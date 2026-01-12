@@ -6,3 +6,7 @@ dist/
 
 # Deciduous database (local)
 .deciduous/
+
+.mycelium/
+
+.claude/settings.local.json
