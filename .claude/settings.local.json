@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(deciduous add:*)",
+      "Bash(deciduous link:*)",
+      "Bash(deciduous writeup:*)",
+      "Bash(deciduous status:*)",
+      "Bash(deciduous nodes:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm approve-builds:*)",
+      "Bash(node dist/cli.js query calls:*)"
+    ]
+  }
+}

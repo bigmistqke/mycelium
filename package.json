@@ -1,0 +1,35 @@
+{
+  "name": "@bigmistqke/mycelium",
+  "version": "0.1.0",
+  "description": "Semantic code graph for TypeScript codebases with multi-resolution understanding",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "mycelium": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "sync": "node dist/cli.js sync"
+  },
+  "keywords": [
+    "typescript",
+    "code-analysis",
+    "knowledge-graph",
+    "sqlite"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^12.6.0",
+    "commander": "^14.0.2",
+    "ts-morph": "^27.0.2",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.0.6"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3"]
+  }
+}
