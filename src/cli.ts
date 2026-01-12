@@ -10,6 +10,9 @@ import { TypeScriptAnalyzer } from "./analyzer.js";
 const DEFAULT_DB_PATH = ".mycelium/graph.db";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Gets the current git HEAD commit SHA. Falls back to a timestamp-based ID if not in a git repository.
+ */
 function getGitCommitSha(): string {
   try {
     return execSync("git rev-parse HEAD", { encoding: "utf-8" }).trim();
@@ -18,6 +21,9 @@ function getGitCommitSha(): string {
   }
 }
 
+/**
+ * Searches for tsconfig.json or tsconfig.build.json in the current directory. Returns undefined if none found.
+ */
 function findTsConfig(): string | undefined {
   const candidates = ["tsconfig.json", "tsconfig.build.json"];
   for (const candidate of candidates) {
@@ -109,6 +115,9 @@ program
     console.log("\nRun 'mycelium sync' to analyze your codebase.");
   });
 
+/**
+ * Fallback template creator when packaged template files are not found. Writes minimal Claude command templates inline.
+ */
 function createInlineTemplate(dest: string, name: string): void {
   const templates: Record<string, string> = {
     "mycelium-sync.md": `---
@@ -458,6 +467,143 @@ program
         console.log(`    ${desc.content}`);
         console.log();
       }
+    }
+
+    store.close();
+  });
+
+program
+  .command("jsdoc")
+  .description("Check or update JSDoc comments from descriptions")
+  .argument("<mode>", "Mode: check | sync")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("-p, --pattern <patterns...>", "Glob patterns for source files", ["src/**/*.ts"])
+  .action((mode, options) => {
+    if (mode !== "check" && mode !== "sync") {
+      console.error("Mode must be 'check' or 'sync'");
+      process.exit(1);
+    }
+
+    const store = new GraphStore(resolve(options.db));
+    const entities = store.getEntities();
+    const descriptions = store.getAllDescriptions();
+    const descMap = new Map(descriptions.map((d) => [d.entity_id, d]));
+
+    // Group entities by file
+    const fileEntities = new Map<string, typeof entities>();
+    for (const entity of entities) {
+      const desc = descMap.get(entity.id);
+      if (!desc) continue;
+
+      const list = fileEntities.get(entity.file_path) || [];
+      list.push(entity);
+      fileEntities.set(entity.file_path, list);
+    }
+
+    let totalChanges = 0;
+
+    for (const [filePath, fileEnts] of fileEntities) {
+      const fullPath = resolve(filePath);
+      if (!existsSync(fullPath)) {
+        console.warn(`File not found: ${filePath}`);
+        continue;
+      }
+
+      const content = readFileSync(fullPath, "utf-8");
+      const lines = content.split("\n");
+
+      // Sort by line number descending so edits don't shift line numbers
+      const sorted = [...fileEnts].sort((a, b) => b.start_line - a.start_line);
+
+      let modified = false;
+
+      for (const entity of sorted) {
+        const desc = descMap.get(entity.id);
+        if (!desc) continue;
+
+        const lineIdx = entity.start_line - 1;
+        if (lineIdx < 0 || lineIdx >= lines.length) continue;
+
+        // Check for existing JSDoc comment above the function
+        let jsdocStart = -1;
+        let jsdocEnd = -1;
+        let existingJsdoc = "";
+
+        for (let i = lineIdx - 1; i >= 0; i--) {
+          const trimmed = lines[i].trim();
+          if (trimmed === "") continue;
+          if (trimmed.endsWith("*/")) {
+            jsdocEnd = i;
+          }
+          if (trimmed.startsWith("/**")) {
+            jsdocStart = i;
+            break;
+          }
+          if (jsdocEnd === -1 && !trimmed.startsWith("*") && !trimmed.startsWith("//")) {
+            break;
+          }
+        }
+
+        if (jsdocStart !== -1 && jsdocEnd !== -1) {
+          existingJsdoc = lines
+            .slice(jsdocStart, jsdocEnd + 1)
+            .join("\n");
+        }
+
+        // Extract description text from existing JSDoc
+        const existingDesc = existingJsdoc
+          .replace(/\/\*\*|\*\/|\s*\*\s*/g, " ")
+          .replace(/@\w+[^@]*/g, "")
+          .trim();
+
+        const newDesc = desc.content.trim();
+
+        if (existingDesc === newDesc) continue;
+
+        // Get indentation from the function line
+        const indent = lines[lineIdx].match(/^(\s*)/)?.[1] || "";
+
+        // Format new JSDoc
+        const newJsdoc = `${indent}/**\n${indent} * ${newDesc}\n${indent} */`;
+
+        if (mode === "check") {
+          console.log(`\n${entity.id} (${filePath}:${entity.start_line})`);
+          if (existingJsdoc) {
+            console.log("  Current:");
+            console.log(`    ${existingDesc || "(empty)"}`);
+          } else {
+            console.log("  Current: (no JSDoc)");
+          }
+          console.log("  New:");
+          console.log(`    ${newDesc}`);
+          totalChanges++;
+        } else {
+          // Apply changes
+          if (jsdocStart !== -1 && jsdocEnd !== -1) {
+            // Replace existing JSDoc
+            lines.splice(jsdocStart, jsdocEnd - jsdocStart + 1, newJsdoc);
+          } else {
+            // Insert new JSDoc before function
+            lines.splice(lineIdx, 0, newJsdoc);
+          }
+          modified = true;
+          totalChanges++;
+          console.log(`Updated: ${entity.id}`);
+        }
+      }
+
+      if (mode === "sync" && modified) {
+        writeFileSync(fullPath, lines.join("\n"));
+      }
+    }
+
+    if (mode === "check") {
+      console.log(`\n${totalChanges} change(s) would be made.`);
+      if (totalChanges > 0) {
+        console.log("Run 'mycelium jsdoc sync' to apply.");
+      }
+    } else {
+      console.log(`\n${totalChanges} JSDoc comment(s) updated.`);
     }
 
     store.close();
