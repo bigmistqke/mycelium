@@ -1,5 +1,13 @@
 [
   {
+    "hash": "fe6532d7618f6bbc4b0f6e307313e806386992e1",
+    "short_hash": "fe6532d",
+    "author": "bigmistqke",
+    "date": "2026-01-12T23:24:12+01:00",
+    "message": "feat: add hash-based change detection for sync and descriptions",
+    "files_changed": 2
+  },
+  {
     "hash": "99b68fa34f688ee1e5ca10f70ce4feefda5473f0",
     "short_hash": "99b68fa",
     "author": "bigmistqke",
