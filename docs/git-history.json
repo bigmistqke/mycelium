@@ -1,0 +1,10 @@
+[
+  {
+    "hash": "387b997d1aec1d0c747d5669659db22ca70ec4aa",
+    "short_hash": "387b997",
+    "author": "bigmistqke",
+    "date": "2026-01-12T22:51:08+01:00",
+    "message": "chore: add Claude command templates for mycelium workflow",
+    "files_changed": 5
+  }
+]
