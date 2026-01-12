@@ -560,6 +560,61 @@
       "created_at": "2026-01-12T22:53:20.192320+01:00",
       "updated_at": "2026-01-12T22:53:20.192320+01:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":85,\"prompt\":\"User asked: are we checking these to only update descriptions/... if the hash changes? -> yes, 2 tickets. Ticket 2: On describe, skip if entity unchanged since last description (add impl_hash to descriptions table).\"}"
+    },
+    {
+      "id": 52,
+      "change_id": "fffc5622-3904-474d-b54d-3f7f653b1ef4",
+      "node_type": "goal",
+      "title": "Add transitions table to track changes between commits",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-12T22:57:24.958647+01:00",
+      "updated_at": "2026-01-12T22:57:24.958647+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90,\"prompt\":\"when doing sync it automatically creates a transition with in: A out: B -> cli command to add description to it -> update the mycylium-sync claude command to add descriptions to all the new transitions\"}"
+    },
+    {
+      "id": 53,
+      "change_id": "ccb7f8f8-09ca-4baf-aaa4-7a7cdcc81383",
+      "node_type": "goal",
+      "title": "Add jsdoc command for checking/updating JSDoc from descriptions",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-12T22:59:00.185213+01:00",
+      "updated_at": "2026-01-12T22:59:00.185213+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90,\"prompt\":\"add jsdoc command for checking/updating the jsdoc dependent on the description\"}"
+    },
+    {
+      "id": 54,
+      "change_id": "9f77d67a-18e1-4e58-b3ab-ef1878c852b0",
+      "node_type": "action",
+      "title": "Implemented jsdoc command with check and sync modes",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-12T23:00:29.031254+01:00",
+      "updated_at": "2026-01-12T23:00:29.031254+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95,\"files\":[\"src/cli.ts\"]}"
+    },
+    {
+      "id": 55,
+      "change_id": "1b1a16b5-de7e-4ed4-bc46-dcc04a0771cc",
+      "node_type": "outcome",
+      "title": "Committed: feat: add jsdoc command",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-12T23:03:51.397210+01:00",
+      "updated_at": "2026-01-12T23:03:51.397210+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"2813632\",\"confidence\":95}"
+    },
+    {
+      "id": 56,
+      "change_id": "30f53881-6ea4-4227-915c-d73477ad64c0",
+      "node_type": "outcome",
+      "title": "Committed: docs: sync JSDoc comments",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-12T23:03:51.565630+01:00",
+      "updated_at": "2026-01-12T23:03:51.565630+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"99b68fa\",\"confidence\":95}"
     }
   ],
   "edges": [
@@ -1156,6 +1211,61 @@
       "weight": 1.0,
       "rationale": "Implements hash-based change detection for descriptions",
       "created_at": "2026-01-12T22:53:26.501456+01:00"
+    },
+    {
+      "id": 55,
+      "from_node_id": 1,
+      "to_node_id": 52,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "fffc5622-3904-474d-b54d-3f7f653b1ef4",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Temporal dimension enhancement",
+      "created_at": "2026-01-12T22:57:31.613060+01:00"
+    },
+    {
+      "id": 56,
+      "from_node_id": 41,
+      "to_node_id": 53,
+      "from_change_id": "3bd30b4d-b4cb-44ff-bfeb-9daf530f873e",
+      "to_change_id": "ccb7f8f8-09ca-4baf-aaa4-7a7cdcc81383",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implements bidirectional JSDoc sync",
+      "created_at": "2026-01-12T22:59:06.019484+01:00"
+    },
+    {
+      "id": 57,
+      "from_node_id": 53,
+      "to_node_id": 54,
+      "from_change_id": "ccb7f8f8-09ca-4baf-aaa4-7a7cdcc81383",
+      "to_change_id": "9f77d67a-18e1-4e58-b3ab-ef1878c852b0",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation",
+      "created_at": "2026-01-12T23:00:33.267125+01:00"
+    },
+    {
+      "id": 58,
+      "from_node_id": 54,
+      "to_node_id": 55,
+      "from_change_id": "9f77d67a-18e1-4e58-b3ab-ef1878c852b0",
+      "to_change_id": "1b1a16b5-de7e-4ed4-bc46-dcc04a0771cc",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Committed",
+      "created_at": "2026-01-12T23:03:56.026386+01:00"
+    },
+    {
+      "id": 59,
+      "from_node_id": 54,
+      "to_node_id": 56,
+      "from_change_id": "9f77d67a-18e1-4e58-b3ab-ef1878c852b0",
+      "to_change_id": "30f53881-6ea4-4227-915c-d73477ad64c0",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Committed",
+      "created_at": "2026-01-12T23:03:56.035790+01:00"
     }
   ]
 }

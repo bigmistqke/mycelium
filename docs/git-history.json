@@ -1,5 +1,21 @@
 [
   {
+    "hash": "99b68fa34f688ee1e5ca10f70ce4feefda5473f0",
+    "short_hash": "99b68fa",
+    "author": "bigmistqke",
+    "date": "2026-01-12T23:03:45+01:00",
+    "message": "docs: sync JSDoc comments from stored descriptions",
+    "files_changed": 4
+  },
+  {
+    "hash": "281363245783d31c7408fd51fed93581b83c67c8",
+    "short_hash": "2813632",
+    "author": "bigmistqke",
+    "date": "2026-01-12T23:03:35+01:00",
+    "message": "feat: add jsdoc command for syncing descriptions to source",
+    "files_changed": 1
+  },
+  {
     "hash": "387b997d1aec1d0c747d5669659db22ca70ec4aa",
     "short_hash": "387b997",
     "author": "bigmistqke",
