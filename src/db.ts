@@ -38,6 +38,12 @@ export interface System {
   commit_sha: string;
 }
 
+export interface Description {
+  entity_id: string;
+  content: string;
+  updated_at: string;
+}
+
 export function createDatabase(dbPath: string): Database.Database {
   const dir = dirname(dbPath);
   if (!existsSync(dir)) {
@@ -97,6 +103,13 @@ export function createDatabase(dbPath: string): Database.Database {
       entry_point_id TEXT NOT NULL,
       commit_sha TEXT NOT NULL,
       PRIMARY KEY (system_id, entry_point_id, commit_sha)
+    );
+
+    -- Descriptions for entities (AI-generated or manual)
+    CREATE TABLE IF NOT EXISTS descriptions (
+      entity_id TEXT PRIMARY KEY,
+      content TEXT NOT NULL,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     -- Indexes for common queries
@@ -265,6 +278,24 @@ export class GraphStore {
       .prepare("SELECT DISTINCT commit_sha FROM entities ORDER BY created_at DESC")
       .all() as Array<{ commit_sha: string }>;
     return rows.map(r => r.commit_sha);
+  }
+
+  getDescription(entityId: string): Description | undefined {
+    return this.db
+      .prepare("SELECT * FROM descriptions WHERE entity_id = ?")
+      .get(entityId) as Description | undefined;
+  }
+
+  setDescription(entityId: string, content: string): void {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO descriptions (entity_id, content, updated_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP)
+    `);
+    stmt.run(entityId, content);
+  }
+
+  getAllDescriptions(): Description[] {
+    return this.db.prepare("SELECT * FROM descriptions").all() as Description[];
   }
 
   close(): void {

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { execSync } from "child_process";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { GraphStore } from "./db.js";
 import { TypeScriptAnalyzer } from "./analyzer.js";
@@ -240,6 +240,91 @@ program
 
     if (!added.length && !removed.length && !signatureChanged.length && !implChanged.length) {
       console.log("No changes.");
+    }
+
+    store.close();
+  });
+
+program
+  .command("describe")
+  .description("Get or set description for an entity")
+  .argument("<entity-id>", "Entity ID (e.g., src/db.ts::GraphStore.getEntities)")
+  .argument("[description]", "Description text (omit to show current)")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("--stdin", "Read description from stdin")
+  .action(async (entityId, description, options) => {
+    const store = new GraphStore(resolve(options.db));
+
+    // Verify entity exists
+    const entity = store.getEntityById(entityId);
+    if (!entity) {
+      console.error(`Entity not found: ${entityId}`);
+      console.error("Run 'mycelium query entities' to see available entities.");
+      store.close();
+      process.exit(1);
+    }
+
+    if (options.stdin) {
+      // Read from stdin
+      const chunks: Buffer[] = [];
+      for await (const chunk of process.stdin) {
+        chunks.push(chunk);
+      }
+      description = Buffer.concat(chunks).toString("utf-8").trim();
+    }
+
+    if (description) {
+      // Set description
+      store.setDescription(entityId, description);
+      console.log(`Description set for: ${entityId}`);
+    } else {
+      // Show current description
+      const desc = store.getDescription(entityId);
+      console.log(`\n${entityId}`);
+      console.log(`  Signature: ${entity.signature}`);
+      console.log(`  File: ${entity.file_path}:${entity.start_line}`);
+      if (desc) {
+        console.log(`\n  Description:`);
+        console.log(`    ${desc.content}`);
+        console.log(`\n  Updated: ${desc.updated_at}`);
+      } else {
+        console.log(`\n  No description set.`);
+      }
+    }
+
+    store.close();
+  });
+
+program
+  .command("descriptions")
+  .description("List all entities with descriptions")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("--missing", "Show entities without descriptions")
+  .action((options) => {
+    const store = new GraphStore(resolve(options.db));
+    const entities = store.getEntities();
+    const descriptions = store.getAllDescriptions();
+    const descMap = new Map(descriptions.map((d) => [d.entity_id, d]));
+
+    if (options.missing) {
+      const missing = entities.filter((e) => !descMap.has(e.id));
+      console.log(`\nEntities without descriptions (${missing.length}):\n`);
+      for (const e of missing) {
+        console.log(`  ${e.id}`);
+        console.log(`    ${e.signature}`);
+        console.log();
+      }
+    } else {
+      console.log(`\nDescriptions (${descriptions.length}):\n`);
+      for (const desc of descriptions) {
+        const entity = store.getEntityById(desc.entity_id);
+        console.log(`  ${desc.entity_id}`);
+        if (entity) {
+          console.log(`    Signature: ${entity.signature}`);
+        }
+        console.log(`    ${desc.content}`);
+        console.log();
+      }
     }
 
     store.close();
