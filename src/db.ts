@@ -41,6 +41,7 @@ export interface System {
 export interface Description {
   entity_id: string;
   content: string;
+  impl_hash: string | null;
   updated_at: string;
 }
 
@@ -112,6 +113,7 @@ export function createDatabase(dbPath: string): Database.Database {
     CREATE TABLE IF NOT EXISTS descriptions (
       entity_id TEXT PRIMARY KEY,
       content TEXT NOT NULL,
+      impl_hash TEXT,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -132,6 +134,18 @@ export class GraphStore {
 
   constructor(dbPath: string) {
     this.db = createDatabase(dbPath);
+  }
+
+  /**
+   * Checks if an entity exists with identical signature and implementation hashes. Used to skip redundant inserts during sync.
+   */
+  isEntityUnchanged(id: string, signatureHash: string, implHash: string | null): boolean {
+    const existing = this.db
+      .prepare("SELECT signature_hash, impl_hash FROM entities WHERE id = ? ORDER BY created_at DESC LIMIT 1")
+      .get(id) as { signature_hash: string; impl_hash: string | null } | undefined;
+
+    if (!existing) return false;
+    return existing.signature_hash === signatureHash && existing.impl_hash === implHash;
   }
 
   /**
@@ -326,14 +340,39 @@ export class GraphStore {
   }
 
   /**
-   * Stores or updates a description for an entity. Descriptions are AI-generated or manually written and persist across syncs.
+   * Stores or updates a description for an entity. Descriptions are AI-generated or manually written and persist across syncs. Also stores the current impl_hash to detect when re-description is needed.
    */
-  setDescription(entityId: string, content: string): void {
+  setDescription(entityId: string, content: string, implHash?: string | null): void {
     const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO descriptions (entity_id, content, updated_at)
-      VALUES (?, ?, CURRENT_TIMESTAMP)
+      INSERT OR REPLACE INTO descriptions (entity_id, content, impl_hash, updated_at)
+      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
     `);
-    stmt.run(entityId, content);
+    stmt.run(entityId, content, implHash ?? null);
+  }
+
+  /**
+   * Checks if an entity's description is stale (impl_hash changed since description was written).
+   */
+  isDescriptionStale(entityId: string): boolean {
+    const entity = this.getEntityById(entityId);
+    if (!entity) return false;
+
+    const desc = this.getDescription(entityId);
+    if (!desc) return true; // No description = needs one
+
+    // If impl_hash wasn't tracked when description was set, consider it stale
+    if (desc.impl_hash === null) return true;
+
+    return desc.impl_hash !== entity.impl_hash;
+  }
+
+  /**
+   * Returns entities that need descriptions: either missing or stale (implementation changed).
+   */
+  getEntitiesNeedingDescriptions(): Entity[] {
+    // Get all entities and filter to those needing descriptions
+    const entities = this.getEntities();
+    return entities.filter(e => this.isDescriptionStale(e.id));
   }
 
   /**

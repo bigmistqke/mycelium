@@ -199,9 +199,17 @@ program
 
     const store = new GraphStore(resolve(options.db));
 
+    let inserted = 0;
+    let skipped = 0;
     for (const entity of result.entities) {
-      store.insertEntity(entity);
+      if (store.isEntityUnchanged(entity.id, entity.signature_hash, entity.impl_hash)) {
+        skipped++;
+      } else {
+        store.insertEntity(entity);
+        inserted++;
+      }
     }
+    console.log(`Entities: ${inserted} updated, ${skipped} unchanged`);
 
     for (const relation of result.relations) {
       store.insertRelation(relation);
@@ -416,8 +424,8 @@ program
     }
 
     if (description) {
-      // Set description
-      store.setDescription(entityId, description);
+      // Set description with current impl_hash
+      store.setDescription(entityId, description, entity.impl_hash);
       console.log(`Description set for: ${entityId}`);
     } else {
       // Show current description
@@ -441,18 +449,19 @@ program
   .command("descriptions")
   .description("List all entities with descriptions")
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
-  .option("--missing", "Show entities without descriptions")
+  .option("--missing", "Show entities needing descriptions (missing or stale)")
   .action((options) => {
     const store = new GraphStore(resolve(options.db));
-    const entities = store.getEntities();
     const descriptions = store.getAllDescriptions();
-    const descMap = new Map(descriptions.map((d) => [d.entity_id, d]));
 
     if (options.missing) {
-      const missing = entities.filter((e) => !descMap.has(e.id));
-      console.log(`\nEntities without descriptions (${missing.length}):\n`);
-      for (const e of missing) {
-        console.log(`  ${e.id}`);
+      const needing = store.getEntitiesNeedingDescriptions();
+      const descMap = new Map(descriptions.map((d) => [d.entity_id, d]));
+      console.log(`\nEntities needing descriptions (${needing.length}):\n`);
+      for (const e of needing) {
+        const existing = descMap.get(e.id);
+        const status = existing ? "(stale)" : "(missing)";
+        console.log(`  ${e.id} ${status}`);
         console.log(`    ${e.signature}`);
         console.log();
       }
