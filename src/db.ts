@@ -44,6 +44,9 @@ export interface Description {
   updated_at: string;
 }
 
+/**
+ * Creates and initializes the SQLite database with all required tables (entities, relations, entry_points, systems, descriptions). Sets up WAL mode for better concurrent access.
+ */
 export function createDatabase(dbPath: string): Database.Database {
   const dir = dirname(dbPath);
   if (!existsSync(dir)) {
@@ -131,6 +134,9 @@ export class GraphStore {
     this.db = createDatabase(dbPath);
   }
 
+  /**
+   * Persists a code entity (function, type, etc.) to the database. Uses INSERT OR REPLACE to update existing entities for the same commit.
+   */
   insertEntity(entity: Omit<Entity, "created_at">): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO entities (id, kind, name, file_path, start_line, end_line, signature, signature_hash, impl_hash, commit_sha)
@@ -150,6 +156,9 @@ export class GraphStore {
     );
   }
 
+  /**
+   * Records a relationship between entities (calls, uses_type, exports, imports). Uses INSERT OR IGNORE to prevent duplicate edges.
+   */
   insertRelation(relation: Omit<Relation, "id">): void {
     const stmt = this.db.prepare(`
       INSERT OR IGNORE INTO relations (from_id, to_id, kind, commit_sha, metadata)
@@ -164,6 +173,9 @@ export class GraphStore {
     );
   }
 
+  /**
+   * Marks a function as an entry point (call graph root). Entry points are functions with outgoing calls but no callers.
+   */
   insertEntryPoint(entryPoint: EntryPoint): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO entry_points (entity_id, description, commit_sha)
@@ -172,6 +184,9 @@ export class GraphStore {
     stmt.run(entryPoint.entity_id, entryPoint.description, entryPoint.commit_sha);
   }
 
+  /**
+   * Retrieves all entities from the database. If commitSha is provided, returns entities at that specific commit. Otherwise returns the latest version of each entity.
+   */
   getEntities(commitSha?: string): Entity[] {
     if (commitSha) {
       return this.db
@@ -191,6 +206,9 @@ export class GraphStore {
       .all() as Entity[];
   }
 
+  /**
+   * Retrieves a single entity by ID, optionally at a specific commit. Returns the latest version if no commit specified.
+   */
   getEntityById(id: string, commitSha?: string): Entity | undefined {
     if (commitSha) {
       return this.db
@@ -202,6 +220,9 @@ export class GraphStore {
       .get(id) as Entity | undefined;
   }
 
+  /**
+   * Returns all relationship edges, optionally filtered by commit. Used for building the full call graph visualization.
+   */
   getRelations(commitSha?: string): Relation[] {
     if (commitSha) {
       return this.db
@@ -211,6 +232,9 @@ export class GraphStore {
     return this.db.prepare("SELECT * FROM relations").all() as Relation[];
   }
 
+  /**
+   * Finds all functions that call a given entity. Essential for impact analysis - understanding what would break if this function changes.
+   */
   getCallers(entityId: string, commitSha?: string): Entity[] {
     const query = commitSha
       ? `SELECT e.* FROM entities e
@@ -225,6 +249,9 @@ export class GraphStore {
       : (this.db.prepare(query).all(entityId) as Entity[]);
   }
 
+  /**
+   * Finds all functions called by a given entity. Used to trace execution flow downward from entry points.
+   */
   getCallees(entityId: string, commitSha?: string): Entity[] {
     const query = commitSha
       ? `SELECT e.* FROM entities e
@@ -239,6 +266,9 @@ export class GraphStore {
       : (this.db.prepare(query).all(entityId) as Entity[]);
   }
 
+  /**
+   * Returns entry points with their associated entity data. Entry points define the main flows through the codebase.
+   */
   getEntryPoints(commitSha?: string): Array<EntryPoint & { entity: Entity }> {
     const query = commitSha
       ? `SELECT ep.*, e.* FROM entry_points ep
@@ -254,6 +284,9 @@ export class GraphStore {
     return rows as Array<EntryPoint & { entity: Entity }>;
   }
 
+  /**
+   * Identifies call graph roots - functions that make outgoing calls but receive no incoming calls. These represent system entry points like CLI commands or API handlers.
+   */
   findEntryPoints(commitSha: string): string[] {
     // Entry points = entities that have outgoing calls but no incoming calls
     const query = `
@@ -273,6 +306,9 @@ export class GraphStore {
     return rows.map(r => r.id);
   }
 
+  /**
+   * Returns all unique commit SHAs in the database, ordered by creation time. Used to list available snapshots for temporal queries.
+   */
   getCommits(): string[] {
     const rows = this.db
       .prepare("SELECT DISTINCT commit_sha FROM entities ORDER BY created_at DESC")
@@ -280,12 +316,18 @@ export class GraphStore {
     return rows.map(r => r.commit_sha);
   }
 
+  /**
+   * Retrieves the stored description for an entity. Returns undefined if no description has been set.
+   */
   getDescription(entityId: string): Description | undefined {
     return this.db
       .prepare("SELECT * FROM descriptions WHERE entity_id = ?")
       .get(entityId) as Description | undefined;
   }
 
+  /**
+   * Stores or updates a description for an entity. Descriptions are AI-generated or manually written and persist across syncs.
+   */
   setDescription(entityId: string, content: string): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO descriptions (entity_id, content, updated_at)
@@ -294,10 +336,16 @@ export class GraphStore {
     stmt.run(entityId, content);
   }
 
+  /**
+   * Returns all stored descriptions. Used by the descriptions command to show documented entities.
+   */
   getAllDescriptions(): Description[] {
     return this.db.prepare("SELECT * FROM descriptions").all() as Description[];
   }
 
+  /**
+   * Closes the database connection. Should be called when done with queries to release resources.
+   */
   close(): void {
     this.db.close();
   }

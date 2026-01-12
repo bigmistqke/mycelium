@@ -538,6 +538,28 @@
       "created_at": "2026-01-12T22:51:23.427136+01:00",
       "updated_at": "2026-01-12T22:51:23.427136+01:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"387b997\",\"confidence\":95}"
+    },
+    {
+      "id": 50,
+      "change_id": "df835e26-b244-44c6-8b65-f3700477634c",
+      "node_type": "goal",
+      "title": "Skip re-inserting unchanged entities during sync",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-12T22:53:20.043490+01:00",
+      "updated_at": "2026-01-12T22:53:20.043490+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85,\"prompt\":\"User asked: are we checking these to only update descriptions/... if the hash changes? -> yes, 2 tickets. Ticket 1: On sync, skip inserting entities where signature_hash AND impl_hash match existing.\"}"
+    },
+    {
+      "id": 51,
+      "change_id": "099f1bd7-9373-4053-9215-43c8ce8cf39c",
+      "node_type": "goal",
+      "title": "Skip re-describing unchanged entities",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-12T22:53:20.192320+01:00",
+      "updated_at": "2026-01-12T22:53:20.192320+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85,\"prompt\":\"User asked: are we checking these to only update descriptions/... if the hash changes? -> yes, 2 tickets. Ticket 2: On describe, skip if entity unchanged since last description (add impl_hash to descriptions table).\"}"
     }
   ],
   "edges": [
@@ -1112,6 +1134,28 @@
       "weight": 1.0,
       "rationale": "Templates created by init --ai claude",
       "created_at": "2026-01-12T22:51:27.291423+01:00"
+    },
+    {
+      "id": 53,
+      "from_node_id": 9,
+      "to_node_id": 50,
+      "from_change_id": "8867cfd9-622a-47c0-96dd-d06d558c9a61",
+      "to_change_id": "df835e26-b244-44c6-8b65-f3700477634c",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implements hash-based change detection for sync",
+      "created_at": "2026-01-12T22:53:26.492071+01:00"
+    },
+    {
+      "id": 54,
+      "from_node_id": 9,
+      "to_node_id": 51,
+      "from_change_id": "8867cfd9-622a-47c0-96dd-d06d558c9a61",
+      "to_change_id": "099f1bd7-9373-4053-9215-43c8ce8cf39c",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implements hash-based change detection for descriptions",
+      "created_at": "2026-01-12T22:53:26.501456+01:00"
     }
   ]
 }

@@ -48,10 +48,16 @@ export class TypeScriptAnalyzer {
     }
   }
 
+  /**
+   * Adds source files to the ts-morph Project using glob patterns. Called before analyze() to define the analysis scope.
+   */
   addSourceFiles(patterns: string[]): void {
     this.project.addSourceFilesAtPaths(patterns);
   }
 
+  /**
+   * Main analysis entry point. Performs two passes: first extracts all functions, then builds the call graph by resolving call expressions to known functions.
+   */
   analyze(commitSha: string): AnalysisResult {
     const entities: Omit<Entity, "created_at">[] = [];
     const relations: Omit<Relation, "id">[] = [];
@@ -100,10 +106,16 @@ export class TypeScriptAnalyzer {
     return { entities, relations };
   }
 
+  /**
+   * Converts absolute file paths to paths relative to the project root. Ensures consistent entity IDs across different machines.
+   */
   private getRelativePath(absolutePath: string): string {
     return relative(this.rootDir, absolutePath);
   }
 
+  /**
+   * Extracts all function-like entities from a source file: named functions, exported arrow functions, and class methods. Returns FunctionInfo for each.
+   */
   private extractFunctions(sourceFile: SourceFile, filePath: string): FunctionInfo[] {
     const functions: FunctionInfo[] = [];
 
@@ -145,6 +157,9 @@ export class TypeScriptAnalyzer {
     return functions;
   }
 
+  /**
+   * Creates a FunctionInfo record from a function declaration or method. Extracts signature, body, and location for storage.
+   */
   private createFunctionInfo(
     fn: FunctionDeclaration | FunctionExpression | Node,
     name: string,
@@ -170,6 +185,9 @@ export class TypeScriptAnalyzer {
     return { id, name, filePath, startLine, endLine, signature, body, node: fn };
   }
 
+  /**
+   * Creates FunctionInfo for arrow functions and function expressions assigned to variables. Handles the different AST structure compared to declarations.
+   */
   private createFunctionInfoFromVar(
     varDecl: VariableDeclaration,
     fn: ArrowFunction | FunctionExpression,
@@ -188,6 +206,9 @@ export class TypeScriptAnalyzer {
     return { id, name, filePath, startLine, endLine, signature, body, node: fn };
   }
 
+  /**
+   * Finds all call expressions within a function and resolves them to known function IDs. Returns deduplicated list of callee IDs for building the call graph.
+   */
   private extractCalls(node: Node, functionMap: Map<string, FunctionInfo>): string[] {
     const calls: string[] = [];
     const callExpressions = node.getDescendantsOfKind(SyntaxKind.CallExpression);
@@ -208,6 +229,9 @@ export class TypeScriptAnalyzer {
     return [...new Set(calls)]; // deduplicate
   }
 
+  /**
+   * Extracts the function name from a CallExpression AST node. Handles both simple identifiers and property access (obj.method).
+   */
   private getCalleeName(call: CallExpression): string | null {
     const expression = call.getExpression();
 
