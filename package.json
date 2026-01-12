@@ -8,6 +8,10 @@
   "bin": {
     "mycelium": "dist/cli.js"
   },
+  "files": [
+    "dist",
+    "templates"
+  ],
   "scripts": {
     "build": "tsc",
     "sync": "node dist/cli.js sync"

@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { execSync } from "child_process";
-import { existsSync, readFileSync } from "fs";
-import { resolve } from "path";
+import { existsSync, readFileSync, mkdirSync, writeFileSync, cpSync } from "fs";
+import { resolve, dirname, join } from "path";
+import { fileURLToPath } from "url";
 import { GraphStore } from "./db.js";
 import { TypeScriptAnalyzer } from "./analyzer.js";
 
 const DEFAULT_DB_PATH = ".mycelium/graph.db";
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function getGitCommitSha(): string {
   try {
@@ -32,6 +34,137 @@ program
   .name("mycelium")
   .description("Semantic code graph for TypeScript codebases")
   .version("0.1.0");
+
+program
+  .command("init")
+  .description("Initialize mycelium in a TypeScript project")
+  .option("--ai <provider>", "Set up AI integration (claude)")
+  .action((options) => {
+    // Create .mycelium directory
+    if (!existsSync(".mycelium")) {
+      mkdirSync(".mycelium", { recursive: true });
+      console.log("Created .mycelium/");
+    }
+
+    // Add to .gitignore if not already there
+    const gitignorePath = ".gitignore";
+    const gitignoreEntries = [".mycelium/"];
+
+    if (existsSync(gitignorePath)) {
+      const content = readFileSync(gitignorePath, "utf-8");
+      const toAdd = gitignoreEntries.filter((e) => !content.includes(e));
+      if (toAdd.length) {
+        writeFileSync(gitignorePath, content + "\n" + toAdd.join("\n") + "\n");
+        console.log("Updated .gitignore");
+      }
+    } else {
+      writeFileSync(gitignorePath, gitignoreEntries.join("\n") + "\n");
+      console.log("Created .gitignore");
+    }
+
+    // Set up AI integration
+    if (options.ai) {
+      const provider = options.ai.toLowerCase();
+
+      if (provider === "claude") {
+        const commandsDir = ".claude/commands";
+        if (!existsSync(commandsDir)) {
+          mkdirSync(commandsDir, { recursive: true });
+        }
+
+        // Copy command templates
+        const templatesDir = join(__dirname, "..", "templates", "claude");
+        const templates = [
+          "mycelium-sync.md",
+          "mycelium-describe.md",
+          "mycelium-explore.md",
+        ];
+
+        for (const template of templates) {
+          const src = join(templatesDir, template);
+          const dest = join(commandsDir, template);
+
+          if (existsSync(src)) {
+            cpSync(src, dest);
+            console.log(`Created ${dest}`);
+          } else {
+            // Fallback: create inline if templates not found
+            console.log(`Template not found: ${src}, creating inline...`);
+            createInlineTemplate(dest, template);
+          }
+        }
+
+        console.log("\nClaude integration set up!");
+        console.log("Commands available:");
+        console.log("  /mycelium-sync     - Analyze codebase");
+        console.log("  /mycelium-describe - Generate descriptions");
+        console.log("  /mycelium-explore  - Query the graph");
+      } else {
+        console.error(`Unknown AI provider: ${provider}`);
+        console.error("Supported: claude");
+        process.exit(1);
+      }
+    }
+
+    console.log("\nRun 'mycelium sync' to analyze your codebase.");
+  });
+
+function createInlineTemplate(dest: string, name: string): void {
+  const templates: Record<string, string> = {
+    "mycelium-sync.md": `---
+description: Analyze TypeScript codebase and update the mycelium graph
+allowed-tools: Bash(mycelium:*, git:*)
+---
+
+# Mycelium Sync
+
+\`\`\`bash
+mycelium sync
+mycelium query entities
+mycelium query entry-points
+mycelium descriptions --missing
+\`\`\`
+`,
+    "mycelium-describe.md": `---
+description: Generate descriptions for TypeScript entities
+allowed-tools: Bash(mycelium:*), Read
+argument-hint: [entity-id or "missing"]
+---
+
+# Mycelium Describe
+
+\`\`\`bash
+# Get entities needing descriptions
+mycelium descriptions --missing
+
+# View entity
+mycelium describe "src/module.ts::functionName"
+
+# Set description
+mycelium describe "src/module.ts::functionName" "Description here"
+\`\`\`
+`,
+    "mycelium-explore.md": `---
+description: Explore the mycelium graph
+allowed-tools: Bash(mycelium:*)
+argument-hint: <query> [target]
+---
+
+# Mycelium Explore
+
+\`\`\`bash
+mycelium query entities
+mycelium query entry-points
+mycelium query calls "<id>"
+mycelium query callers "<id>"
+mycelium history
+mycelium diff <from> <to>
+\`\`\`
+`,
+  };
+
+  writeFileSync(dest, templates[name] || "");
+}
 
 program
   .command("sync")

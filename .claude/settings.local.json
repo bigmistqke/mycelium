@@ -12,7 +12,9 @@
       "Bash(npm run build:*)",
       "Bash(pnpm install:*)",
       "Bash(pnpm approve-builds:*)",
-      "Bash(node dist/cli.js query calls:*)"
+      "Bash(node dist/cli.js query calls:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm build:*)"
     ]
   }
 }
