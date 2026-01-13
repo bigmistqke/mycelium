@@ -26,6 +26,7 @@
   "dependencies": {
     "better-sqlite3": "^12.6.0",
     "commander": "^14.0.2",
+    "enquirer": "^2.4.1",
     "ts-morph": "^27.0.2",
     "typescript": "^5.9.3"
   },
@@ -34,6 +35,8 @@
     "@types/node": "^25.0.6"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["better-sqlite3"]
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }

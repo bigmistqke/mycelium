@@ -4,6 +4,7 @@ import { execSync, spawn } from "child_process";
 import { existsSync, readFileSync, mkdirSync, writeFileSync, cpSync } from "fs";
 import { resolve, dirname, join } from "path";
 import { fileURLToPath } from "url";
+import enquirer from "enquirer";
 import { GraphStore } from "./db.js";
 import { TypeScriptAnalyzer } from "./analyzer.js";
 
@@ -233,77 +234,188 @@ program
 
 program
   .command("query")
-  .description("Query the graph")
-  .argument("<type>", "Query type: calls | callers | entry-points | entities")
-  .argument("[target]", "Target entity ID")
+  .description("Smart query: search, show context, or query relationships")
+  .argument("<target>", "Search pattern or entity ID")
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
-  .option("--at <commit>", "Query at specific commit")
-  .action((type, target, options) => {
+  .option("--calls", "Show what the entity calls")
+  .option("--callers", "Show what calls the entity")
+  .option("--trace <to>", "Find call path to another entity")
+  .option("--desc", "Search in descriptions instead of names")
+  .option("--fuzzy", "List all matches instead of selecting")
+  .action(async (target, options) => {
     const store = new GraphStore(resolve(options.db));
-    const commitSha = options.at;
+    const entities = store.getEntities();
+    const descriptions = store.getAllDescriptions();
+    const descMap = new Map(descriptions.map((d) => [d.entity_id, d.content]));
 
-    switch (type) {
-      case "entities": {
-        const entities = store.getEntities(commitSha);
-        console.log(`\nEntities (${entities.length}):\n`);
-        for (const e of entities) {
-          console.log(`  ${e.id}`);
-          console.log(`    ${e.signature}`);
-          console.log();
-        }
-        break;
+    // Helper: find entities matching a pattern
+    const findMatches = (pattern: string) => {
+      const lower = pattern.toLowerCase();
+      if (options.desc) {
+        return entities.filter((e) => {
+          const desc = descMap.get(e.id);
+          return desc?.toLowerCase().includes(lower);
+        });
       }
+      return entities.filter(
+        (e) =>
+          e.name.toLowerCase().includes(lower) ||
+          e.id.toLowerCase().includes(lower)
+      );
+    };
 
-      case "calls": {
-        if (!target) {
-          console.error("Target entity ID required for 'calls' query");
+    // Helper: resolve pattern to single entity (with interactive select if ambiguous)
+    const resolveEntity = async (pattern: string) => {
+      if (pattern.includes("::")) {
+        const entity = entities.find((e) => e.id === pattern);
+        if (!entity) {
+          console.error(`Entity not found: ${pattern}`);
           process.exit(1);
         }
-        const callees = store.getCallees(target, commitSha);
-        console.log(`\n${target} calls:\n`);
-        for (const e of callees) {
-          console.log(`  → ${e.id}`);
-        }
-        break;
+        return entity;
       }
-
-      case "callers": {
-        if (!target) {
-          console.error("Target entity ID required for 'callers' query");
-          process.exit(1);
-        }
-        const callers = store.getCallers(target, commitSha);
-        console.log(`\n${target} is called by:\n`);
-        for (const e of callers) {
-          console.log(`  ← ${e.id}`);
-        }
-        break;
+      const matches = findMatches(pattern);
+      if (matches.length === 0) {
+        console.error(`No entities found matching "${pattern}"`);
+        process.exit(1);
       }
+      if (matches.length === 1) {
+        return matches[0];
+      }
+      // Multiple matches - interactive select
+      const { Select } = enquirer as any;
+      const prompt = new Select({
+        name: "entity",
+        message: `Multiple matches for "${pattern}":`,
+        choices: matches.slice(0, 15).map((e) => ({
+          name: e.id,
+          message: `${e.name} (${e.file_path}:${e.start_line})`,
+          value: e.id,
+        })),
+      });
+      try {
+        const selected = await prompt.run();
+        return matches.find((e) => e.id === selected)!;
+      } catch {
+        process.exit(0);
+      }
+    };
 
-      case "entry-points": {
-        const commits = commitSha ? [commitSha] : store.getCommits();
-        const latestCommit = commits[0];
-        if (!latestCommit) {
-          console.log("No data in database. Run 'mycelium sync' first.");
+    // --calls: show what entity calls
+    if (options.calls) {
+      const entity = await resolveEntity(target);
+      const callees = store.getCallees(entity.id);
+      console.log(`\n${entity.id} calls:\n`);
+      for (const e of callees) {
+        console.log(`  → ${e.id}`);
+        console.log(`    ${e.file_path}:${e.start_line}`);
+      }
+      if (callees.length === 0) console.log("  (nothing)");
+      store.close();
+      return;
+    }
+
+    // --callers: show what calls entity
+    if (options.callers) {
+      const entity = await resolveEntity(target);
+      const callers = store.getCallers(entity.id);
+      console.log(`\n${entity.id} is called by:\n`);
+      for (const e of callers) {
+        console.log(`  ← ${e.id}`);
+        console.log(`    ${e.file_path}:${e.start_line}`);
+      }
+      if (callers.length === 0) console.log("  (nothing)");
+      store.close();
+      return;
+    }
+
+    // --trace: find path between entities
+    if (options.trace) {
+      const from = await resolveEntity(target);
+      const to = await resolveEntity(options.trace);
+
+      // BFS to find path
+      const visited = new Set<string>();
+      const queue: { id: string; path: string[] }[] = [{ id: from.id, path: [from.id] }];
+      let found: string[] | null = null;
+
+      while (queue.length > 0 && !found) {
+        const { id, path } = queue.shift()!;
+        if (id === to.id) {
+          found = path;
           break;
         }
-        const entryPointIds = store.findEntryPoints(latestCommit);
-        console.log(`\nEntry points (${entryPointIds.length}):\n`);
-        for (const id of entryPointIds) {
-          const entity = store.getEntityById(id, latestCommit);
-          console.log(`  ${id}`);
-          if (entity) {
-            console.log(`    ${entity.signature}`);
+        if (visited.has(id)) continue;
+        visited.add(id);
+
+        const callees = store.getCallees(id);
+        for (const callee of callees) {
+          if (!visited.has(callee.id)) {
+            queue.push({ id: callee.id, path: [...path, callee.id] });
+          }
+        }
+      }
+
+      if (found) {
+        console.log(`\nPath from ${from.name} to ${to.name}:\n`);
+        for (let i = 0; i < found.length; i++) {
+          const prefix = i === 0 ? "  " : "  → ";
+          console.log(`${prefix}${found[i]}`);
+        }
+      } else {
+        console.log(`\nNo path found from ${from.id} to ${to.id}`);
+      }
+      store.close();
+      return;
+    }
+
+    // --fuzzy: list all matches
+    if (options.fuzzy) {
+      const matches = findMatches(target);
+      if (matches.length === 0) {
+        console.log(`No entities found matching "${target}"`);
+      } else {
+        console.log(`\nFound ${matches.length} entities:\n`);
+        for (const e of matches) {
+          console.log(`  ${e.id}`);
+          console.log(`    ${e.file_path}:${e.start_line}-${e.end_line}`);
+          console.log(`    ${e.signature}`);
+          const desc = descMap.get(e.id);
+          if (desc) {
+            console.log(`    ${desc.slice(0, 80)}${desc.length > 80 ? "..." : ""}`);
           }
           console.log();
         }
-        break;
       }
+      store.close();
+      return;
+    }
 
-      default:
-        console.error(`Unknown query type: ${type}`);
-        console.error("Available: entities, calls, callers, entry-points");
-        process.exit(1);
+    // No flags: resolve entity and show context
+    const entity = await resolveEntity(target);
+    const desc = descMap.get(entity.id);
+    const callers = store.getCallers(entity.id);
+    const callees = store.getCallees(entity.id);
+
+    console.log(`\n${entity.name}`);
+    console.log(`${"─".repeat(40)}`);
+    console.log(`ID:        ${entity.id}`);
+    console.log(`Location:  ${entity.file_path}:${entity.start_line}-${entity.end_line}`);
+    console.log(`Signature: ${entity.signature}`);
+    if (desc) {
+      console.log(`\nDescription:\n  ${desc}`);
+    }
+    if (callers.length > 0) {
+      console.log(`\nCalled by (${callers.length}):`);
+      for (const e of callers) {
+        console.log(`  ← ${e.name} (${e.file_path}:${e.start_line})`);
+      }
+    }
+    if (callees.length > 0) {
+      console.log(`\nCalls (${callees.length}):`);
+      for (const e of callees) {
+        console.log(`  → ${e.name} (${e.file_path}:${e.start_line})`);
+      }
     }
 
     store.close();
