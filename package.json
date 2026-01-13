@@ -25,8 +25,11 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@mapequation/infomap": "^2.8.0",
     "better-sqlite3": "^12.6.0",
     "commander": "^14.0.2",
+    "graphology": "^0.26.0",
+    "graphology-communities-louvain": "^2.0.2",
     "ts-morph": "^27.0.2",
     "typescript": "^5.9.3"
   },
