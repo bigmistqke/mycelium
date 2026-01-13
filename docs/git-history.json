@@ -1,5 +1,29 @@
 [
   {
+    "hash": "95b3d52858a544d254628c4838cde4e563bc32d4",
+    "short_hash": "95b3d52",
+    "author": "bigmistqke",
+    "date": "2026-01-13T01:18:21+01:00",
+    "message": "feat: add web visualization client with Cytoscape.js",
+    "files_changed": 17
+  },
+  {
+    "hash": "d461d209ca0687495ffda0629e58f9391fdab9d9",
+    "short_hash": "d461d20",
+    "author": "bigmistqke",
+    "date": "2026-01-13T01:18:17+01:00",
+    "message": "feat: add export command for graph visualization",
+    "files_changed": 1
+  },
+  {
+    "hash": "407a77e2fa46966155e4e70f01864dc4887a1a54",
+    "short_hash": "407a77e",
+    "author": "bigmistqke",
+    "date": "2026-01-13T01:18:13+01:00",
+    "message": "fix: improve call graph detection for class methods",
+    "files_changed": 1
+  },
+  {
     "hash": "fe6532d7618f6bbc4b0f6e307313e806386992e1",
     "short_hash": "fe6532d",
     "author": "bigmistqke",

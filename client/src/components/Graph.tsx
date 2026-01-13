@@ -94,10 +94,10 @@ export function Graph(props: GraphProps) {
         },
       ],
       layout: {
-        name: "breadthfirst",
-        directed: true,
-        padding: 20,
-        spacingFactor: 1.2,
+        name: "cose",
+        fit: true,
+        padding: 30,
+        spacingFactor: 2,
       },
     });
 
@@ -153,10 +153,10 @@ export function Graph(props: GraphProps) {
     });
 
     cy.layout({
-      name: "breadthfirst",
-      directed: true,
-      padding: 20,
-      spacingFactor: 1.2,
+      name: "cose",
+      fit: true,
+      padding: 30,
+      spacingFactor: 1.5,
     }).run();
 
     cy.fit(undefined, 10);

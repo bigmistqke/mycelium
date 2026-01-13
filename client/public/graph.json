@@ -1,410 +1,1997 @@
 {
   "nodes": [
     {
-      "id": "src/analyzer.ts::TypeScriptAnalyzer.addSourceFiles",
-      "name": "TypeScriptAnalyzer.addSourceFiles",
+      "id": "packages/app/src/App.tsx::App",
+      "name": "App",
       "kind": "function",
-      "file_path": "src/analyzer.ts",
-      "signature": "(patterns: string[]) => void",
-      "start_line": 51,
-      "end_line": 53,
-      "description": "Adds source files to the ts-morph Project using glob patterns. Called before analyze() to define the analysis scope."
+      "file_path": "packages/app/src/App.tsx",
+      "signature": "() => any",
+      "start_line": 28,
+      "end_line": 39,
+      "description": "Root application component. Sets up SolidJS router with routes for home, editor, callback, and debug pages."
     },
     {
-      "id": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
-      "name": "TypeScriptAnalyzer.analyze",
+      "id": "packages/app/src/App.tsx::Root",
+      "name": "Root",
       "kind": "function",
-      "file_path": "src/analyzer.ts",
-      "signature": "(commitSha: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/analyzer\").AnalysisResult",
-      "start_line": 55,
-      "end_line": 101,
-      "description": "Main analysis entry point. Performs two passes: first extracts all functions, then builds the call graph by resolving call expressions to known functions."
-    },
-    {
-      "id": "src/analyzer.ts::TypeScriptAnalyzer.createFunctionInfo",
-      "name": "TypeScriptAnalyzer.createFunctionInfo",
-      "kind": "function",
-      "file_path": "src/analyzer.ts",
-      "signature": "(fn: FunctionDeclaration | FunctionExpression | Node, name: string, filePath: string) => FunctionInfo",
-      "start_line": 148,
-      "end_line": 171,
-      "description": "Creates a FunctionInfo record from a function declaration or method. Extracts signature, body, and location for storage."
-    },
-    {
-      "id": "src/analyzer.ts::TypeScriptAnalyzer.createFunctionInfoFromVar",
-      "name": "TypeScriptAnalyzer.createFunctionInfoFromVar",
-      "kind": "function",
-      "file_path": "src/analyzer.ts",
-      "signature": "(varDecl: VariableDeclaration, fn: ArrowFunction | FunctionExpression, name: string, filePath: string) => FunctionInfo",
-      "start_line": 173,
-      "end_line": 189,
-      "description": "Creates FunctionInfo for arrow functions and function expressions assigned to variables. Handles the different AST structure compared to declarations."
-    },
-    {
-      "id": "src/analyzer.ts::TypeScriptAnalyzer.extractCalls",
-      "name": "TypeScriptAnalyzer.extractCalls",
-      "kind": "function",
-      "file_path": "src/analyzer.ts",
-      "signature": "(node: Node, functionMap: Map<string, FunctionInfo>) => string[]",
-      "start_line": 212,
-      "end_line": 235,
-      "description": "Finds all call expressions within a function and resolves them to known function IDs. Returns deduplicated list of callee IDs for building the call graph."
-    },
-    {
-      "id": "src/analyzer.ts::TypeScriptAnalyzer.extractFunctions",
-      "name": "TypeScriptAnalyzer.extractFunctions",
-      "kind": "function",
-      "file_path": "src/analyzer.ts",
-      "signature": "(sourceFile: SourceFile, filePath: string) => FunctionInfo[]",
-      "start_line": 107,
-      "end_line": 146,
-      "description": "Extracts all function-like entities from a source file: named functions, exported arrow functions, and class methods. Returns FunctionInfo for each."
-    },
-    {
-      "id": "src/analyzer.ts::TypeScriptAnalyzer.getCalleeName",
-      "name": "TypeScriptAnalyzer.getCalleeName",
-      "kind": "function",
-      "file_path": "src/analyzer.ts",
-      "signature": "(call: CallExpression) => string | null",
-      "start_line": 211,
-      "end_line": 224,
-      "description": "Extracts the function name from a CallExpression AST node. Handles both simple identifiers and property access (obj.method)."
-    },
-    {
-      "id": "src/analyzer.ts::TypeScriptAnalyzer.getRelativePath",
-      "name": "TypeScriptAnalyzer.getRelativePath",
-      "kind": "function",
-      "file_path": "src/analyzer.ts",
-      "signature": "(absolutePath: string) => string",
-      "start_line": 103,
-      "end_line": 105,
-      "description": "Converts absolute file paths to paths relative to the project root. Ensures consistent entity IDs across different machines."
-    },
-    {
-      "id": "src/cli.ts::createInlineTemplate",
-      "name": "createInlineTemplate",
-      "kind": "function",
-      "file_path": "src/cli.ts",
-      "signature": "(dest: string, name: string) => void",
-      "start_line": 112,
-      "end_line": 167,
-      "description": "Fallback template creator when packaged template files are not found. Writes minimal Claude command templates inline."
-    },
-    {
-      "id": "src/cli.ts::findTsConfig",
-      "name": "findTsConfig",
-      "kind": "function",
-      "file_path": "src/cli.ts",
-      "signature": "() => string | undefined",
-      "start_line": 21,
-      "end_line": 29,
-      "description": "Searches for tsconfig.json or tsconfig.build.json in the current directory. Returns undefined if none found."
-    },
-    {
-      "id": "src/cli.ts::getGitCommitSha",
-      "name": "getGitCommitSha",
-      "kind": "function",
-      "file_path": "src/cli.ts",
-      "signature": "() => string",
+      "file_path": "packages/app/src/App.tsx",
+      "signature": "(props: ParentProps) => any",
       "start_line": 13,
-      "end_line": 19,
-      "description": "Gets the current git HEAD commit SHA. Falls back to a timestamp-based ID if not in a git repository."
-    },
-    {
-      "id": "src/db.ts::GraphStore.close",
-      "name": "GraphStore.close",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "() => void",
-      "start_line": 301,
-      "end_line": 303,
-      "description": "Closes the database connection. Should be called when done with queries to release resources."
-    },
-    {
-      "id": "src/db.ts::GraphStore.findEntryPoints",
-      "name": "GraphStore.findEntryPoints",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(commitSha: string) => string[]",
-      "start_line": 257,
-      "end_line": 274,
-      "description": "Identifies call graph roots - functions that make outgoing calls but receive no incoming calls. These represent system entry points like CLI commands or API handlers."
-    },
-    {
-      "id": "src/db.ts::GraphStore.getAllDescriptions",
-      "name": "GraphStore.getAllDescriptions",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "() => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Description[]",
-      "start_line": 297,
-      "end_line": 299,
-      "description": "Returns all stored descriptions. Used by the descriptions command to show documented entities."
-    },
-    {
-      "id": "src/db.ts::GraphStore.getCallees",
-      "name": "GraphStore.getCallees",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(entityId: string, commitSha?: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity[]",
-      "start_line": 228,
-      "end_line": 240,
-      "description": "Finds all functions called by a given entity. Used to trace execution flow downward from entry points."
-    },
-    {
-      "id": "src/db.ts::GraphStore.getCallers",
-      "name": "GraphStore.getCallers",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(entityId: string, commitSha?: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity[]",
-      "start_line": 214,
-      "end_line": 226,
-      "description": "Finds all functions that call a given entity. Essential for impact analysis - understanding what would break if this function changes."
-    },
-    {
-      "id": "src/db.ts::GraphStore.getCommits",
-      "name": "GraphStore.getCommits",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "() => string[]",
-      "start_line": 276,
-      "end_line": 281,
-      "description": "Returns all unique commit SHAs in the database, ordered by creation time. Used to list available snapshots for temporal queries."
-    },
-    {
-      "id": "src/db.ts::GraphStore.getDescription",
-      "name": "GraphStore.getDescription",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(entityId: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Description | undefined",
-      "start_line": 283,
-      "end_line": 287,
-      "description": "Retrieves the stored description for an entity. Returns undefined if no description has been set."
-    },
-    {
-      "id": "src/db.ts::GraphStore.getEntities",
-      "name": "GraphStore.getEntities",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(commitSha?: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity[]",
-      "start_line": 175,
-      "end_line": 192,
-      "description": "Retrieves all entities from the database. If commitSha is provided, returns entities at that specific commit. Otherwise returns the latest version of each entity."
-    },
-    {
-      "id": "src/db.ts::GraphStore.getEntitiesNeedingDescriptions",
-      "name": "GraphStore.getEntitiesNeedingDescriptions",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "() => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity[]",
-      "start_line": 372,
-      "end_line": 376,
-      "description": "Returns entities that need descriptions: either missing entirely or stale (implementation changed since last description)."
-    },
-    {
-      "id": "src/db.ts::GraphStore.getEntityById",
-      "name": "GraphStore.getEntityById",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(id: string, commitSha?: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity | undefined",
-      "start_line": 194,
-      "end_line": 203,
-      "description": "Retrieves a single entity by ID, optionally at a specific commit. Returns the latest version if no commit specified."
-    },
-    {
-      "id": "src/db.ts::GraphStore.getEntryPoints",
-      "name": "GraphStore.getEntryPoints",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(commitSha?: string) => (import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").EntryPoint & { entity: import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity; })[]",
-      "start_line": 242,
-      "end_line": 255,
-      "description": "Returns entry points with their associated entity data. Entry points define the main flows through the codebase."
-    },
-    {
-      "id": "src/db.ts::GraphStore.getRelations",
-      "name": "GraphStore.getRelations",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(commitSha?: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Relation[]",
-      "start_line": 205,
-      "end_line": 212,
-      "description": "Returns all relationship edges, optionally filtered by commit. Used for building the full call graph visualization."
-    },
-    {
-      "id": "src/db.ts::GraphStore.insertEntity",
-      "name": "GraphStore.insertEntity",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(entity: Omit<Entity, \"created_at\">) => void",
-      "start_line": 134,
-      "end_line": 151,
-      "description": "Persists a code entity (function, type, etc.) to the database. Uses INSERT OR REPLACE to update existing entities for the same commit."
-    },
-    {
-      "id": "src/db.ts::GraphStore.insertEntryPoint",
-      "name": "GraphStore.insertEntryPoint",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(entryPoint: EntryPoint) => void",
-      "start_line": 167,
-      "end_line": 173,
-      "description": "Marks a function as an entry point (call graph root). Entry points are functions with outgoing calls but no callers."
-    },
-    {
-      "id": "src/db.ts::GraphStore.insertRelation",
-      "name": "GraphStore.insertRelation",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(relation: Omit<Relation, \"id\">) => void",
-      "start_line": 153,
-      "end_line": 165,
-      "description": "Records a relationship between entities (calls, uses_type, exports, imports). Uses INSERT OR IGNORE to prevent duplicate edges."
-    },
-    {
-      "id": "src/db.ts::GraphStore.isDescriptionStale",
-      "name": "GraphStore.isDescriptionStale",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(entityId: string) => boolean",
-      "start_line": 356,
-      "end_line": 367,
-      "description": "Checks if an entity's description is stale (impl_hash changed since description was written or was never tracked)."
-    },
-    {
-      "id": "src/db.ts::GraphStore.isEntityUnchanged",
-      "name": "GraphStore.isEntityUnchanged",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(id: string, signatureHash: string, implHash: string | null) => boolean",
-      "start_line": 142,
-      "end_line": 149,
-      "description": "Checks if an entity exists with identical signature and implementation hashes. Used to skip redundant inserts during sync."
-    },
-    {
-      "id": "src/db.ts::GraphStore.setDescription",
-      "name": "GraphStore.setDescription",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(entityId: string, content: string, implHash?: string | null) => void",
-      "start_line": 345,
-      "end_line": 351,
-      "description": "Stores or updates a description for an entity. Descriptions are AI-generated or manually written and persist across syncs."
-    },
-    {
-      "id": "src/db.ts::createDatabase",
-      "name": "createDatabase",
-      "kind": "function",
-      "file_path": "src/db.ts",
-      "signature": "(dbPath: string) => BetterSqlite3.Database",
-      "start_line": 51,
-      "end_line": 130,
-      "description": "Creates and initializes the SQLite database with all required tables (entities, relations, entry_points, systems, descriptions). Sets up WAL mode for better concurrent access."
-    },
-    {
-      "id": "src/hash.ts::computeHash",
-      "name": "computeHash",
-      "kind": "function",
-      "file_path": "src/hash.ts",
-      "signature": "(content: string) => string",
-      "start_line": 7,
-      "end_line": 9,
-      "description": "Computes a SHA-256 hash of the input string, returning the first 16 hex characters. Used as the base hashing function for both signature and implementation hashes."
-    },
-    {
-      "id": "src/hash.ts::computeImplHash",
-      "name": "computeImplHash",
-      "kind": "function",
-      "file_path": "src/hash.ts",
-      "signature": "(body: string) => string",
-      "start_line": 24,
       "end_line": 26,
-      "description": "Computes a hash of function body source text to detect implementation changes. Simpler than AST-based hashing, catches any code modification including formatting."
+      "description": "Root layout component wrapping all routes. Provides AuthProvider context and renders Header with main content area."
     },
     {
-      "id": "src/hash.ts::computeSignatureHash",
-      "name": "computeSignatureHash",
+      "id": "packages/app/src/components/auth/LoginButton.tsx::LoginButton",
+      "name": "LoginButton",
       "kind": "function",
-      "file_path": "src/hash.ts",
-      "signature": "(signature: string) => string",
-      "start_line": 15,
+      "file_path": "packages/app/src/components/auth/LoginButton.tsx",
+      "signature": "() => any",
+      "start_line": 6,
+      "end_line": 53,
+      "description": "Sign-in button that expands to handle input form. Triggers AT Protocol OAuth flow on submit."
+    },
+    {
+      "id": "packages/app/src/components/auth/UserMenu.tsx::UserMenu",
+      "name": "UserMenu",
+      "kind": "function",
+      "file_path": "packages/app/src/components/auth/UserMenu.tsx",
+      "signature": "() => any",
+      "start_line": 5,
+      "end_line": 37,
+      "description": "User avatar dropdown menu showing truncated DID with sign-out option."
+    },
+    {
+      "id": "packages/app/src/components/editor/Editor.tsx::Editor",
+      "name": "Editor",
+      "kind": "function",
+      "file_path": "packages/app/src/components/editor/Editor.tsx",
+      "signature": "(props) => any",
+      "start_line": 34,
+      "end_line": 215,
+      "description": "Main video editor component. Renders compositor canvas, transport controls, and track grid. Manages editor state via createEditor hook."
+    },
+    {
+      "id": "packages/app/src/components/editor/Editor.tsx::formatTime",
+      "name": "formatTime",
+      "kind": "function",
+      "file_path": "packages/app/src/components/editor/Editor.tsx",
+      "signature": "(seconds: number) => string",
+      "start_line": 5,
+      "end_line": 10,
+      "description": "Formats seconds to MM:SS.ms display string for timeline."
+    },
+    {
+      "id": "packages/app/src/components/editor/Editor.tsx::parseTime",
+      "name": "parseTime",
+      "kind": "function",
+      "file_path": "packages/app/src/components/editor/Editor.tsx",
+      "signature": "(str: string) => number | null",
+      "start_line": 13,
+      "end_line": 23,
+      "description": "Parses MM:SS.ms or SS format strings to seconds for timeline input."
+    },
+    {
+      "id": "packages/app/src/components/editor/Track.tsx::Track",
+      "name": "Track",
+      "kind": "function",
+      "file_path": "packages/app/src/components/editor/Track.tsx",
+      "signature": "(props) => any",
+      "start_line": 23,
+      "end_line": 108,
+      "description": "Track panel component displaying status, volume/pan sliders, and clip controls (download, clear). Handles selection for recording."
+    },
+    {
+      "id": "packages/app/src/components/layout/Header.tsx::Header",
+      "name": "Header",
+      "kind": "function",
+      "file_path": "packages/app/src/components/layout/Header.tsx",
+      "signature": "() => any",
+      "start_line": 8,
+      "end_line": 25,
+      "description": "Application header with logo link and auth controls (LoginButton or UserMenu based on session state)."
+    },
+    {
+      "id": "packages/app/src/hooks/action.ts::action",
+      "name": "action",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/action.ts",
+      "signature": "(fetcher: ActionFetcher<T, R>) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/hooks/action\").Action<T, R>",
+      "start_line": 210,
+      "end_line": 333,
+      "description": "Factory that creates a cancellable async action with SolidJS signals for pending, result, and error states. Supports generator functions with automatic abort checks between yields, and hold() for run-until-cancelled patterns."
+    },
+    {
+      "id": "packages/app/src/hooks/action.ts::defer",
+      "name": "defer",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/action.ts",
+      "signature": "(promise: Promise<T>, onCleanup?: (value: T) => void) => Generator<Promise<T> | import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/hooks/action\").PromiseWithCleanup<T>, T, T>",
+      "start_line": 135,
+      "end_line": 143,
+      "description": "Generator helper for typed promise yielding in action generators. Optionally registers a cleanup callback for the resolved value."
+    },
+    {
+      "id": "packages/app/src/hooks/action.ts::hold",
+      "name": "hold",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/action.ts",
+      "signature": "(getValue?: () => T) => HoldMarker<T>",
+      "start_line": 157,
+      "end_line": 159,
+      "description": "Creates a marker that keeps an action running until cancelled. On cancellation, evaluates the optional getValue callback to produce the final return value."
+    },
+    {
+      "id": "packages/app/src/hooks/action.ts::isHoldMarker",
+      "name": "isHoldMarker",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/action.ts",
+      "signature": "(value: unknown) => boolean",
+      "start_line": 66,
+      "end_line": 68,
+      "description": "Type guard that checks if a value is a hold marker from the hold() function."
+    },
+    {
+      "id": "packages/app/src/hooks/action.ts::isPromiseWithCleanup",
+      "name": "isPromiseWithCleanup",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/action.ts",
+      "signature": "(value: unknown) => boolean",
+      "start_line": 70,
+      "end_line": 72,
+      "description": "Type guard that checks if a promise has an attached cleanup callback from defer()."
+    },
+    {
+      "id": "packages/app/src/hooks/action.ts::runGenerator",
+      "name": "runGenerator",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/action.ts",
+      "signature": "(gen: ActionGenerator<R>, context: ActionContext) => Promise<R | HoldMarker<R>>",
+      "start_line": 81,
+      "end_line": 112,
+      "description": "Runs an action generator, awaiting each yielded promise and checking for abort between yields. Enables automatic cancellation points in generator-based actions."
+    },
+    {
+      "id": "packages/app/src/hooks/action.ts::waitForAbort",
+      "name": "waitForAbort",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/action.ts",
+      "signature": "(signal: AbortSignal) => Promise<void>",
+      "start_line": 74,
+      "end_line": 78,
+      "description": "Creates a promise that resolves when the given AbortSignal is aborted. Used internally for hold() to wait until cancellation."
+    },
+    {
+      "id": "packages/app/src/hooks/create-clock.ts::createClock",
+      "name": "createClock",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/create-clock.ts",
+      "signature": "(options: ClockOptions = {}) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/hooks/create-clock\").Clock",
+      "start_line": 35,
+      "end_line": 121,
+      "description": "Factory that creates a playback clock with high-precision timing using performance.now(). Provides play/pause/stop/seek control and loop support with tick() for render loop integration."
+    },
+    {
+      "id": "packages/app/src/hooks/create-editor.ts::createDefaultProject",
+      "name": "createDefaultProject",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/create-editor.ts",
+      "signature": "() => { title: string; canvas: { width: number; height: number; background?: string | undefined; }; groups: { id: string; members: ({ id: string; } | { type: \"void\"; })[]; name?: string | undefined; layout?: { type: \"grid\"; columns: number; rows: number; gap?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; padding?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | undefined; pipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; }[]; tracks: { id: string; clips: { id: string; offset: number; duration: number; source?: { type: \"stem\"; ref: { uri: string; cid: string; }; } | { type: \"group\"; id: string; } | undefined; sourceOffset?: number | undefined; speed?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; reverse?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; audioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; videoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; }[]; name?: string | undefined; audioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; videoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; muted?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; solo?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; }[]; createdAt: string; schemaVersion?: number | undefined; description?: string | undefined; bpm?: number | undefined; duration?: number | undefined; curves?: ({ type: \"keyframe\"; id: string; points: { t: number; v: number; in?: number[] | undefined; out?: number[] | undefined; }[]; } | { type: \"envelope\"; id: string; attack?: { duration: number; curve?: number[] | undefined; } | undefined; decay?: { duration: number; curve?: number[] | undefined; } | undefined; sustain?: number | undefined; release?: { duration: number; curve?: number[] | undefined; } | undefined; peak?: number | undefined; } | { type: \"lfo\"; id: string; waveform?: \"sine\" | \"triangle\" | \"square\" | \"sawtooth\" | undefined; frequency?: number | undefined; sync?: \"4/1\" | \"2/1\" | \"1/1\" | \"1/2\" | \"1/4\" | \"1/8\" | \"1/16\" | \"1/32\" | undefined; amplitude?: number | undefined; center?: number | undefined; phase?: number | undefined; })[] | undefined; rootGroup?: string | undefined; masterAudioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; masterVideoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; parent?: { uri: string; cid: string; } | undefined; updatedAt?: string | undefined; }",
+      "start_line": 35,
+      "end_line": 94,
+      "description": "Creates a new project object with default 2x2 grid layout, four tracks with gain/pan audio pipelines, and standard canvas dimensions."
+    },
+    {
+      "id": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "name": "createEditor",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/create-editor.ts",
+      "signature": "(options: CreateEditorOptions) => { canPublish(): boolean; getEffectValue: (trackId: string, effectIndex: number) => number; getTrackPipeline: (trackId: string) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/lexicons/src/index\").AudioEffect[]; hasAnyRecording: () => boolean; isPlayerLoading: () => any; isProjectLoading: () => any; isPublishing: any; isRecording: () => any; isSelectedTrack: (key: string | null) => boolean; loopEnabled: () => any; masterVolume: import(\"/Users/bigmistqke/Documents/GitHub/eddy/node_modules/.pnpm/solid-js@1.9.10/node_modules/solid-js/types/reactive/signal\").Accessor<number>; player: any; previewPending: any; publishError: any; selectedTrack: import(\"/Users/bigmistqke/Documents/GitHub/eddy/node_modules/.pnpm/solid-js@1.9.10/node_modules/solid-js/types/reactive/signal\").Accessor<string | null>; setMasterVolume: import(\"/Users/bigmistqke/Documents/GitHub/eddy/node_modules/.pnpm/solid-js@1.9.10/node_modules/solid-js/types/reactive/signal\").Setter<number>; setTitle(title: string): void; finalizingRecording: any; project: any; publish(): any; stop(): Promise<void>; selectTrack(trackId: string): void; toggleRecording(): Promise<void>; playPause(): Promise<void>; clearRecording(trackId: string): void; setTrackVolume(trackId: string, value: number): void; setTrackPan(trackId: string, value: number): void; toggleLoop(): void; downloadClip(trackId: string): void; loadTestClip(trackId: string, blob: Blob, duration: number): void; }",
+      "start_line": 103,
+      "end_line": 678,
+      "description": "Factory that creates the main editor state manager. Coordinates project data, player, recording actions, and publishing. Returns methods for track selection, recording, playback control, and project publishing."
+    },
+    {
+      "id": "packages/app/src/hooks/create-editor.ts::isStemSource",
+      "name": "isStemSource",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/create-editor.ts",
+      "signature": "(source: ClipSource | undefined) => boolean",
+      "start_line": 25,
+      "end_line": 27,
+      "description": "Type guard that checks if a clip source references an AT Protocol stem record."
+    },
+    {
+      "id": "packages/app/src/hooks/create-player.ts::createPlayer",
+      "name": "createPlayer",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/create-player.ts",
+      "signature": "(options: CreatePlayerOptions) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/hooks/create-player\").Player>",
+      "start_line": 134,
+      "end_line": 762,
+      "description": "Factory that creates the video player coordinating compositor, playback workers, and audio pipelines. Manages worker pool for clips, gapless loop transitions, and direct worker-to-worker frame transfer."
+    },
+    {
+      "id": "packages/app/src/hooks/deep-resource.ts::deepResource",
+      "name": "deepResource",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/deep-resource.ts",
+      "signature": "(source: ResourceSource<S>, fetcher: ResourceFetcher<S, NoInfer<T>>, options: { initialValue: T }) => [import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/hooks/deep-resource\").StoreAccessor<T>, DeepResourceActions<T, S>]",
+      "start_line": 47,
+      "end_line": 78,
+      "description": "Resource primitive that fetches data and reconciles into a SolidJS store for fine-grained reactivity. Allows local mutations while receiving updates on refetch."
+    },
+    {
+      "id": "packages/app/src/hooks/resource.ts::resource",
+      "name": "resource",
+      "kind": "function",
+      "file_path": "packages/app/src/hooks/resource.ts",
+      "signature": "(sourceOrFetcher: ResourceSource<S> | SimpleFetcher<T>, fetcherOrOptions?: ResourceFetcher<S, T> | ManagedResourceOptions<NoInfer<T>, S>, maybeOptions?: ManagedResourceOptions<NoInfer<T>, S>) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/hooks/resource\").ManagedResourceReturn<T, S>",
+      "start_line": 103,
+      "end_line": 204,
+      "description": "Enhanced createResource wrapper with proper cleanup support. Provides onCleanup callback that works after await (unlike Solid's built-in) and AbortController for fetch cancellation."
+    },
+    {
+      "id": "packages/app/src/lib/__tests__/timeline-compiler.test.ts::createTestProject",
+      "name": "createTestProject",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/__tests__/timeline-compiler.test.ts",
+      "signature": "(overrides: Partial<Project> = {}) => { title: string; canvas: { width: number; height: number; background?: string | undefined; }; groups: { id: string; members: ({ id: string; } | { type: \"void\"; })[]; name?: string | undefined; layout?: { type: \"grid\"; columns: number; rows: number; gap?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; padding?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | undefined; pipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; }[]; tracks: { id: string; clips: { id: string; offset: number; duration: number; source?: { type: \"stem\"; ref: { uri: string; cid: string; }; } | { type: \"group\"; id: string; } | undefined; sourceOffset?: number | undefined; speed?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; reverse?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; audioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; videoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; }[]; name?: string | undefined; audioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; videoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; muted?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; solo?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; }[]; createdAt: string; schemaVersion?: number | undefined; description?: string | undefined; bpm?: number | undefined; duration?: number | undefined; curves?: ({ type: \"keyframe\"; id: string; points: { t: number; v: number; in?: number[] | undefined; out?: number[] | undefined; }[]; } | { type: \"envelope\"; id: string; attack?: { duration: number; curve?: number[] | undefined; } | undefined; decay?: { duration: number; curve?: number[] | undefined; } | undefined; sustain?: number | undefined; release?: { duration: number; curve?: number[] | undefined; } | undefined; peak?: number | undefined; } | { type: \"lfo\"; id: string; waveform?: \"sine\" | \"triangle\" | \"square\" | \"sawtooth\" | undefined; frequency?: number | undefined; sync?: \"4/1\" | \"2/1\" | \"1/1\" | \"1/2\" | \"1/4\" | \"1/8\" | \"1/16\" | \"1/32\" | undefined; amplitude?: number | undefined; center?: number | undefined; phase?: number | undefined; })[] | undefined; rootGroup?: string | undefined; masterAudioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; masterVideoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; parent?: { uri: string; cid: string; } | undefined; updatedAt?: string | undefined; }",
+      "start_line": 12,
+      "end_line": 65
+    },
+    {
+      "id": "packages/app/src/lib/atproto/auth-context.tsx::AuthProvider",
+      "name": "AuthProvider",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/auth-context.tsx",
+      "signature": "(props) => any",
+      "start_line": 26,
+      "end_line": 51,
+      "description": "SolidJS context provider that manages AT Protocol authentication state. Wraps session initialization and exposes agent, loading, and signOut."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/auth-context.tsx::useAuth",
+      "name": "useAuth",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/auth-context.tsx",
+      "signature": "() => AuthContextValue",
+      "start_line": 53,
+      "end_line": 59,
+      "description": "Hook to access authentication context (session, agent, loading, signOut) from within AuthProvider."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/auth.ts::createAgent",
+      "name": "createAgent",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/auth.ts",
+      "signature": "(session: OAuthSession) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/node_modules/.pnpm/@atproto+api@0.13.35/node_modules/@atproto/api/dist/agent\").Agent",
+      "start_line": 26,
+      "end_line": 28,
+      "description": "Creates an AT Protocol Agent from an OAuth session for making authenticated API calls."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/auth.ts::getOAuthClient",
+      "name": "getOAuthClient",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/auth.ts",
+      "signature": "() => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/node_modules/.pnpm/@atproto+oauth-client-browser@0.3.38/node_modules/@atproto/oauth-client-browser/dist/browser-oauth-client\").BrowserOAuthClient>",
+      "start_line": 6,
+      "end_line": 24,
+      "description": "Singleton that returns the BrowserOAuthClient configured for AT Protocol loopback development. Handles localhost redirect URI setup."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/auth.ts::initSession",
+      "name": "initSession",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/auth.ts",
+      "signature": "() => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/node_modules/.pnpm/@atproto+oauth-client@0.5.12/node_modules/@atproto/oauth-client/dist/oauth-session\").OAuthSession | null>",
+      "start_line": 30,
+      "end_line": 34,
+      "description": "Initializes OAuth session from stored credentials. Returns existing session or null if not logged in."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/auth.ts::signIn",
+      "name": "signIn",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/auth.ts",
+      "signature": "(handle: string) => Promise<void>",
+      "start_line": 36,
+      "end_line": 41,
+      "description": "Initiates OAuth sign-in flow by redirecting to the AT Protocol authorization endpoint."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::cloneStem",
+      "name": "cloneStem",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent, stemUri: string) => Promise<{ uri: string; cid: string; }>",
+      "start_line": 189,
+      "end_line": 202,
+      "description": "Copies an external stem to the user's own PDS. Returns existing reference if already owned."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::createStemRecord",
+      "name": "createStemRecord",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent, blob: Blob, duration: number) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/atproto/crud\").RecordRef>",
+      "start_line": 156,
+      "end_line": 186,
+      "description": "Creates a stem record with the uploaded blob and metadata (duration, type, mimeType)."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::deleteOrphanedStems",
+      "name": "deleteOrphanedStems",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent) => Promise<string[]>",
+      "start_line": 325,
+      "end_line": 353,
+      "description": "Finds and deletes stems not referenced by any project. Returns list of deleted URIs."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::deleteProject",
+      "name": "deleteProject",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent, uri: string) => Promise<void>",
+      "start_line": 296,
+      "end_line": 305,
+      "description": "Deletes a project record. Does not delete associated stems (they may be shared)."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::deleteStem",
+      "name": "deleteStem",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent, uri: string) => Promise<void>",
+      "start_line": 307,
+      "end_line": 314,
+      "description": "Deletes a single stem record from the user's repository."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::getProject",
+      "name": "getProject",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent, uri: string) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/atproto/crud\").ProjectRecord>",
+      "start_line": 57,
+      "end_line": 69,
+      "description": "Fetches a project record from AT Protocol by URI. Validates against projectValidators schema."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::getProjectByRkey",
+      "name": "getProjectByRkey",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent, rkey: string, handle?: string) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/atproto/crud\").ProjectRecord>",
+      "start_line": 79,
+      "end_line": 93,
+      "description": "Fetches a project by record key, optionally resolving a handle to DID first."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::getStem",
+      "name": "getStem",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent, uri: string) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/atproto/crud\").StemRecord>",
+      "start_line": 95,
+      "end_line": 107,
+      "description": "Fetches a stem record from AT Protocol by URI. Validates against stemValidators schema."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::getStemBlob",
+      "name": "getStemBlob",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent, stemUri: string) => Promise<Blob>",
+      "start_line": 109,
+      "end_line": 126,
+      "description": "Fetches the actual video/audio blob data for a stem record."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::isStemSource",
+      "name": "isStemSource",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(source: ClipSource | undefined) => boolean",
+      "start_line": 20,
+      "end_line": 22,
+      "description": "Type guard that checks if a clip source references an AT Protocol stem record."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::listProjects",
+      "name": "listProjects",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/atproto/crud\").ProjectListItem[]>",
+      "start_line": 128,
+      "end_line": 147,
+      "description": "Lists all projects for the authenticated user's repository."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::listStems",
+      "name": "listStems",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent) => Promise<string[]>",
+      "start_line": 316,
+      "end_line": 323,
+      "description": "Lists all stem URIs in the user's repository."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::parseAtUri",
+      "name": "parseAtUri",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(uri: string) => { repo: string; collection: string; rkey: string; }",
+      "start_line": 51,
+      "end_line": 55,
+      "description": "Parses an AT Protocol URI into repo, collection, and rkey components."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::publishProject",
+      "name": "publishProject",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent, project: Project, clipBlobs: Map<string, { blob: Blob; duration: number }>) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/atproto/crud\").RecordRef>",
+      "start_line": 204,
+      "end_line": 294,
+      "description": "Publishes a project by uploading all local recordings as stems and creating the project record. Clones external stems to own PDS."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::resolveHandle",
+      "name": "resolveHandle",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent, handle: string) => Promise<string>",
+      "start_line": 72,
+      "end_line": 75,
+      "description": "Resolves a Bluesky handle to its DID using the AT Protocol API."
+    },
+    {
+      "id": "packages/app/src/lib/atproto/crud.ts::uploadBlob",
+      "name": "uploadBlob",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/atproto/crud.ts",
+      "signature": "(agent: Agent, blob: Blob) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/node_modules/.pnpm/@atproto+lexicon@0.4.14/node_modules/@atproto/lexicon/dist/blob-refs\").BlobRef>",
+      "start_line": 149,
+      "end_line": 154,
+      "description": "Uploads a blob to the user's PDS and returns the blob reference."
+    },
+    {
+      "id": "packages/app/src/lib/create-debug-info.ts::createDebugInfo",
+      "name": "createDebugInfo",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/create-debug-info.ts",
+      "signature": "(player: Player) => void",
+      "start_line": 13,
+      "end_line": 23,
+      "description": "Exposes player state on window.__EDDY_DEBUG__ for browser console debugging. Provides getState() for inspecting playback status."
+    },
+    {
+      "id": "packages/app/src/lib/create-resource-map.ts::createResourceMap",
+      "name": "createResourceMap",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/create-resource-map.ts",
+      "signature": "(entries: Accessor<[K, E][]>, fetcher: (key: K, entry: E) => Promise<V | null> | null | V) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/create-resource-map\").ResourceMap<V>",
+      "start_line": 25,
+      "end_line": 55,
+      "description": "Creates a reactive map where each key has its own SolidJS resource. Provides fine-grained reactivity - accessing one key doesn't subscribe to others."
+    },
+    {
+      "id": "packages/app/src/lib/scheduler.ts::createScheduler",
+      "name": "createScheduler",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/scheduler.ts",
+      "signature": "(buffer: SchedulerBuffer) => { playback: { shouldSkipDeltaFrames: () => boolean; }; recorder: { updateFromEncoder(queueSize: number): void; reset: () => number; }; }",
+      "start_line": 23,
+      "end_line": 42,
+      "description": "Creates a cross-worker scheduler using SharedArrayBuffer for backpressure coordination. Playback workers check busy state to skip delta frames when encoder is backed up."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::buildSegments",
+      "name": "buildSegments",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(clipInfos: ClipInfo[]) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/layout-types\").LayoutSegment[]",
+      "start_line": 177,
+      "end_line": 223,
+      "description": "Builds time-sorted segments from clip transition points. Each segment contains all placements active during that time range."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::calculateGridViewport",
+      "name": "calculateGridViewport",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(cellIndex: number, columns: number, rows: number, canvasSize: CanvasSize, gap = 0, padding = 0) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/layout-types\").Viewport",
+      "start_line": 62,
+      "end_line": 94,
+      "description": "Calculates the viewport rectangle for a grid cell at the given index, accounting for columns, rows, gap, and padding."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::calculateStackViewport",
+      "name": "calculateStackViewport",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(canvasSize: CanvasSize) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/layout-types\").Viewport",
+      "start_line": 97,
+      "end_line": 104,
+      "description": "Returns a full-canvas viewport for stacked layout where all members overlap at full size."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::collectClipInfos",
+      "name": "collectClipInfos",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(project: Project, canvasSize: CanvasSize) => ClipInfo[]",
+      "start_line": 107,
+      "end_line": 174,
+      "description": "Collects all clips from project with their timing and viewport info computed from the layout system."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::compileLayoutTimeline",
+      "name": "compileLayoutTimeline",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(project: Project, canvasSize: CanvasSize) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/layout-types\").CompiledTimeline",
+      "start_line": 264,
+      "end_line": 280,
+      "description": "Compiles a Project into a CompiledTimeline with segments optimized for O(log n) time queries. Processes groups, tracks, and clips into flat placement data with viewports."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::findSegmentAtTime",
+      "name": "findSegmentAtTime",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(timeline: CompiledTimeline, time: number) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/layout-types\").LayoutSegment | null",
+      "start_line": 286,
+      "end_line": 308,
+      "description": "Binary search to find the segment containing a given time. Returns null if time is outside all segments."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::getActivePlacements",
+      "name": "getActivePlacements",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(timeline: CompiledTimeline, time: number) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/layout-types\").ActivePlacement[]",
+      "start_line": 314,
+      "end_line": 324,
+      "description": "Returns all placements active at a given time with computed local source times. Uses binary search for O(log n) segment lookup."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::getNextTransition",
+      "name": "getNextTransition",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(timeline: CompiledTimeline, time: number) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/layout-types\").TransitionInfo | null",
+      "start_line": 355,
+      "end_line": 389,
+      "description": "Finds the next segment boundary after a given time, returning which placements start/end."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::getPlacementsInRange",
+      "name": "getPlacementsInRange",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(timeline: CompiledTimeline, start: number, end: number) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/layout-types\").Placement[]",
+      "start_line": 329,
+      "end_line": 350,
+      "description": "Returns all placements that overlap with a time range. Used for pre-buffering clips ahead of playback."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::getRootGroup",
+      "name": "getRootGroup",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(project: Project) => { id: string; members: ({ id: string; } | { type: \"void\"; })[]; name?: string | undefined; layout?: { type: \"grid\"; columns: number; rows: number; gap?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; padding?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | undefined; pipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; } | undefined",
+      "start_line": 54,
+      "end_line": 59,
+      "description": "Gets the root group from a project, using rootGroup ID or falling back to first group."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::injectPreviewClip",
+      "name": "injectPreviewClip",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(project: Project, previewTrackId: string) => { title: string; canvas: { width: number; height: number; background?: string | undefined; }; groups: { id: string; members: ({ id: string; } | { type: \"void\"; })[]; name?: string | undefined; layout?: { type: \"grid\"; columns: number; rows: number; gap?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; padding?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | undefined; pipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; }[]; tracks: { id: string; clips: { id: string; offset: number; duration: number; source?: { type: \"stem\"; ref: { uri: string; cid: string; }; } | { type: \"group\"; id: string; } | undefined; sourceOffset?: number | undefined; speed?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; reverse?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; audioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; videoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; }[]; name?: string | undefined; audioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; videoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; muted?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; solo?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; }[]; createdAt: string; schemaVersion?: number | undefined; description?: string | undefined; bpm?: number | undefined; duration?: number | undefined; curves?: ({ type: \"keyframe\"; id: string; points: { t: number; v: number; in?: number[] | undefined; out?: number[] | undefined; }[]; } | { type: \"envelope\"; id: string; attack?: { duration: number; curve?: number[] | undefined; } | undefined; decay?: { duration: number; curve?: number[] | undefined; } | undefined; sustain?: number | undefined; release?: { duration: number; curve?: number[] | undefined; } | undefined; peak?: number | undefined; } | { type: \"lfo\"; id: string; waveform?: \"sine\" | \"triangle\" | \"square\" | \"sawtooth\" | undefined; frequency?: number | undefined; sync?: \"4/1\" | \"2/1\" | \"1/1\" | \"1/2\" | \"1/4\" | \"1/8\" | \"1/16\" | \"1/32\" | undefined; amplitude?: number | undefined; center?: number | undefined; phase?: number | undefined; })[] | undefined; rootGroup?: string | undefined; masterAudioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; masterVideoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; parent?: { uri: string; cid: string; } | undefined; updatedAt?: string | undefined; }",
+      "start_line": 229,
+      "end_line": 246,
+      "description": "Middleware that replaces a track's clips with a preview placeholder clip for live camera preview mode."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::injectPreviewClips",
+      "name": "injectPreviewClips",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(project: Project, previewTrackIds: Set<string>) => { title: string; canvas: { width: number; height: number; background?: string | undefined; }; groups: { id: string; members: ({ id: string; } | { type: \"void\"; })[]; name?: string | undefined; layout?: { type: \"grid\"; columns: number; rows: number; gap?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; padding?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | undefined; pipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; }[]; tracks: { id: string; clips: { id: string; offset: number; duration: number; source?: { type: \"stem\"; ref: { uri: string; cid: string; }; } | { type: \"group\"; id: string; } | undefined; sourceOffset?: number | undefined; speed?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; reverse?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; audioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; videoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; }[]; name?: string | undefined; audioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; videoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; muted?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; solo?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; }[]; createdAt: string; schemaVersion?: number | undefined; description?: string | undefined; bpm?: number | undefined; duration?: number | undefined; curves?: ({ type: \"keyframe\"; id: string; points: { t: number; v: number; in?: number[] | undefined; out?: number[] | undefined; }[]; } | { type: \"envelope\"; id: string; attack?: { duration: number; curve?: number[] | undefined; } | undefined; decay?: { duration: number; curve?: number[] | undefined; } | undefined; sustain?: number | undefined; release?: { duration: number; curve?: number[] | undefined; } | undefined; peak?: number | undefined; } | { type: \"lfo\"; id: string; waveform?: \"sine\" | \"triangle\" | \"square\" | \"sawtooth\" | undefined; frequency?: number | undefined; sync?: \"4/1\" | \"2/1\" | \"1/1\" | \"1/2\" | \"1/4\" | \"1/8\" | \"1/16\" | \"1/32\" | undefined; amplitude?: number | undefined; center?: number | undefined; phase?: number | undefined; })[] | undefined; rootGroup?: string | undefined; masterAudioPipeline?: ({ type: \"audio.pan\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"audio.gain\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; masterVideoPipeline?: ({ type: \"visual.transform\"; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; x?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; y?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; scale?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; rotation?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorX?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; anchorY?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; } | { type: \"visual.opacity\"; value: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; }; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; blendMode?: \"normal\" | \"multiply\" | \"screen\" | \"overlay\" | \"add\" | undefined; } | { type: string; enabled?: { value: number; min?: number | undefined; max?: number | undefined; default?: number | undefined; } | { curve: string; min?: number | undefined; max?: number | undefined; offset?: number | undefined; timeScale?: number | undefined; timeRef?: \"clip\" | \"project\" | undefined; } | undefined; params?: unknown; })[] | undefined; parent?: { uri: string; cid: string; } | undefined; updatedAt?: string | undefined; }",
+      "start_line": 251,
+      "end_line": 259,
+      "description": "Applies injectPreviewClip for multiple tracks. Used when multiple tracks are in preview mode simultaneously."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::isVoidMember",
+      "name": "isVoidMember",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(member: { id?: string; type?: string }) => boolean",
+      "start_line": 49,
+      "end_line": 51,
+      "description": "Checks if a group member is a void placeholder for empty grid cells."
+    },
+    {
+      "id": "packages/app/src/lib/timeline-compiler.ts::resolveValue",
+      "name": "resolveValue",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/timeline-compiler.ts",
+      "signature": "(value: Value | undefined, defaultValue: number, _time = 0) => number",
+      "start_line": 38,
+      "end_line": 46,
+      "description": "Resolves a lexicon Value (static or curve reference) to a number at a given time. Returns the scaled static value or curve minimum."
+    },
+    {
+      "id": "packages/app/src/lib/worker-pool.ts::createWorkerPool",
+      "name": "createWorkerPool",
+      "kind": "function",
+      "file_path": "packages/app/src/lib/worker-pool.ts",
+      "signature": "(options: WorkerPoolOptions<T>) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/app/src/lib/worker-pool\").WorkerPool<T>",
+      "start_line": 49,
+      "end_line": 130,
+      "description": "Creates a generic pool of reusable Web Workers to avoid initialization overhead. Workers are acquired, used, released back, or terminated if pool is full."
+    },
+    {
+      "id": "packages/app/src/routes/callback.tsx::Callback",
+      "name": "Callback",
+      "kind": "function",
+      "file_path": "packages/app/src/routes/callback.tsx",
+      "signature": "() => any",
+      "start_line": 5,
       "end_line": 18,
-      "description": "Computes a deterministic hash for function/type signatures by normalizing whitespace before hashing. Used to detect when a function's interface changes between commits."
+      "description": "OAuth callback route that completes sign-in flow. Redirects to home after a brief delay."
+    },
+    {
+      "id": "packages/app/src/routes/debug.tsx::Debug",
+      "name": "Debug",
+      "kind": "function",
+      "file_path": "packages/app/src/routes/debug.tsx",
+      "signature": "() => any",
+      "start_line": 22,
+      "end_line": 196
+    },
+    {
+      "id": "packages/app/src/routes/editor.tsx::EditorRoute",
+      "name": "EditorRoute",
+      "kind": "function",
+      "file_path": "packages/app/src/routes/editor.tsx",
+      "signature": "() => any",
+      "start_line": 5,
+      "end_line": 13,
+      "description": "Editor route wrapper that passes handle and rkey params to the Editor component for loading projects."
+    },
+    {
+      "id": "packages/app/src/routes/home.tsx::Home",
+      "name": "Home",
+      "kind": "function",
+      "file_path": "packages/app/src/routes/home.tsx",
+      "signature": "() => any",
+      "start_line": 10,
+      "end_line": 95,
+      "description": "Home page showing hero section with New Project link and list of user's existing projects with delete functionality."
+    },
+    {
+      "id": "packages/app/src/workers/capture.worker.ts::audioDataToFrameData",
+      "name": "audioDataToFrameData",
+      "kind": "function",
+      "file_path": "packages/app/src/workers/capture.worker.ts",
+      "signature": "(audioData: AudioData, firstTimestamp: number) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/codecs/src/muxer\").AudioFrameData",
+      "start_line": 53,
+      "end_line": 110,
+      "description": "Converts WebCodecs AudioData to planar Float32Array format expected by the muxer. Handles both planar and interleaved audio formats."
+    },
+    {
+      "id": "packages/app/src/workers/capture.worker.ts::copyVideoFrameToBuffer",
+      "name": "copyVideoFrameToBuffer",
+      "kind": "function",
+      "file_path": "packages/app/src/workers/capture.worker.ts",
+      "signature": "(frame: VideoFrame) => Promise<{ buffer: ArrayBuffer; format: VideoPixelFormat; codedWidth: number; codedHeight: number; }>",
+      "start_line": 37,
+      "end_line": 50,
+      "description": "Copies a VideoFrame's pixel data to an ArrayBuffer and closes the frame. Returns format, dimensions, and buffer for muxer."
+    },
+    {
+      "id": "packages/app/src/workers/compositor.worker.ts::readPreviewStream",
+      "name": "readPreviewStream",
+      "kind": "function",
+      "file_path": "packages/app/src/workers/compositor.worker.ts",
+      "signature": "(trackId: string, stream: ReadableStream<VideoFrame>) => Promise<void>",
+      "start_line": 104,
+      "end_line": 129,
+      "description": "Continuously reads frames from a preview stream (camera) and stores the latest for rendering. Runs until stream ends or is cancelled."
+    },
+    {
+      "id": "packages/app/src/workers/compositor.worker.ts::setFrame",
+      "name": "setFrame",
+      "kind": "function",
+      "file_path": "packages/app/src/workers/compositor.worker.ts",
+      "signature": "(clipId: string, frame: VideoFrame | null) => void",
+      "start_line": 90,
+      "end_line": 102,
+      "description": "Stores a VideoFrame for a clipId, closing any previous frame. Used by playback workers to send frames for compositing."
+    },
+    {
+      "id": "packages/app/src/workers/compositor.worker.ts::updateRenderStats",
+      "name": "updateRenderStats",
+      "kind": "function",
+      "file_path": "packages/app/src/workers/compositor.worker.ts",
+      "signature": "(time: number, frame: VideoFrame | null | undefined, placement: Placement, isPreview: boolean) => void",
+      "start_line": 131,
+      "end_line": 160,
+      "description": "Tracks frame rendering statistics including dropped, stale, and rendered counts. Detects stale frames by comparing timestamps and durations."
+    },
+    {
+      "id": "packages/app/src/workers/debug-capture.worker.ts::copyFrameToBuffer",
+      "name": "copyFrameToBuffer",
+      "kind": "function",
+      "file_path": "packages/app/src/workers/debug-capture.worker.ts",
+      "signature": "(frame: VideoFrame) => Promise<{ buffer: ArrayBuffer; format: VideoPixelFormat; codedWidth: number; codedHeight: number; }>",
+      "start_line": 34,
+      "end_line": 47,
+      "description": "Copies a VideoFrame to ArrayBuffer format for muxer. Debug version of capture worker utility."
+    },
+    {
+      "id": "packages/app/src/workers/debug-muxer.worker.ts::addFrame",
+      "name": "addFrame",
+      "kind": "function",
+      "file_path": "packages/app/src/workers/debug-muxer.worker.ts",
+      "signature": "(data: MuxerFrameData) => void",
+      "start_line": 116,
+      "end_line": 119,
+      "description": "Queues a frame for encoding and triggers queue processing."
+    },
+    {
+      "id": "packages/app/src/workers/debug-muxer.worker.ts::init",
+      "name": "init",
+      "kind": "function",
+      "file_path": "packages/app/src/workers/debug-muxer.worker.ts",
+      "signature": "(config: MuxerInitConfig) => Promise<void>",
+      "start_line": 102,
+      "end_line": 114,
+      "description": "Initializes the muxer with format info. Creates mediabunny Output if not pre-initialized."
+    },
+    {
+      "id": "packages/app/src/workers/debug-muxer.worker.ts::processQueue",
+      "name": "processQueue",
+      "kind": "function",
+      "file_path": "packages/app/src/workers/debug-muxer.worker.ts",
+      "signature": "() => Promise<void>",
+      "start_line": 72,
+      "end_line": 100,
+      "description": "Processes the frame queue by encoding each frame through mediabunny's VideoSampleSource."
+    },
+    {
+      "id": "packages/app/src/workers/muxer.worker.ts::addAudioFrame",
+      "name": "addAudioFrame",
+      "kind": "function",
+      "file_path": "packages/app/src/workers/muxer.worker.ts",
+      "signature": "(data: AudioFrameData) => void",
+      "start_line": 71,
+      "end_line": 77,
+      "description": "Queues an audio frame for encoding via the muxer's audio pipeline."
+    },
+    {
+      "id": "packages/app/src/workers/muxer.worker.ts::addVideoFrame",
+      "name": "addVideoFrame",
+      "kind": "function",
+      "file_path": "packages/app/src/workers/muxer.worker.ts",
+      "signature": "(data: VideoFrameData) => void",
+      "start_line": 58,
+      "end_line": 69,
+      "description": "Queues a video frame for encoding and updates scheduler with queue depth for backpressure signaling."
+    },
+    {
+      "id": "packages/codecs/src/__tests__/audio-decoder.browser.test.ts::loadFixture",
+      "name": "loadFixture",
+      "kind": "function",
+      "file_path": "packages/codecs/src/__tests__/audio-decoder.browser.test.ts",
+      "signature": "(filename: string) => Promise<ArrayBuffer>",
+      "start_line": 11,
+      "end_line": 17
+    },
+    {
+      "id": "packages/codecs/src/__tests__/demuxer.browser.test.ts::loadFixture",
+      "name": "loadFixture",
+      "kind": "function",
+      "file_path": "packages/codecs/src/__tests__/demuxer.browser.test.ts",
+      "signature": "(filename: string) => Promise<ArrayBuffer>",
+      "start_line": 5,
+      "end_line": 11
+    },
+    {
+      "id": "packages/codecs/src/__tests__/video-decoder.browser.test.ts::loadFixture",
+      "name": "loadFixture",
+      "kind": "function",
+      "file_path": "packages/codecs/src/__tests__/video-decoder.browser.test.ts",
+      "signature": "(filename: string) => Promise<ArrayBuffer>",
+      "start_line": 11,
+      "end_line": 17
+    },
+    {
+      "id": "packages/codecs/src/audio-decoder.ts::createAudioDecoder",
+      "name": "createAudioDecoder",
+      "kind": "function",
+      "file_path": "packages/codecs/src/audio-decoder.ts",
+      "signature": "(demuxer: Demuxer, _trackInfo: AudioTrackInfo, options: CreateAudioDecoderOptions = {}) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/codecs/src/audio-decoder\").AudioDecoderHandle>",
+      "start_line": 54,
+      "end_line": 186,
+      "description": "Factory that creates a WebCodecs AudioDecoder handle for a demuxer's audio track. Provides decode(), decodeAll(), flush(), reset(), and close() methods with Promise-based AudioData output."
+    },
+    {
+      "id": "packages/codecs/src/audio-decoder.ts::isAudioCodecSupported",
+      "name": "isAudioCodecSupported",
+      "kind": "function",
+      "file_path": "packages/codecs/src/audio-decoder.ts",
+      "signature": "(codec: string) => Promise<boolean>",
+      "start_line": 198,
+      "end_line": 213,
+      "description": "Checks if a specific audio codec string (e.g., 'opus', 'mp4a.40.2') is supported by WebCodecs AudioDecoder."
+    },
+    {
+      "id": "packages/codecs/src/audio-decoder.ts::isAudioDecoderSupported",
+      "name": "isAudioDecoderSupported",
+      "kind": "function",
+      "file_path": "packages/codecs/src/audio-decoder.ts",
+      "signature": "() => boolean",
+      "start_line": 191,
+      "end_line": 193,
+      "description": "Checks if the WebCodecs AudioDecoder API is available in the current environment."
+    },
+    {
+      "id": "packages/codecs/src/demuxer.ts::createDemuxer",
+      "name": "createDemuxer",
+      "kind": "function",
+      "file_path": "packages/codecs/src/demuxer.ts",
+      "signature": "(source: ArrayBuffer | Blob) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/codecs/src/demuxer\").Demuxer>",
+      "start_line": 157,
+      "end_line": 333,
+      "description": "Factory that creates a demuxer for extracting video and audio samples from media containers. Wraps mediabunny's Input/EncodedPacketSink for sample access and keyframe seeking."
+    },
+    {
+      "id": "packages/codecs/src/demuxer.ts::packetToSample",
+      "name": "packetToSample",
+      "kind": "function",
+      "file_path": "packages/codecs/src/demuxer.ts",
+      "signature": "(packet: EncodedPacket, trackId: number, sampleNumber: number) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/codecs/src/demuxer\").DemuxedSample",
+      "start_line": 107,
+      "end_line": 122,
+      "description": "Converts a mediabunny EncodedPacket to the normalized DemuxedSample format with timestamps in seconds."
+    },
+    {
+      "id": "packages/codecs/src/demuxer.ts::parseAudioTrack",
+      "name": "parseAudioTrack",
+      "kind": "function",
+      "file_path": "packages/codecs/src/demuxer.ts",
+      "signature": "(track: InputAudioTrack, index: number) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/codecs/src/demuxer\").AudioTrackInfo>",
+      "start_line": 140,
+      "end_line": 155,
+      "description": "Extracts AudioTrackInfo metadata (codec, sample rate, channels, duration) from a mediabunny InputAudioTrack."
+    },
+    {
+      "id": "packages/codecs/src/demuxer.ts::parseVideoTrack",
+      "name": "parseVideoTrack",
+      "kind": "function",
+      "file_path": "packages/codecs/src/demuxer.ts",
+      "signature": "(track: InputVideoTrack, index: number) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/codecs/src/demuxer\").VideoTrackInfo>",
+      "start_line": 124,
+      "end_line": 138,
+      "description": "Extracts VideoTrackInfo metadata (codec, dimensions, duration) from a mediabunny InputVideoTrack."
+    },
+    {
+      "id": "packages/codecs/src/muxer.ts::createMuxer",
+      "name": "createMuxer",
+      "kind": "function",
+      "file_path": "packages/codecs/src/muxer.ts",
+      "signature": "(options: MuxerOptions = {}) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/codecs/src/muxer\").Muxer",
+      "start_line": 104,
+      "end_line": 314,
+      "description": "Factory that creates a video/audio muxer for encoding frames to WebM format. Uses mediabunny for progressive encoding with configurable video (VP8/VP9/AV1) and audio (Opus/Vorbis) codecs."
+    },
+    {
+      "id": "packages/codecs/src/video-decoder.ts::createVideoDecoder",
+      "name": "createVideoDecoder",
+      "kind": "function",
+      "file_path": "packages/codecs/src/video-decoder.ts",
+      "signature": "(demuxer: Demuxer, _trackInfo: VideoTrackInfo, options: CreateVideoDecoderOptions = {}) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/codecs/src/video-decoder\").VideoDecoderHandle>",
+      "start_line": 59,
+      "end_line": 204,
+      "description": "Factory that creates a WebCodecs VideoDecoder handle for a demuxer's video track. Provides decode(), decodeAll(), flush(), reset(), and close() methods with Promise-based frame output."
+    },
+    {
+      "id": "packages/codecs/src/video-decoder.ts::isVideoCodecSupported",
+      "name": "isVideoCodecSupported",
+      "kind": "function",
+      "file_path": "packages/codecs/src/video-decoder.ts",
+      "signature": "(codec: string) => Promise<boolean>",
+      "start_line": 216,
+      "end_line": 231,
+      "description": "Checks if a specific video codec string (e.g., 'vp9', 'avc1.42E01E') is supported by WebCodecs VideoDecoder."
+    },
+    {
+      "id": "packages/codecs/src/video-decoder.ts::isVideoDecoderSupported",
+      "name": "isVideoDecoderSupported",
+      "kind": "function",
+      "file_path": "packages/codecs/src/video-decoder.ts",
+      "signature": "() => boolean",
+      "start_line": 209,
+      "end_line": 211,
+      "description": "Checks if the WebCodecs VideoDecoder API is available in the current environment."
+    },
+    {
+      "id": "packages/compositor/src/index.ts::createCompositor",
+      "name": "createCompositor",
+      "kind": "function",
+      "file_path": "packages/compositor/src/index.ts",
+      "signature": "(canvas: OffscreenCanvas) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/compositor/src/index\").Compositor",
+      "start_line": 120,
+      "end_line": 240,
+      "description": "Factory that creates a WebGL-based video compositor for an OffscreenCanvas. Renders VideoFrames with viewport positioning using texture caching and provides frame capture for recording."
+    },
+    {
+      "id": "packages/compositor/src/index.ts::createVideoTexture",
+      "name": "createVideoTexture",
+      "kind": "function",
+      "file_path": "packages/compositor/src/index.ts",
+      "signature": "(glCtx: WebGL2RenderingContext | WebGLRenderingContext) => WebGLTexture",
+      "start_line": 94,
+      "end_line": 105,
+      "description": "Creates a WebGL texture with standard video sampling settings (clamp-to-edge wrapping, linear filtering)."
+    },
+    {
+      "id": "packages/compositor/src/index.ts::viewportToWebGL",
+      "name": "viewportToWebGL",
+      "kind": "function",
+      "file_path": "packages/compositor/src/index.ts",
+      "signature": "(viewport: Viewport, canvasHeight: number) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/compositor/src/index\").Viewport",
+      "start_line": 108,
+      "end_line": 115,
+      "description": "Converts a viewport from layout coordinates (y=0 at top) to WebGL coordinates (y=0 at bottom) for correct rendering."
+    },
+    {
+      "id": "packages/mixer/src/context.ts::getAudioContext",
+      "name": "getAudioContext",
+      "kind": "function",
+      "file_path": "packages/mixer/src/context.ts",
+      "signature": "() => AudioContext",
+      "start_line": 3,
+      "end_line": 5,
+      "description": "Singleton that returns the shared AudioContext instance, creating it on first access."
+    },
+    {
+      "id": "packages/mixer/src/context.ts::resumeAudioContext",
+      "name": "resumeAudioContext",
+      "kind": "function",
+      "file_path": "packages/mixer/src/context.ts",
+      "signature": "() => Promise<void>",
+      "start_line": 7,
+      "end_line": 13,
+      "description": "Resumes the AudioContext if suspended (required after user gesture in browsers). Returns immediately if already running."
+    },
+    {
+      "id": "packages/mixer/src/index.ts::createAudioPipeline",
+      "name": "createAudioPipeline",
+      "kind": "function",
+      "file_path": "packages/mixer/src/index.ts",
+      "signature": "() => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/mixer/src/index\").AudioPipeline",
+      "start_line": 23,
+      "end_line": 74,
+      "description": "Factory that creates an audio pipeline with gain and stereo pan nodes for a single audio source. Connects through the master mixer for centralized volume control."
+    },
+    {
+      "id": "packages/mixer/src/mixer.ts::getMasterMixer",
+      "name": "getMasterMixer",
+      "kind": "function",
+      "file_path": "packages/mixer/src/mixer.ts",
+      "signature": "() => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/mixer/src/mixer\").MasterMixer",
+      "start_line": 27,
+      "end_line": 96,
+      "description": "Singleton that provides the master audio mixer with volume control and output routing. Supports switching between direct AudioContext output and MediaStream output to work around Chrome recording bugs."
+    },
+    {
+      "id": "packages/playback/src/create-decoder.ts::createDecoder",
+      "name": "createDecoder",
+      "kind": "function",
+      "file_path": "packages/playback/src/create-decoder.ts",
+      "signature": "({\n  videoConfig,\n  queueThreshold = 3,\n  shouldSkipDeltaFrame,\n}: DecoderConfig) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/playback/src/create-decoder\").Decoder",
+      "start_line": 64,
+      "end_line": 235,
+      "description": "Factory that creates a managed VideoDecoder wrapper with automatic error recovery. Uses a synchronous decode + drain pattern for performance: decode() queues work without Promise overhead, drainFrames() returns accumulated frames."
+    },
+    {
+      "id": "packages/playback/src/create-playback.ts::configsMatch",
+      "name": "configsMatch",
+      "kind": "function",
+      "file_path": "packages/playback/src/create-playback.ts",
+      "signature": "(a: VideoDecoderConfig | null, b: VideoDecoderConfig | null) => boolean",
+      "start_line": 109,
+      "end_line": 112,
+      "description": "Checks if two VideoDecoderConfigs are equivalent (same codec, width, height) to determine if the decoder can be reused between clips."
+    },
+    {
+      "id": "packages/playback/src/create-playback.ts::createPlayback",
+      "name": "createPlayback",
+      "kind": "function",
+      "file_path": "packages/playback/src/create-playback.ts",
+      "signature": "({ onFrame, shouldSkipDeltaFrame }: PlaybackConfig = {}) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/playback/src/create-playback\").Playback",
+      "start_line": 123,
+      "end_line": 546,
+      "description": "Factory that creates a video playback engine managing demuxing, decoding, and frame buffering. Coordinates the decode pipeline using mediabunny for demuxing, maintains a ring buffer of decoded frames, and outputs VideoFrames via callback at the correct timing during playback."
+    },
+    {
+      "id": "packages/playback/src/create-playback.ts::packetToSample",
+      "name": "packetToSample",
+      "kind": "function",
+      "file_path": "packages/playback/src/create-playback.ts",
+      "signature": "(packet: EncodedPacket, trackId: number) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/codecs/src/demuxer\").DemuxedSample",
+      "start_line": 95,
+      "end_line": 106,
+      "description": "Converts a mediabunny EncodedPacket to the DemuxedSample format expected by the decoder."
+    },
+    {
+      "id": "packages/playback/src/frame-utils.ts::alignUp",
+      "name": "alignUp",
+      "kind": "function",
+      "file_path": "packages/playback/src/frame-utils.ts",
+      "signature": "(value: number, alignment: number) => number",
+      "start_line": 25,
+      "end_line": 27,
+      "description": "Rounds a value up to the nearest multiple of the given alignment. Used for GPU-compatible memory layout calculations."
+    },
+    {
+      "id": "packages/playback/src/frame-utils.ts::calculateAlignedLayout",
+      "name": "calculateAlignedLayout",
+      "kind": "function",
+      "file_path": "packages/playback/src/frame-utils.ts",
+      "signature": "(format: string, width: number, height: number) => { layout: import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/playback/src/frame-utils\").PlaneLayout[]; totalSize: number; }",
+      "start_line": 30,
+      "end_line": 127,
+      "description": "Calculates memory layout with 128-byte alignment for a given video pixel format. Supports I420, I422, I444, NV12, and RGBA format families with 8/10/12-bit variants and optional alpha."
+    },
+    {
+      "id": "packages/playback/src/frame-utils.ts::dataToFrame",
+      "name": "dataToFrame",
+      "kind": "function",
+      "file_path": "packages/playback/src/frame-utils.ts",
+      "signature": "(data: FrameData) => VideoFrame",
+      "start_line": 170,
+      "end_line": 188,
+      "description": "Reconstructs a VideoFrame from a FrameData object. Used to recreate transferable VideoFrames from buffered raw data."
+    },
+    {
+      "id": "packages/playback/src/frame-utils.ts::frameToData",
+      "name": "frameToData",
+      "kind": "function",
+      "file_path": "packages/playback/src/frame-utils.ts",
+      "signature": "(frame: VideoFrame) => Promise<import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/playback/src/frame-utils\").FrameData>",
+      "start_line": 130,
+      "end_line": 167,
+      "description": "Converts a VideoFrame to a serializable FrameData object for buffering. Copies pixel data to an ArrayBuffer with GPU-compatible 128-byte alignment and closes the original frame."
+    },
+    {
+      "id": "packages/utils/src/index.ts::assertNotNullish",
+      "name": "assertNotNullish",
+      "kind": "function",
+      "file_path": "packages/utils/src/index.ts",
+      "signature": "(value: any) => boolean",
+      "start_line": 29,
+      "end_line": 31,
+      "description": "Type predicate that returns true if a value is not null or undefined."
+    },
+    {
+      "id": "packages/utils/src/index.ts::assertedNotNullish",
+      "name": "assertedNotNullish",
+      "kind": "function",
+      "file_path": "packages/utils/src/index.ts",
+      "signature": "(value: T, error?: string) => NonNullable<T>",
+      "start_line": 33,
+      "end_line": 40,
+      "description": "Assertion function that throws with a custom message if the value is null or undefined, otherwise returns the narrowed type."
+    },
+    {
+      "id": "packages/utils/src/index.ts::debug",
+      "name": "debug",
+      "kind": "function",
+      "file_path": "packages/utils/src/index.ts",
+      "signature": "(title: string, enabled: boolean) => (...args: unknown[]) => void",
+      "start_line": 10,
+      "end_line": 16,
+      "description": "Factory that creates a togglable console logger with a labeled prefix. Used throughout the codebase for development-time debugging output."
+    },
+    {
+      "id": "packages/utils/src/index.ts::isGeneratorFunction",
+      "name": "isGeneratorFunction",
+      "kind": "function",
+      "file_path": "packages/utils/src/index.ts",
+      "signature": "(fn: Function) => boolean",
+      "start_line": 19,
+      "end_line": 23,
+      "description": "Type guard that checks if a function is a generator function by examining its constructor name."
+    },
+    {
+      "id": "packages/utils/src/index.ts::isObject",
+      "name": "isObject",
+      "kind": "function",
+      "file_path": "packages/utils/src/index.ts",
+      "signature": "(value: unknown) => boolean",
+      "start_line": 25,
+      "end_line": 27,
+      "description": "Type guard that checks if a value is a non-null object."
+    },
+    {
+      "id": "packages/utils/src/loop.ts::createLoop",
+      "name": "createLoop",
+      "kind": "function",
+      "file_path": "packages/utils/src/loop.ts",
+      "signature": "(callback: (loop: Loop) => void) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/utils/src/loop\").Loop",
+      "start_line": 38,
+      "end_line": 67,
+      "description": "Factory that creates a requestAnimationFrame loop with start/stop control. The callback receives the loop instance to enable self-termination."
+    },
+    {
+      "id": "packages/utils/src/perf.ts::createPerfMonitor",
+      "name": "createPerfMonitor",
+      "kind": "function",
+      "file_path": "packages/utils/src/perf.ts",
+      "signature": "(threshold: number = 16.67, maxSamples: number = 1000) => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/utils/src/perf\").PerfMonitor",
+      "start_line": 57,
+      "end_line": 196,
+      "description": "Factory that creates a performance monitor for timing operations and tracking metrics. Supports labeled start/end timing, counters, configurable slow-frame thresholds, and summary logging."
+    },
+    {
+      "id": "packages/utils/src/perf.ts::getGlobalPerfMonitor",
+      "name": "getGlobalPerfMonitor",
+      "kind": "function",
+      "file_path": "packages/utils/src/perf.ts",
+      "signature": "() => import(\"/Users/bigmistqke/Documents/GitHub/eddy/packages/utils/src/perf\").PerfMonitor",
+      "start_line": 204,
+      "end_line": 209,
+      "description": "Singleton that returns the shared global PerfMonitor instance, creating it on first access."
+    },
+    {
+      "id": "packages/utils/src/perf.ts::timed",
+      "name": "timed",
+      "kind": "function",
+      "file_path": "packages/utils/src/perf.ts",
+      "signature": "(label: string, fn: () => T) => T",
+      "start_line": 214,
+      "end_line": 228,
+      "description": "Helper that wraps a function call with performance timing using the global monitor. Handles both sync and async functions."
+    },
+    {
+      "id": "scripts/perf-test.ts::getArg",
+      "name": "getArg",
+      "kind": "function",
+      "file_path": "scripts/perf-test.ts",
+      "signature": "(name: string, defaultValue: string) => string",
+      "start_line": 23,
+      "end_line": 26
+    },
+    {
+      "id": "scripts/perf-test.ts::hasFlag",
+      "name": "hasFlag",
+      "kind": "function",
+      "file_path": "scripts/perf-test.ts",
+      "signature": "(name: string) => boolean",
+      "start_line": 27,
+      "end_line": 27
+    },
+    {
+      "id": "scripts/perf-test.ts::main",
+      "name": "main",
+      "kind": "function",
+      "file_path": "scripts/perf-test.ts",
+      "signature": "() => Promise<void>",
+      "start_line": 52,
+      "end_line": 439
+    },
+    {
+      "id": "scripts/perf-test.ts::sleep",
+      "name": "sleep",
+      "kind": "function",
+      "file_path": "scripts/perf-test.ts",
+      "signature": "(ms: number) => Promise<void>",
+      "start_line": 44,
+      "end_line": 46
+    },
+    {
+      "id": "scripts/perf-test.ts::waitForSelector",
+      "name": "waitForSelector",
+      "kind": "function",
+      "file_path": "scripts/perf-test.ts",
+      "signature": "(page: Page, selector: string, timeout = 10000) => Promise<void>",
+      "start_line": 48,
+      "end_line": 50
+    },
+    {
+      "id": "scripts/seed-deciduous.ts::commitToNodeType",
+      "name": "commitToNodeType",
+      "kind": "function",
+      "file_path": "scripts/seed-deciduous.ts",
+      "signature": "(subject: string) => { type: NodeType; confidence: number; }",
+      "start_line": 24,
+      "end_line": 50,
+      "description": "Maps conventional commit prefixes (feat, fix, refactor, etc.) to deciduous node types with confidence scores."
+    },
+    {
+      "id": "scripts/seed-deciduous.ts::createNode",
+      "name": "createNode",
+      "kind": "function",
+      "file_path": "scripts/seed-deciduous.ts",
+      "signature": "(node: DeciduousNode) => number | null",
+      "start_line": 88,
+      "end_line": 104
+    },
+    {
+      "id": "scripts/seed-deciduous.ts::getCommits",
+      "name": "getCommits",
+      "kind": "function",
+      "file_path": "scripts/seed-deciduous.ts",
+      "signature": "(limit: number) => Commit[]",
+      "start_line": 53,
+      "end_line": 85
+    },
+    {
+      "id": "scripts/seed-deciduous.ts::linkNodes",
+      "name": "linkNodes",
+      "kind": "function",
+      "file_path": "scripts/seed-deciduous.ts",
+      "signature": "(from: number, to: number, reason: string) => void",
+      "start_line": 107,
+      "end_line": 114
+    },
+    {
+      "id": "scripts/seed-deciduous.ts::main",
+      "name": "main",
+      "kind": "function",
+      "file_path": "scripts/seed-deciduous.ts",
+      "signature": "() => void",
+      "start_line": 117,
+      "end_line": 161
+    },
+    {
+      "id": "scripts/sync-graph-to-issues.ts::findLinkedIssues",
+      "name": "findLinkedIssues",
+      "kind": "function",
+      "file_path": "scripts/sync-graph-to-issues.ts",
+      "signature": "(graph: Graph, nodeId: number) => number[]",
+      "start_line": 98,
+      "end_line": 131
+    },
+    {
+      "id": "scripts/sync-graph-to-issues.ts::formatNodeAsComment",
+      "name": "formatNodeAsComment",
+      "kind": "function",
+      "file_path": "scripts/sync-graph-to-issues.ts",
+      "signature": "(node: GraphNode, prompt: string) => string",
+      "start_line": 133,
+      "end_line": 156
+    },
+    {
+      "id": "scripts/sync-graph-to-issues.ts::getGraph",
+      "name": "getGraph",
+      "kind": "function",
+      "file_path": "scripts/sync-graph-to-issues.ts",
+      "signature": "() => Graph",
+      "start_line": 74,
+      "end_line": 77
+    },
+    {
+      "id": "scripts/sync-graph-to-issues.ts::getNodeIssue",
+      "name": "getNodeIssue",
+      "kind": "function",
+      "file_path": "scripts/sync-graph-to-issues.ts",
+      "signature": "(node: GraphNode) => number | null",
+      "start_line": 89,
+      "end_line": 96
+    },
+    {
+      "id": "scripts/sync-graph-to-issues.ts::getNodePrompt",
+      "name": "getNodePrompt",
+      "kind": "function",
+      "file_path": "scripts/sync-graph-to-issues.ts",
+      "signature": "(nodeId: number) => string",
+      "start_line": 79,
+      "end_line": 87
+    },
+    {
+      "id": "scripts/sync-graph-to-issues.ts::loadSyncedNodes",
+      "name": "loadSyncedNodes",
+      "kind": "function",
+      "file_path": "scripts/sync-graph-to-issues.ts",
+      "signature": "() => SyncedNodes",
+      "start_line": 58,
+      "end_line": 64
+    },
+    {
+      "id": "scripts/sync-graph-to-issues.ts::main",
+      "name": "main",
+      "kind": "function",
+      "file_path": "scripts/sync-graph-to-issues.ts",
+      "signature": "() => Promise<void>",
+      "start_line": 184,
+      "end_line": 248
+    },
+    {
+      "id": "scripts/sync-graph-to-issues.ts::postComment",
+      "name": "postComment",
+      "kind": "function",
+      "file_path": "scripts/sync-graph-to-issues.ts",
+      "signature": "(issueNumber: number, body: string, dryRun: boolean) => string | null",
+      "start_line": 158,
+      "end_line": 182
+    },
+    {
+      "id": "scripts/sync-graph-to-issues.ts::saveSyncedNodes",
+      "name": "saveSyncedNodes",
+      "kind": "function",
+      "file_path": "scripts/sync-graph-to-issues.ts",
+      "signature": "(synced: SyncedNodes) => void",
+      "start_line": 66,
+      "end_line": 72
     }
   ],
   "edges": [
     {
-      "source": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
-      "target": "src/hash.ts::computeSignatureHash",
+      "source": "scripts/perf-test.ts::waitForSelector",
+      "target": "scripts/perf-test.ts::waitForSelector",
       "kind": "calls"
     },
     {
-      "source": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
-      "target": "src/hash.ts::computeImplHash",
+      "source": "scripts/perf-test.ts::main",
+      "target": "scripts/perf-test.ts::sleep",
       "kind": "calls"
     },
     {
-      "source": "src/hash.ts::computeSignatureHash",
-      "target": "src/hash.ts::computeHash",
+      "source": "scripts/seed-deciduous.ts::main",
+      "target": "scripts/seed-deciduous.ts::getCommits",
       "kind": "calls"
     },
     {
-      "source": "src/hash.ts::computeImplHash",
-      "target": "src/hash.ts::computeHash",
+      "source": "scripts/seed-deciduous.ts::main",
+      "target": "scripts/seed-deciduous.ts::commitToNodeType",
       "kind": "calls"
     },
     {
-      "source": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
-      "target": "src/analyzer.ts::TypeScriptAnalyzer.getRelativePath",
+      "source": "scripts/seed-deciduous.ts::main",
+      "target": "scripts/seed-deciduous.ts::createNode",
       "kind": "calls"
     },
     {
-      "source": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
-      "target": "src/analyzer.ts::TypeScriptAnalyzer.extractFunctions",
+      "source": "scripts/seed-deciduous.ts::main",
+      "target": "scripts/seed-deciduous.ts::linkNodes",
       "kind": "calls"
     },
     {
-      "source": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
-      "target": "src/analyzer.ts::TypeScriptAnalyzer.extractCalls",
+      "source": "scripts/sync-graph-to-issues.ts::findLinkedIssues",
+      "target": "scripts/sync-graph-to-issues.ts::getNodeIssue",
       "kind": "calls"
     },
     {
-      "source": "src/analyzer.ts::TypeScriptAnalyzer.extractFunctions",
-      "target": "src/analyzer.ts::TypeScriptAnalyzer.createFunctionInfo",
+      "source": "scripts/sync-graph-to-issues.ts::main",
+      "target": "scripts/sync-graph-to-issues.ts::getGraph",
       "kind": "calls"
     },
     {
-      "source": "src/analyzer.ts::TypeScriptAnalyzer.extractFunctions",
-      "target": "src/analyzer.ts::TypeScriptAnalyzer.createFunctionInfoFromVar",
+      "source": "scripts/sync-graph-to-issues.ts::main",
+      "target": "scripts/sync-graph-to-issues.ts::loadSyncedNodes",
       "kind": "calls"
     },
     {
-      "source": "src/analyzer.ts::TypeScriptAnalyzer.extractCalls",
-      "target": "src/analyzer.ts::TypeScriptAnalyzer.getCalleeName",
+      "source": "scripts/sync-graph-to-issues.ts::main",
+      "target": "scripts/sync-graph-to-issues.ts::findLinkedIssues",
       "kind": "calls"
     },
     {
-      "source": "src/db.ts::GraphStore.isDescriptionStale",
-      "target": "src/db.ts::GraphStore.getEntityById",
+      "source": "scripts/sync-graph-to-issues.ts::main",
+      "target": "scripts/sync-graph-to-issues.ts::getNodePrompt",
       "kind": "calls"
     },
     {
-      "source": "src/db.ts::GraphStore.isDescriptionStale",
-      "target": "src/db.ts::GraphStore.getDescription",
+      "source": "scripts/sync-graph-to-issues.ts::main",
+      "target": "scripts/sync-graph-to-issues.ts::formatNodeAsComment",
       "kind": "calls"
     },
     {
-      "source": "src/db.ts::GraphStore.getEntitiesNeedingDescriptions",
-      "target": "src/db.ts::GraphStore.getEntities",
+      "source": "scripts/sync-graph-to-issues.ts::main",
+      "target": "scripts/sync-graph-to-issues.ts::postComment",
       "kind": "calls"
     },
     {
-      "source": "src/db.ts::GraphStore.getEntitiesNeedingDescriptions",
-      "target": "src/db.ts::GraphStore.isDescriptionStale",
+      "source": "scripts/sync-graph-to-issues.ts::main",
+      "target": "scripts/sync-graph-to-issues.ts::saveSyncedNodes",
       "kind": "calls"
     },
     {
-      "source": "src/db.ts::GraphStore.close",
-      "target": "src/db.ts::GraphStore.close",
+      "source": "packages/codecs/src/audio-decoder.ts::isAudioCodecSupported",
+      "target": "packages/codecs/src/audio-decoder.ts::isAudioDecoderSupported",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/codecs/src/demuxer.ts::createDemuxer",
+      "target": "packages/codecs/src/demuxer.ts::parseVideoTrack",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/codecs/src/demuxer.ts::createDemuxer",
+      "target": "packages/codecs/src/demuxer.ts::parseAudioTrack",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/codecs/src/demuxer.ts::createDemuxer",
+      "target": "packages/codecs/src/demuxer.ts::packetToSample",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/codecs/src/video-decoder.ts::isVideoCodecSupported",
+      "target": "packages/codecs/src/video-decoder.ts::isVideoDecoderSupported",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/compositor/src/index.ts::createCompositor",
+      "target": "packages/utils/src/index.ts::assertedNotNullish",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/compositor/src/index.ts::createCompositor",
+      "target": "packages/compositor/src/index.ts::createVideoTexture",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/compositor/src/index.ts::createCompositor",
+      "target": "packages/compositor/src/index.ts::viewportToWebGL",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/mixer/src/context.ts::resumeAudioContext",
+      "target": "packages/mixer/src/context.ts::getAudioContext",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/mixer/src/index.ts::createAudioPipeline",
+      "target": "packages/mixer/src/context.ts::getAudioContext",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/mixer/src/index.ts::createAudioPipeline",
+      "target": "packages/mixer/src/mixer.ts::getMasterMixer",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/mixer/src/mixer.ts::getMasterMixer",
+      "target": "packages/mixer/src/context.ts::getAudioContext",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/playback/src/create-decoder.ts::createDecoder",
+      "target": "packages/app/src/workers/debug-muxer.worker.ts::init",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/playback/src/create-playback.ts::createPlayback",
+      "target": "packages/utils/src/perf.ts::createPerfMonitor",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/playback/src/create-playback.ts::createPlayback",
+      "target": "packages/playback/src/frame-utils.ts::dataToFrame",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/playback/src/create-playback.ts::createPlayback",
+      "target": "packages/codecs/src/demuxer.ts::packetToSample",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/playback/src/create-playback.ts::createPlayback",
+      "target": "packages/playback/src/frame-utils.ts::frameToData",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/playback/src/create-playback.ts::createPlayback",
+      "target": "packages/utils/src/loop.ts::createLoop",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/playback/src/create-playback.ts::createPlayback",
+      "target": "packages/playback/src/create-playback.ts::configsMatch",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/playback/src/create-playback.ts::createPlayback",
+      "target": "packages/playback/src/create-decoder.ts::createDecoder",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/playback/src/create-playback.ts::createPlayback",
+      "target": "packages/utils/src/index.ts::assertedNotNullish",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/playback/src/frame-utils.ts::calculateAlignedLayout",
+      "target": "packages/playback/src/frame-utils.ts::alignUp",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/playback/src/frame-utils.ts::frameToData",
+      "target": "packages/playback/src/frame-utils.ts::calculateAlignedLayout",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/utils/src/index.ts::assertedNotNullish",
+      "target": "packages/utils/src/index.ts::assertNotNullish",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/utils/src/perf.ts::getGlobalPerfMonitor",
+      "target": "packages/utils/src/perf.ts::createPerfMonitor",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/utils/src/perf.ts::timed",
+      "target": "packages/utils/src/perf.ts::getGlobalPerfMonitor",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/action.ts::isHoldMarker",
+      "target": "packages/utils/src/index.ts::isObject",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/action.ts::isPromiseWithCleanup",
+      "target": "packages/utils/src/index.ts::isObject",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/action.ts::runGenerator",
+      "target": "packages/app/src/hooks/action.ts::isPromiseWithCleanup",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/action.ts::action",
+      "target": "packages/utils/src/index.ts::isGeneratorFunction",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/action.ts::action",
+      "target": "packages/app/src/hooks/action.ts::runGenerator",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/action.ts::action",
+      "target": "packages/app/src/hooks/action.ts::isPromiseWithCleanup",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/action.ts::action",
+      "target": "packages/app/src/hooks/action.ts::isHoldMarker",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/action.ts::action",
+      "target": "packages/app/src/hooks/action.ts::waitForAbort",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/action.ts::action",
+      "target": "packages/utils/src/index.ts::assertedNotNullish",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/hooks/deep-resource.ts::deepResource",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/lib/atproto/crud.ts::getProjectByRkey",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/hooks/create-editor.ts::createDefaultProject",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/hooks/resource.ts::resource",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/hooks/create-player.ts::createPlayer",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/lib/create-resource-map.ts::createResourceMap",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/hooks/create-editor.ts::isStemSource",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/lib/atproto/crud.ts::getStemBlob",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/hooks/action.ts::action",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/mixer/src/context.ts::resumeAudioContext",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/utils/src/index.ts::assertedNotNullish",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/mixer/src/mixer.ts::getMasterMixer",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/hooks/action.ts::defer",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/hooks/action.ts::hold",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "target": "packages/app/src/lib/atproto/crud.ts::publishProject",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-player.ts::createPlayer",
+      "target": "packages/app/src/workers/debug-muxer.worker.ts::init",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-player.ts::createPlayer",
+      "target": "packages/app/src/lib/timeline-compiler.ts::injectPreviewClips",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-player.ts::createPlayer",
+      "target": "packages/app/src/lib/timeline-compiler.ts::compileLayoutTimeline",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-player.ts::createPlayer",
+      "target": "packages/app/src/lib/worker-pool.ts::createWorkerPool",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-player.ts::createPlayer",
+      "target": "packages/mixer/src/index.ts::createAudioPipeline",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-player.ts::createPlayer",
+      "target": "packages/app/src/hooks/create-clock.ts::createClock",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/create-player.ts::createPlayer",
+      "target": "packages/utils/src/loop.ts::createLoop",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/hooks/deep-resource.ts::deepResource",
+      "target": "packages/app/src/hooks/resource.ts::resource",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/create-resource-map.ts::createResourceMap",
+      "target": "packages/app/src/hooks/resource.ts::resource",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/timeline-compiler.ts::collectClipInfos",
+      "target": "packages/app/src/lib/timeline-compiler.ts::getRootGroup",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/timeline-compiler.ts::collectClipInfos",
+      "target": "packages/app/src/lib/timeline-compiler.ts::resolveValue",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/timeline-compiler.ts::collectClipInfos",
+      "target": "packages/app/src/lib/timeline-compiler.ts::isVoidMember",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/timeline-compiler.ts::collectClipInfos",
+      "target": "packages/app/src/lib/timeline-compiler.ts::calculateGridViewport",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/timeline-compiler.ts::collectClipInfos",
+      "target": "packages/app/src/lib/timeline-compiler.ts::calculateStackViewport",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/timeline-compiler.ts::injectPreviewClips",
+      "target": "packages/app/src/lib/timeline-compiler.ts::injectPreviewClip",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/timeline-compiler.ts::compileLayoutTimeline",
+      "target": "packages/app/src/lib/timeline-compiler.ts::collectClipInfos",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/timeline-compiler.ts::compileLayoutTimeline",
+      "target": "packages/app/src/lib/timeline-compiler.ts::buildSegments",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/timeline-compiler.ts::getActivePlacements",
+      "target": "packages/app/src/lib/timeline-compiler.ts::findSegmentAtTime",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/routes/debug.tsx::Debug",
+      "target": "packages/app/src/hooks/resource.ts::resource",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/routes/debug.tsx::Debug",
+      "target": "packages/app/src/hooks/action.ts::action",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/routes/debug.tsx::Debug",
+      "target": "packages/app/src/hooks/action.ts::defer",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/routes/debug.tsx::Debug",
+      "target": "packages/app/src/hooks/action.ts::hold",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/routes/home.tsx::Home",
+      "target": "packages/app/src/lib/atproto/auth-context.tsx::useAuth",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/routes/home.tsx::Home",
+      "target": "packages/app/src/hooks/resource.ts::resource",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/routes/home.tsx::Home",
+      "target": "packages/app/src/lib/atproto/crud.ts::listProjects",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/routes/home.tsx::Home",
+      "target": "packages/app/src/lib/atproto/crud.ts::deleteProject",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/routes/home.tsx::Home",
+      "target": "packages/app/src/hooks/action.ts::action",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/routes/home.tsx::Home",
+      "target": "packages/app/src/lib/atproto/crud.ts::deleteOrphanedStems",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/workers/debug-muxer.worker.ts::addFrame",
+      "target": "packages/app/src/workers/debug-muxer.worker.ts::processQueue",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/workers/muxer.worker.ts::addVideoFrame",
+      "target": "packages/app/src/workers/muxer.worker.ts::addVideoFrame",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/workers/muxer.worker.ts::addAudioFrame",
+      "target": "packages/app/src/workers/muxer.worker.ts::addAudioFrame",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/components/auth/UserMenu.tsx::UserMenu",
+      "target": "packages/app/src/lib/atproto/auth-context.tsx::useAuth",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/components/editor/Editor.tsx::Editor",
+      "target": "packages/app/src/lib/atproto/auth-context.tsx::useAuth",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/components/editor/Editor.tsx::Editor",
+      "target": "packages/app/src/hooks/create-editor.ts::createEditor",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/components/editor/Editor.tsx::Editor",
+      "target": "packages/app/src/components/editor/Editor.tsx::formatTime",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/components/editor/Editor.tsx::Editor",
+      "target": "packages/app/src/components/editor/Editor.tsx::parseTime",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/components/layout/Header.tsx::Header",
+      "target": "packages/app/src/lib/atproto/auth-context.tsx::useAuth",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/auth-context.tsx::AuthProvider",
+      "target": "packages/app/src/lib/atproto/auth.ts::createAgent",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/auth.ts::initSession",
+      "target": "packages/app/src/lib/atproto/auth.ts::getOAuthClient",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/auth.ts::initSession",
+      "target": "packages/app/src/workers/debug-muxer.worker.ts::init",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/auth.ts::signIn",
+      "target": "packages/app/src/lib/atproto/auth.ts::getOAuthClient",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/auth.ts::signIn",
+      "target": "packages/app/src/lib/atproto/auth.ts::signIn",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::getProject",
+      "target": "packages/app/src/lib/atproto/crud.ts::parseAtUri",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::resolveHandle",
+      "target": "packages/app/src/lib/atproto/crud.ts::resolveHandle",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::getProjectByRkey",
+      "target": "packages/app/src/lib/atproto/crud.ts::resolveHandle",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::getProjectByRkey",
+      "target": "packages/app/src/lib/atproto/crud.ts::getProject",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::getStem",
+      "target": "packages/app/src/lib/atproto/crud.ts::parseAtUri",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::getStemBlob",
+      "target": "packages/app/src/lib/atproto/crud.ts::parseAtUri",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::getStemBlob",
+      "target": "packages/app/src/lib/atproto/crud.ts::getStem",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::listProjects",
+      "target": "packages/app/src/lib/atproto/crud.ts::parseAtUri",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::uploadBlob",
+      "target": "packages/app/src/lib/atproto/crud.ts::uploadBlob",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::createStemRecord",
+      "target": "packages/app/src/lib/atproto/crud.ts::uploadBlob",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::cloneStem",
+      "target": "packages/app/src/lib/atproto/crud.ts::parseAtUri",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::cloneStem",
+      "target": "packages/app/src/lib/atproto/crud.ts::getStem",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::cloneStem",
+      "target": "packages/app/src/lib/atproto/crud.ts::getStemBlob",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::cloneStem",
+      "target": "packages/app/src/lib/atproto/crud.ts::createStemRecord",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::publishProject",
+      "target": "packages/app/src/lib/atproto/crud.ts::createStemRecord",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::publishProject",
+      "target": "packages/app/src/hooks/create-editor.ts::isStemSource",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::publishProject",
+      "target": "packages/app/src/lib/atproto/crud.ts::parseAtUri",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::publishProject",
+      "target": "packages/app/src/lib/atproto/crud.ts::cloneStem",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::deleteProject",
+      "target": "packages/app/src/lib/atproto/crud.ts::parseAtUri",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::deleteStem",
+      "target": "packages/app/src/lib/atproto/crud.ts::parseAtUri",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::deleteOrphanedStems",
+      "target": "packages/app/src/lib/atproto/crud.ts::listStems",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::deleteOrphanedStems",
+      "target": "packages/app/src/lib/atproto/crud.ts::listProjects",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::deleteOrphanedStems",
+      "target": "packages/app/src/lib/atproto/crud.ts::getProject",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::deleteOrphanedStems",
+      "target": "packages/app/src/hooks/create-editor.ts::isStemSource",
+      "kind": "calls"
+    },
+    {
+      "source": "packages/app/src/lib/atproto/crud.ts::deleteOrphanedStems",
+      "target": "packages/app/src/lib/atproto/crud.ts::deleteStem",
       "kind": "calls"
     }
   ]

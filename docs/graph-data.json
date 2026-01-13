@@ -648,6 +648,116 @@
       "created_at": "2026-01-12T23:24:17.925638+01:00",
       "updated_at": "2026-01-12T23:24:17.925638+01:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"fe6532d\",\"confidence\":95}"
+    },
+    {
+      "id": 60,
+      "change_id": "9cf027d1-1c08-4b25-b8e6-6eb1f252962c",
+      "node_type": "goal",
+      "title": "Add web visualization with Cytoscape.js",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-12T23:30:21.105975+01:00",
+      "updated_at": "2026-01-12T23:30:21.105975+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85,\"prompt\":\"let's do cytoscape.js for now\"}"
+    },
+    {
+      "id": 61,
+      "change_id": "05d7036a-74b6-4d4b-98b2-329d71c5e9bc",
+      "node_type": "outcome",
+      "title": "Fixed call graph detection for class method calls",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:18:35.285186+01:00",
+      "updated_at": "2026-01-13T01:18:35.285186+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"407a77e\",\"confidence\":95}"
+    },
+    {
+      "id": 62,
+      "change_id": "b3e9a90f-cad8-43a3-b4fc-58122ee6241b",
+      "node_type": "outcome",
+      "title": "Added export command for graph.json",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:18:35.314134+01:00",
+      "updated_at": "2026-01-13T01:18:35.314134+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"d461d20\",\"confidence\":95}"
+    },
+    {
+      "id": 63,
+      "change_id": "34682da0-4891-4068-be05-f709e4f9f8d7",
+      "node_type": "outcome",
+      "title": "Added web client with Vite + SolidJS + Cytoscape.js",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:18:35.341905+01:00",
+      "updated_at": "2026-01-13T01:18:35.341905+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"95b3d52\",\"confidence\":95}"
+    },
+    {
+      "id": 64,
+      "change_id": "292f0f60-f513-479e-8077-6582cd7b520e",
+      "node_type": "goal",
+      "title": "Add find command for partial name search",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:38:22.275792+01:00",
+      "updated_at": "2026-01-13T01:38:22.275792+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":80,\"prompt\":\"mycelium find <name> - search entities by partial name match\"}"
+    },
+    {
+      "id": 65,
+      "change_id": "ec38a7d8-a130-4a73-8cde-7b0e0419e692",
+      "node_type": "goal",
+      "title": "Add show command to display source code",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:38:22.463485+01:00",
+      "updated_at": "2026-01-13T01:38:22.463485+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":80,\"prompt\":\"mycelium show <entity-id> - display full source code + context for an entity\"}"
+    },
+    {
+      "id": 66,
+      "change_id": "e63faab2-b945-4140-85b6-78607da1e7fa",
+      "node_type": "goal",
+      "title": "Add trace command to find call paths",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:38:22.628378+01:00",
+      "updated_at": "2026-01-13T01:38:22.628378+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":80,\"prompt\":\"mycelium trace <from> <to> - find path between two functions in call graph\"}"
+    },
+    {
+      "id": 67,
+      "change_id": "c3a7bc9b-cf69-4a51-a51d-90220563a881",
+      "node_type": "goal",
+      "title": "Add context command for function overview",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:38:22.806534+01:00",
+      "updated_at": "2026-01-13T01:38:22.806534+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":80,\"prompt\":\"mycelium context <entity-id> - show callers + callees + description + source in one view\"}"
+    },
+    {
+      "id": 68,
+      "change_id": "0122ca51-44b5-410b-a467-5e07f48ced2b",
+      "node_type": "goal",
+      "title": "Add search command for description search",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:38:22.969847+01:00",
+      "updated_at": "2026-01-13T01:38:22.969847+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":70,\"prompt\":\"mycelium search <query> - find functions by description/purpose\"}"
+    },
+    {
+      "id": 69,
+      "change_id": "a537865a-193e-4ebc-921f-7c71881a3a51",
+      "node_type": "goal",
+      "title": "Add stack trace mapping",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:38:23.123108+01:00",
+      "updated_at": "2026-01-13T01:38:23.123108+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":60,\"prompt\":\"Given an error stack trace, map lines to graph entities\"}"
     }
   ],
   "edges": [
@@ -1332,6 +1442,50 @@
       "weight": 1.0,
       "rationale": "Committed",
       "created_at": "2026-01-12T23:24:22.152018+01:00"
+    },
+    {
+      "id": 63,
+      "from_node_id": 1,
+      "to_node_id": 60,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "9cf027d1-1c08-4b25-b8e6-6eb1f252962c",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Visualization feature",
+      "created_at": "2026-01-12T23:30:27.231565+01:00"
+    },
+    {
+      "id": 64,
+      "from_node_id": 60,
+      "to_node_id": 61,
+      "from_change_id": "9cf027d1-1c08-4b25-b8e6-6eb1f252962c",
+      "to_change_id": "05d7036a-74b6-4d4b-98b2-329d71c5e9bc",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Bug fix during implementation",
+      "created_at": "2026-01-13T01:18:39.768479+01:00"
+    },
+    {
+      "id": 65,
+      "from_node_id": 60,
+      "to_node_id": 62,
+      "from_change_id": "9cf027d1-1c08-4b25-b8e6-6eb1f252962c",
+      "to_change_id": "b3e9a90f-cad8-43a3-b4fc-58122ee6241b",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Export command for visualization",
+      "created_at": "2026-01-13T01:18:39.777824+01:00"
+    },
+    {
+      "id": 66,
+      "from_node_id": 60,
+      "to_node_id": 63,
+      "from_change_id": "9cf027d1-1c08-4b25-b8e6-6eb1f252962c",
+      "to_change_id": "34682da0-4891-4068-be05-f709e4f9f8d7",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Web client implementation",
+      "created_at": "2026-01-13T01:18:39.786564+01:00"
     }
   ]
 }
