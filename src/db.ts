@@ -4,7 +4,7 @@ import { dirname } from "path";
 
 export interface Entity {
   id: string;
-  kind: "function" | "type" | "interface" | "class" | "variable" | "module" | "property";
+  kind: "function" | "type" | "interface" | "class" | "variable" | "module" | "property" | "parameter";
   name: string;
   file_path: string;
   start_line: number;
@@ -53,6 +53,14 @@ export interface Description {
   content: string;
   impl_hash: string | null;
   updated_at: string;
+}
+
+export interface CallArgument {
+  caller_id: string;      // entity that contains the call (e.g., file::x for const x = double(a))
+  callee_id: string;      // function being called (e.g., file::double)
+  param_index: number;    // 0-based parameter index
+  arg_entity_id: string;  // entity passed as argument (e.g., file::a)
+  commit_sha: string;
 }
 
 /**
@@ -142,6 +150,16 @@ export function createDatabase(dbPath: string): Database.Database {
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Call arguments: tracks what was passed to each parameter at each call site
+    CREATE TABLE IF NOT EXISTS call_arguments (
+      caller_id TEXT NOT NULL,
+      callee_id TEXT NOT NULL,
+      param_index INTEGER NOT NULL,
+      arg_entity_id TEXT NOT NULL,
+      commit_sha TEXT NOT NULL,
+      PRIMARY KEY (caller_id, callee_id, param_index, commit_sha)
+    );
+
     -- Indexes for common queries
     CREATE INDEX IF NOT EXISTS idx_entities_file ON entities(file_path);
     CREATE INDEX IF NOT EXISTS idx_entities_kind ON entities(kind);
@@ -149,6 +167,9 @@ export function createDatabase(dbPath: string): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_relations_from ON relations(from_id);
     CREATE INDEX IF NOT EXISTS idx_relations_to ON relations(to_id);
     CREATE INDEX IF NOT EXISTS idx_relations_commit ON relations(commit_sha);
+    CREATE INDEX IF NOT EXISTS idx_call_args_caller ON call_arguments(caller_id);
+    CREATE INDEX IF NOT EXISTS idx_call_args_callee ON call_arguments(callee_id);
+    CREATE INDEX IF NOT EXISTS idx_call_args_arg ON call_arguments(arg_entity_id);
   `);
 
   return db;
@@ -798,6 +819,166 @@ export class GraphStore {
     }
 
     return result;
+  }
+
+  // ==================== Call Arguments Methods ====================
+
+  /**
+   * Inserts a call argument record tracking what was passed at a call site.
+   */
+  insertCallArgument(arg: Omit<CallArgument, never>): void {
+    this.db
+      .prepare(
+        `INSERT OR REPLACE INTO call_arguments (caller_id, callee_id, param_index, arg_entity_id, commit_sha)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(arg.caller_id, arg.callee_id, arg.param_index, arg.arg_entity_id, arg.commit_sha);
+  }
+
+  /**
+   * Gets what was passed to a specific parameter at calls from a specific caller.
+   */
+  getCallArgument(callerId: string, calleeId: string, paramIndex: number, commitSha?: string): string | undefined {
+    const query = commitSha
+      ? `SELECT arg_entity_id FROM call_arguments WHERE caller_id = ? AND callee_id = ? AND param_index = ? AND commit_sha = ?`
+      : `SELECT arg_entity_id FROM call_arguments WHERE caller_id = ? AND callee_id = ? AND param_index = ? LIMIT 1`;
+
+    const result = commitSha
+      ? this.db.prepare(query).get(callerId, calleeId, paramIndex, commitSha) as { arg_entity_id: string } | undefined
+      : this.db.prepare(query).get(callerId, calleeId, paramIndex) as { arg_entity_id: string } | undefined;
+
+    return result?.arg_entity_id;
+  }
+
+  /**
+   * Gets all arguments passed at a call site.
+   */
+  getCallArguments(callerId: string, calleeId: string, commitSha?: string): CallArgument[] {
+    const query = commitSha
+      ? `SELECT * FROM call_arguments WHERE caller_id = ? AND callee_id = ? AND commit_sha = ? ORDER BY param_index`
+      : `SELECT * FROM call_arguments WHERE caller_id = ? AND callee_id = ? ORDER BY param_index`;
+
+    return commitSha
+      ? (this.db.prepare(query).all(callerId, calleeId, commitSha) as CallArgument[])
+      : (this.db.prepare(query).all(callerId, calleeId) as CallArgument[]);
+  }
+
+  /**
+   * Gets all call sites that pass a specific entity as an argument.
+   */
+  getCallSitesForArgument(argEntityId: string, commitSha?: string): CallArgument[] {
+    const query = commitSha
+      ? `SELECT * FROM call_arguments WHERE arg_entity_id = ? AND commit_sha = ?`
+      : `SELECT * FROM call_arguments WHERE arg_entity_id = ?`;
+
+    return commitSha
+      ? (this.db.prepare(query).all(argEntityId, commitSha) as CallArgument[])
+      : (this.db.prepare(query).all(argEntityId) as CallArgument[]);
+  }
+
+  /**
+   * Gets all call sites where a specific function is called.
+   */
+  getCallSitesForCallee(calleeId: string, commitSha?: string): CallArgument[] {
+    const query = commitSha
+      ? `SELECT * FROM call_arguments WHERE callee_id = ? AND commit_sha = ?`
+      : `SELECT * FROM call_arguments WHERE callee_id = ?`;
+
+    return commitSha
+      ? (this.db.prepare(query).all(calleeId, commitSha) as CallArgument[])
+      : (this.db.prepare(query).all(calleeId) as CallArgument[]);
+  }
+
+  /**
+   * Resolves transitive dependencies through function calls.
+   * When a dependency is on a parameter (e.g., `foo<param:0>`), this method
+   * resolves what was passed at the call site from the given caller context.
+   *
+   * @param entityId - The entity to get dependencies for
+   * @param callerId - The caller context for resolving parameters
+   * @param commitSha - Optional commit SHA
+   * @param maxDepth - Maximum depth to traverse
+   * @returns Array of resolved entity IDs representing the full dependency chain
+   */
+  getTransitiveDependenciesFromCaller(
+    entityId: string,
+    callerId: string,
+    commitSha?: string,
+    maxDepth = 50
+  ): string[] {
+    const visited = new Set<string>();
+    const result: string[] = [];
+    const queue: Array<{ id: string; depth: number; context: string }> = [
+      { id: entityId, depth: 0, context: callerId }
+    ];
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const visitKey = `${current.id}@${current.context}`;
+      if (visited.has(visitKey) || current.depth > maxDepth) continue;
+      visited.add(visitKey);
+
+      // Check if this is a parameter entity: functionId<param:N>
+      const paramMatch = current.id.match(/^(.+)<param:(\d+)>$/);
+      if (paramMatch) {
+        const [, functionId, paramIndexStr] = paramMatch;
+        const paramIndex = parseInt(paramIndexStr, 10);
+
+        // Look up what was passed to this parameter from the current context
+        const argEntityId = this.getCallArgument(current.context, functionId, paramIndex, commitSha);
+        if (argEntityId) {
+          result.push(argEntityId);
+          // Continue tracing from the argument, keeping the same caller context
+          queue.push({ id: argEntityId, depth: current.depth + 1, context: current.context });
+        }
+        continue;
+      }
+
+      // Check if this is a return entity: functionId<return>
+      // When we depend on foo<return>, we need to trace into foo's implementation
+      const returnMatch = current.id.match(/^(.+)<return>$/);
+      if (returnMatch) {
+        const [, functionId] = returnMatch;
+        // The return depends on what the function's return statement depends on
+        // Get direct dependencies of the return entity
+        const returnDeps = this.getDependencyIds(current.id, commitSha);
+        for (const depId of returnDeps) {
+          if (!visited.has(`${depId}@${functionId}`)) {
+            result.push(depId);
+            // When tracing into a function's return, the context becomes the function itself
+            queue.push({ id: depId, depth: current.depth + 1, context: functionId });
+          }
+        }
+        continue;
+      }
+
+      // Regular entity - get its direct dependencies
+      const deps = this.getDependencyIds(current.id, commitSha);
+      for (const depId of deps) {
+        if (!visited.has(`${depId}@${current.context}`)) {
+          result.push(depId);
+          queue.push({ id: depId, depth: current.depth + 1, context: current.context });
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Gets dependency IDs without loading full entity data.
+   * Helper for transitive resolution.
+   */
+  private getDependencyIds(entityId: string, commitSha?: string): string[] {
+    const query = commitSha
+      ? `SELECT to_id FROM relations WHERE from_id = ? AND kind = 'depends_on' AND commit_sha = ?`
+      : `SELECT DISTINCT to_id FROM relations WHERE from_id = ? AND kind = 'depends_on'`;
+
+    const rows = commitSha
+      ? (this.db.prepare(query).all(entityId, commitSha) as Array<{ to_id: string }>)
+      : (this.db.prepare(query).all(entityId) as Array<{ to_id: string }>);
+
+    return rows.map(r => r.to_id);
   }
 
   /**

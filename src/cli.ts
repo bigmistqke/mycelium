@@ -236,6 +236,12 @@ program
       store.insertRelation(relation);
     }
 
+    // Insert call arguments for transitive dependency resolution
+    for (const callArg of result.callArguments) {
+      store.insertCallArgument(callArg);
+    }
+    console.log(`Found ${result.callArguments.length} call arguments`);
+
     // Detect entry points
     const entryPointIds = store.findEntryPoints(commitSha);
     console.log(`Found ${entryPointIds.length} entry points (call graph roots)`);

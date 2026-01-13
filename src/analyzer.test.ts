@@ -587,4 +587,70 @@ describe("TypeScriptAnalyzer", () => {
       expect(versionProp).toBeDefined();
     });
   });
+
+  describe("call arguments and transitive dependencies", () => {
+    it("extracts call arguments for simple function calls", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/transitive-flow/*.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      // Find call argument: result = identity(value)
+      // caller_id: main.ts::result, callee_id: identity.ts::identity, param_index: 0, arg_entity_id: value.ts::value (via import alias)
+      const callArgs = result.callArguments.filter(ca =>
+        ca.callee_id.includes("identity")
+      );
+
+      expect(callArgs.length).toBeGreaterThanOrEqual(1);
+      // The argument should be the imported 'value' alias
+      expect(callArgs[0].param_index).toBe(0);
+    });
+
+    it("creates parameter entities for functions", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/transitive-flow/*.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      // identity function should have a parameter entity
+      const param = result.entities.find(e =>
+        e.id.includes("identity<param:0>")
+      );
+      expect(param).toBeDefined();
+      expect(param?.kind).toBe("parameter");
+      expect(param?.name).toBe("x");
+    });
+
+    it("creates return entity for functions", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/transitive-flow/*.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      const returnEntity = result.entities.find(e =>
+        e.id.includes("identity<return>")
+      );
+      expect(returnEntity).toBeDefined();
+    });
+
+    it("tracks return depending on parameter", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/transitive-flow/*.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      // identity<return> should depend on identity<param:0>
+      const returnDep = result.relations.find(r =>
+        r.from_id.includes("identity<return>") &&
+        r.to_id.includes("identity<param:0>") &&
+        r.kind === "depends_on"
+      );
+      expect(returnDep).toBeDefined();
+    });
+
+    it("tracks result depending on function return", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/transitive-flow/*.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      // result should depend on identity<return>
+      const resultDep = result.relations.find(r =>
+        r.from_id.includes("main.ts::result") &&
+        r.to_id.includes("identity<return>") &&
+        r.kind === "depends_on"
+      );
+      expect(resultDep).toBeDefined();
+    });
+  });
 });

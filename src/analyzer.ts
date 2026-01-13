@@ -15,12 +15,13 @@ import {
   ReturnStatement,
 } from "ts-morph";
 import { computeSignatureHash, computeImplHash } from "./hash.js";
-import type { Entity, Relation } from "./db.js";
+import type { Entity, Relation, CallArgument } from "./db.js";
 import { relative } from "path";
 
 export interface AnalysisResult {
   entities: Omit<Entity, "created_at">[];
   relations: Omit<Relation, "id">[];
+  callArguments: CallArgument[];
 }
 
 interface FunctionInfo {
@@ -76,6 +77,16 @@ interface Dependency {
   toId: string;
 }
 
+interface ParameterInfo {
+  id: string;          // e.g., "file.ts::foo(0)"
+  name: string;        // e.g., "x"
+  index: number;       // 0-based parameter index
+  functionId: string;  // e.g., "file.ts::foo"
+  filePath: string;
+  startLine: number;
+  endLine: number;
+}
+
 export class TypeScriptAnalyzer {
   private project: Project;
   private rootDir: string;
@@ -115,6 +126,8 @@ export class TypeScriptAnalyzer {
     const closureVariablesByOwner = new Map<string, Map<string, VariableInfo>>();
     // classPropertiesMap: maps className -> Map<propertyName, ClassPropertyInfo>
     const classPropertiesMap = new Map<string, Map<string, ClassPropertyInfo>>();
+    // parametersByFunction: maps function ID -> Map<paramName, ParameterInfo>
+    const parametersByFunction = new Map<string, Map<string, ParameterInfo>>();
 
     // First pass: collect all functions and module-level variables
     for (const sourceFile of this.project.getSourceFiles()) {
@@ -172,6 +185,28 @@ export class TypeScriptAnalyzer {
           impl_hash: fn.body ? computeImplHash(fn.body) : null,
           commit_sha: commitSha,
         });
+
+        // Extract parameters for this function
+        const params = this.extractParameters(fn, filePath);
+        if (params.length > 0) {
+          parametersByFunction.set(fn.id, new Map());
+          for (const param of params) {
+            parametersByFunction.get(fn.id)!.set(param.name, param);
+
+            entities.push({
+              id: param.id,
+              kind: "parameter",
+              name: param.name,
+              file_path: filePath,
+              start_line: param.startLine,
+              end_line: param.endLine,
+              signature: `(${param.index})`,
+              signature_hash: computeSignatureHash(`param ${param.index}`),
+              impl_hash: null,
+              commit_sha: commitSha,
+            });
+          }
+        }
       }
 
       // Extract closure variables that are mutated by nested functions
@@ -349,7 +384,8 @@ export class TypeScriptAnalyzer {
         fnId,
         allEntityIdsWithImports,
         variableMap,
-        functionMap
+        functionMap,
+        parametersByFunction.get(fnId)
       );
       for (const dep of returnDeps) {
         relations.push({
@@ -383,7 +419,52 @@ export class TypeScriptAnalyzer {
       }
     }
 
-    return { entities, relations };
+    // Sixth pass: extract call arguments for transitive dependency resolution
+    const callArguments: CallArgument[] = [];
+
+    // Extract call arguments from variable initializers: const x = foo(a, b)
+    for (const v of variableMap.values()) {
+      if (!Node.isVariableDeclaration(v.node)) continue;
+      const initializer = v.node.getInitializer();
+      if (!initializer) continue;
+
+      const args = this.extractCallArguments(
+        initializer,
+        v.id,
+        v.filePath,
+        allEntityIdsWithImports,
+        variableMap,
+        functionMap,
+        commitSha
+      );
+      callArguments.push(...args);
+    }
+
+    // Extract call arguments from function bodies
+    for (const [fnId, fn] of functionMap) {
+      const body = this.getFunctionBody(fn.node);
+      if (!body) continue;
+
+      // Find all call expressions in the function body (excluding nested functions)
+      const callExprs = body.getDescendantsOfKind(SyntaxKind.CallExpression);
+      for (const callExpr of callExprs) {
+        if (this.hasIntermediateFunction(body, callExpr)) continue;
+
+        const args = this.extractCallArgumentsFromCall(
+          callExpr,
+          fnId,
+          fn.filePath,
+          allEntityIdsWithImports,
+          variableMap,
+          functionMap,
+          parametersByFunction.get(fnId),
+          commitSha
+        );
+        callArguments.push(...args);
+      }
+    }
+
+    return { entities, relations, callArguments };
   }
 
   /**
@@ -467,6 +548,44 @@ export class TypeScriptAnalyzer {
    */
   private getRelativePath(absolutePath: string): string {
     return relative(this.rootDir, absolutePath);
+  }
+
+  /**
+   * Extracts parameters from a function as entities.
+   * Creates parameter entities like foo(0), foo(1), etc.
+   */
+  private extractParameters(fn: FunctionInfo, filePath: string): ParameterInfo[] {
+    const params: ParameterInfo[] = [];
+    const node = fn.node;
+
+    // Get parameters from the function node
+    let parameterNodes: Node[] = [];
+    if (Node.isFunctionDeclaration(node) || Node.isFunctionExpression(node) ||
+        Node.isArrowFunction(node) || Node.isMethodDeclaration(node) ||
+        Node.isConstructorDeclaration(node)) {
+      parameterNodes = node.getParameters();
+    }
+
+    for (let i = 0; i < parameterNodes.length; i++) {
+      const param = parameterNodes[i];
+      if (!Node.isParameterDeclaration(param)) continue;
+
+      const paramName = param.getName();
+      // Skip destructured parameters for now (they have complex names)
+      if (paramName.startsWith("{") || paramName.startsWith("[")) continue;
+
+      params.push({
+        id: `${fn.id}<param:${i}>`,
+        name: paramName,
+        index: i,
+        functionId: fn.id,
+        filePath: filePath,
+        startLine: param.getStartLineNumber(),
+        endLine: param.getEndLineNumber(),
+      });
+    }
+
+    return params;
   }
 
   /**
@@ -626,9 +745,9 @@ export class TypeScriptAnalyzer {
   /**
    * Extracts functions from call arguments: object literals and anonymous functions.
    * Naming scheme:
-   * - Object literal methods: {line:col}funcName(argIdx).methodName
-   * - Anonymous functions: {line:col}funcName(argIdx)<anonymous>
-   * - Nested inside anonymous: {line:col}funcName(argIdx)<anonymous>::nestedFn
+   * - Object literal methods: {line:col}funcName<arg:N>.methodName
+   * - Anonymous functions: {line:col}funcName<arg:N><anonymous>
+   * - Nested inside anonymous: {line:col}funcName<arg:N><anonymous>::nestedFn
    */
   private extractCallArgumentMethods(sourceFile: SourceFile, filePath: string): FunctionInfo[] {
     const functions: FunctionInfo[] = [];
@@ -655,8 +774,8 @@ export class TypeScriptAnalyzer {
           : call.getStart();
         const { line, column } = sourceFile.getLineAndColumnAtPos(callPos);
 
-        // Build the synthetic name base: {line:col}funcName(argIdx)
-        const syntheticBase = `{${line}:${column}}${calleeName}(${argIdx})`;
+        // Build the synthetic name base: {line:col}funcName<arg:N>
+        const syntheticBase = `{${line}:${column}}${calleeName}<arg:${argIdx}>`;
 
         // Determine nesting context
         const scopePrefix = this.getScopePrefix(call, filePath);
@@ -1990,7 +2109,8 @@ export class TypeScriptAnalyzer {
     fnId: string,
     allEntityIds: Set<string>,
     variableMap: Map<string, VariableInfo>,
-    functionMap: Map<string, FunctionInfo>
+    functionMap: Map<string, FunctionInfo>,
+    parametersMap?: Map<string, ParameterInfo>
   ): Dependency[] {
     const dependencies: Dependency[] = [];
     const returnId = `${fnId}<return>`;
@@ -2014,7 +2134,8 @@ export class TypeScriptAnalyzer {
         fnId,
         allEntityIds,
         variableMap,
-        functionMap
+        functionMap,
+        parametersMap
       );
 
       for (const refId of refs) {
@@ -2035,7 +2156,8 @@ export class TypeScriptAnalyzer {
           fnId,
           allEntityIds,
           variableMap,
-          functionMap
+          functionMap,
+          parametersMap
         );
 
         for (const refId of refs) {
@@ -2103,7 +2225,8 @@ export class TypeScriptAnalyzer {
     contextId: string,
     allEntityIds: Set<string>,
     variableMap: Map<string, VariableInfo>,
-    functionMap: Map<string, FunctionInfo>
+    functionMap: Map<string, FunctionInfo>,
+    parametersMap?: Map<string, ParameterInfo>
   ): string[] {
     const refs: string[] = [];
 
@@ -2118,17 +2241,21 @@ export class TypeScriptAnalyzer {
         // Depend on the function's <return> entity
         refs.push(`${calleeFnId}<return>`);
       }
-
-      // Also recurse into arguments
-      for (const arg of expr.getArguments()) {
-        refs.push(...this.extractExpressionDependencies(arg, contextId, allEntityIds, variableMap, functionMap));
-      }
+      // Don't recurse into arguments - the dependency is on <return>, not the args
       return refs;
     }
 
     // Handle identifiers: x → depends on x
     if (Node.isIdentifier(expr)) {
       const name = expr.getText();
+      // Check if it's a parameter (highest priority within function scope)
+      if (parametersMap) {
+        const paramInfo = parametersMap.get(name);
+        if (paramInfo) {
+          refs.push(paramInfo.id);
+          return refs;
+        }
+      }
       // Check if it's a known variable
       const varInfo = variableMap.get(name);
       if (varInfo && allEntityIds.has(varInfo.id)) {
@@ -2162,21 +2289,21 @@ export class TypeScriptAnalyzer {
         }
       }
       // Recurse into the object
-      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
       return refs;
     }
 
     // Handle binary expressions: a + b
     if (Node.isBinaryExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getLeft(), contextId, allEntityIds, variableMap, functionMap));
-      refs.push(...this.extractExpressionDependencies(expr.getRight(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getLeft(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(...this.extractExpressionDependencies(expr.getRight(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
       return refs;
     }
 
     // Handle array literals: [a, b, c]
     if (Node.isArrayLiteralExpression(expr)) {
       for (const element of expr.getElements()) {
-        refs.push(...this.extractExpressionDependencies(element, contextId, allEntityIds, variableMap, functionMap));
+        refs.push(...this.extractExpressionDependencies(element, contextId, allEntityIds, variableMap, functionMap, parametersMap));
       }
       return refs;
     }
@@ -2187,10 +2314,18 @@ export class TypeScriptAnalyzer {
         if (Node.isPropertyAssignment(prop)) {
           const init = prop.getInitializer();
           if (init) {
-            refs.push(...this.extractExpressionDependencies(init, contextId, allEntityIds, variableMap, functionMap));
+            refs.push(...this.extractExpressionDependencies(init, contextId, allEntityIds, variableMap, functionMap, parametersMap));
           }
         } else if (Node.isShorthandPropertyAssignment(prop)) {
           const name = prop.getName();
+          // Check if it's a parameter first
+          if (parametersMap) {
+            const paramInfo = parametersMap.get(name);
+            if (paramInfo) {
+              refs.push(paramInfo.id);
+              continue;
+            }
+          }
           const varInfo = variableMap.get(name);
           if (varInfo && allEntityIds.has(varInfo.id)) {
             refs.push(varInfo.id);
@@ -2203,51 +2338,51 @@ export class TypeScriptAnalyzer {
     // Handle template literals: `${a} and ${b}`
     if (Node.isTemplateExpression(expr)) {
       for (const span of expr.getTemplateSpans()) {
-        refs.push(...this.extractExpressionDependencies(span.getExpression(), contextId, allEntityIds, variableMap, functionMap));
+        refs.push(...this.extractExpressionDependencies(span.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
       }
       return refs;
     }
 
     // Handle conditional: a ? b : c
     if (Node.isConditionalExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getCondition(), contextId, allEntityIds, variableMap, functionMap));
-      refs.push(...this.extractExpressionDependencies(expr.getWhenTrue(), contextId, allEntityIds, variableMap, functionMap));
-      refs.push(...this.extractExpressionDependencies(expr.getWhenFalse(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getCondition(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(...this.extractExpressionDependencies(expr.getWhenTrue(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(...this.extractExpressionDependencies(expr.getWhenFalse(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
       return refs;
     }
 
     // Handle parenthesized: (a + b)
     if (Node.isParenthesizedExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
       return refs;
     }
 
     // Handle prefix/postfix: !a, a++
     if (Node.isPrefixUnaryExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getOperand(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getOperand(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
       return refs;
     }
     if (Node.isPostfixUnaryExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getOperand(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getOperand(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
       return refs;
     }
 
     // Handle spread: ...arr
     if (Node.isSpreadElement(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
       return refs;
     }
 
     // Handle await: await promise
     if (Node.isAwaitExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
       return refs;
     }
 
     // Handle element access: arr[0]
     if (Node.isElementAccessExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap));
-      refs.push(...this.extractExpressionDependencies(expr.getArgumentExpression()!, contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(...this.extractExpressionDependencies(expr.getArgumentExpression()!, contextId, allEntityIds, variableMap, functionMap, parametersMap));
       return refs;
     }
 
@@ -2297,6 +2432,191 @@ export class TypeScriptAnalyzer {
       }
     }
 
+    return null;
+  }
+
+  // ==================== Call Argument Extraction ====================
+
+  /**
+   * Extracts call arguments from an expression tree.
+   * Recursively finds call expressions and extracts their arguments.
+   */
+  private extractCallArguments(
+    expr: Node,
+    callerId: string,
+    filePath: string,
+    allEntityIds: Set<string>,
+    variableMap: Map<string, VariableInfo>,
+    functionMap: Map<string, FunctionInfo>,
+    commitSha: string,
+    parametersMap?: Map<string, ParameterInfo>
+  ): CallArgument[] {
+    const callArguments: CallArgument[] = [];
+
+    // Handle call expressions directly
+    if (Node.isCallExpression(expr)) {
+      const args = this.extractCallArgumentsFromCall(
+        expr,
+        callerId,
+        filePath,
+        allEntityIds,
+        variableMap,
+        functionMap,
+        parametersMap,
+        commitSha
+      );
+      callArguments.push(...args);
+      return callArguments;
+    }
+
+    // Recurse into child expressions
+    for (const child of expr.getChildren()) {
+      if (Node.isCallExpression(child)) {
+        const args = this.extractCallArgumentsFromCall(
+          child,
+          callerId,
+          filePath,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+          commitSha
+        );
+        callArguments.push(...args);
+      } else if (!Node.isArrowFunction(child) && !Node.isFunctionExpression(child)) {
+        // Recurse but skip nested function definitions
+        callArguments.push(...this.extractCallArguments(
+          child,
+          callerId,
+          filePath,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          commitSha,
+          parametersMap
+        ));
+      }
+    }
+
+    return callArguments;
+  }
+
+  /**
+   * Extracts call arguments from a single call expression.
+   * Returns CallArgument records for each argument that resolves to an entity.
+   */
+  private extractCallArgumentsFromCall(
+    callExpr: CallExpression,
+    callerId: string,
+    filePath: string,
+    allEntityIds: Set<string>,
+    variableMap: Map<string, VariableInfo>,
+    functionMap: Map<string, FunctionInfo>,
+    parametersMap: Map<string, ParameterInfo> | undefined,
+    commitSha: string
+  ): CallArgument[] {
+    const callArguments: CallArgument[] = [];
+
+    // Resolve the callee
+    const callee = callExpr.getExpression();
+    const calleeId = this.resolveCalleeId(callee, filePath, allEntityIds, variableMap, functionMap);
+    if (!calleeId) return callArguments;
+
+    // Process each argument
+    const args = callExpr.getArguments();
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+
+      // Resolve the argument to an entity ID
+      const argEntityId = this.resolveArgumentToEntity(
+        arg,
+        filePath,
+        allEntityIds,
+        variableMap,
+        functionMap,
+        parametersMap
+      );
+
+      if (argEntityId) {
+        callArguments.push({
+          caller_id: callerId,
+          callee_id: calleeId,
+          param_index: i,
+          arg_entity_id: argEntityId,
+          commit_sha: commitSha,
+        });
+      }
+    }
+
+    return callArguments;
+  }
+
+  /**
+   * Resolves an argument expression to an entity ID.
+   * Returns null if the argument doesn't resolve to a single entity.
+   */
+  private resolveArgumentToEntity(
+    arg: Node,
+    filePath: string,
+    allEntityIds: Set<string>,
+    variableMap: Map<string, VariableInfo>,
+    functionMap: Map<string, FunctionInfo>,
+    parametersMap?: Map<string, ParameterInfo>
+  ): string | null {
+    // Simple identifier: foo(x) → x
+    if (Node.isIdentifier(arg)) {
+      const name = arg.getText();
+
+      // Check parameters first (highest priority in function scope)
+      if (parametersMap) {
+        const paramInfo = parametersMap.get(name);
+        if (paramInfo) {
+          return paramInfo.id;
+        }
+      }
+
+      // Check variables
+      const varInfo = variableMap.get(name);
+      if (varInfo && allEntityIds.has(varInfo.id)) {
+        return varInfo.id;
+      }
+
+      // Check functions
+      for (const [id, fn] of functionMap) {
+        if (fn.name === name || id.endsWith(`::${name}`)) {
+          return id;
+        }
+      }
+
+      // Check by full ID
+      const fullId = `${filePath}::${name}`;
+      if (allEntityIds.has(fullId)) {
+        return fullId;
+      }
+    }
+
+    // Property access: foo(obj.prop)
+    if (Node.isPropertyAccessExpression(arg)) {
+      const path = this.getPropertyAccessPath(arg);
+      if (path) {
+        const fullId = `${filePath}::${path}`;
+        if (allEntityIds.has(fullId)) {
+          return fullId;
+        }
+      }
+    }
+
+    // Call expression: foo(bar()) → bar<return>
+    if (Node.isCallExpression(arg)) {
+      const callee = arg.getExpression();
+      const calleeId = this.resolveCalleeId(callee, filePath, allEntityIds, variableMap, functionMap);
+      if (calleeId) {
+        return `${calleeId}<return>`;
+      }
+    }
+
+    // For complex expressions (binary, ternary, etc.), return null
+    // These would require creating synthetic entities which we're avoiding
     return null;
   }
 }
