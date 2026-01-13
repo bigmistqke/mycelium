@@ -25,7 +25,6 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@mapequation/infomap": "^2.8.0",
     "better-sqlite3": "^12.6.0",
     "commander": "^14.0.2",
     "graphology": "^0.26.0",

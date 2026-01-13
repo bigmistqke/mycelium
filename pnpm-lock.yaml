@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@mapequation/infomap':
-        specifier: ^2.8.0
-        version: 2.8.0
       better-sqlite3:
         specifier: ^12.6.0
         version: 12.6.0
@@ -208,9 +205,6 @@ packages:
 
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
-
-  '@mapequation/infomap@2.8.0':
-    resolution: {integrity: sha512-wVNsvBJo1ht+6/5pNuyNqjYn+oPTpd0jYawnSH+EM8kIRlxQ9VUQl1T/KAXhf5KssQiQEHigczCm9iUR4qGReg==}
 
   '@rollup/rollup-android-arm-eabi@4.55.1':
     resolution: {integrity: sha512-9R0DM/ykwfGIlNu6+2U09ga0WXeZ9MRC2Ter8jnz8415VbuIykVuc6bhdrbORFZANDmTDvq26mJrEVTl8TdnDg==}
@@ -838,8 +832,6 @@ snapshots:
       '@isaacs/balanced-match': 4.0.1
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
-
-  '@mapequation/infomap@2.8.0': {}
 
   '@rollup/rollup-android-arm-eabi@4.55.1':
     optional: true
