@@ -20,7 +20,7 @@ export interface Relation {
   id: number;
   from_id: string;
   to_id: string;
-  kind: "calls" | "uses_type" | "exports" | "imports" | "reads" | "writes";
+  kind: "calls" | "uses_type" | "exports" | "imports" | "reads" | "writes" | "aliases";
   commit_sha: string;
   metadata: string | null;
 }
@@ -676,6 +676,64 @@ export class GraphStore {
     return commitSha
       ? (this.db.prepare(query).all(commitSha) as Array<{ system_id: string; count: number }>)
       : (this.db.prepare(query).all() as Array<{ system_id: string; count: number }>);
+  }
+
+  // ==================== Alias Methods ====================
+
+  /**
+   * Gets the direct alias target for an entity (single hop).
+   * Returns undefined if the entity doesn't alias anything.
+   */
+  getAliasTarget(entityId: string, commitSha?: string): Entity | undefined {
+    const query = commitSha
+      ? `SELECT e.* FROM entities e
+         JOIN relations r ON e.id = r.to_id
+         WHERE r.from_id = ? AND r.kind = 'aliases' AND r.commit_sha = ? AND e.commit_sha = ?
+         LIMIT 1`
+      : `SELECT DISTINCT e.* FROM entities e
+         JOIN relations r ON e.id = r.to_id
+         WHERE r.from_id = ? AND r.kind = 'aliases'
+         LIMIT 1`;
+
+    return commitSha
+      ? (this.db.prepare(query).get(entityId, commitSha, commitSha) as Entity | undefined)
+      : (this.db.prepare(query).get(entityId) as Entity | undefined);
+  }
+
+  /**
+   * Follows the alias chain to find the root entity.
+   * Returns the original entity if it doesn't alias anything.
+   * Protects against cycles with a max depth limit.
+   */
+  resolveAliasChain(entityId: string, commitSha?: string, maxDepth = 10): Entity | undefined {
+    let current = this.getEntityById(entityId, commitSha);
+    let depth = 0;
+
+    while (current && depth < maxDepth) {
+      const target = this.getAliasTarget(current.id, commitSha);
+      if (!target) break; // No more aliases, current is the root
+      current = target;
+      depth++;
+    }
+
+    return current;
+  }
+
+  /**
+   * Gets entities that alias a given entity (reverse lookup).
+   */
+  getAliasedBy(entityId: string, commitSha?: string): Entity[] {
+    const query = commitSha
+      ? `SELECT e.* FROM entities e
+         JOIN relations r ON e.id = r.from_id
+         WHERE r.to_id = ? AND r.kind = 'aliases' AND r.commit_sha = ? AND e.commit_sha = ?`
+      : `SELECT DISTINCT e.* FROM entities e
+         JOIN relations r ON e.id = r.from_id
+         WHERE r.to_id = ? AND r.kind = 'aliases'`;
+
+    return commitSha
+      ? (this.db.prepare(query).all(entityId, commitSha, commitSha) as Entity[])
+      : (this.db.prepare(query).all(entityId) as Entity[]);
   }
 
   /**

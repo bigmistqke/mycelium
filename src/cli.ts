@@ -326,6 +326,8 @@ program
   .option("--writers", "Show what functions write to this variable")
   .option("--side-effects", "Show all side-effects (reads + writes)")
   .option("--trace <to>", "Find call path to another entity")
+  .option("--aliases", "Show what the entity aliases (follow alias chain)")
+  .option("--aliased-by", "Show what entities alias this one")
   .option("--source", "Show source code of the entity")
   .action((pattern, options) => {
     const store = new GraphStore(resolve(options.db));
@@ -454,6 +456,50 @@ program
         console.log(`    ${e.file_path}:${e.start_line}`);
       }
       if (writers.length === 0) console.log("  (no functions write to this)");
+      store.close();
+      return;
+    }
+
+    // --aliases: show what entity aliases (follow chain to root)
+    if (options.aliases) {
+      console.log(`\n${entity.id} alias chain:\n`);
+      let current = entity;
+      let depth = 0;
+      const maxDepth = 10;
+
+      while (depth < maxDepth) {
+        const target = store.getAliasTarget(current.id);
+        if (!target) {
+          if (depth === 0) {
+            console.log("  (does not alias anything)");
+          } else {
+            console.log(`  ${"  ".repeat(depth)}└─ ${current.id} (root)`);
+          }
+          break;
+        }
+        console.log(`  ${"  ".repeat(depth)}${current.id}`);
+        console.log(`  ${"  ".repeat(depth)}↓ aliases`);
+        current = target;
+        depth++;
+      }
+
+      if (depth >= maxDepth) {
+        console.log(`  (max depth ${maxDepth} reached)`);
+      }
+
+      store.close();
+      return;
+    }
+
+    // --aliased-by: show what entities alias this one
+    if (options.aliasedBy) {
+      const aliasedBy = store.getAliasedBy(entity.id);
+      console.log(`\n${entity.id} is aliased by:\n`);
+      for (const e of aliasedBy) {
+        console.log(`  ← ${e.id}`);
+        console.log(`    ${e.file_path}:${e.start_line}`);
+      }
+      if (aliasedBy.length === 0) console.log("  (nothing aliases this)");
       store.close();
       return;
     }

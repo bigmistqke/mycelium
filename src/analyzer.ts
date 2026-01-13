@@ -262,7 +262,102 @@ export class TypeScriptAnalyzer {
       }
     }
 
+    // Third pass: extract alias relations for variables
+    const allEntityIds = new Set([
+      ...Array.from(functionMap.keys()),
+      ...Array.from(variableMap.values()).map(v => v.id),
+    ]);
+
+    for (const v of variableMap.values()) {
+      const aliasTarget = this.resolveAliasTarget(v.node, v.filePath, allEntityIds, variableMap, functionMap);
+      if (aliasTarget) {
+        relations.push({
+          from_id: v.id,
+          to_id: aliasTarget,
+          kind: "aliases",
+          commit_sha: commitSha,
+          metadata: null,
+        });
+      }
+    }
+
     return { entities, relations };
+  }
+
+  /**
+   * Resolves what a variable aliases (single hop).
+   * Returns the entity ID if the initializer points to a known entity, null otherwise.
+   */
+  private resolveAliasTarget(
+    varDecl: Node,
+    filePath: string,
+    allEntityIds: Set<string>,
+    variableMap: Map<string, VariableInfo>,
+    functionMap: Map<string, FunctionInfo>
+  ): string | null {
+    if (!Node.isVariableDeclaration(varDecl)) return null;
+
+    const initializer = varDecl.getInitializer();
+    if (!initializer) return null;
+
+    // Skip function expressions - they're tracked as functions, not aliases
+    if (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer)) {
+      return null;
+    }
+
+    // Case 1: Direct identifier reference (const b = a)
+    if (Node.isIdentifier(initializer)) {
+      const name = initializer.getText();
+      // Check if it's a known variable
+      const varInfo = variableMap.get(name);
+      if (varInfo && allEntityIds.has(varInfo.id)) {
+        return varInfo.id;
+      }
+      // Check if it's a known function
+      for (const [id, fn] of functionMap) {
+        if (fn.name === name || id.endsWith(`::${name}`)) {
+          return id;
+        }
+      }
+    }
+
+    // Case 2: Property access (const action = utils.helper)
+    if (Node.isPropertyAccessExpression(initializer)) {
+      // Build the full property path (e.g., "utils.helper")
+      const propertyPath = this.getPropertyAccessPath(initializer);
+      if (propertyPath) {
+        // Entity IDs use :: for scope, . for member access
+        // So utils.helper becomes file::utils.helper
+        const potentialId = `${filePath}::${propertyPath}`;
+        if (allEntityIds.has(potentialId)) {
+          return potentialId;
+        }
+        // Check for method references in other scopes
+        for (const [id] of functionMap) {
+          if (id.endsWith(`::${propertyPath}`)) {
+            return id;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Gets the full path of a property access expression (e.g., "program.command.action").
+   */
+  private getPropertyAccessPath(expr: Node): string | null {
+    if (Node.isIdentifier(expr)) {
+      return expr.getText();
+    }
+    if (Node.isPropertyAccessExpression(expr)) {
+      const base = this.getPropertyAccessPath(expr.getExpression());
+      if (base) {
+        return `${base}.${expr.getName()}`;
+      }
+    }
+    return null;
   }
 
   /**
@@ -403,7 +498,7 @@ export class TypeScriptAnalyzer {
       // Shorthand methods: { method() {} }
       if (Node.isMethodDeclaration(prop)) {
         const methodName = prop.getName();
-        const fullName = `${objName}::${methodName}`;
+        const fullName = `${objName}.${methodName}`;
         const info = this.createFunctionInfo(prop, fullName, filePath);
         functions.push(info);
         // Extract nested functions within the method
@@ -414,7 +509,7 @@ export class TypeScriptAnalyzer {
         const init = prop.getInitializer();
         if (init && (Node.isArrowFunction(init) || Node.isFunctionExpression(init))) {
           const methodName = prop.getName();
-          const fullName = `${objName}::${methodName}`;
+          const fullName = `${objName}.${methodName}`;
           const info = this.createFunctionInfoFromMethod(prop, init, fullName, filePath);
           functions.push(info);
           // Extract nested functions within the method
