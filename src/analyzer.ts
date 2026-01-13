@@ -311,9 +311,18 @@ export class TypeScriptAnalyzer {
       }
     }
 
-    // Class methods
+    // Class methods and constructors
     for (const classDecl of sourceFile.getClasses()) {
       const className = classDecl.getName() ?? "AnonymousClass";
+
+      // Extract constructors
+      for (const ctor of classDecl.getConstructors()) {
+        const fullName = `${className}.<constructor>`;
+        const info = this.createFunctionInfo(ctor, fullName, filePath);
+        functions.push(info);
+        // Extract nested functions
+        functions.push(...this.extractNestedFunctions(ctor, fullName, filePath));
+      }
 
       for (const method of classDecl.getMethods()) {
         const methodName = method.getName();
