@@ -114,7 +114,7 @@ export class TypeScriptAnalyzer {
   }
 
   /**
-   * Extracts all function-like entities from a source file: named functions, exported arrow functions, and class methods. Returns FunctionInfo for each.
+   * Extracts all function-like entities from a source file: named functions, exported arrow functions, class methods, and nested functions. Returns FunctionInfo for each.
    */
   private extractFunctions(sourceFile: SourceFile, filePath: string): FunctionInfo[] {
     const functions: FunctionInfo[] = [];
@@ -124,7 +124,10 @@ export class TypeScriptAnalyzer {
       const name = fn.getName();
       if (!name) continue;
 
-      functions.push(this.createFunctionInfo(fn, name, filePath));
+      const info = this.createFunctionInfo(fn, name, filePath);
+      functions.push(info);
+      // Extract nested functions
+      functions.push(...this.extractNestedFunctions(fn, name, filePath));
     }
 
     // Exported arrow functions and function expressions
@@ -137,9 +140,10 @@ export class TypeScriptAnalyzer {
         Node.isFunctionExpression(initializer)
       ) {
         const name = varDecl.getName();
-        functions.push(
-          this.createFunctionInfoFromVar(varDecl, initializer, name, filePath)
-        );
+        const info = this.createFunctionInfoFromVar(varDecl, initializer, name, filePath);
+        functions.push(info);
+        // Extract nested functions
+        functions.push(...this.extractNestedFunctions(initializer, name, filePath));
       }
     }
 
@@ -150,11 +154,81 @@ export class TypeScriptAnalyzer {
       for (const method of classDecl.getMethods()) {
         const methodName = method.getName();
         const fullName = `${className}.${methodName}`;
-        functions.push(this.createFunctionInfo(method, fullName, filePath));
+        const info = this.createFunctionInfo(method, fullName, filePath);
+        functions.push(info);
+        // Extract nested functions
+        functions.push(...this.extractNestedFunctions(method, fullName, filePath));
       }
     }
 
     return functions;
+  }
+
+  /**
+   * Recursively extracts nested functions from within a function body. Uses :: separator for nested IDs (e.g., file.ts::outer::inner).
+   */
+  private extractNestedFunctions(parentNode: Node, parentName: string, filePath: string): FunctionInfo[] {
+    const functions: FunctionInfo[] = [];
+    const body = Node.isFunctionDeclaration(parentNode) || Node.isMethodDeclaration(parentNode) || Node.isArrowFunction(parentNode) || Node.isFunctionExpression(parentNode)
+      ? (parentNode as any).getBody?.()
+      : null;
+
+    if (!body) return functions;
+
+    // Find nested named function declarations
+    const nestedFunctions = body.getDescendantsOfKind(SyntaxKind.FunctionDeclaration);
+    for (const fn of nestedFunctions) {
+      const name = fn.getName();
+      if (!name) continue;
+      // Skip if this function is nested inside another nested function (will be handled recursively)
+      if (this.hasIntermediateFunction(body, fn)) continue;
+
+      const fullName = `${parentName}::${name}`;
+      const info = this.createFunctionInfo(fn, fullName, filePath);
+      functions.push(info);
+      // Recurse into this nested function
+      functions.push(...this.extractNestedFunctions(fn, fullName, filePath));
+    }
+
+    // Find nested arrow functions and function expressions assigned to variables
+    const varStatements = body.getDescendantsOfKind(SyntaxKind.VariableDeclaration);
+    for (const varDecl of varStatements) {
+      const initializer = varDecl.getInitializer();
+      if (!initializer) continue;
+      // Skip if this var is nested inside another nested function (will be handled recursively)
+      if (this.hasIntermediateFunction(body, varDecl)) continue;
+
+      if (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer)) {
+        const name = varDecl.getName();
+        const fullName = `${parentName}::${name}`;
+        const info = this.createFunctionInfoFromVar(varDecl, initializer, fullName, filePath);
+        functions.push(info);
+        // Recurse into this nested function
+        functions.push(...this.extractNestedFunctions(initializer, fullName, filePath));
+      }
+    }
+
+    return functions;
+  }
+
+  /**
+   * Checks if there's an intermediate function between the body and the target node.
+   * Used to avoid double-processing deeply nested functions.
+   */
+  private hasIntermediateFunction(body: Node, target: Node): boolean {
+    let current = target.getParent();
+    while (current && current !== body) {
+      if (
+        Node.isFunctionDeclaration(current) ||
+        Node.isFunctionExpression(current) ||
+        Node.isArrowFunction(current) ||
+        Node.isMethodDeclaration(current)
+      ) {
+        return true;
+      }
+      current = current.getParent();
+    }
+    return false;
   }
 
   /**
