@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import { GraphStore } from "./db.js";
 import { TypeScriptAnalyzer } from "./analyzer.js";
 import { computeHash } from "./hash.js";
+import { loadConfig, mergeConfig, shouldExclude } from "./config.js";
 
 const DEFAULT_DB_PATH = ".mycelium/graph.db";
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -207,22 +208,35 @@ mycelium community detect
 program
   .command("sync")
   .description("Analyze codebase and update the graph")
-  .option("-p, --pattern <patterns...>", "Glob patterns for source files", ["src/**/*.ts"])
-  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
-  .option("--tsconfig <path>", "Path to tsconfig.json")
+  .option("-p, --pattern <patterns...>", "Glob patterns for source files")
+  .option("-x, --exclude <patterns...>", "Glob patterns to exclude")
+  .option("-d, --db <path>", "Database path")
+  .option("-c, --config <path>", "Path to mycelium.config.json")
   .action(async (options) => {
     const endTotal = time("sync total");
+
+    // Load config and merge with CLI options
+    const loaded = await loadConfig(options.config);
+    const config = mergeConfig(loaded, {
+      include: options.pattern,
+      exclude: options.exclude,
+      db: options.db,
+    });
+
     const commitSha = getGitCommitSha();
     console.log(`Syncing at commit: ${commitSha.slice(0, 8)}`);
 
     const endAnalyzerInit = time("analyzer init");
-    const tsConfigPath = options.tsconfig ?? findTsConfig();
-    const analyzer = new TypeScriptAnalyzer(tsConfigPath);
+    const tsConfigPath = config.tsconfig ?? findTsConfig();
+    const analyzer = new TypeScriptAnalyzer(tsConfigPath, config.configDir);
     endAnalyzerInit();
 
-    console.log(`Adding source files: ${options.pattern.join(", ")}`);
+    console.log(`Including: ${config.include.join(", ")}`);
+    if (config.exclude.length > 0) {
+      console.log(`Excluding: ${config.exclude.join(", ")}`);
+    }
     const endAddFiles = time("add source files");
-    analyzer.addSourceFiles(options.pattern);
+    analyzer.addSourceFiles(config.include);
     endAddFiles();
 
     console.log("Analyzing...");
@@ -230,17 +244,28 @@ program
     const result = analyzer.analyze(commitSha);
     endAnalyze();
 
-    console.log(`Found ${result.entities.length} functions`);
-    console.log(`Found ${result.relations.length} call relations`);
+    // Filter out excluded entities and relations
+    const entities = result.entities.filter(e => !shouldExclude(e.file_path, config.exclude));
+    const entityIds = new Set(entities.map(e => e.id));
+    const relations = result.relations.filter(r => entityIds.has(r.from_id) && entityIds.has(r.to_id));
+    const callArguments = result.callArguments.filter(ca => entityIds.has(ca.caller_id));
+
+    if (config.exclude.length > 0) {
+      const excluded = result.entities.length - entities.length;
+      console.log(`Excluded ${excluded} entities from ${config.exclude.length} pattern(s)`);
+    }
+
+    console.log(`Found ${entities.length} entities`);
+    console.log(`Found ${relations.length} relations`);
 
     const endDbOpen = time("db open");
-    const store = new GraphStore(resolve(options.db));
+    const store = new GraphStore(resolve(config.db));
     endDbOpen();
 
     const endInsertEntities = time("insert entities");
     let inserted = 0;
     let skipped = 0;
-    for (const entity of result.entities) {
+    for (const entity of entities) {
       if (store.isEntityUnchanged(entity.id, entity.signature_hash, entity.impl_hash)) {
         skipped++;
       } else {
@@ -252,22 +277,22 @@ program
     console.log(`Entities: ${inserted} updated, ${skipped} unchanged`);
 
     const endInsertRelations = time("insert relations");
-    for (const relation of result.relations) {
+    for (const relation of relations) {
       store.insertRelation(relation);
     }
     endInsertRelations();
 
     // Insert call arguments for transitive dependency resolution
     const endInsertCallArgs = time("insert call arguments");
-    for (const callArg of result.callArguments) {
+    for (const callArg of callArguments) {
       store.insertCallArgument(callArg);
     }
     endInsertCallArgs();
-    console.log(`Found ${result.callArguments.length} call arguments`);
+    console.log(`Found ${callArguments.length} call arguments`);
 
     // Compute and store file hashes for staleness detection
     const endFileHashes = time("file hashes");
-    const filePaths = new Set(result.entities.map(e => e.file_path));
+    const filePaths = new Set(entities.map(e => e.file_path));
     for (const filePath of filePaths) {
       try {
         const content = readFileSync(filePath, "utf-8");
@@ -336,12 +361,15 @@ program
   .command("read")
   .description("Read source code of an entity (auto-syncs if stale)")
   .argument("<id>", "Exact entity ID (use 'mycelium find' to discover IDs)")
-  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
-  .option("--tsconfig <path>", "Path to tsconfig.json")
-  .action((idArg, options) => {
+  .option("-d, --db <path>", "Database path")
+  .option("-c, --config <path>", "Path to mycelium.config.json")
+  .action(async (idArg, options) => {
     const endTotal = time("read total");
+    const loaded = await loadConfig(options.config);
+    const config = mergeConfig(loaded, { db: options.db });
+
     const endDbOpen = time("db open");
-    const store = new GraphStore(resolve(options.db));
+    const store = new GraphStore(resolve(config.db));
     endDbOpen();
 
     // Exact ID match only
@@ -356,7 +384,7 @@ program
       process.exit(1);
     }
 
-    const filePath = resolve(entity.file_path);
+    const filePath = resolve(config.configDir, entity.file_path);
 
     // Check file existence
     if (!existsSync(filePath)) {
@@ -376,8 +404,8 @@ program
     if (!freshness.fresh) {
       const endAutoSync = time("auto-sync (stale file)");
       const commitSha = getGitCommitSha();
-      const tsConfigPath = options.tsconfig ?? findTsConfig();
-      const analyzer = new TypeScriptAnalyzer(tsConfigPath);
+      const tsConfigPath = config.tsconfig ?? findTsConfig();
+      const analyzer = new TypeScriptAnalyzer(tsConfigPath, config.configDir);
       analyzer.addSourceFiles([entity.file_path]);
       const result = analyzer.analyze(commitSha);
       endAutoSync();
@@ -433,10 +461,12 @@ program
   .command("write")
   .description("Write new source code for an entity (reads from stdin)")
   .argument("<id>", "Exact entity ID (use 'mycelium find' to discover IDs)")
-  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
-  .option("--tsconfig <path>", "Path to tsconfig.json")
+  .option("-d, --db <path>", "Database path")
+  .option("-c, --config <path>", "Path to mycelium.config.json")
   .action(async (idArg, options) => {
-    const store = new GraphStore(resolve(options.db));
+    const loaded = await loadConfig(options.config);
+    const config = mergeConfig(loaded, { db: options.db });
+    const store = new GraphStore(resolve(config.db));
 
     // Exact ID match only
     const entity = store.getEntityById(idArg);
@@ -448,7 +478,7 @@ program
       process.exit(1);
     }
 
-    const filePath = resolve(entity.file_path);
+    const filePath = resolve(config.configDir, entity.file_path);
 
     if (!existsSync(filePath)) {
       console.error(`error: file not found: ${filePath}`);
@@ -478,8 +508,8 @@ program
 
     // Re-sync this file to update the graph
     const commitSha = getGitCommitSha();
-    const tsConfigPath = options.tsconfig ?? findTsConfig();
-    const analyzer = new TypeScriptAnalyzer(tsConfigPath);
+    const tsConfigPath = config.tsconfig ?? findTsConfig();
+    const analyzer = new TypeScriptAnalyzer(tsConfigPath, config.configDir);
     analyzer.addSourceFiles([entity.file_path]);
     const result = analyzer.analyze(commitSha);
 
@@ -514,11 +544,13 @@ program
   .command("create")
   .description("Create a new file with source code (reads from stdin)")
   .argument("<file-path>", "Path for the new file")
-  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
-  .option("--tsconfig <path>", "Path to tsconfig.json")
+  .option("-d, --db <path>", "Database path")
+  .option("-c, --config <path>", "Path to mycelium.config.json")
   .option("-f, --force", "Overwrite existing file")
   .action(async (filePath, options) => {
-    const fullPath = resolve(filePath);
+    const loaded = await loadConfig(options.config);
+    const config = mergeConfig(loaded, { db: options.db });
+    const fullPath = resolve(config.configDir, filePath);
 
     // Check if file exists
     if (existsSync(fullPath) && !options.force) {
@@ -549,10 +581,10 @@ program
     writeFileSync(fullPath, content, "utf-8");
 
     // Sync to graph
-    const store = new GraphStore(resolve(options.db));
+    const store = new GraphStore(resolve(config.db));
     const commitSha = getGitCommitSha();
-    const tsConfigPath = options.tsconfig ?? findTsConfig();
-    const analyzer = new TypeScriptAnalyzer(tsConfigPath);
+    const tsConfigPath = config.tsconfig ?? findTsConfig();
+    const analyzer = new TypeScriptAnalyzer(tsConfigPath, config.configDir);
     analyzer.addSourceFiles([filePath]);
     const result = analyzer.analyze(commitSha);
 
@@ -589,11 +621,13 @@ program
   .command("delete")
   .description("Delete an entity from its file")
   .argument("<id>", "Exact entity ID (use 'mycelium find' to discover IDs)")
-  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
-  .option("--tsconfig <path>", "Path to tsconfig.json")
+  .option("-d, --db <path>", "Database path")
+  .option("-c, --config <path>", "Path to mycelium.config.json")
   .option("--file", "Delete the entire file if it becomes empty")
   .action(async (idArg, options) => {
-    const store = new GraphStore(resolve(options.db));
+    const loaded = await loadConfig(options.config);
+    const config = mergeConfig(loaded, { db: options.db });
+    const store = new GraphStore(resolve(config.db));
 
     // Exact ID match only
     const entity = store.getEntityById(idArg);
@@ -605,7 +639,7 @@ program
       process.exit(1);
     }
 
-    const filePath = resolve(entity.file_path);
+    const filePath = resolve(config.configDir, entity.file_path);
 
     if (!existsSync(filePath)) {
       console.error(`error: file not found: ${filePath}`);
@@ -648,8 +682,8 @@ program
     // Re-sync this file to update the graph (unless file was deleted)
     if (!isEmpty || !options.file) {
       const commitSha = getGitCommitSha();
-      const tsConfigPath = options.tsconfig ?? findTsConfig();
-      const analyzer = new TypeScriptAnalyzer(tsConfigPath);
+      const tsConfigPath = config.tsconfig ?? findTsConfig();
+      const analyzer = new TypeScriptAnalyzer(tsConfigPath, config.configDir);
       analyzer.addSourceFiles([entity.file_path]);
       const result = analyzer.analyze(commitSha);
 
@@ -1553,16 +1587,16 @@ communityCmd
       process.exit(1);
     }
 
-    // Build graph for community detection
+    // Build graph for community detection - include all entity kinds and relation types
     const graph = buildGraph(entities, relations, {
-      edgeTypes: ["calls"],
-      nodeKinds: ["function"],
+      edgeTypes: ["calls", "reads", "writes", "aliases", "depends_on", "uses_type", "exports", "imports"],
+      nodeKinds: ["function", "variable", "class", "interface", "type", "module", "property", "parameter"],
     });
 
     console.log(`Graph: ${graph.nodes.length} nodes, ${graph.edges.length} edges`);
 
     if (graph.nodes.length === 0) {
-      console.error("No function nodes found.");
+      console.error("No nodes found in graph.");
       store.close();
       process.exit(1);
     }
@@ -1573,14 +1607,25 @@ communityCmd
     const communities = await detector.detect(graph, { resolution });
 
     // Group by community
-    const communityGroups = new Map<number, string[]>();
+    const allGroups = new Map<number, string[]>();
     for (const [entityId, communityId] of communities) {
-      const group = communityGroups.get(communityId) || [];
+      const group = allGroups.get(communityId) || [];
       group.push(entityId);
-      communityGroups.set(communityId, group);
+      allGroups.set(communityId, group);
     }
 
-    console.log(`Detected ${communityGroups.size} communities`);
+    // Filter out single-member communities (these are orphans, not communities)
+    const communityGroups = new Map<number, string[]>();
+    let orphanCount = 0;
+    for (const [communityId, members] of allGroups) {
+      if (members.length >= 2) {
+        communityGroups.set(communityId, members);
+      } else {
+        orphanCount++;
+      }
+    }
+
+    console.log(`Detected ${communityGroups.size} communities (${orphanCount} orphan nodes)`);
 
     // Get user-named systems before clearing (for overlap matching)
     const userNamedSystems = store.getUserNamedSystemsWithMembers();

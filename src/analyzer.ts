@@ -91,10 +91,9 @@ export class TypeScriptAnalyzer {
   private project: Project;
   private rootDir: string;
 
-  constructor(tsConfigPath?: string) {
+  constructor(tsConfigPath?: string, rootDir?: string) {
     if (tsConfigPath) {
       this.project = new Project({ tsConfigFilePath: tsConfigPath });
-      this.rootDir = this.project.getDirectory("")?.getPath() ?? process.cwd();
     } else {
       this.project = new Project({
         compilerOptions: {
@@ -102,8 +101,8 @@ export class TypeScriptAnalyzer {
           checkJs: false,
         },
       });
-      this.rootDir = process.cwd();
     }
+    this.rootDir = rootDir ?? process.cwd();
   }
 
   /**

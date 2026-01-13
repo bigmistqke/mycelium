@@ -10,18 +10,24 @@ describe("CLI read/write commands", () => {
   let fixturePath: string;
   let greetId: string;
   let addId: string;
-
-  let tsconfigPath: string;
+  let configPath: string;
 
   beforeEach(() => {
     // Create temp directory
     tempDir = mkdtempSync(join(tmpdir(), "mycelium-test-"));
     dbPath = join(tempDir, "test.db");
     fixturePath = join(tempDir, "test.ts");
-    tsconfigPath = join(tempDir, "tsconfig.json");
+    const tsconfigPath = join(tempDir, "tsconfig.json");
+    configPath = join(tempDir, "mycelium.config.json");
 
     // Create minimal tsconfig to isolate from parent project
     writeFileSync(tsconfigPath, '{"compilerOptions":{}}');
+
+    // Create mycelium config that references tsconfig
+    writeFileSync(configPath, JSON.stringify({
+      tsconfig: tsconfigPath,
+      db: dbPath,
+    }));
 
     // Create a simple test file
     writeFileSync(
@@ -37,7 +43,7 @@ export function add(a: number, b: number): number {
     );
 
     // Sync the test file
-    execSync(`node dist/cli.js sync -p "${fixturePath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
+    execSync(`node dist/cli.js sync -p "${fixturePath}" -c "${configPath}"`, {
       encoding: "utf-8",
     });
 
@@ -59,7 +65,7 @@ export function add(a: number, b: number): number {
   describe("read command", () => {
     it("reads entity source code", () => {
       const output = execSync(
-        `node dist/cli.js read "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `node dist/cli.js read "${greetId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -72,7 +78,7 @@ export function add(a: number, b: number): number {
 
     it("includes correct line numbers", () => {
       const output = execSync(
-        `node dist/cli.js read "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `node dist/cli.js read "${greetId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -89,7 +95,7 @@ export function add(a: number, b: number): number {
 
       // Read should auto-sync and return updated content
       const output = execSync(
-        `node dist/cli.js read "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `node dist/cli.js read "${greetId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -98,7 +104,7 @@ export function add(a: number, b: number): number {
 
     it("fails with helpful message for non-existent entity", () => {
       try {
-        execSync(`node dist/cli.js read "nonexistent" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
+        execSync(`node dist/cli.js read "nonexistent" -c "${configPath}"`, {
           encoding: "utf-8",
           stdio: "pipe",
         });
@@ -117,7 +123,7 @@ export function add(a: number, b: number): number {
 }`;
 
       execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `echo '${newSource}' | node dist/cli.js write "${greetId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -133,7 +139,7 @@ export function add(a: number, b: number): number {
 }`;
 
       execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `echo '${newSource}' | node dist/cli.js write "${greetId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -152,20 +158,20 @@ export function add(a: number, b: number): number {
 }`;
 
       execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `echo '${newSource}' | node dist/cli.js write "${greetId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
       // Read greet - should have more lines now
       const greetOutput = execSync(
-        `node dist/cli.js read "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `node dist/cli.js read "${greetId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
       expect(greetOutput).toContain("lines: 1-5");
 
       // Read add - should have shifted line numbers
       const addOutput = execSync(
-        `node dist/cli.js read "${addId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `node dist/cli.js read "${addId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
       expect(addOutput).toContain("lines: 7-9");
@@ -177,7 +183,7 @@ export function add(a: number, b: number): number {
 }`;
 
       const output = execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `echo '${newSource}' | node dist/cli.js write "${greetId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -190,7 +196,7 @@ export function add(a: number, b: number): number {
     it("can read, modify, and write back", () => {
       // Read original
       const readOutput = execSync(
-        `node dist/cli.js read "${addId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `node dist/cli.js read "${addId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -201,13 +207,13 @@ export function add(a: number, b: number): number {
       // Modify and write back
       const modified = source.replace("a + b", "a * b");
       execSync(
-        `echo '${modified}' | node dist/cli.js write "${addId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `echo '${modified}' | node dist/cli.js write "${addId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
       // Read again to verify
       const verifyOutput = execSync(
-        `node dist/cli.js read "${addId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `node dist/cli.js read "${addId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
       expect(verifyOutput).toContain("return a * b");
@@ -222,7 +228,7 @@ export function add(a: number, b: number): number {
 }`;
 
       const output = execSync(
-        `echo '${newSource}' | node dist/cli.js create "${newFilePath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `echo '${newSource}' | node dist/cli.js create "${newFilePath}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -238,7 +244,7 @@ export function add(a: number, b: number): number {
     it("fails if file already exists without --force", () => {
       try {
         execSync(
-          `echo 'content' | node dist/cli.js create "${fixturePath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+          `echo 'content' | node dist/cli.js create "${fixturePath}" -c "${configPath}"`,
           { encoding: "utf-8", stdio: "pipe" }
         );
         expect.fail("Should have thrown");
@@ -253,7 +259,7 @@ export function add(a: number, b: number): number {
 }`;
 
       execSync(
-        `echo '${newSource}' | node dist/cli.js create "${fixturePath}" --force -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `echo '${newSource}' | node dist/cli.js create "${fixturePath}" --force -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -267,7 +273,7 @@ export function add(a: number, b: number): number {
       const source = `export const CONSTANT = 42;`;
 
       execSync(
-        `echo '${source}' | node dist/cli.js create "${nestedPath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `echo '${source}' | node dist/cli.js create "${nestedPath}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -280,7 +286,7 @@ export function add(a: number, b: number): number {
     it("deletes an entity from file", () => {
       // Delete greet function
       const output = execSync(
-        `node dist/cli.js delete "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `node dist/cli.js delete "${greetId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -294,13 +300,13 @@ export function add(a: number, b: number): number {
 
     it("updates line numbers of remaining entities", () => {
       // Delete greet (lines 1-3)
-      execSync(`node dist/cli.js delete "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
+      execSync(`node dist/cli.js delete "${greetId}" -c "${configPath}"`, {
         encoding: "utf-8",
       });
 
       // Read add - should now be at different lines
       const output = execSync(
-        `node dist/cli.js read "${addId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `node dist/cli.js read "${addId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -314,7 +320,7 @@ export function add(a: number, b: number): number {
       const singlePath = join(tempDir, "single.ts");
       writeFileSync(singlePath, `export function only(): void {}`);
 
-      execSync(`node dist/cli.js sync -p "${singlePath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
+      execSync(`node dist/cli.js sync -p "${singlePath}" -c "${configPath}"`, {
         encoding: "utf-8",
       });
 
@@ -324,7 +330,7 @@ export function add(a: number, b: number): number {
       ).split('\n')[0];
 
       const output = execSync(
-        `node dist/cli.js delete "${onlyId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `node dist/cli.js delete "${onlyId}" -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -337,7 +343,7 @@ export function add(a: number, b: number): number {
       const singlePath = join(tempDir, "to-delete.ts");
       writeFileSync(singlePath, `export function toDelete(): void {}`);
 
-      execSync(`node dist/cli.js sync -p "${singlePath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
+      execSync(`node dist/cli.js sync -p "${singlePath}" -c "${configPath}"`, {
         encoding: "utf-8",
       });
 
@@ -347,7 +353,7 @@ export function add(a: number, b: number): number {
       ).split('\n')[0];
 
       const output = execSync(
-        `node dist/cli.js delete "${deleteId}" --file -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        `node dist/cli.js delete "${deleteId}" --file -c "${configPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -360,7 +366,7 @@ export function add(a: number, b: number): number {
 
     it("fails with helpful message for non-existent entity", () => {
       try {
-        execSync(`node dist/cli.js delete "nonexistent" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
+        execSync(`node dist/cli.js delete "nonexistent" -c "${configPath}"`, {
           encoding: "utf-8",
           stdio: "pipe",
         });
