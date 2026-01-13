@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { execSync } from "child_process";
+import { execSync, spawn } from "child_process";
 import { existsSync, readFileSync, mkdirSync, writeFileSync, cpSync } from "fs";
 import { resolve, dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -658,6 +658,68 @@ program
     console.log(`Exported ${graphData.nodes.length} nodes and ${graphData.edges.length} edges to ${options.output}`);
 
     store.close();
+  });
+
+program
+  .command("serve")
+  .description("Start the web visualization client")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("-p, --port <port>", "Port for the dev server", "5173")
+  .action((options) => {
+    const clientDir = join(__dirname, "..", "client");
+
+    if (!existsSync(clientDir)) {
+      console.error("Client directory not found. Make sure the package is installed correctly.");
+      process.exit(1);
+    }
+
+    // Export graph to client
+    const store = new GraphStore(resolve(options.db));
+    const entities = store.getEntities();
+    const relations = store.getRelations();
+    const descriptions = store.getAllDescriptions();
+    const descMap = new Map(descriptions.map((d) => [d.entity_id, d]));
+
+    const edgeMap = new Map<string, { source: string; target: string; kind: string }>();
+    for (const r of relations) {
+      if (r.kind !== "calls") continue;
+      const key = `${r.from_id}::${r.to_id}`;
+      if (!edgeMap.has(key)) {
+        edgeMap.set(key, { source: r.from_id, target: r.to_id, kind: r.kind });
+      }
+    }
+
+    const graphData = {
+      nodes: entities.map((e) => ({
+        id: e.id,
+        name: e.name,
+        kind: e.kind,
+        file_path: e.file_path,
+        signature: e.signature,
+        start_line: e.start_line,
+        end_line: e.end_line,
+        description: descMap.get(e.id)?.content,
+      })),
+      edges: Array.from(edgeMap.values()),
+    };
+
+    const graphPath = join(clientDir, "public", "graph.json");
+    writeFileSync(graphPath, JSON.stringify(graphData, null, 2));
+    console.log(`Exported ${graphData.nodes.length} nodes and ${graphData.edges.length} edges`);
+    store.close();
+
+    // Start vite dev server
+    console.log(`\nStarting visualization at http://localhost:${options.port}/`);
+    const vite = spawn("npx", ["vite", "--port", options.port], {
+      cwd: clientDir,
+      stdio: "inherit",
+      shell: true,
+    });
+
+    vite.on("error", (err) => {
+      console.error("Failed to start dev server:", err.message);
+      process.exit(1);
+    });
   });
 
 program.parse();
