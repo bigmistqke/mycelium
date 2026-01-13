@@ -281,6 +281,30 @@ export class TypeScriptAnalyzer {
       }
     }
 
+    // Fourth pass: extract import/export aliases
+    for (const sourceFile of this.project.getSourceFiles()) {
+      if (sourceFile.isFromExternalLibrary()) continue;
+
+      const filePath = this.getRelativePath(sourceFile.getFilePath());
+
+      // Handle default exports: create <default> entity/alias
+      const defaultExport = this.extractDefaultExport(sourceFile, filePath, allEntityIds, commitSha);
+      if (defaultExport) {
+        if (defaultExport.entity) {
+          entities.push(defaultExport.entity);
+          allEntityIds.add(defaultExport.entity.id);
+        }
+        if (defaultExport.alias) {
+          relations.push(defaultExport.alias);
+        }
+      }
+
+      // Handle imports: create entities and alias relations
+      const imports = this.extractImports(sourceFile, filePath, commitSha);
+      entities.push(...imports.entities);
+      relations.push(...imports.aliases);
+    }
+
     return { entities, relations };
   }
 
@@ -1516,5 +1540,226 @@ export class TypeScriptAnalyzer {
       }
     }
     return null;
+  }
+
+  // ==================== Import/Export Handling ====================
+
+  /**
+   * Extracts the default export from a source file.
+   * Returns an entity for <default> and optionally an alias if it points to a named entity.
+   */
+  private extractDefaultExport(
+    sourceFile: SourceFile,
+    filePath: string,
+    allEntityIds: Set<string>,
+    commitSha: string
+  ): { entity?: Omit<Entity, "created_at">; alias?: Omit<Relation, "id"> } | null {
+    const defaultExportSymbol = sourceFile.getDefaultExportSymbol();
+    if (!defaultExportSymbol) return null;
+
+    const declarations = defaultExportSymbol.getDeclarations();
+    if (declarations.length === 0) return null;
+
+    const decl = declarations[0];
+    const defaultId = `${filePath}::<default>`;
+
+    // Check if it's an export assignment: export default foo
+    if (Node.isExportAssignment(decl)) {
+      const expr = decl.getExpression();
+
+      // If it references an identifier, create alias to that entity
+      if (Node.isIdentifier(expr)) {
+        const name = expr.getText();
+        // Find the entity it references
+        const targetId = `${filePath}::${name}`;
+        if (allEntityIds.has(targetId)) {
+          // Create <default> as alias to the named entity
+          return {
+            entity: {
+              id: defaultId,
+              kind: "function", // Will be refined based on target
+              name: "<default>",
+              file_path: filePath,
+              start_line: decl.getStartLineNumber(),
+              end_line: decl.getEndLineNumber(),
+              signature: `export default ${name}`,
+              signature_hash: computeSignatureHash(`export default`),
+              impl_hash: null,
+              commit_sha: commitSha,
+            },
+            alias: {
+              from_id: defaultId,
+              to_id: targetId,
+              kind: "aliases",
+              commit_sha: commitSha,
+              metadata: null,
+            },
+          };
+        }
+      }
+
+      // Anonymous default export: export default () => {} or export default { ... }
+      if (Node.isArrowFunction(expr) || Node.isFunctionExpression(expr)) {
+        const params = (expr as ArrowFunction).getParameters().map(p => p.getText()).join(", ");
+        return {
+          entity: {
+            id: defaultId,
+            kind: "function",
+            name: "<default>",
+            file_path: filePath,
+            start_line: decl.getStartLineNumber(),
+            end_line: decl.getEndLineNumber(),
+            signature: `(${params}) => ...`,
+            signature_hash: computeSignatureHash(`export default function`),
+            impl_hash: computeImplHash(expr.getText()),
+            commit_sha: commitSha,
+          },
+        };
+      }
+    }
+
+    // Check for: export default function foo() {} or export default class Foo {}
+    if (Node.isFunctionDeclaration(decl)) {
+      const name = decl.getName();
+      if (name) {
+        const targetId = `${filePath}::${name}`;
+        if (allEntityIds.has(targetId)) {
+          return {
+            entity: {
+              id: defaultId,
+              kind: "function",
+              name: "<default>",
+              file_path: filePath,
+              start_line: decl.getStartLineNumber(),
+              end_line: decl.getEndLineNumber(),
+              signature: `export default ${name}`,
+              signature_hash: computeSignatureHash(`export default`),
+              impl_hash: null,
+              commit_sha: commitSha,
+            },
+            alias: {
+              from_id: defaultId,
+              to_id: targetId,
+              kind: "aliases",
+              commit_sha: commitSha,
+              metadata: null,
+            },
+          };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Extracts import bindings as entities and alias relations.
+   * Each import creates a local entity that aliases the source module entity.
+   */
+  private extractImports(
+    sourceFile: SourceFile,
+    filePath: string,
+    commitSha: string
+  ): { entities: Omit<Entity, "created_at">[]; aliases: Omit<Relation, "id">[] } {
+    const entities: Omit<Entity, "created_at">[] = [];
+    const aliases: Omit<Relation, "id">[] = [];
+
+    for (const importDecl of sourceFile.getImportDeclarations()) {
+      const moduleSpecifier = importDecl.getModuleSpecifierValue();
+
+      // Resolve the module path
+      const resolvedPath = this.resolveModulePath(sourceFile, moduleSpecifier);
+      if (!resolvedPath) continue;
+
+      // Handle default import: import foo from './mod'
+      const defaultImport = importDecl.getDefaultImport();
+      if (defaultImport) {
+        const localName = defaultImport.getText();
+        const localId = `${filePath}::${localName}`;
+        const targetId = `${resolvedPath}::<default>`;
+
+        entities.push({
+          id: localId,
+          kind: "variable", // imports are bindings
+          name: localName,
+          file_path: filePath,
+          start_line: importDecl.getStartLineNumber(),
+          end_line: importDecl.getEndLineNumber(),
+          signature: `import ${localName} from "${moduleSpecifier}"`,
+          signature_hash: computeSignatureHash(`import default`),
+          impl_hash: null,
+          commit_sha: commitSha,
+        });
+
+        aliases.push({
+          from_id: localId,
+          to_id: targetId,
+          kind: "aliases",
+          commit_sha: commitSha,
+          metadata: null,
+        });
+      }
+
+      // Handle named imports: import { foo, bar as baz } from './mod'
+      const namedImports = importDecl.getNamedImports();
+      for (const namedImport of namedImports) {
+        const sourceName = namedImport.getName(); // foo (the imported name)
+        const localName = namedImport.getAliasNode()?.getText() ?? sourceName; // baz or foo
+
+        const localId = `${filePath}::${localName}`;
+        const targetId = `${resolvedPath}::${sourceName}`;
+
+        entities.push({
+          id: localId,
+          kind: "variable",
+          name: localName,
+          file_path: filePath,
+          start_line: namedImport.getStartLineNumber(),
+          end_line: namedImport.getEndLineNumber(),
+          signature: localName === sourceName
+            ? `import { ${sourceName} }`
+            : `import { ${sourceName} as ${localName} }`,
+          signature_hash: computeSignatureHash(`import named`),
+          impl_hash: null,
+          commit_sha: commitSha,
+        });
+
+        aliases.push({
+          from_id: localId,
+          to_id: targetId,
+          kind: "aliases",
+          commit_sha: commitSha,
+          metadata: null,
+        });
+      }
+
+      // Handle namespace import: import * as utils from './mod'
+      // Skip for now - would need special handling
+    }
+
+    return { entities, aliases };
+  }
+
+  /**
+   * Resolves a module specifier to a file path relative to project root.
+   */
+  private resolveModulePath(sourceFile: SourceFile, moduleSpecifier: string): string | null {
+    // Only handle relative imports for now
+    if (!moduleSpecifier.startsWith(".")) {
+      return null;
+    }
+
+    try {
+      // Use ts-morph's module resolution
+      const importDecl = sourceFile.getImportDeclaration(moduleSpecifier);
+      if (!importDecl) return null;
+
+      const moduleFile = importDecl.getModuleSpecifierSourceFile();
+      if (!moduleFile) return null;
+
+      return this.getRelativePath(moduleFile.getFilePath());
+    } catch {
+      return null;
+    }
   }
 }
