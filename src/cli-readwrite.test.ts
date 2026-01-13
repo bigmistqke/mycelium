@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, cpSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { mkdtempSync, cpSync, readFileSync, rmSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import { execSync } from "child_process";
@@ -11,11 +11,17 @@ describe("CLI read/write commands", () => {
   let greetId: string;
   let addId: string;
 
+  let tsconfigPath: string;
+
   beforeEach(() => {
     // Create temp directory
     tempDir = mkdtempSync(join(tmpdir(), "mycelium-test-"));
     dbPath = join(tempDir, "test.db");
     fixturePath = join(tempDir, "test.ts");
+    tsconfigPath = join(tempDir, "tsconfig.json");
+
+    // Create minimal tsconfig to isolate from parent project
+    writeFileSync(tsconfigPath, '{"compilerOptions":{}}');
 
     // Create a simple test file
     writeFileSync(
@@ -31,23 +37,18 @@ export function add(a: number, b: number): number {
     );
 
     // Sync the test file
-    execSync(`node dist/cli.js sync -p "${fixturePath}" -d "${dbPath}"`, {
+    execSync(`node dist/cli.js sync -p "${fixturePath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
       encoding: "utf-8",
     });
 
-    // Discover actual entity IDs from query (analyzer may use relative paths)
-    const queryOutput = execSync(`node dist/cli.js query "%::greet" -d "${dbPath}"`, {
+    // find outputs IDs one per line - get the first match (function, not params/return)
+    greetId = execSync(`node dist/cli.js find greet -d "${dbPath}"`, {
       encoding: "utf-8",
-    });
-    // Extract ID from output like "  path::greet\n    [function] ..."
-    const greetMatch = queryOutput.match(/^\s+(\S+::greet)\s*$/m);
-    greetId = greetMatch ? greetMatch[1] : `${fixturePath}::greet`;
+    }).split('\n')[0];
 
-    const addQueryOutput = execSync(`node dist/cli.js query "%::add" -d "${dbPath}"`, {
+    addId = execSync(`node dist/cli.js find add -d "${dbPath}"`, {
       encoding: "utf-8",
-    });
-    const addMatch = addQueryOutput.match(/^\s+(\S+::add)\s*$/m);
-    addId = addMatch ? addMatch[1] : `${fixturePath}::add`;
+    }).split('\n')[0];
   });
 
   afterEach(() => {
@@ -58,7 +59,7 @@ export function add(a: number, b: number): number {
   describe("read command", () => {
     it("reads entity source code", () => {
       const output = execSync(
-        `node dist/cli.js read "${greetId}" -d "${dbPath}"`,
+        `node dist/cli.js read "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -71,7 +72,7 @@ export function add(a: number, b: number): number {
 
     it("includes correct line numbers", () => {
       const output = execSync(
-        `node dist/cli.js read "${greetId}" -d "${dbPath}"`,
+        `node dist/cli.js read "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -88,7 +89,7 @@ export function add(a: number, b: number): number {
 
       // Read should auto-sync and return updated content
       const output = execSync(
-        `node dist/cli.js read "${greetId}" -d "${dbPath}"`,
+        `node dist/cli.js read "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -97,7 +98,7 @@ export function add(a: number, b: number): number {
 
     it("fails with helpful message for non-existent entity", () => {
       try {
-        execSync(`node dist/cli.js read "nonexistent" -d "${dbPath}"`, {
+        execSync(`node dist/cli.js read "nonexistent" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
           encoding: "utf-8",
           stdio: "pipe",
         });
@@ -116,7 +117,7 @@ export function add(a: number, b: number): number {
 }`;
 
       execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}"`,
+        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -132,7 +133,7 @@ export function add(a: number, b: number): number {
 }`;
 
       execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}"`,
+        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -151,20 +152,20 @@ export function add(a: number, b: number): number {
 }`;
 
       execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}"`,
+        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
 
       // Read greet - should have more lines now
       const greetOutput = execSync(
-        `node dist/cli.js read "${greetId}" -d "${dbPath}"`,
+        `node dist/cli.js read "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
       expect(greetOutput).toContain("lines: 1-5");
 
       // Read add - should have shifted line numbers
       const addOutput = execSync(
-        `node dist/cli.js read "${addId}" -d "${dbPath}"`,
+        `node dist/cli.js read "${addId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
       expect(addOutput).toContain("lines: 7-9");
@@ -176,7 +177,7 @@ export function add(a: number, b: number): number {
 }`;
 
       const output = execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}"`,
+        `echo '${newSource}' | node dist/cli.js write "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -189,7 +190,7 @@ export function add(a: number, b: number): number {
     it("can read, modify, and write back", () => {
       // Read original
       const readOutput = execSync(
-        `node dist/cli.js read "${addId}" -d "${dbPath}"`,
+        `node dist/cli.js read "${addId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
 
@@ -200,16 +201,174 @@ export function add(a: number, b: number): number {
       // Modify and write back
       const modified = source.replace("a + b", "a * b");
       execSync(
-        `echo '${modified}' | node dist/cli.js write "${addId}" -d "${dbPath}"`,
+        `echo '${modified}' | node dist/cli.js write "${addId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
 
       // Read again to verify
       const verifyOutput = execSync(
-        `node dist/cli.js read "${addId}" -d "${dbPath}"`,
+        `node dist/cli.js read "${addId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
         { encoding: "utf-8" }
       );
       expect(verifyOutput).toContain("return a * b");
+    });
+  });
+
+  describe("create command", () => {
+    it("creates a new file with content", () => {
+      const newFilePath = join(tempDir, "new-module.ts");
+      const newSource = `export function multiply(a: number, b: number): number {
+  return a * b;
+}`;
+
+      const output = execSync(
+        `echo '${newSource}' | node dist/cli.js create "${newFilePath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        { encoding: "utf-8" }
+      );
+
+      expect(output).toContain("created:");
+      expect(output).toContain("synced:");
+      expect(output).toContain("multiply");
+
+      // Verify file exists
+      const content = readFileSync(newFilePath, "utf-8");
+      expect(content).toContain("return a * b");
+    });
+
+    it("fails if file already exists without --force", () => {
+      try {
+        execSync(
+          `echo 'content' | node dist/cli.js create "${fixturePath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+          { encoding: "utf-8", stdio: "pipe" }
+        );
+        expect.fail("Should have thrown");
+      } catch (e: any) {
+        expect(e.stderr.toString()).toContain("file already exists");
+      }
+    });
+
+    it("overwrites existing file with --force", () => {
+      const newSource = `export function replaced(): string {
+  return "replaced";
+}`;
+
+      execSync(
+        `echo '${newSource}' | node dist/cli.js create "${fixturePath}" --force -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        { encoding: "utf-8" }
+      );
+
+      const content = readFileSync(fixturePath, "utf-8");
+      expect(content).toContain("replaced");
+      expect(content).not.toContain("greet");
+    });
+
+    it("creates directories if needed", () => {
+      const nestedPath = join(tempDir, "nested", "deep", "module.ts");
+      const source = `export const CONSTANT = 42;`;
+
+      execSync(
+        `echo '${source}' | node dist/cli.js create "${nestedPath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        { encoding: "utf-8" }
+      );
+
+      const content = readFileSync(nestedPath, "utf-8");
+      expect(content).toContain("CONSTANT = 42");
+    });
+  });
+
+  describe("delete command", () => {
+    it("deletes an entity from file", () => {
+      // Delete greet function
+      const output = execSync(
+        `node dist/cli.js delete "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        { encoding: "utf-8" }
+      );
+
+      expect(output).toContain("deleted:");
+
+      // Verify greet is gone but add remains
+      const content = readFileSync(fixturePath, "utf-8");
+      expect(content).not.toContain("function greet");
+      expect(content).toContain("function add");
+    });
+
+    it("updates line numbers of remaining entities", () => {
+      // Delete greet (lines 1-3)
+      execSync(`node dist/cli.js delete "${greetId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
+        encoding: "utf-8",
+      });
+
+      // Read add - should now be at different lines
+      const output = execSync(
+        `node dist/cli.js read "${addId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        { encoding: "utf-8" }
+      );
+
+      // add should now start earlier in the file
+      expect(output).toContain("lines:");
+      expect(output).toContain("return a + b");
+    });
+
+    it("warns when file becomes empty", () => {
+      // Create a file with single entity
+      const singlePath = join(tempDir, "single.ts");
+      writeFileSync(singlePath, `export function only(): void {}`);
+
+      execSync(`node dist/cli.js sync -p "${singlePath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
+        encoding: "utf-8",
+      });
+
+      const onlyId = execSync(
+        `node dist/cli.js find only -d "${dbPath}"`,
+        { encoding: "utf-8" }
+      ).split('\n')[0];
+
+      const output = execSync(
+        `node dist/cli.js delete "${onlyId}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        { encoding: "utf-8" }
+      );
+
+      expect(output).toContain("warning:");
+      expect(output).toContain("empty");
+    });
+
+    it("deletes file when empty with --file flag", () => {
+      // Create a file with single entity
+      const singlePath = join(tempDir, "to-delete.ts");
+      writeFileSync(singlePath, `export function toDelete(): void {}`);
+
+      execSync(`node dist/cli.js sync -p "${singlePath}" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
+        encoding: "utf-8",
+      });
+
+      const deleteId = execSync(
+        `node dist/cli.js find toDelete -d "${dbPath}"`,
+        { encoding: "utf-8" }
+      ).split('\n')[0];
+
+      const output = execSync(
+        `node dist/cli.js delete "${deleteId}" --file -d "${dbPath}" --tsconfig "${tsconfigPath}"`,
+        { encoding: "utf-8" }
+      );
+
+      expect(output).toContain("removed:");
+      expect(output).toContain("empty");
+
+      // Verify file is gone
+      expect(existsSync(singlePath)).toBe(false);
+    });
+
+    it("fails with helpful message for non-existent entity", () => {
+      try {
+        execSync(`node dist/cli.js delete "nonexistent" -d "${dbPath}" --tsconfig "${tsconfigPath}"`, {
+          encoding: "utf-8",
+          stdio: "pipe",
+        });
+        expect.fail("Should have thrown");
+      } catch (e: any) {
+        expect(e.stderr.toString()).toContain("entity not found");
+        expect(e.stderr.toString()).toContain("mycelium find");
+      }
     });
   });
 });

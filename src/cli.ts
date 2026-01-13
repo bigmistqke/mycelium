@@ -11,6 +11,13 @@ import { computeHash } from "./hash.js";
 const DEFAULT_DB_PATH = ".mycelium/graph.db";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+const DEBUG_TIMING = process.env.MYCELIUM_DEBUG_TIMING === "1";
+function time(label: string): () => void {
+  if (!DEBUG_TIMING) return () => {};
+  const start = performance.now();
+  return () => console.error(`[timing] ${label}: ${(performance.now() - start).toFixed(0)}ms`);
+}
+
 /**
  * Gets the current git HEAD commit SHA. Falls back to a timestamp-based ID if not in a git repository.
  */
@@ -204,23 +211,33 @@ program
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
   .option("--tsconfig <path>", "Path to tsconfig.json")
   .action(async (options) => {
+    const endTotal = time("sync total");
     const commitSha = getGitCommitSha();
     console.log(`Syncing at commit: ${commitSha.slice(0, 8)}`);
 
+    const endAnalyzerInit = time("analyzer init");
     const tsConfigPath = options.tsconfig ?? findTsConfig();
     const analyzer = new TypeScriptAnalyzer(tsConfigPath);
+    endAnalyzerInit();
 
     console.log(`Adding source files: ${options.pattern.join(", ")}`);
+    const endAddFiles = time("add source files");
     analyzer.addSourceFiles(options.pattern);
+    endAddFiles();
 
     console.log("Analyzing...");
+    const endAnalyze = time("analyze");
     const result = analyzer.analyze(commitSha);
+    endAnalyze();
 
     console.log(`Found ${result.entities.length} functions`);
     console.log(`Found ${result.relations.length} call relations`);
 
+    const endDbOpen = time("db open");
     const store = new GraphStore(resolve(options.db));
+    endDbOpen();
 
+    const endInsertEntities = time("insert entities");
     let inserted = 0;
     let skipped = 0;
     for (const entity of result.entities) {
@@ -231,19 +248,25 @@ program
         inserted++;
       }
     }
+    endInsertEntities();
     console.log(`Entities: ${inserted} updated, ${skipped} unchanged`);
 
+    const endInsertRelations = time("insert relations");
     for (const relation of result.relations) {
       store.insertRelation(relation);
     }
+    endInsertRelations();
 
     // Insert call arguments for transitive dependency resolution
+    const endInsertCallArgs = time("insert call arguments");
     for (const callArg of result.callArguments) {
       store.insertCallArgument(callArg);
     }
+    endInsertCallArgs();
     console.log(`Found ${result.callArguments.length} call arguments`);
 
     // Compute and store file hashes for staleness detection
+    const endFileHashes = time("file hashes");
     const filePaths = new Set(result.entities.map(e => e.file_path));
     for (const filePath of filePaths) {
       try {
@@ -254,9 +277,11 @@ program
         // Skip files that can't be read (e.g., virtual files)
       }
     }
+    endFileHashes();
     console.log(`Tracked ${filePaths.size} files`);
 
     // Detect entry points
+    const endEntryPoints = time("entry points");
     const entryPointIds = store.findEntryPoints(commitSha);
     console.log(`Found ${entryPointIds.length} entry points (call graph roots)`);
 
@@ -267,45 +292,41 @@ program
         commit_sha: commitSha,
       });
     }
+    endEntryPoints();
 
     store.close();
+    endTotal();
     console.log("Done!");
   });
 
 program
   .command("find")
-  .description("Search for entities by name or description")
+  .description("Search for entities by name (outputs IDs, one per line)")
   .argument("<pattern>", "Search pattern (partial match)")
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
   .option("--desc", "Search in descriptions instead of names")
   .action((pattern, options) => {
     const store = new GraphStore(resolve(options.db));
     const entities = store.getEntities();
-    const descriptions = store.getAllDescriptions();
-    const descMap = new Map(descriptions.map((d) => [d.entity_id, d.content]));
 
     const lower = pattern.toLowerCase();
-    const matches = options.desc
-      ? entities.filter((e) => descMap.get(e.id)?.toLowerCase().includes(lower))
-      : entities.filter(
-          (e) =>
-            e.name.toLowerCase().includes(lower) ||
-            e.id.toLowerCase().includes(lower)
-        );
+    let matches: typeof entities;
 
-    if (matches.length === 0) {
-      console.log(`No entities found matching "${pattern}"`);
+    if (options.desc) {
+      const descriptions = store.getAllDescriptions();
+      const descMap = new Map(descriptions.map((d) => [d.entity_id, d.content]));
+      matches = entities.filter((e) => descMap.get(e.id)?.toLowerCase().includes(lower));
     } else {
-      console.log(`\nFound ${matches.length} entities:\n`);
-      for (const e of matches) {
-        console.log(`  ${e.id}`);
-        console.log(`    ${e.file_path}:${e.start_line}-${e.end_line}`);
-        const desc = descMap.get(e.id);
-        if (desc) {
-          console.log(`    ${desc.slice(0, 60)}${desc.length > 60 ? "..." : ""}`);
-        }
-        console.log();
-      }
+      matches = entities.filter(
+        (e) =>
+          e.name.toLowerCase().includes(lower) ||
+          e.id.toLowerCase().includes(lower)
+      );
+    }
+
+    // Output just IDs, one per line (pipeable)
+    for (const e of matches) {
+      console.log(e.id);
     }
 
     store.close();
@@ -318,10 +339,15 @@ program
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
   .option("--tsconfig <path>", "Path to tsconfig.json")
   .action((idArg, options) => {
+    const endTotal = time("read total");
+    const endDbOpen = time("db open");
     const store = new GraphStore(resolve(options.db));
+    endDbOpen();
 
     // Exact ID match only
+    const endGetEntity = time("get entity");
     let entity = store.getEntityById(idArg);
+    endGetEntity();
 
     if (!entity) {
       console.error(`error: entity not found: ${idArg}`);
@@ -342,15 +368,19 @@ program
     // Read file content and check freshness
     let content = readFileSync(filePath, "utf-8");
     const currentHash = computeHash(content);
+    const endCheckFreshness = time("check freshness");
     const freshness = store.checkFileFreshness(entity.file_path, currentHash);
+    endCheckFreshness();
 
     // If stale, re-sync this file
     if (!freshness.fresh) {
+      const endAutoSync = time("auto-sync (stale file)");
       const commitSha = getGitCommitSha();
       const tsConfigPath = options.tsconfig ?? findTsConfig();
       const analyzer = new TypeScriptAnalyzer(tsConfigPath);
       analyzer.addSourceFiles([entity.file_path]);
       const result = analyzer.analyze(commitSha);
+      endAutoSync();
 
       // Update entities from this file
       for (const e of result.entities) {
@@ -396,6 +426,7 @@ program
     }
 
     store.close();
+    endTotal();
   });
 
 program
@@ -475,6 +506,174 @@ program
     console.log(`wrote: ${entity.id}`);
     console.log(`file: ${entity.file_path}`);
     console.log(`synced: ${result.entities.length} entities`);
+
+    store.close();
+  });
+
+program
+  .command("create")
+  .description("Create a new file with source code (reads from stdin)")
+  .argument("<file-path>", "Path for the new file")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("--tsconfig <path>", "Path to tsconfig.json")
+  .option("-f, --force", "Overwrite existing file")
+  .action(async (filePath, options) => {
+    const fullPath = resolve(filePath);
+
+    // Check if file exists
+    if (existsSync(fullPath) && !options.force) {
+      console.error(`error: file already exists: ${filePath}`);
+      console.error(`hint: use --force to overwrite`);
+      process.exit(1);
+    }
+
+    // Read content from stdin
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) {
+      chunks.push(chunk);
+    }
+    const content = Buffer.concat(chunks).toString("utf-8");
+
+    if (!content.trim()) {
+      console.error(`error: no content provided (stdin was empty)`);
+      process.exit(1);
+    }
+
+    // Ensure directory exists
+    const dir = dirname(fullPath);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+
+    // Write file
+    writeFileSync(fullPath, content, "utf-8");
+
+    // Sync to graph
+    const store = new GraphStore(resolve(options.db));
+    const commitSha = getGitCommitSha();
+    const tsConfigPath = options.tsconfig ?? findTsConfig();
+    const analyzer = new TypeScriptAnalyzer(tsConfigPath);
+    analyzer.addSourceFiles([filePath]);
+    const result = analyzer.analyze(commitSha);
+
+    // Insert entities
+    for (const e of result.entities) {
+      store.insertEntity(e);
+    }
+
+    // Insert relations
+    for (const r of result.relations) {
+      store.insertRelation(r);
+    }
+
+    // Insert call arguments
+    for (const ca of result.callArguments) {
+      store.insertCallArgument(ca);
+    }
+
+    // Store file hash
+    const contentHash = computeHash(content);
+    store.insertFile({ path: filePath, content_hash: contentHash, commit_sha: commitSha });
+
+    // Output created entities
+    console.log(`created: ${filePath}`);
+    console.log(`synced: ${result.entities.length} entities`);
+    for (const e of result.entities) {
+      console.log(`  ${e.id}`);
+    }
+
+    store.close();
+  });
+
+program
+  .command("delete")
+  .description("Delete an entity from its file")
+  .argument("<id>", "Exact entity ID (use 'mycelium find' to discover IDs)")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("--tsconfig <path>", "Path to tsconfig.json")
+  .option("--file", "Delete the entire file if it becomes empty")
+  .action(async (idArg, options) => {
+    const store = new GraphStore(resolve(options.db));
+
+    // Exact ID match only
+    const entity = store.getEntityById(idArg);
+
+    if (!entity) {
+      console.error(`error: entity not found: ${idArg}`);
+      console.error(`hint: use 'mycelium find <pattern>' to discover entity IDs`);
+      store.close();
+      process.exit(1);
+    }
+
+    const filePath = resolve(entity.file_path);
+
+    if (!existsSync(filePath)) {
+      console.error(`error: file not found: ${filePath}`);
+      store.close();
+      process.exit(1);
+    }
+
+    // Read current file
+    const content = readFileSync(filePath, "utf-8");
+    const lines = content.split("\n");
+
+    // Remove entity lines
+    const before = lines.slice(0, entity.start_line - 1);
+    const after = lines.slice(entity.end_line);
+    const newLines = [...before, ...after];
+    const newContent = newLines.join("\n");
+
+    // Check if file is now empty (only whitespace)
+    const isEmpty = !newContent.trim();
+
+    if (isEmpty && options.file) {
+      // Delete the file
+      const { rmSync } = await import("fs");
+      rmSync(filePath);
+      console.log(`deleted: ${entity.id}`);
+      console.log(`removed: ${entity.file_path} (empty)`);
+    } else if (isEmpty) {
+      // Write empty file but warn
+      writeFileSync(filePath, newContent, "utf-8");
+      console.log(`deleted: ${entity.id}`);
+      console.log(`warning: ${entity.file_path} is now empty`);
+      console.log(`hint: use --file to also delete the file`);
+    } else {
+      // Write updated file
+      writeFileSync(filePath, newContent, "utf-8");
+      console.log(`deleted: ${entity.id}`);
+      console.log(`file: ${entity.file_path}`);
+    }
+
+    // Re-sync this file to update the graph (unless file was deleted)
+    if (!isEmpty || !options.file) {
+      const commitSha = getGitCommitSha();
+      const tsConfigPath = options.tsconfig ?? findTsConfig();
+      const analyzer = new TypeScriptAnalyzer(tsConfigPath);
+      analyzer.addSourceFiles([entity.file_path]);
+      const result = analyzer.analyze(commitSha);
+
+      // Update entities
+      for (const e of result.entities) {
+        store.insertEntity(e);
+      }
+
+      // Update relations
+      for (const r of result.relations) {
+        store.insertRelation(r);
+      }
+
+      // Update call arguments
+      for (const ca of result.callArguments) {
+        store.insertCallArgument(ca);
+      }
+
+      // Update file hash
+      const newHash = computeHash(newContent);
+      store.insertFile({ path: entity.file_path, content_hash: newHash, commit_sha: commitSha });
+
+      console.log(`synced: ${result.entities.length} entities remaining`);
+    }
 
     store.close();
   });
