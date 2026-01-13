@@ -1,19 +1,35 @@
 [
   {
+    "hash": "1ee4e66a48cc0858cb0e0ae33a307c4c5ec3b317",
+    "short_hash": "1ee4e66",
+    "author": "bigmistqke",
+    "date": "2026-01-13T23:22:39+01:00",
+    "message": "feat: add dependency tracking for local variable initializers\n\nCreate depends_on edges from local variables to entities they reference\nin their initializers. For `const x = y.filter(...)`, x depends on y.\n\nThis connects local variables to the broader dataflow graph, reducing\norphan nodes from 1214 to 559 (~54% reduction).",
+    "files_changed": 1
+  },
+  {
+    "hash": "473be7b42e945062e26cf30110e8ec535aac3ad2",
+    "short_hash": "473be7b",
+    "author": "bigmistqke",
+    "date": "2026-01-13T23:19:56+01:00",
+    "message": "feat: track local variables as entities\n\n- Add extractLocalVariables() to create entities for all local vars in functions\n- Update extractOpaqueHofDataflow to pass local vars to findObjectEntity\n- HOF callback params now connect to local variables they iterate over\n- Entity count ~doubles but enables complete dataflow tracking",
+    "files_changed": 3
+  },
+  {
+    "hash": "473be7b42e945062e26cf30110e8ec535aac3ad2",
+    "short_hash": "473be7b",
+    "author": "bigmistqke",
+    "date": "2026-01-13T23:19:56+01:00",
+    "message": "feat: track local variables as entities\n\n- Add extractLocalVariables() to create entities for all local vars in functions\n- Update extractOpaqueHofDataflow to pass local vars to findObjectEntity\n- HOF callback params now connect to local variables they iterate over\n- Entity count ~doubles but enables complete dataflow tracking",
+    "files_changed": 3
+  },
+  {
     "hash": "cd5061cd6e753acc9285e488faa1e7c9bda78fe1",
     "short_hash": "cd5061c",
     "author": "bigmistqke",
     "date": "2026-01-13T23:15:57+01:00",
     "message": "feat: add sync prune and HOF dataflow extraction\n\n- Add pruneEntities() to remove entities not matching include/exclude patterns\n- Add shouldInclude/shouldExclude/isPathAllowed to config for pattern matching\n- Add extractOpaqueHofDataflow() to create depends_on edges for callback params\n- When method is opaque (built-in like .map/.filter), link callback param to object\n- Fix globToRegex to properly handle **/ patterns",
     "files_changed": 10
-  },
-  {
-    "hash": "47951f84afb95ca3e2f39c831cdb3a70dcdb0dfa",
-    "short_hash": "47951f8",
-    "author": "bigmistqke",
-    "date": "2026-01-13T23:15:28+01:00",
-    "message": "chore: reorganize tests into test/ directory\n\nMove test files and fixtures out of src/ to fix tsconfig rootDir issues.\nAdd vitest.config.ts for test configuration.",
-    "files_changed": 39
   },
   {
     "hash": "47951f84afb95ca3e2f39c831cdb3a70dcdb0dfa",

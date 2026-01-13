@@ -2023,6 +2023,28 @@
       "created_at": "2026-01-13T23:16:01.847829+01:00",
       "updated_at": "2026-01-13T23:16:01.847829+01:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"cd5061c\",\"confidence\":90}"
+    },
+    {
+      "id": 185,
+      "change_id": "a96d019c-d54f-4112-bc84-5e979859f140",
+      "node_type": "action",
+      "title": "Track all local variables as entities",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T23:20:00.846285+01:00",
+      "updated_at": "2026-01-13T23:20:00.846285+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"473be7b\",\"confidence\":90}"
+    },
+    {
+      "id": 186,
+      "change_id": "74799e7a-6c33-4c08-8bd7-439ca144c597",
+      "node_type": "action",
+      "title": "Add dependency tracking for local variable initializers",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T23:22:44.907639+01:00",
+      "updated_at": "2026-01-13T23:22:44.907639+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"1ee4e66\",\"confidence\":90}"
     }
   ],
   "edges": [
@@ -3972,6 +3994,28 @@
       "weight": 1.0,
       "rationale": "Partial implementation",
       "created_at": "2026-01-13T23:16:01.857851+01:00"
+    },
+    {
+      "id": 178,
+      "from_node_id": 184,
+      "to_node_id": 185,
+      "from_change_id": "46df447c-5cf5-4eb8-bedb-010f137bd16a",
+      "to_change_id": "a96d019c-d54f-4112-bc84-5e979859f140",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Continued implementation",
+      "created_at": "2026-01-13T23:20:00.857173+01:00"
+    },
+    {
+      "id": 179,
+      "from_node_id": 185,
+      "to_node_id": 186,
+      "from_change_id": "a96d019c-d54f-4112-bc84-5e979859f140",
+      "to_change_id": "74799e7a-6c33-4c08-8bd7-439ca144c597",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Continued dataflow tracking",
+      "created_at": "2026-01-13T23:22:44.918721+01:00"
     }
   ]
 }
