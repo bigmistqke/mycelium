@@ -314,20 +314,18 @@ program
 program
   .command("read")
   .description("Read source code of an entity (auto-syncs if stale)")
-  .argument("<id>", "Entity ID or name")
+  .argument("<id>", "Exact entity ID (use 'mycelium find' to discover IDs)")
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
   .option("--tsconfig <path>", "Path to tsconfig.json")
   .action((idArg, options) => {
     const store = new GraphStore(resolve(options.db));
 
-    // Find entity by ID or name
-    let entities = store.getEntities();
-    let entity = entities.find(
-      (e) => e.id === idArg || e.name === idArg || e.id.endsWith(`::${idArg}`)
-    );
+    // Exact ID match only
+    let entity = store.getEntityById(idArg);
 
     if (!entity) {
       console.error(`error: entity not found: ${idArg}`);
+      console.error(`hint: use 'mycelium find <pattern>' to discover entity IDs`);
       store.close();
       process.exit(1);
     }
@@ -373,8 +371,7 @@ program
       store.insertFile({ path: entity.file_path, content_hash: currentHash, commit_sha: commitSha });
 
       // Re-fetch entity with updated line numbers
-      entities = store.getEntities();
-      const updated = entities.find((e) => e.id === entity!.id);
+      const updated = store.getEntityById(entity.id);
       if (updated) {
         entity = updated;
       }
@@ -397,6 +394,87 @@ program
     for (const line of sourceLines) {
       console.log(line);
     }
+
+    store.close();
+  });
+
+program
+  .command("write")
+  .description("Write new source code for an entity (reads from stdin)")
+  .argument("<id>", "Exact entity ID (use 'mycelium find' to discover IDs)")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("--tsconfig <path>", "Path to tsconfig.json")
+  .action(async (idArg, options) => {
+    const store = new GraphStore(resolve(options.db));
+
+    // Exact ID match only
+    const entity = store.getEntityById(idArg);
+
+    if (!entity) {
+      console.error(`error: entity not found: ${idArg}`);
+      console.error(`hint: use 'mycelium find <pattern>' to discover entity IDs`);
+      store.close();
+      process.exit(1);
+    }
+
+    const filePath = resolve(entity.file_path);
+
+    if (!existsSync(filePath)) {
+      console.error(`error: file not found: ${filePath}`);
+      store.close();
+      process.exit(1);
+    }
+
+    // Read new source from stdin
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) {
+      chunks.push(chunk);
+    }
+    const newSource = Buffer.concat(chunks).toString("utf-8").trimEnd();
+
+    // Read current file
+    const content = readFileSync(filePath, "utf-8");
+    const lines = content.split("\n");
+
+    // Replace entity lines with new source
+    const before = lines.slice(0, entity.start_line - 1);
+    const after = lines.slice(entity.end_line);
+    const newLines = [...before, ...newSource.split("\n"), ...after];
+    const newContent = newLines.join("\n");
+
+    // Write file
+    writeFileSync(filePath, newContent, "utf-8");
+
+    // Re-sync this file to update the graph
+    const commitSha = getGitCommitSha();
+    const tsConfigPath = options.tsconfig ?? findTsConfig();
+    const analyzer = new TypeScriptAnalyzer(tsConfigPath);
+    analyzer.addSourceFiles([entity.file_path]);
+    const result = analyzer.analyze(commitSha);
+
+    // Update entities
+    for (const e of result.entities) {
+      store.insertEntity(e);
+    }
+
+    // Update relations
+    for (const r of result.relations) {
+      store.insertRelation(r);
+    }
+
+    // Update call arguments
+    for (const ca of result.callArguments) {
+      store.insertCallArgument(ca);
+    }
+
+    // Update file hash
+    const newHash = computeHash(newContent);
+    store.insertFile({ path: entity.file_path, content_hash: newHash, commit_sha: commitSha });
+
+    // Output confirmation
+    console.log(`wrote: ${entity.id}`);
+    console.log(`file: ${entity.file_path}`);
+    console.log(`synced: ${result.entities.length} entities`);
 
     store.close();
   });
