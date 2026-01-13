@@ -1,5 +1,13 @@
 [
   {
+    "hash": "691ae0c1897280643852cf95e61986de5614e050",
+    "short_hash": "691ae0c",
+    "author": "bigmistqke",
+    "date": "2026-01-13T16:25:24+01:00",
+    "message": "feat: add depends_on relation for data-flow tracking\n\n- Create <return> entities for functions to represent return values\n- Track return statement dependencies (what <return> depends on)\n- Track variable initialization dependencies (const x = a + b)\n- Track call site dependencies (result depends on callee<return>)\n- Add --depends-on, --dependents, --all-deps CLI flags",
+    "files_changed": 6
+  },
+  {
     "hash": "d67931f60ccb0826345963b36b5ee7d8bb7f90d4",
     "short_hash": "d67931f",
     "author": "bigmistqke",
@@ -8,12 +16,12 @@
     "files_changed": 3
   },
   {
-    "hash": "c54a381d347af947e5cb279e8269d775b319ed2c",
-    "short_hash": "c54a381",
+    "hash": "d67931f60ccb0826345963b36b5ee7d8bb7f90d4",
+    "short_hash": "d67931f",
     "author": "bigmistqke",
-    "date": "2026-01-13T15:51:52+01:00",
-    "message": "refactor: change location syntax from [line:col] to {line:col}\n\nAvoids conflict with computed properties and Symbol methods.\nExample: {42:1}action(0)<anonymous> instead of [42:1]action(0)<anonymous>",
-    "files_changed": 1
+    "date": "2026-01-13T16:08:10+01:00",
+    "message": "feat: track imports/exports as aliases\n\n- Default exports create <default> entity that aliases the named entity\n- Default imports alias the source module's <default>\n- Named imports alias the source module's entity directly\n- Renamed imports (import { foo as bar }) handled correctly\n- Import bindings created as entities for queryability\n\nExample chain:\n  imports.ts::mainFn → exports.ts::<default> → exports.ts::mainFunction",
+    "files_changed": 3
   },
   {
     "hash": "c54a381d347af947e5cb279e8269d775b319ed2c",

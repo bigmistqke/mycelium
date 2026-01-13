@@ -122,6 +122,20 @@ export class TypeScriptAnalyzer {
 
       const filePath = this.getRelativePath(sourceFile.getFilePath());
 
+      // Create <namespace> entity for this module (used by namespace imports)
+      entities.push({
+        id: `${filePath}::<namespace>`,
+        kind: "module",
+        name: "<namespace>",
+        file_path: filePath,
+        start_line: 1,
+        end_line: sourceFile.getEndLineNumber(),
+        signature: `module ${filePath}`,
+        signature_hash: computeSignatureHash("module namespace"),
+        impl_hash: null,
+        commit_sha: commitSha,
+      });
+
       // Extract module-level variables
       const variables = this.extractModuleVariables(sourceFile, filePath);
       for (const v of variables) {
@@ -309,6 +323,11 @@ export class TypeScriptAnalyzer {
       const imports = this.extractImports(sourceFile, filePath, commitSha);
       entities.push(...imports.entities);
       relations.push(...imports.aliases);
+
+      // Handle re-exports: export { foo } from './mod', export * from './mod'
+      const reExports = this.extractReExports(sourceFile, filePath, commitSha);
+      entities.push(...reExports.entities);
+      relations.push(...reExports.aliases);
     }
 
     // Fifth pass: extract dependencies (data-flow)
@@ -1793,7 +1812,121 @@ export class TypeScriptAnalyzer {
       }
 
       // Handle namespace import: import * as utils from './mod'
-      // Skip for now - would need special handling
+      const namespaceImport = importDecl.getNamespaceImport();
+      if (namespaceImport) {
+        const localName = namespaceImport.getText();
+        const localId = `${filePath}::${localName}`;
+        const targetId = `${resolvedPath}::<namespace>`;
+
+        entities.push({
+          id: localId,
+          kind: "module",
+          name: localName,
+          file_path: filePath,
+          start_line: importDecl.getStartLineNumber(),
+          end_line: importDecl.getEndLineNumber(),
+          signature: `import * as ${localName} from "${moduleSpecifier}"`,
+          signature_hash: computeSignatureHash(`import namespace`),
+          impl_hash: null,
+          commit_sha: commitSha,
+        });
+
+        aliases.push({
+          from_id: localId,
+          to_id: targetId,
+          kind: "aliases",
+          commit_sha: commitSha,
+          metadata: null,
+        });
+      }
+    }
+
+    return { entities, aliases };
+  }
+
+  /**
+   * Extracts re-export declarations as entities and alias relations.
+   * Handles: export { foo } from './mod', export { foo as bar } from './mod', export * from './mod'
+   */
+  private extractReExports(
+    sourceFile: SourceFile,
+    filePath: string,
+    commitSha: string
+  ): { entities: Omit<Entity, "created_at">[]; aliases: Omit<Relation, "id">[] } {
+    const entities: Omit<Entity, "created_at">[] = [];
+    const aliases: Omit<Relation, "id">[] = [];
+
+    for (const exportDecl of sourceFile.getExportDeclarations()) {
+      const moduleSpecifier = exportDecl.getModuleSpecifierValue();
+      if (!moduleSpecifier) continue; // Not a re-export, just `export { foo }`
+
+      // Resolve the source module path directly from export declaration
+      const moduleFile = exportDecl.getModuleSpecifierSourceFile();
+      if (!moduleFile) continue;
+      const resolvedPath = this.getRelativePath(moduleFile.getFilePath());
+
+      // Handle named re-exports: export { foo, bar as baz } from './mod'
+      const namedExports = exportDecl.getNamedExports();
+      for (const namedExport of namedExports) {
+        const sourceName = namedExport.getName(); // foo (from source module)
+        const localName = namedExport.getAliasNode()?.getText() ?? sourceName; // baz or foo
+
+        const localId = `${filePath}::${localName}`;
+        // Handle re-exporting default: export { default as foo } from './mod'
+        const targetName = sourceName === "default" ? "<default>" : sourceName;
+        const targetId = `${resolvedPath}::${targetName}`;
+
+        entities.push({
+          id: localId,
+          kind: "variable",
+          name: localName,
+          file_path: filePath,
+          start_line: namedExport.getStartLineNumber(),
+          end_line: namedExport.getEndLineNumber(),
+          signature: localName === sourceName
+            ? `export { ${sourceName} } from "${moduleSpecifier}"`
+            : `export { ${sourceName} as ${localName} } from "${moduleSpecifier}"`,
+          signature_hash: computeSignatureHash(`export named from`),
+          impl_hash: null,
+          commit_sha: commitSha,
+        });
+
+        aliases.push({
+          from_id: localId,
+          to_id: targetId,
+          kind: "aliases",
+          commit_sha: commitSha,
+          metadata: null,
+        });
+      }
+
+      // Handle star re-export: export * from './mod'
+      if (exportDecl.isNamespaceExport()) {
+        // Create a <re-export:modulePath> entity that aliases <namespace>
+        const reExportId = `${filePath}::<re-export:${moduleSpecifier}>`;
+        const targetId = `${resolvedPath}::<namespace>`;
+
+        entities.push({
+          id: reExportId,
+          kind: "module",
+          name: `<re-export:${moduleSpecifier}>`,
+          file_path: filePath,
+          start_line: exportDecl.getStartLineNumber(),
+          end_line: exportDecl.getEndLineNumber(),
+          signature: `export * from "${moduleSpecifier}"`,
+          signature_hash: computeSignatureHash(`export star from`),
+          impl_hash: null,
+          commit_sha: commitSha,
+        });
+
+        aliases.push({
+          from_id: reExportId,
+          to_id: targetId,
+          kind: "aliases",
+          commit_sha: commitSha,
+          metadata: null,
+        });
+      }
     }
 
     return { entities, aliases };
