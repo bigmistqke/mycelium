@@ -242,6 +242,7 @@ program
   .option("--trace <to>", "Find call path to another entity")
   .option("--desc", "Search in descriptions instead of names")
   .option("--fuzzy", "List all matches instead of selecting")
+  .option("--source", "Show source code of the entity")
   .action(async (target, options) => {
     const store = new GraphStore(resolve(options.db));
     const entities = store.getEntities();
@@ -387,6 +388,37 @@ program
           console.log();
         }
       }
+      store.close();
+      return;
+    }
+
+    // --source: show source code
+    if (options.source) {
+      const entity = await resolveEntity(target);
+      const filePath = resolve(entity.file_path);
+
+      if (!existsSync(filePath)) {
+        console.error(`File not found: ${filePath}`);
+        store.close();
+        process.exit(1);
+      }
+
+      const content = readFileSync(filePath, "utf-8");
+      const lines = content.split("\n");
+      const startLine = entity.start_line - 1; // 0-indexed
+      const endLine = entity.end_line;
+      const sourceLines = lines.slice(startLine, endLine);
+
+      console.log(`\n${entity.name}`);
+      console.log(`${"─".repeat(60)}`);
+      console.log(`File: ${entity.file_path}:${entity.start_line}-${entity.end_line}\n`);
+
+      // Print with line numbers
+      for (let i = 0; i < sourceLines.length; i++) {
+        const lineNum = (startLine + i + 1).toString().padStart(4, " ");
+        console.log(`${lineNum} │ ${sourceLines[i]}`);
+      }
+
       store.close();
       return;
     }
