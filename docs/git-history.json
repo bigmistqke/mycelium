@@ -1,19 +1,35 @@
 [
   {
+    "hash": "cd5061cd6e753acc9285e488faa1e7c9bda78fe1",
+    "short_hash": "cd5061c",
+    "author": "bigmistqke",
+    "date": "2026-01-13T23:15:57+01:00",
+    "message": "feat: add sync prune and HOF dataflow extraction\n\n- Add pruneEntities() to remove entities not matching include/exclude patterns\n- Add shouldInclude/shouldExclude/isPathAllowed to config for pattern matching\n- Add extractOpaqueHofDataflow() to create depends_on edges for callback params\n- When method is opaque (built-in like .map/.filter), link callback param to object\n- Fix globToRegex to properly handle **/ patterns",
+    "files_changed": 10
+  },
+  {
+    "hash": "47951f84afb95ca3e2f39c831cdb3a70dcdb0dfa",
+    "short_hash": "47951f8",
+    "author": "bigmistqke",
+    "date": "2026-01-13T23:15:28+01:00",
+    "message": "chore: reorganize tests into test/ directory\n\nMove test files and fixtures out of src/ to fix tsconfig rootDir issues.\nAdd vitest.config.ts for test configuration.",
+    "files_changed": 39
+  },
+  {
+    "hash": "47951f84afb95ca3e2f39c831cdb3a70dcdb0dfa",
+    "short_hash": "47951f8",
+    "author": "bigmistqke",
+    "date": "2026-01-13T23:15:28+01:00",
+    "message": "chore: reorganize tests into test/ directory\n\nMove test files and fixtures out of src/ to fix tsconfig rootDir issues.\nAdd vitest.config.ts for test configuration.",
+    "files_changed": 39
+  },
+  {
     "hash": "c54ba4e9d28b22a308a2678d20ab07f653734d11",
     "short_hash": "c54ba4e",
     "author": "bigmistqke",
     "date": "2026-01-13T20:00:56+01:00",
     "message": "feat: replace --tsconfig with -c/--config for unified configuration\n\n- Add mycelium.config.json for project-level settings (db, tsconfig, include/exclude patterns)\n- Add src/config.ts for loading and merging config files\n- Replace --tsconfig option with -c/--config in sync, read, write, create, delete commands\n- Paths are now resolved relative to config file directory\n- Update tests to use new -c flag",
     "files_changed": 5
-  },
-  {
-    "hash": "8398f57d6d279d301adce8b12b21d980cb6a2969",
-    "short_hash": "8398f57",
-    "author": "bigmistqke",
-    "date": "2026-01-13T18:32:48+01:00",
-    "message": "feat: add create/delete CLI commands with tests\n\n- create: writes stdin to file, syncs to graph (--force to overwrite)\n- delete: removes entity from file, syncs (--file to remove empty files)\n- Added debug timing infrastructure for performance profiling\n- Tests use isolated tsconfig for 3x faster execution",
-    "files_changed": 2
   },
   {
     "hash": "8398f57d6d279d301adce8b12b21d980cb6a2969",

@@ -131,6 +131,11 @@ export class TypeScriptAnalyzer {
     >();
     // parametersByFunction: maps function ID -> Map<paramName, ParameterInfo>
     const parametersByFunction = new Map<string, Map<string, ParameterInfo>>();
+    // localVariablesByFunction: maps function ID -> Map<varName, VariableInfo>
+    const localVariablesByFunction = new Map<
+      string,
+      Map<string, VariableInfo>
+    >();
 
     // First pass: collect all functions and module-level variables
     for (const sourceFile of this.project.getSourceFiles()) {
@@ -206,6 +211,28 @@ export class TypeScriptAnalyzer {
               signature: `(${param.index})`,
               signature_hash: computeSignatureHash(`param ${param.index}`),
               impl_hash: null,
+              commit_sha: commitSha,
+            });
+          }
+        }
+
+        // Extract local variables for this function
+        const localVars = this.extractLocalVariables(fn, filePath);
+        if (localVars.length > 0) {
+          localVariablesByFunction.set(fn.id, new Map());
+          for (const v of localVars) {
+            localVariablesByFunction.get(fn.id)!.set(v.name, v);
+
+            entities.push({
+              id: v.id,
+              kind: "variable",
+              name: v.name,
+              file_path: filePath,
+              start_line: v.startLine,
+              end_line: v.endLine,
+              signature: v.isConst ? `const ${v.name}` : `let ${v.name}`,
+              signature_hash: computeSignatureHash(v.isConst ? "const" : "let"),
+              impl_hash: v.initialValue ? computeImplHash(v.initialValue) : null,
               commit_sha: commitSha,
             });
           }
@@ -320,6 +347,7 @@ export class TypeScriptAnalyzer {
         functionMap,
         accessibleVars,
         parametersByFunction,
+        localVariablesByFunction,
         callerSourceFile,
         caller.filePath,
         commitSha,
@@ -639,6 +667,137 @@ export class TypeScriptAnalyzer {
     }
 
     return params;
+  }
+
+  /**
+   * Extracts local variables declared within a function body.
+   */
+  private extractLocalVariables(
+    fn: FunctionInfo,
+    filePath: string,
+  ): VariableInfo[] {
+    const variables: VariableInfo[] = [];
+    const node = fn.node;
+
+    // Get the function body
+    let body: Node | undefined;
+    if (
+      Node.isFunctionDeclaration(node) ||
+      Node.isFunctionExpression(node) ||
+      Node.isMethodDeclaration(node) ||
+      Node.isConstructorDeclaration(node)
+    ) {
+      body = node.getBody();
+    } else if (Node.isArrowFunction(node)) {
+      body = node.getBody();
+    }
+
+    if (!body) return variables;
+
+    // Find all variable statements in the body (direct children only, not nested functions)
+    const varStatements = body.getDescendantsOfKind(
+      SyntaxKind.VariableStatement,
+    );
+
+    for (const varStmt of varStatements) {
+      // Skip variables inside nested functions
+      const parentFn = this.getContainingFunction(varStmt);
+      if (parentFn !== node) continue;
+
+      const isConst =
+        varStmt.getDeclarationKind() === VariableDeclarationKind.Const;
+
+      for (const decl of varStmt.getDeclarations()) {
+        const initializer = decl.getInitializer();
+        // Skip function declarations (they're tracked as functions)
+        if (
+          initializer &&
+          (Node.isArrowFunction(initializer) ||
+            Node.isFunctionExpression(initializer))
+        ) {
+          continue;
+        }
+
+        const nameNode = decl.getNameNode();
+        // Handle simple identifiers
+        if (Node.isIdentifier(nameNode)) {
+          const name = decl.getName();
+          variables.push({
+            id: `${fn.id}::${name}`,
+            name,
+            filePath,
+            startLine: decl.getStartLineNumber(),
+            endLine: decl.getEndLineNumber(),
+            isConst,
+            initialValue: initializer?.getText() ?? null,
+            node: decl,
+            ownerFunctionId: fn.id,
+          });
+        }
+        // Handle destructuring - extract individual names
+        else if (Node.isObjectBindingPattern(nameNode)) {
+          for (const element of nameNode.getElements()) {
+            const bindingName = element.getNameNode();
+            if (Node.isIdentifier(bindingName)) {
+              const name = bindingName.getText();
+              variables.push({
+                id: `${fn.id}::${name}`,
+                name,
+                filePath,
+                startLine: element.getStartLineNumber(),
+                endLine: element.getEndLineNumber(),
+                isConst,
+                initialValue: null,
+                node: element,
+                ownerFunctionId: fn.id,
+              });
+            }
+          }
+        } else if (Node.isArrayBindingPattern(nameNode)) {
+          for (const element of nameNode.getElements()) {
+            if (Node.isBindingElement(element)) {
+              const bindingName = element.getNameNode();
+              if (Node.isIdentifier(bindingName)) {
+                const name = bindingName.getText();
+                variables.push({
+                  id: `${fn.id}::${name}`,
+                  name,
+                  filePath,
+                  startLine: element.getStartLineNumber(),
+                  endLine: element.getEndLineNumber(),
+                  isConst,
+                  initialValue: null,
+                  node: element,
+                  ownerFunctionId: fn.id,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return variables;
+  }
+
+  /**
+   * Gets the containing function for a node (direct parent function, not ancestors).
+   */
+  private getContainingFunction(node: Node): Node | null {
+    let current = node.getParent();
+    while (current) {
+      if (
+        Node.isFunctionDeclaration(current) ||
+        Node.isFunctionExpression(current) ||
+        Node.isArrowFunction(current) ||
+        Node.isMethodDeclaration(current) ||
+        Node.isConstructorDeclaration(current)
+      ) {
+        return current;
+      }
+      current = current.getParent();
+    }
+    return null;
   }
 
   /**
@@ -1149,6 +1308,7 @@ export class TypeScriptAnalyzer {
     functionMap: Map<string, FunctionInfo>,
     accessibleVars: Map<string, VariableInfo>,
     parametersByFunction: Map<string, Map<string, ParameterInfo>>,
+    localVariablesByFunction: Map<string, Map<string, VariableInfo>>,
     sourceFile: SourceFile,
     filePath: string,
     commitSha: string | null,
@@ -1185,6 +1345,7 @@ export class TypeScriptAnalyzer {
           callerFn,
           accessibleVars,
           parametersByFunction,
+          localVariablesByFunction,
         );
         if (!objectEntity) continue;
 
@@ -1240,10 +1401,17 @@ export class TypeScriptAnalyzer {
     callerFn: FunctionInfo,
     accessibleVars: Map<string, VariableInfo>,
     parametersByFunction: Map<string, Map<string, ParameterInfo>>,
+    localVariablesByFunction: Map<string, Map<string, VariableInfo>>,
   ): { id: string } | null {
     if (!Node.isIdentifier(objectExpr)) return null;
 
     const name = objectExpr.getText();
+
+    // Check local variables of the containing function
+    const localVars = localVariablesByFunction.get(callerFn.id);
+    if (localVars?.has(name)) {
+      return localVars.get(name)!;
+    }
 
     // Check accessible variables (module-level + closure vars)
     if (accessibleVars.has(name)) {
