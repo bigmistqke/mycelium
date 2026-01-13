@@ -267,10 +267,12 @@ program
 
     // Helper: resolve pattern to single entity (with interactive select if ambiguous)
     const resolveEntity = async (pattern: string) => {
+      // Exact match if pattern contains ::
       if (pattern.includes("::")) {
         const entity = entities.find((e) => e.id === pattern);
         if (!entity) {
           console.error(`Entity not found: ${pattern}`);
+          console.error(`Use --fuzzy to search for partial matches`);
           process.exit(1);
         }
         return entity;
