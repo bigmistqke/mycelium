@@ -84,6 +84,7 @@ program
           "mycelium-sync.md",
           "mycelium-describe.md",
           "mycelium-explore.md",
+          "mycelium-community.md",
         ];
 
         for (const template of templates) {
@@ -102,9 +103,10 @@ program
 
         console.log("\nClaude integration set up!");
         console.log("Commands available:");
-        console.log("  /mycelium-sync     - Analyze codebase");
-        console.log("  /mycelium-describe - Generate descriptions");
-        console.log("  /mycelium-explore  - Query the graph");
+        console.log("  /mycelium-sync      - Analyze codebase");
+        console.log("  /mycelium-describe  - Generate descriptions");
+        console.log("  /mycelium-explore   - Query the graph");
+        console.log("  /mycelium-community - Name code communities");
       } else {
         console.error(`Unknown AI provider: ${provider}`);
         console.error("Supported: claude");
@@ -168,6 +170,25 @@ mycelium query calls "<id>"
 mycelium query callers "<id>"
 mycelium history
 mycelium diff <from> <to>
+\`\`\`
+`,
+    "mycelium-community.md": `---
+description: Name and manage code communities detected by mycelium
+allowed-tools: Bash(mycelium:*)
+argument-hint: [name | list | detect]
+---
+
+# Mycelium Community
+
+\`\`\`bash
+# List unnamed communities with members
+mycelium community list --unnamed --members
+
+# Rename a community
+mycelium community rename <old-name> <new-name>
+
+# Re-run detection (preserves user names)
+mycelium community detect
 \`\`\`
 `,
   };
