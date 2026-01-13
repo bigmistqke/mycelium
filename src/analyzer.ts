@@ -354,6 +354,16 @@ export class TypeScriptAnalyzer {
       );
       relations.push(...hofDataflow);
 
+      // Extract local variable dependencies (what each local var is initialized from)
+      const localVarDeps = this.extractLocalVariableDependencies(
+        caller,
+        accessibleVars,
+        parametersByFunction,
+        localVariablesByFunction,
+        commitSha,
+      );
+      relations.push(...localVarDeps);
+
       // Extract this.x accesses for class methods
       const className = this.getOwningClassName(caller.node);
       if (className) {
@@ -1422,6 +1432,145 @@ export class TypeScriptAnalyzer {
     const callerParams = parametersByFunction.get(callerFn.id);
     if (callerParams?.has(name)) {
       return callerParams.get(name)!;
+    }
+
+    return null;
+  }
+
+  /**
+   * Extracts dependency edges from local variables to their initialization sources.
+   * For `const x = y.method()`, creates edge: x depends_on y
+   * For `const x = y`, creates edge: x depends_on y
+   */
+  private extractLocalVariableDependencies(
+    callerFn: FunctionInfo,
+    accessibleVars: Map<string, VariableInfo>,
+    parametersByFunction: Map<string, Map<string, ParameterInfo>>,
+    localVariablesByFunction: Map<string, Map<string, VariableInfo>>,
+    commitSha: string | null,
+  ): Array<Omit<Relation, "id">> {
+    const relations: Array<Omit<Relation, "id">> = [];
+
+    const localVars = localVariablesByFunction.get(callerFn.id);
+    if (!localVars) return relations;
+
+    for (const [, localVar] of localVars) {
+      // Get the initializer from the variable declaration
+      const varNode = localVar.node;
+      if (!Node.isVariableDeclaration(varNode) && !Node.isBindingElement(varNode)) continue;
+
+      const initializer = Node.isVariableDeclaration(varNode)
+        ? varNode.getInitializer()
+        : null;
+      if (!initializer) continue;
+
+      // Find all identifiers in the initializer that reference tracked entities
+      const deps = this.extractLocalVarInitDependencies(
+        initializer,
+        callerFn,
+        accessibleVars,
+        parametersByFunction,
+        localVariablesByFunction,
+      );
+
+      for (const depId of deps) {
+        // Don't create self-references
+        if (depId === localVar.id) continue;
+
+        relations.push({
+          from_id: localVar.id,
+          to_id: depId,
+          kind: "depends_on",
+          commit_sha: commitSha!,
+          metadata: JSON.stringify({ source: "initializer" }),
+        });
+      }
+    }
+
+    return relations;
+  }
+
+  /**
+   * Extracts entity IDs that a local variable's initializer depends on.
+   */
+  private extractLocalVarInitDependencies(
+    initializer: Node,
+    callerFn: FunctionInfo,
+    accessibleVars: Map<string, VariableInfo>,
+    parametersByFunction: Map<string, Map<string, ParameterInfo>>,
+    localVariablesByFunction: Map<string, Map<string, VariableInfo>>,
+  ): string[] {
+    const deps: string[] = [];
+    const seen = new Set<string>();
+
+    // Find all identifiers in the expression
+    const identifiers = initializer.getDescendantsOfKind(SyntaxKind.Identifier);
+
+    // Also check if the initializer itself is an identifier
+    if (Node.isIdentifier(initializer)) {
+      const entity = this.findEntityByName(
+        initializer.getText(),
+        callerFn,
+        accessibleVars,
+        parametersByFunction,
+        localVariablesByFunction,
+      );
+      if (entity && !seen.has(entity.id)) {
+        deps.push(entity.id);
+        seen.add(entity.id);
+      }
+    }
+
+    for (const ident of identifiers) {
+      // Skip property names in property access (obj.prop - skip prop)
+      const parent = ident.getParent();
+      if (Node.isPropertyAccessExpression(parent) && parent.getNameNode() === ident) {
+        continue;
+      }
+
+      const name = ident.getText();
+      const entity = this.findEntityByName(
+        name,
+        callerFn,
+        accessibleVars,
+        parametersByFunction,
+        localVariablesByFunction,
+      );
+
+      if (entity && !seen.has(entity.id)) {
+        deps.push(entity.id);
+        seen.add(entity.id);
+      }
+    }
+
+    return deps;
+  }
+
+  /**
+   * Finds an entity by name in the available scopes.
+   */
+  private findEntityByName(
+    name: string,
+    callerFn: FunctionInfo,
+    accessibleVars: Map<string, VariableInfo>,
+    parametersByFunction: Map<string, Map<string, ParameterInfo>>,
+    localVariablesByFunction: Map<string, Map<string, VariableInfo>>,
+  ): { id: string } | null {
+    // Check local variables
+    const localVars = localVariablesByFunction.get(callerFn.id);
+    if (localVars?.has(name)) {
+      return localVars.get(name)!;
+    }
+
+    // Check accessible variables (module-level + closure)
+    if (accessibleVars.has(name)) {
+      return accessibleVars.get(name)!;
+    }
+
+    // Check parameters
+    const params = parametersByFunction.get(callerFn.id);
+    if (params?.has(name)) {
+      return params.get(name)!;
     }
 
     return null;
