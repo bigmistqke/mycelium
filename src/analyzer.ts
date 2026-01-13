@@ -1,22 +1,20 @@
+import { relative } from "path";
 import {
-  Project,
-  SourceFile,
-  FunctionDeclaration,
   ArrowFunction,
-  FunctionExpression,
-  VariableDeclaration,
-  VariableDeclarationKind,
   CallExpression,
-  SyntaxKind,
+  FunctionDeclaration,
+  FunctionExpression,
   Node,
   ObjectLiteralExpression,
+  Project,
   PropertyAssignment,
-  MethodDeclaration,
-  ReturnStatement,
+  SourceFile,
+  SyntaxKind,
+  VariableDeclaration,
+  VariableDeclarationKind,
 } from "ts-morph";
-import { computeSignatureHash, computeImplHash } from "./hash.js";
-import type { Entity, Relation, CallArgument } from "./db.js";
-import { relative } from "path";
+import type { CallArgument, Entity, Relation } from "./db.ts";
+import { computeImplHash, computeSignatureHash } from "./hash.ts";
 
 export interface AnalysisResult {
   entities: Omit<Entity, "created_at">[];
@@ -78,10 +76,10 @@ interface Dependency {
 }
 
 interface ParameterInfo {
-  id: string;          // e.g., "file.ts::foo(0)"
-  name: string;        // e.g., "x"
-  index: number;       // 0-based parameter index
-  functionId: string;  // e.g., "file.ts::foo"
+  id: string; // e.g., "file.ts::foo(0)"
+  name: string; // e.g., "x"
+  index: number; // 0-based parameter index
+  functionId: string; // e.g., "file.ts::foo"
   filePath: string;
   startLine: number;
   endLine: number;
@@ -122,9 +120,15 @@ export class TypeScriptAnalyzer {
     // variableMap: keyed by simple name for module-level, by full ID for closure vars
     const variableMap = new Map<string, VariableInfo>();
     // closureVariablesByOwner: maps owner function ID -> Map<varName, VariableInfo>
-    const closureVariablesByOwner = new Map<string, Map<string, VariableInfo>>();
+    const closureVariablesByOwner = new Map<
+      string,
+      Map<string, VariableInfo>
+    >();
     // classPropertiesMap: maps className -> Map<propertyName, ClassPropertyInfo>
-    const classPropertiesMap = new Map<string, Map<string, ClassPropertyInfo>>();
+    const classPropertiesMap = new Map<
+      string,
+      Map<string, ClassPropertyInfo>
+    >();
     // parametersByFunction: maps function ID -> Map<paramName, ParameterInfo>
     const parametersByFunction = new Map<string, Map<string, ParameterInfo>>();
 
@@ -209,7 +213,10 @@ export class TypeScriptAnalyzer {
       }
 
       // Extract closure variables that are mutated by nested functions
-      const closureVars = this.findMutatedClosureVariables(functionMap, filePath);
+      const closureVars = this.findMutatedClosureVariables(
+        functionMap,
+        filePath,
+      );
       for (const v of closureVars) {
         // Add to closure variable lookup by owner
         if (!closureVariablesByOwner.has(v.ownerFunctionId!)) {
@@ -248,8 +255,12 @@ export class TypeScriptAnalyzer {
           start_line: prop.startLine,
           end_line: prop.endLine,
           signature: prop.isReadonly ? `readonly ${prop.name}` : prop.name,
-          signature_hash: computeSignatureHash(prop.isReadonly ? "readonly" : "property"),
-          impl_hash: prop.initialValue ? computeImplHash(prop.initialValue) : null,
+          signature_hash: computeSignatureHash(
+            prop.isReadonly ? "readonly" : "property",
+          ),
+          impl_hash: prop.initialValue
+            ? computeImplHash(prop.initialValue)
+            : null,
           commit_sha: commitSha,
         });
       }
@@ -286,7 +297,12 @@ export class TypeScriptAnalyzer {
 
       // Extract variable accesses (reads/writes)
       const scope = this.buildScopeContext(caller.node);
-      const accesses = this.extractVariableAccesses(caller.node, scope, accessibleVars, caller.filePath);
+      const accesses = this.extractVariableAccesses(
+        caller.node,
+        scope,
+        accessibleVars,
+        caller.filePath,
+      );
       for (const access of accesses) {
         relations.push({
           from_id: callerId,
@@ -297,12 +313,29 @@ export class TypeScriptAnalyzer {
         });
       }
 
+      // Extract dataflow through opaque HOFs (map/filter/etc)
+      const callerSourceFile = caller.node.getSourceFile();
+      const hofDataflow = this.extractOpaqueHofDataflow(
+        caller,
+        functionMap,
+        accessibleVars,
+        parametersByFunction,
+        callerSourceFile,
+        caller.filePath,
+        commitSha,
+      );
+      relations.push(...hofDataflow);
+
       // Extract this.x accesses for class methods
       const className = this.getOwningClassName(caller.node);
       if (className) {
         const classProps = classPropertiesMap.get(className);
         if (classProps) {
-          const propAccesses = this.extractThisPropertyAccesses(caller.node, classProps, caller.filePath);
+          const propAccesses = this.extractThisPropertyAccesses(
+            caller.node,
+            classProps,
+            caller.filePath,
+          );
           for (const access of propAccesses) {
             relations.push({
               from_id: callerId,
@@ -319,11 +352,17 @@ export class TypeScriptAnalyzer {
     // Third pass: extract alias relations for variables
     const allEntityIds = new Set([
       ...Array.from(functionMap.keys()),
-      ...Array.from(variableMap.values()).map(v => v.id),
+      ...Array.from(variableMap.values()).map((v) => v.id),
     ]);
 
     for (const v of variableMap.values()) {
-      const aliasTarget = this.resolveAliasTarget(v.node, v.filePath, allEntityIds, variableMap, functionMap);
+      const aliasTarget = this.resolveAliasTarget(
+        v.node,
+        v.filePath,
+        allEntityIds,
+        variableMap,
+        functionMap,
+      );
       if (aliasTarget) {
         relations.push({
           from_id: v.id,
@@ -342,7 +381,12 @@ export class TypeScriptAnalyzer {
       const filePath = this.getRelativePath(sourceFile.getFilePath());
 
       // Handle default exports: create <default> entity/alias
-      const defaultExport = this.extractDefaultExport(sourceFile, filePath, allEntityIds, commitSha);
+      const defaultExport = this.extractDefaultExport(
+        sourceFile,
+        filePath,
+        allEntityIds,
+        commitSha,
+      );
       if (defaultExport) {
         if (defaultExport.entity) {
           entities.push(defaultExport.entity);
@@ -368,7 +412,7 @@ export class TypeScriptAnalyzer {
     // Build a complete ID set including newly added entities
     const allEntityIdsWithImports = new Set([
       ...allEntityIds,
-      ...entities.map(e => e.id),
+      ...entities.map((e) => e.id),
     ]);
 
     // Create <return> entities and track return statement dependencies
@@ -384,7 +428,7 @@ export class TypeScriptAnalyzer {
         allEntityIdsWithImports,
         variableMap,
         functionMap,
-        parametersByFunction.get(fnId)
+        parametersByFunction.get(fnId),
       );
       for (const dep of returnDeps) {
         relations.push({
@@ -405,7 +449,7 @@ export class TypeScriptAnalyzer {
         v.filePath,
         allEntityIdsWithImports,
         variableMap,
-        functionMap
+        functionMap,
       );
       for (const dep of deps) {
         relations.push({
@@ -434,7 +478,7 @@ export class TypeScriptAnalyzer {
         allEntityIdsWithImports,
         variableMap,
         functionMap,
-        commitSha
+        commitSha,
       );
       callArguments.push(...args);
     }
@@ -457,7 +501,7 @@ export class TypeScriptAnalyzer {
           variableMap,
           functionMap,
           parametersByFunction.get(fnId),
-          commitSha
+          commitSha,
         );
         callArguments.push(...args);
       }
@@ -475,7 +519,7 @@ export class TypeScriptAnalyzer {
     filePath: string,
     allEntityIds: Set<string>,
     variableMap: Map<string, VariableInfo>,
-    functionMap: Map<string, FunctionInfo>
+    functionMap: Map<string, FunctionInfo>,
   ): string | null {
     if (!Node.isVariableDeclaration(varDecl)) return null;
 
@@ -483,7 +527,10 @@ export class TypeScriptAnalyzer {
     if (!initializer) return null;
 
     // Skip function expressions - they're tracked as functions, not aliases
-    if (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer)) {
+    if (
+      Node.isArrowFunction(initializer) ||
+      Node.isFunctionExpression(initializer)
+    ) {
       return null;
     }
 
@@ -553,15 +600,22 @@ export class TypeScriptAnalyzer {
    * Extracts parameters from a function as entities.
    * Creates parameter entities like foo(0), foo(1), etc.
    */
-  private extractParameters(fn: FunctionInfo, filePath: string): ParameterInfo[] {
+  private extractParameters(
+    fn: FunctionInfo,
+    filePath: string,
+  ): ParameterInfo[] {
     const params: ParameterInfo[] = [];
     const node = fn.node;
 
     // Get parameters from the function node
     let parameterNodes: Node[] = [];
-    if (Node.isFunctionDeclaration(node) || Node.isFunctionExpression(node) ||
-        Node.isArrowFunction(node) || Node.isMethodDeclaration(node) ||
-        Node.isConstructorDeclaration(node)) {
+    if (
+      Node.isFunctionDeclaration(node) ||
+      Node.isFunctionExpression(node) ||
+      Node.isArrowFunction(node) ||
+      Node.isMethodDeclaration(node) ||
+      Node.isConstructorDeclaration(node)
+    ) {
       parameterNodes = node.getParameters();
     }
 
@@ -590,7 +644,10 @@ export class TypeScriptAnalyzer {
   /**
    * Extracts all function-like entities from a source file: named functions, exported arrow functions, class methods, and nested functions. Returns FunctionInfo for each.
    */
-  private extractFunctions(sourceFile: SourceFile, filePath: string): FunctionInfo[] {
+  private extractFunctions(
+    sourceFile: SourceFile,
+    filePath: string,
+  ): FunctionInfo[] {
     const functions: FunctionInfo[] = [];
 
     // Named function declarations
@@ -614,15 +671,29 @@ export class TypeScriptAnalyzer {
         Node.isFunctionExpression(initializer)
       ) {
         const name = varDecl.getName();
-        const info = this.createFunctionInfoFromVar(varDecl, initializer, name, filePath);
+        const info = this.createFunctionInfoFromVar(
+          varDecl,
+          initializer,
+          name,
+          filePath,
+        );
         functions.push(info);
         // Extract nested functions
-        functions.push(...this.extractNestedFunctions(initializer, name, filePath));
+        functions.push(
+          ...this.extractNestedFunctions(initializer, name, filePath),
+        );
       }
       // Object literals with methods: const api = { method() {}, handler: () => {} }
       else if (Node.isObjectLiteralExpression(initializer)) {
         const objName = varDecl.getName();
-        functions.push(...this.extractObjectLiteralMethods(initializer, objName, filePath, sourceFile));
+        functions.push(
+          ...this.extractObjectLiteralMethods(
+            initializer,
+            objName,
+            filePath,
+            sourceFile,
+          ),
+        );
       }
     }
 
@@ -636,7 +707,9 @@ export class TypeScriptAnalyzer {
         const info = this.createFunctionInfo(ctor, fullName, filePath);
         functions.push(info);
         // Extract nested functions
-        functions.push(...this.extractNestedFunctions(ctor, fullName, filePath));
+        functions.push(
+          ...this.extractNestedFunctions(ctor, fullName, filePath),
+        );
       }
 
       for (const method of classDecl.getMethods()) {
@@ -645,7 +718,9 @@ export class TypeScriptAnalyzer {
         const info = this.createFunctionInfo(method, fullName, filePath);
         functions.push(info);
         // Extract nested functions
-        functions.push(...this.extractNestedFunctions(method, fullName, filePath));
+        functions.push(
+          ...this.extractNestedFunctions(method, fullName, filePath),
+        );
       }
     }
 
@@ -658,16 +733,26 @@ export class TypeScriptAnalyzer {
   /**
    * Recursively extracts nested functions from within a function body. Uses :: separator for nested IDs (e.g., file.ts::outer::inner).
    */
-  private extractNestedFunctions(parentNode: Node, parentName: string, filePath: string): FunctionInfo[] {
+  private extractNestedFunctions(
+    parentNode: Node,
+    parentName: string,
+    filePath: string,
+  ): FunctionInfo[] {
     const functions: FunctionInfo[] = [];
-    const body = Node.isFunctionDeclaration(parentNode) || Node.isMethodDeclaration(parentNode) || Node.isArrowFunction(parentNode) || Node.isFunctionExpression(parentNode)
-      ? (parentNode as any).getBody?.()
-      : null;
+    const body =
+      Node.isFunctionDeclaration(parentNode) ||
+      Node.isMethodDeclaration(parentNode) ||
+      Node.isArrowFunction(parentNode) ||
+      Node.isFunctionExpression(parentNode)
+        ? (parentNode as any).getBody?.()
+        : null;
 
     if (!body) return functions;
 
     // Find nested named function declarations
-    const nestedFunctions = body.getDescendantsOfKind(SyntaxKind.FunctionDeclaration);
+    const nestedFunctions = body.getDescendantsOfKind(
+      SyntaxKind.FunctionDeclaration,
+    );
     for (const fn of nestedFunctions) {
       const name = fn.getName();
       if (!name) continue;
@@ -682,20 +767,32 @@ export class TypeScriptAnalyzer {
     }
 
     // Find nested arrow functions and function expressions assigned to variables
-    const varStatements = body.getDescendantsOfKind(SyntaxKind.VariableDeclaration);
+    const varStatements = body.getDescendantsOfKind(
+      SyntaxKind.VariableDeclaration,
+    );
     for (const varDecl of varStatements) {
       const initializer = varDecl.getInitializer();
       if (!initializer) continue;
       // Skip if this var is nested inside another nested function (will be handled recursively)
       if (this.hasIntermediateFunction(body, varDecl)) continue;
 
-      if (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer)) {
+      if (
+        Node.isArrowFunction(initializer) ||
+        Node.isFunctionExpression(initializer)
+      ) {
         const name = varDecl.getName();
         const fullName = `${parentName}::${name}`;
-        const info = this.createFunctionInfoFromVar(varDecl, initializer, fullName, filePath);
+        const info = this.createFunctionInfoFromVar(
+          varDecl,
+          initializer,
+          fullName,
+          filePath,
+        );
         functions.push(info);
         // Recurse into this nested function
-        functions.push(...this.extractNestedFunctions(initializer, fullName, filePath));
+        functions.push(
+          ...this.extractNestedFunctions(initializer, fullName, filePath),
+        );
       }
     }
 
@@ -710,7 +807,7 @@ export class TypeScriptAnalyzer {
     objLiteral: ObjectLiteralExpression,
     objName: string,
     filePath: string,
-    sourceFile: SourceFile
+    sourceFile: SourceFile,
   ): FunctionInfo[] {
     const functions: FunctionInfo[] = [];
 
@@ -722,18 +819,30 @@ export class TypeScriptAnalyzer {
         const info = this.createFunctionInfo(prop, fullName, filePath);
         functions.push(info);
         // Extract nested functions within the method
-        functions.push(...this.extractNestedFunctions(prop, fullName, filePath));
+        functions.push(
+          ...this.extractNestedFunctions(prop, fullName, filePath),
+        );
       }
       // Property assignments with function values: { method: () => {} } or { method: function() {} }
       else if (Node.isPropertyAssignment(prop)) {
         const init = prop.getInitializer();
-        if (init && (Node.isArrowFunction(init) || Node.isFunctionExpression(init))) {
+        if (
+          init &&
+          (Node.isArrowFunction(init) || Node.isFunctionExpression(init))
+        ) {
           const methodName = prop.getName();
           const fullName = `${objName}.${methodName}`;
-          const info = this.createFunctionInfoFromMethod(prop, init, fullName, filePath);
+          const info = this.createFunctionInfoFromMethod(
+            prop,
+            init,
+            fullName,
+            filePath,
+          );
           functions.push(info);
           // Extract nested functions within the method
-          functions.push(...this.extractNestedFunctions(init, fullName, filePath));
+          functions.push(
+            ...this.extractNestedFunctions(init, fullName, filePath),
+          );
         }
       }
     }
@@ -748,11 +857,16 @@ export class TypeScriptAnalyzer {
    * - Anonymous functions: {line:col}funcName<arg:N><anonymous>
    * - Nested inside anonymous: {line:col}funcName<arg:N><anonymous>::nestedFn
    */
-  private extractCallArgumentMethods(sourceFile: SourceFile, filePath: string): FunctionInfo[] {
+  private extractCallArgumentMethods(
+    sourceFile: SourceFile,
+    filePath: string,
+  ): FunctionInfo[] {
     const functions: FunctionInfo[] = [];
     const processedNodes = new Set<Node>();
 
-    for (const call of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    for (const call of sourceFile.getDescendantsOfKind(
+      SyntaxKind.CallExpression,
+    )) {
       const args = call.getArguments();
 
       for (let argIdx = 0; argIdx < args.length; argIdx++) {
@@ -778,12 +892,21 @@ export class TypeScriptAnalyzer {
 
         // Determine nesting context
         const scopePrefix = this.getScopePrefix(call, filePath);
-        const fullBase = scopePrefix ? `${scopePrefix}::${syntheticBase}` : syntheticBase;
+        const fullBase = scopePrefix
+          ? `${scopePrefix}::${syntheticBase}`
+          : syntheticBase;
 
         // Handle object literals: { method() {} }
         if (Node.isObjectLiteralExpression(arg)) {
           processedNodes.add(arg);
-          functions.push(...this.extractObjectLiteralMethods(arg, fullBase, filePath, sourceFile));
+          functions.push(
+            ...this.extractObjectLiteralMethods(
+              arg,
+              fullBase,
+              filePath,
+              sourceFile,
+            ),
+          );
         }
         // Handle anonymous functions: (args) => {} or function(args) {}
         else if (Node.isArrowFunction(arg) || Node.isFunctionExpression(arg)) {
@@ -792,7 +915,9 @@ export class TypeScriptAnalyzer {
           const info = this.createFunctionInfo(arg, anonName, filePath);
           functions.push(info);
           // Extract nested functions within the anonymous function
-          functions.push(...this.extractNestedFunctions(arg, anonName, filePath));
+          functions.push(
+            ...this.extractNestedFunctions(arg, anonName, filePath),
+          );
         }
       }
     }
@@ -811,7 +936,10 @@ export class TypeScriptAnalyzer {
       if (Node.isFunctionDeclaration(current)) {
         const name = current.getName();
         if (name) scopes.unshift(name);
-      } else if (Node.isArrowFunction(current) || Node.isFunctionExpression(current)) {
+      } else if (
+        Node.isArrowFunction(current) ||
+        Node.isFunctionExpression(current)
+      ) {
         // Check if assigned to a variable
         const parent = current.getParent();
         if (parent && Node.isVariableDeclaration(parent)) {
@@ -841,18 +969,30 @@ export class TypeScriptAnalyzer {
     prop: PropertyAssignment,
     fn: ArrowFunction | FunctionExpression,
     name: string,
-    filePath: string
+    filePath: string,
   ): FunctionInfo {
     const startLine = prop.getStartLineNumber();
     const endLine = prop.getEndLineNumber();
     const id = `${filePath}::${name}`;
 
-    const params = fn.getParameters().map((p) => p.getText()).join(", ");
+    const params = fn
+      .getParameters()
+      .map((p) => p.getText())
+      .join(", ");
     const returnType = fn.getReturnType().getText();
     const signature = `(${params}) => ${returnType}`;
     const body = fn.getBody()?.getText() ?? null;
 
-    return { id, name, filePath, startLine, endLine, signature, body, node: fn };
+    return {
+      id,
+      name,
+      filePath,
+      startLine,
+      endLine,
+      signature,
+      body,
+      node: fn,
+    };
   }
 
   /**
@@ -881,7 +1021,7 @@ export class TypeScriptAnalyzer {
   private createFunctionInfo(
     fn: FunctionDeclaration | FunctionExpression | Node,
     name: string,
-    filePath: string
+    filePath: string,
   ): FunctionInfo {
     const startLine = fn.getStartLineNumber();
     const endLine = fn.getEndLineNumber();
@@ -891,7 +1031,10 @@ export class TypeScriptAnalyzer {
     let body: string | null = null;
 
     if (Node.isFunctionDeclaration(fn) || Node.isMethodDeclaration(fn)) {
-      const params = fn.getParameters().map((p) => p.getText()).join(", ");
+      const params = fn
+        .getParameters()
+        .map((p) => p.getText())
+        .join(", ");
       const returnType = fn.getReturnType().getText();
       signature = `(${params}) => ${returnType}`;
       body = fn.getBody()?.getText() ?? null;
@@ -900,7 +1043,16 @@ export class TypeScriptAnalyzer {
       body = fn.getText();
     }
 
-    return { id, name, filePath, startLine, endLine, signature, body, node: fn };
+    return {
+      id,
+      name,
+      filePath,
+      startLine,
+      endLine,
+      signature,
+      body,
+      node: fn,
+    };
   }
 
   /**
@@ -910,26 +1062,43 @@ export class TypeScriptAnalyzer {
     varDecl: VariableDeclaration,
     fn: ArrowFunction | FunctionExpression,
     name: string,
-    filePath: string
+    filePath: string,
   ): FunctionInfo {
     const startLine = varDecl.getStartLineNumber();
     const endLine = varDecl.getEndLineNumber();
     const id = `${filePath}::${name}`;
 
-    const params = fn.getParameters().map((p) => p.getText()).join(", ");
+    const params = fn
+      .getParameters()
+      .map((p) => p.getText())
+      .join(", ");
     const returnType = fn.getReturnType().getText();
     const signature = `(${params}) => ${returnType}`;
     const body = fn.getBody()?.getText() ?? null;
 
-    return { id, name, filePath, startLine, endLine, signature, body, node: fn };
+    return {
+      id,
+      name,
+      filePath,
+      startLine,
+      endLine,
+      signature,
+      body,
+      node: fn,
+    };
   }
 
   /**
    * Finds all call expressions within a function and resolves them to known function IDs. Returns deduplicated list of callee IDs for building the call graph.
    */
-  private extractCalls(node: Node, functionMap: Map<string, FunctionInfo>): string[] {
+  private extractCalls(
+    node: Node,
+    functionMap: Map<string, FunctionInfo>,
+  ): string[] {
     const calls: string[] = [];
-    const callExpressions = node.getDescendantsOfKind(SyntaxKind.CallExpression);
+    const callExpressions = node.getDescendantsOfKind(
+      SyntaxKind.CallExpression,
+    );
 
     for (const call of callExpressions) {
       const calleeName = this.getCalleeName(call);
@@ -970,30 +1139,169 @@ export class TypeScriptAnalyzer {
     return null;
   }
 
+  /**
+   * Extracts dataflow edges for opaque higher-order function calls.
+   * When we can't trace into a method (built-ins like .map/.filter), we create
+   * "depends_on" edges from callback parameters to the object being iterated.
+   */
+  private extractOpaqueHofDataflow(
+    callerFn: FunctionInfo,
+    functionMap: Map<string, FunctionInfo>,
+    accessibleVars: Map<string, VariableInfo>,
+    parametersByFunction: Map<string, Map<string, ParameterInfo>>,
+    sourceFile: SourceFile,
+    filePath: string,
+    commitSha: string | null,
+  ): Array<Omit<Relation, "id">> {
+    const relations: Array<Omit<Relation, "id">> = [];
+    const body = callerFn.node;
+
+    const callExpressions = body.getDescendantsOfKind(
+      SyntaxKind.CallExpression,
+    );
+
+    for (const call of callExpressions) {
+      const expression = call.getExpression();
+
+      // Only handle method calls: obj.method(...)
+      if (!Node.isPropertyAccessExpression(expression)) continue;
+
+      const methodName = expression.getName();
+      const objectExpr = expression.getExpression();
+
+      // Check if method is traceable (exists in functionMap)
+      if (this.isMethodTraceable(methodName, functionMap)) continue;
+
+      // Find callback arguments
+      const args = call.getArguments();
+      for (let argIdx = 0; argIdx < args.length; argIdx++) {
+        const arg = args[argIdx];
+        if (!Node.isArrowFunction(arg) && !Node.isFunctionExpression(arg))
+          continue;
+
+        // Found opaque HOF with callback - find the object entity
+        const objectEntity = this.findObjectEntity(
+          objectExpr,
+          callerFn,
+          accessibleVars,
+          parametersByFunction,
+        );
+        if (!objectEntity) continue;
+
+        // Reconstruct callback function ID to find its parameters
+        const callPos = expression.getNameNode().getStart();
+        const { line, column } = sourceFile.getLineAndColumnAtPos(callPos);
+        const syntheticBase = `{${line}:${column}}${methodName}<arg:${argIdx}>`;
+        const scopePrefix = this.getScopePrefix(call, filePath);
+        const fullBase = scopePrefix
+          ? `${scopePrefix}::${syntheticBase}`
+          : syntheticBase;
+        const callbackId = `${filePath}::${fullBase}<anonymous>`;
+
+        // Get callback's parameters
+        const callbackParams = parametersByFunction.get(callbackId);
+        if (!callbackParams || callbackParams.size === 0) continue;
+
+        // First parameter depends on the object (for map/filter/forEach/find/etc)
+        const firstParam = Array.from(callbackParams.values())[0];
+        relations.push({
+          from_id: firstParam.id,
+          to_id: objectEntity.id,
+          kind: "depends_on",
+          commit_sha: commitSha!,
+          metadata: JSON.stringify({ source: "hof_branch" }),
+        });
+      }
+    }
+
+    return relations;
+  }
+
+  /**
+   * Checks if a method name is traceable (we have its implementation in functionMap).
+   */
+  private isMethodTraceable(
+    methodName: string,
+    functionMap: Map<string, FunctionInfo>,
+  ): boolean {
+    for (const [, fn] of functionMap) {
+      if (fn.name === methodName || fn.name.endsWith(`.${methodName}`)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Finds the entity for an object expression (variable, parameter, etc).
+   */
+  private findObjectEntity(
+    objectExpr: Node,
+    callerFn: FunctionInfo,
+    accessibleVars: Map<string, VariableInfo>,
+    parametersByFunction: Map<string, Map<string, ParameterInfo>>,
+  ): { id: string } | null {
+    if (!Node.isIdentifier(objectExpr)) return null;
+
+    const name = objectExpr.getText();
+
+    // Check accessible variables (module-level + closure vars)
+    if (accessibleVars.has(name)) {
+      return accessibleVars.get(name)!;
+    }
+
+    // Check parameters of containing function
+    const callerParams = parametersByFunction.get(callerFn.id);
+    if (callerParams?.has(name)) {
+      return callerParams.get(name)!;
+    }
+
+    return null;
+  }
+
   // Methods that mutate their receiver
   private readonly MUTATING_METHODS = new Set([
     // Array
-    "push", "pop", "shift", "unshift", "splice", "sort", "reverse", "fill", "copyWithin",
+    "push",
+    "pop",
+    "shift",
+    "unshift",
+    "splice",
+    "sort",
+    "reverse",
+    "fill",
+    "copyWithin",
     // Set/Map
-    "add", "delete", "clear", "set",
+    "add",
+    "delete",
+    "clear",
+    "set",
   ]);
 
   /**
    * Extracts module-level variables (let/const/var at file scope).
    */
-  extractModuleVariables(sourceFile: SourceFile, filePath: string): VariableInfo[] {
+  extractModuleVariables(
+    sourceFile: SourceFile,
+    filePath: string,
+  ): VariableInfo[] {
     const variables: VariableInfo[] = [];
 
     for (const varStmt of sourceFile.getVariableStatements()) {
       // Skip if inside a function (not module-level)
       if (this.hasParentFunction(varStmt)) continue;
 
-      const isConst = varStmt.getDeclarationKind() === VariableDeclarationKind.Const;
+      const isConst =
+        varStmt.getDeclarationKind() === VariableDeclarationKind.Const;
 
       for (const decl of varStmt.getDeclarations()) {
         const initializer = decl.getInitializer();
         // Skip function declarations (they're tracked as functions)
-        if (initializer && (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))) {
+        if (
+          initializer &&
+          (Node.isArrowFunction(initializer) ||
+            Node.isFunctionExpression(initializer))
+        ) {
           continue;
         }
 
@@ -1037,7 +1345,10 @@ export class TypeScriptAnalyzer {
   /**
    * Extracts class properties (instance and static) from all classes in a source file.
    */
-  extractClassProperties(sourceFile: SourceFile, filePath: string): ClassPropertyInfo[] {
+  extractClassProperties(
+    sourceFile: SourceFile,
+    filePath: string,
+  ): ClassPropertyInfo[] {
     const properties: ClassPropertyInfo[] = [];
 
     for (const classDecl of sourceFile.getClasses()) {
@@ -1085,7 +1396,7 @@ export class TypeScriptAnalyzer {
   private extractThisPropertyAccesses(
     methodNode: Node,
     classProps: Map<string, ClassPropertyInfo>,
-    filePath: string
+    filePath: string,
   ): VariableAccess[] {
     const accesses: VariableAccess[] = [];
     const body = this.getFunctionBody(methodNode);
@@ -1094,7 +1405,9 @@ export class TypeScriptAnalyzer {
     const writtenProps = new Set<string>();
 
     // Track assignments to this.x
-    for (const propAccess of body.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)) {
+    for (const propAccess of body.getDescendantsOfKind(
+      SyntaxKind.PropertyAccessExpression,
+    )) {
       if (this.hasIntermediateFunction(body, propAccess)) continue;
 
       const expr = propAccess.getExpression();
@@ -1108,7 +1421,10 @@ export class TypeScriptAnalyzer {
       const parent = propAccess.getParent();
       if (parent && Node.isBinaryExpression(parent)) {
         const left = parent.getLeft();
-        if (left === propAccess && this.isAssignmentOperator(parent.getOperatorToken().getKind())) {
+        if (
+          left === propAccess &&
+          this.isAssignmentOperator(parent.getOperatorToken().getKind())
+        ) {
           writtenProps.add(propName);
           accesses.push({
             variableName: propName,
@@ -1120,9 +1436,16 @@ export class TypeScriptAnalyzer {
       }
 
       // Check for prefix/postfix operators
-      if (parent && (Node.isPrefixUnaryExpression(parent) || Node.isPostfixUnaryExpression(parent))) {
+      if (
+        parent &&
+        (Node.isPrefixUnaryExpression(parent) ||
+          Node.isPostfixUnaryExpression(parent))
+      ) {
         const op = parent.getOperatorToken();
-        if (op === SyntaxKind.PlusPlusToken || op === SyntaxKind.MinusMinusToken) {
+        if (
+          op === SyntaxKind.PlusPlusToken ||
+          op === SyntaxKind.MinusMinusToken
+        ) {
           writtenProps.add(propName);
           accesses.push({
             variableName: propName,
@@ -1163,7 +1486,7 @@ export class TypeScriptAnalyzer {
 
     // Deduplicate accesses
     const seen = new Set<string>();
-    return accesses.filter(a => {
+    return accesses.filter((a) => {
       const key = `${a.variableId}:${a.kind}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -1225,11 +1548,16 @@ export class TypeScriptAnalyzer {
   /**
    * Builds scope context for a function, tracking local variables and parameters.
    */
-  buildScopeContext(functionNode: Node, parentScope?: ScopeContext): ScopeContext {
+  buildScopeContext(
+    functionNode: Node,
+    parentScope?: ScopeContext,
+  ): ScopeContext {
     const context: ScopeContext = {
       localVariables: new Set(),
       parameters: new Set(),
-      parentScopes: parentScope ? [parentScope, ...parentScope.parentScopes] : [],
+      parentScopes: parentScope
+        ? [parentScope, ...parentScope.parentScopes]
+        : [],
     };
 
     // Extract parameters
@@ -1239,7 +1567,9 @@ export class TypeScriptAnalyzer {
       Node.isFunctionExpression(functionNode) ||
       Node.isMethodDeclaration(functionNode)
     ) {
-      for (const param of (functionNode as FunctionDeclaration).getParameters()) {
+      for (const param of (
+        functionNode as FunctionDeclaration
+      ).getParameters()) {
         const nameNode = param.getNameNode();
         if (Node.isIdentifier(nameNode)) {
           context.parameters.add(nameNode.getText());
@@ -1255,7 +1585,9 @@ export class TypeScriptAnalyzer {
     // Extract local variable declarations
     const body = this.getFunctionBody(functionNode);
     if (body) {
-      const varDecls = body.getDescendantsOfKind(SyntaxKind.VariableDeclaration);
+      const varDecls = body.getDescendantsOfKind(
+        SyntaxKind.VariableDeclaration,
+      );
       for (const decl of varDecls) {
         // Only count if direct child (not in nested function)
         if (!this.hasIntermediateFunction(body, decl)) {
@@ -1295,7 +1627,7 @@ export class TypeScriptAnalyzer {
   private isExternalVariable(
     name: string,
     scope: ScopeContext,
-    moduleVariables: Map<string, VariableInfo>
+    moduleVariables: Map<string, VariableInfo>,
   ): boolean {
     // Check if it's a local variable or parameter
     if (scope.localVariables.has(name) || scope.parameters.has(name)) {
@@ -1304,7 +1636,10 @@ export class TypeScriptAnalyzer {
 
     // Check parent scopes for closures
     for (const parentScope of scope.parentScopes) {
-      if (parentScope.localVariables.has(name) || parentScope.parameters.has(name)) {
+      if (
+        parentScope.localVariables.has(name) ||
+        parentScope.parameters.has(name)
+      ) {
         return false; // Closure captured, but not a module-level side effect
       }
     }
@@ -1320,7 +1655,7 @@ export class TypeScriptAnalyzer {
     functionNode: Node,
     scope: ScopeContext,
     moduleVariables: Map<string, VariableInfo>,
-    filePath: string
+    filePath: string,
   ): VariableAccess[] {
     const accesses: VariableAccess[] = [];
     const body = this.getFunctionBody(functionNode);
@@ -1329,39 +1664,81 @@ export class TypeScriptAnalyzer {
     const writtenIdentifiers = new Set<Node>();
 
     // Track assignments (binary expressions with assignment operator)
-    for (const binExpr of body.getDescendantsOfKind(SyntaxKind.BinaryExpression)) {
+    for (const binExpr of body.getDescendantsOfKind(
+      SyntaxKind.BinaryExpression,
+    )) {
       if (this.hasIntermediateFunction(body, binExpr)) continue;
 
       const operatorKind = binExpr.getOperatorToken().getKind();
       if (this.isAssignmentOperator(operatorKind)) {
         const left = binExpr.getLeft();
-        this.processWriteTarget(left, accesses, scope, moduleVariables, filePath, writtenIdentifiers);
+        this.processWriteTarget(
+          left,
+          accesses,
+          scope,
+          moduleVariables,
+          filePath,
+          writtenIdentifiers,
+        );
       }
     }
 
     // Track prefix/postfix operations (++x, x++, --x, x--)
-    for (const prefixExpr of body.getDescendantsOfKind(SyntaxKind.PrefixUnaryExpression)) {
+    for (const prefixExpr of body.getDescendantsOfKind(
+      SyntaxKind.PrefixUnaryExpression,
+    )) {
       if (this.hasIntermediateFunction(body, prefixExpr)) continue;
 
       const op = prefixExpr.getOperatorToken();
-      if (op === SyntaxKind.PlusPlusToken || op === SyntaxKind.MinusMinusToken) {
-        this.processWriteTarget(prefixExpr.getOperand(), accesses, scope, moduleVariables, filePath, writtenIdentifiers);
+      if (
+        op === SyntaxKind.PlusPlusToken ||
+        op === SyntaxKind.MinusMinusToken
+      ) {
+        this.processWriteTarget(
+          prefixExpr.getOperand(),
+          accesses,
+          scope,
+          moduleVariables,
+          filePath,
+          writtenIdentifiers,
+        );
       }
     }
 
-    for (const postfixExpr of body.getDescendantsOfKind(SyntaxKind.PostfixUnaryExpression)) {
+    for (const postfixExpr of body.getDescendantsOfKind(
+      SyntaxKind.PostfixUnaryExpression,
+    )) {
       if (this.hasIntermediateFunction(body, postfixExpr)) continue;
 
       const op = postfixExpr.getOperatorToken();
-      if (op === SyntaxKind.PlusPlusToken || op === SyntaxKind.MinusMinusToken) {
-        this.processWriteTarget(postfixExpr.getOperand(), accesses, scope, moduleVariables, filePath, writtenIdentifiers);
+      if (
+        op === SyntaxKind.PlusPlusToken ||
+        op === SyntaxKind.MinusMinusToken
+      ) {
+        this.processWriteTarget(
+          postfixExpr.getOperand(),
+          accesses,
+          scope,
+          moduleVariables,
+          filePath,
+          writtenIdentifiers,
+        );
       }
     }
 
     // Track mutating method calls (arr.push, arr.splice, etc.)
-    for (const callExpr of body.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    for (const callExpr of body.getDescendantsOfKind(
+      SyntaxKind.CallExpression,
+    )) {
       if (this.hasIntermediateFunction(body, callExpr)) continue;
-      this.processMutatingCall(callExpr, accesses, scope, moduleVariables, filePath, writtenIdentifiers);
+      this.processMutatingCall(
+        callExpr,
+        accesses,
+        scope,
+        moduleVariables,
+        filePath,
+        writtenIdentifiers,
+      );
     }
 
     // Track reads (all other identifier usages not in write position)
@@ -1385,7 +1762,7 @@ export class TypeScriptAnalyzer {
 
     // Deduplicate accesses
     const seen = new Set<string>();
-    return accesses.filter(a => {
+    return accesses.filter((a) => {
       const key = `${a.variableId}:${a.kind}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -1426,7 +1803,7 @@ export class TypeScriptAnalyzer {
     scope: ScopeContext,
     moduleVariables: Map<string, VariableInfo>,
     filePath: string,
-    writtenIdentifiers: Set<Node>
+    writtenIdentifiers: Set<Node>,
   ): void {
     // Direct identifier: x = value
     if (Node.isIdentifier(node)) {
@@ -1503,7 +1880,7 @@ export class TypeScriptAnalyzer {
     scope: ScopeContext,
     moduleVariables: Map<string, VariableInfo>,
     filePath: string,
-    writtenIdentifiers: Set<Node>
+    writtenIdentifiers: Set<Node>,
   ): void {
     const expression = callExpr.getExpression();
 
@@ -1541,21 +1918,33 @@ export class TypeScriptAnalyzer {
     // Check if it's the left side of an assignment
     if (Node.isBinaryExpression(parent)) {
       const left = parent.getLeft();
-      if (left === identifier && this.isAssignmentOperator(parent.getOperatorToken().getKind())) {
+      if (
+        left === identifier &&
+        this.isAssignmentOperator(parent.getOperatorToken().getKind())
+      ) {
         return true;
       }
     }
 
     // Check if it's in a prefix/postfix expression
-    if (Node.isPrefixUnaryExpression(parent) || Node.isPostfixUnaryExpression(parent)) {
+    if (
+      Node.isPrefixUnaryExpression(parent) ||
+      Node.isPostfixUnaryExpression(parent)
+    ) {
       const op = parent.getOperatorToken();
-      if (op === SyntaxKind.PlusPlusToken || op === SyntaxKind.MinusMinusToken) {
+      if (
+        op === SyntaxKind.PlusPlusToken ||
+        op === SyntaxKind.MinusMinusToken
+      ) {
         return true;
       }
     }
 
     // Check if it's part of a property/element access that's being assigned
-    if (Node.isPropertyAccessExpression(parent) || Node.isElementAccessExpression(parent)) {
+    if (
+      Node.isPropertyAccessExpression(parent) ||
+      Node.isElementAccessExpression(parent)
+    ) {
       return this.isInWritePosition(parent);
     }
 
@@ -1568,7 +1957,7 @@ export class TypeScriptAnalyzer {
    */
   findMutatedClosureVariables(
     functionMap: Map<string, FunctionInfo>,
-    filePath: string
+    filePath: string,
   ): VariableInfo[] {
     const closureVariables: VariableInfo[] = [];
     const seen = new Set<string>();
@@ -1616,7 +2005,9 @@ export class TypeScriptAnalyzer {
   /**
    * Gets all local variable declarations in a function (not in nested functions).
    */
-  private getLocalVariableDeclarations(functionNode: Node): Map<string, VariableDeclaration> {
+  private getLocalVariableDeclarations(
+    functionNode: Node,
+  ): Map<string, VariableDeclaration> {
     const locals = new Map<string, VariableDeclaration>();
     const body = this.getFunctionBody(functionNode);
     if (!body) return locals;
@@ -1628,7 +2019,11 @@ export class TypeScriptAnalyzer {
 
       // Skip function declarations (arrow functions, function expressions)
       const initializer = decl.getInitializer();
-      if (initializer && (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))) {
+      if (
+        initializer &&
+        (Node.isArrowFunction(initializer) ||
+          Node.isFunctionExpression(initializer))
+      ) {
         continue;
       }
 
@@ -1663,14 +2058,16 @@ export class TypeScriptAnalyzer {
    */
   private findWritesToVariables(
     functionNode: Node,
-    targetVariables: Map<string, VariableDeclaration>
+    targetVariables: Map<string, VariableDeclaration>,
   ): Map<string, VariableDeclaration> {
     const written = new Map<string, VariableDeclaration>();
     const body = this.getFunctionBody(functionNode);
     if (!body) return written;
 
     // Check direct assignments
-    for (const binExpr of body.getDescendantsOfKind(SyntaxKind.BinaryExpression)) {
+    for (const binExpr of body.getDescendantsOfKind(
+      SyntaxKind.BinaryExpression,
+    )) {
       const operatorKind = binExpr.getOperatorToken().getKind();
       if (this.isAssignmentOperator(operatorKind)) {
         const left = binExpr.getLeft();
@@ -1682,9 +2079,14 @@ export class TypeScriptAnalyzer {
     }
 
     // Check prefix/postfix operations
-    for (const prefixExpr of body.getDescendantsOfKind(SyntaxKind.PrefixUnaryExpression)) {
+    for (const prefixExpr of body.getDescendantsOfKind(
+      SyntaxKind.PrefixUnaryExpression,
+    )) {
       const op = prefixExpr.getOperatorToken();
-      if (op === SyntaxKind.PlusPlusToken || op === SyntaxKind.MinusMinusToken) {
+      if (
+        op === SyntaxKind.PlusPlusToken ||
+        op === SyntaxKind.MinusMinusToken
+      ) {
         const varName = this.getWrittenVariableName(prefixExpr.getOperand());
         if (varName && targetVariables.has(varName)) {
           written.set(varName, targetVariables.get(varName)!);
@@ -1692,9 +2094,14 @@ export class TypeScriptAnalyzer {
       }
     }
 
-    for (const postfixExpr of body.getDescendantsOfKind(SyntaxKind.PostfixUnaryExpression)) {
+    for (const postfixExpr of body.getDescendantsOfKind(
+      SyntaxKind.PostfixUnaryExpression,
+    )) {
       const op = postfixExpr.getOperatorToken();
-      if (op === SyntaxKind.PlusPlusToken || op === SyntaxKind.MinusMinusToken) {
+      if (
+        op === SyntaxKind.PlusPlusToken ||
+        op === SyntaxKind.MinusMinusToken
+      ) {
         const varName = this.getWrittenVariableName(postfixExpr.getOperand());
         if (varName && targetVariables.has(varName)) {
           written.set(varName, targetVariables.get(varName)!);
@@ -1703,7 +2110,9 @@ export class TypeScriptAnalyzer {
     }
 
     // Check mutating method calls
-    for (const callExpr of body.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+    for (const callExpr of body.getDescendantsOfKind(
+      SyntaxKind.CallExpression,
+    )) {
       const expression = callExpr.getExpression();
       if (Node.isPropertyAccessExpression(expression)) {
         const methodName = expression.getName();
@@ -1729,7 +2138,10 @@ export class TypeScriptAnalyzer {
     if (Node.isIdentifier(node)) {
       return node.getText();
     }
-    if (Node.isPropertyAccessExpression(node) || Node.isElementAccessExpression(node)) {
+    if (
+      Node.isPropertyAccessExpression(node) ||
+      Node.isElementAccessExpression(node)
+    ) {
       const root = this.getRootObject(node);
       if (Node.isIdentifier(root)) {
         return root.getText();
@@ -1748,8 +2160,11 @@ export class TypeScriptAnalyzer {
     sourceFile: SourceFile,
     filePath: string,
     allEntityIds: Set<string>,
-    commitSha: string
-  ): { entity?: Omit<Entity, "created_at">; alias?: Omit<Relation, "id"> } | null {
+    commitSha: string,
+  ): {
+    entity?: Omit<Entity, "created_at">;
+    alias?: Omit<Relation, "id">;
+  } | null {
     const defaultExportSymbol = sourceFile.getDefaultExportSymbol();
     if (!defaultExportSymbol) return null;
 
@@ -1796,7 +2211,10 @@ export class TypeScriptAnalyzer {
 
       // Anonymous default export: export default () => {} or export default { ... }
       if (Node.isArrowFunction(expr) || Node.isFunctionExpression(expr)) {
-        const params = (expr as ArrowFunction).getParameters().map(p => p.getText()).join(", ");
+        const params = (expr as ArrowFunction)
+          .getParameters()
+          .map((p) => p.getText())
+          .join(", ");
         return {
           entity: {
             id: defaultId,
@@ -1855,8 +2273,11 @@ export class TypeScriptAnalyzer {
   private extractImports(
     sourceFile: SourceFile,
     filePath: string,
-    commitSha: string
-  ): { entities: Omit<Entity, "created_at">[]; aliases: Omit<Relation, "id">[] } {
+    commitSha: string,
+  ): {
+    entities: Omit<Entity, "created_at">[];
+    aliases: Omit<Relation, "id">[];
+  } {
     const entities: Omit<Entity, "created_at">[] = [];
     const aliases: Omit<Relation, "id">[] = [];
 
@@ -1912,9 +2333,10 @@ export class TypeScriptAnalyzer {
           file_path: filePath,
           start_line: namedImport.getStartLineNumber(),
           end_line: namedImport.getEndLineNumber(),
-          signature: localName === sourceName
-            ? `import { ${sourceName} }`
-            : `import { ${sourceName} as ${localName} }`,
+          signature:
+            localName === sourceName
+              ? `import { ${sourceName} }`
+              : `import { ${sourceName} as ${localName} }`,
           signature_hash: computeSignatureHash(`import named`),
           impl_hash: null,
           commit_sha: commitSha,
@@ -1969,8 +2391,11 @@ export class TypeScriptAnalyzer {
   private extractReExports(
     sourceFile: SourceFile,
     filePath: string,
-    commitSha: string
-  ): { entities: Omit<Entity, "created_at">[]; aliases: Omit<Relation, "id">[] } {
+    commitSha: string,
+  ): {
+    entities: Omit<Entity, "created_at">[];
+    aliases: Omit<Relation, "id">[];
+  } {
     const entities: Omit<Entity, "created_at">[] = [];
     const aliases: Omit<Relation, "id">[] = [];
 
@@ -2001,9 +2426,10 @@ export class TypeScriptAnalyzer {
           file_path: filePath,
           start_line: namedExport.getStartLineNumber(),
           end_line: namedExport.getEndLineNumber(),
-          signature: localName === sourceName
-            ? `export { ${sourceName} } from "${moduleSpecifier}"`
-            : `export { ${sourceName} as ${localName} } from "${moduleSpecifier}"`,
+          signature:
+            localName === sourceName
+              ? `export { ${sourceName} } from "${moduleSpecifier}"`
+              : `export { ${sourceName} as ${localName} } from "${moduleSpecifier}"`,
           signature_hash: computeSignatureHash(`export named from`),
           impl_hash: null,
           commit_sha: commitSha,
@@ -2053,7 +2479,10 @@ export class TypeScriptAnalyzer {
   /**
    * Resolves a module specifier to a file path relative to project root.
    */
-  private resolveModulePath(sourceFile: SourceFile, moduleSpecifier: string): string | null {
+  private resolveModulePath(
+    sourceFile: SourceFile,
+    moduleSpecifier: string,
+  ): string | null {
     // Only handle relative imports for now
     if (!moduleSpecifier.startsWith(".")) {
       return null;
@@ -2082,7 +2511,7 @@ export class TypeScriptAnalyzer {
   private createReturnEntity(
     fn: FunctionInfo,
     fnId: string,
-    commitSha: string
+    commitSha: string,
   ): Omit<Entity, "created_at"> {
     const returnId = `${fnId}<return>`;
     return {
@@ -2109,7 +2538,7 @@ export class TypeScriptAnalyzer {
     allEntityIds: Set<string>,
     variableMap: Map<string, VariableInfo>,
     functionMap: Map<string, FunctionInfo>,
-    parametersMap?: Map<string, ParameterInfo>
+    parametersMap?: Map<string, ParameterInfo>,
   ): Dependency[] {
     const dependencies: Dependency[] = [];
     const returnId = `${fnId}<return>`;
@@ -2119,7 +2548,9 @@ export class TypeScriptAnalyzer {
     const seen = new Set<string>();
 
     // Find all return statements
-    const returnStatements = body.getDescendantsOfKind(SyntaxKind.ReturnStatement);
+    const returnStatements = body.getDescendantsOfKind(
+      SyntaxKind.ReturnStatement,
+    );
     for (const returnStmt of returnStatements) {
       // Skip if inside a nested function
       if (this.hasIntermediateFunction(body, returnStmt)) continue;
@@ -2134,7 +2565,7 @@ export class TypeScriptAnalyzer {
         allEntityIds,
         variableMap,
         functionMap,
-        parametersMap
+        parametersMap,
       );
 
       for (const refId of refs) {
@@ -2156,7 +2587,7 @@ export class TypeScriptAnalyzer {
           allEntityIds,
           variableMap,
           functionMap,
-          parametersMap
+          parametersMap,
         );
 
         for (const refId of refs) {
@@ -2182,7 +2613,7 @@ export class TypeScriptAnalyzer {
     filePath: string,
     allEntityIds: Set<string>,
     variableMap: Map<string, VariableInfo>,
-    functionMap: Map<string, FunctionInfo>
+    functionMap: Map<string, FunctionInfo>,
   ): Dependency[] {
     if (!Node.isVariableDeclaration(varNode)) return [];
 
@@ -2190,7 +2621,10 @@ export class TypeScriptAnalyzer {
     if (!initializer) return [];
 
     // Skip function expressions - they're not dependencies
-    if (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer)) {
+    if (
+      Node.isArrowFunction(initializer) ||
+      Node.isFunctionExpression(initializer)
+    ) {
       return [];
     }
 
@@ -2202,7 +2636,7 @@ export class TypeScriptAnalyzer {
       filePath, // Use filePath as context for resolving identifiers
       allEntityIds,
       variableMap,
-      functionMap
+      functionMap,
     );
 
     for (const refId of refs) {
@@ -2225,7 +2659,7 @@ export class TypeScriptAnalyzer {
     allEntityIds: Set<string>,
     variableMap: Map<string, VariableInfo>,
     functionMap: Map<string, FunctionInfo>,
-    parametersMap?: Map<string, ParameterInfo>
+    parametersMap?: Map<string, ParameterInfo>,
   ): string[] {
     const refs: string[] = [];
 
@@ -2235,7 +2669,13 @@ export class TypeScriptAnalyzer {
     // Handle call expressions: foo() → depends on foo<return>
     if (Node.isCallExpression(expr)) {
       const callee = expr.getExpression();
-      const calleeFnId = this.resolveCalleeId(callee, filePath, allEntityIds, variableMap, functionMap);
+      const calleeFnId = this.resolveCalleeId(
+        callee,
+        filePath,
+        allEntityIds,
+        variableMap,
+        functionMap,
+      );
       if (calleeFnId) {
         // Depend on the function's <return> entity
         refs.push(`${calleeFnId}<return>`);
@@ -2288,21 +2728,57 @@ export class TypeScriptAnalyzer {
         }
       }
       // Recurse into the object
-      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getExpression(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
       return refs;
     }
 
     // Handle binary expressions: a + b
     if (Node.isBinaryExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getLeft(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
-      refs.push(...this.extractExpressionDependencies(expr.getRight(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getLeft(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getRight(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
       return refs;
     }
 
     // Handle array literals: [a, b, c]
     if (Node.isArrayLiteralExpression(expr)) {
       for (const element of expr.getElements()) {
-        refs.push(...this.extractExpressionDependencies(element, contextId, allEntityIds, variableMap, functionMap, parametersMap));
+        refs.push(
+          ...this.extractExpressionDependencies(
+            element,
+            contextId,
+            allEntityIds,
+            variableMap,
+            functionMap,
+            parametersMap,
+          ),
+        );
       }
       return refs;
     }
@@ -2313,7 +2789,16 @@ export class TypeScriptAnalyzer {
         if (Node.isPropertyAssignment(prop)) {
           const init = prop.getInitializer();
           if (init) {
-            refs.push(...this.extractExpressionDependencies(init, contextId, allEntityIds, variableMap, functionMap, parametersMap));
+            refs.push(
+              ...this.extractExpressionDependencies(
+                init,
+                contextId,
+                allEntityIds,
+                variableMap,
+                functionMap,
+                parametersMap,
+              ),
+            );
           }
         } else if (Node.isShorthandPropertyAssignment(prop)) {
           const name = prop.getName();
@@ -2337,51 +2822,150 @@ export class TypeScriptAnalyzer {
     // Handle template literals: `${a} and ${b}`
     if (Node.isTemplateExpression(expr)) {
       for (const span of expr.getTemplateSpans()) {
-        refs.push(...this.extractExpressionDependencies(span.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+        refs.push(
+          ...this.extractExpressionDependencies(
+            span.getExpression(),
+            contextId,
+            allEntityIds,
+            variableMap,
+            functionMap,
+            parametersMap,
+          ),
+        );
       }
       return refs;
     }
 
     // Handle conditional: a ? b : c
     if (Node.isConditionalExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getCondition(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
-      refs.push(...this.extractExpressionDependencies(expr.getWhenTrue(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
-      refs.push(...this.extractExpressionDependencies(expr.getWhenFalse(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getCondition(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getWhenTrue(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getWhenFalse(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
       return refs;
     }
 
     // Handle parenthesized: (a + b)
     if (Node.isParenthesizedExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getExpression(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
       return refs;
     }
 
     // Handle prefix/postfix: !a, a++
     if (Node.isPrefixUnaryExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getOperand(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getOperand(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
       return refs;
     }
     if (Node.isPostfixUnaryExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getOperand(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getOperand(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
       return refs;
     }
 
     // Handle spread: ...arr
     if (Node.isSpreadElement(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getExpression(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
       return refs;
     }
 
     // Handle await: await promise
     if (Node.isAwaitExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getExpression(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
       return refs;
     }
 
     // Handle element access: arr[0]
     if (Node.isElementAccessExpression(expr)) {
-      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap, parametersMap));
-      refs.push(...this.extractExpressionDependencies(expr.getArgumentExpression()!, contextId, allEntityIds, variableMap, functionMap, parametersMap));
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getExpression(),
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
+      refs.push(
+        ...this.extractExpressionDependencies(
+          expr.getArgumentExpression()!,
+          contextId,
+          allEntityIds,
+          variableMap,
+          functionMap,
+          parametersMap,
+        ),
+      );
       return refs;
     }
 
@@ -2396,7 +2980,7 @@ export class TypeScriptAnalyzer {
     filePath: string,
     allEntityIds: Set<string>,
     variableMap: Map<string, VariableInfo>,
-    functionMap: Map<string, FunctionInfo>
+    functionMap: Map<string, FunctionInfo>,
   ): string | null {
     // Simple identifier: foo()
     if (Node.isIdentifier(callee)) {
@@ -2448,7 +3032,7 @@ export class TypeScriptAnalyzer {
     variableMap: Map<string, VariableInfo>,
     functionMap: Map<string, FunctionInfo>,
     commitSha: string,
-    parametersMap?: Map<string, ParameterInfo>
+    parametersMap?: Map<string, ParameterInfo>,
   ): CallArgument[] {
     const callArguments: CallArgument[] = [];
 
@@ -2462,7 +3046,7 @@ export class TypeScriptAnalyzer {
         variableMap,
         functionMap,
         parametersMap,
-        commitSha
+        commitSha,
       );
       callArguments.push(...args);
       return callArguments;
@@ -2479,21 +3063,26 @@ export class TypeScriptAnalyzer {
           variableMap,
           functionMap,
           parametersMap,
-          commitSha
+          commitSha,
         );
         callArguments.push(...args);
-      } else if (!Node.isArrowFunction(child) && !Node.isFunctionExpression(child)) {
+      } else if (
+        !Node.isArrowFunction(child) &&
+        !Node.isFunctionExpression(child)
+      ) {
         // Recurse but skip nested function definitions
-        callArguments.push(...this.extractCallArguments(
-          child,
-          callerId,
-          filePath,
-          allEntityIds,
-          variableMap,
-          functionMap,
-          commitSha,
-          parametersMap
-        ));
+        callArguments.push(
+          ...this.extractCallArguments(
+            child,
+            callerId,
+            filePath,
+            allEntityIds,
+            variableMap,
+            functionMap,
+            commitSha,
+            parametersMap,
+          ),
+        );
       }
     }
 
@@ -2512,13 +3101,19 @@ export class TypeScriptAnalyzer {
     variableMap: Map<string, VariableInfo>,
     functionMap: Map<string, FunctionInfo>,
     parametersMap: Map<string, ParameterInfo> | undefined,
-    commitSha: string
+    commitSha: string,
   ): CallArgument[] {
     const callArguments: CallArgument[] = [];
 
     // Resolve the callee
     const callee = callExpr.getExpression();
-    const calleeId = this.resolveCalleeId(callee, filePath, allEntityIds, variableMap, functionMap);
+    const calleeId = this.resolveCalleeId(
+      callee,
+      filePath,
+      allEntityIds,
+      variableMap,
+      functionMap,
+    );
     if (!calleeId) return callArguments;
 
     // Process each argument
@@ -2533,7 +3128,7 @@ export class TypeScriptAnalyzer {
         allEntityIds,
         variableMap,
         functionMap,
-        parametersMap
+        parametersMap,
       );
 
       if (argEntityId) {
@@ -2560,7 +3155,7 @@ export class TypeScriptAnalyzer {
     allEntityIds: Set<string>,
     variableMap: Map<string, VariableInfo>,
     functionMap: Map<string, FunctionInfo>,
-    parametersMap?: Map<string, ParameterInfo>
+    parametersMap?: Map<string, ParameterInfo>,
   ): string | null {
     // Simple identifier: foo(x) → x
     if (Node.isIdentifier(arg)) {
@@ -2608,7 +3203,13 @@ export class TypeScriptAnalyzer {
     // Call expression: foo(bar()) → bar<return>
     if (Node.isCallExpression(arg)) {
       const callee = arg.getExpression();
-      const calleeId = this.resolveCalleeId(callee, filePath, allEntityIds, variableMap, functionMap);
+      const calleeId = this.resolveCalleeId(
+        callee,
+        filePath,
+        allEntityIds,
+        variableMap,
+        functionMap,
+      );
       if (calleeId) {
         return `${calleeId}<return>`;
       }

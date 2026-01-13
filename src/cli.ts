@@ -1,13 +1,18 @@
 #!/usr/bin/env node
-import { Command } from "commander";
 import { execSync, spawn } from "child_process";
-import { existsSync, readFileSync, mkdirSync, writeFileSync, cpSync } from "fs";
-import { resolve, dirname, join } from "path";
+import { Command } from "commander";
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
-import { GraphStore } from "./db.js";
-import { TypeScriptAnalyzer } from "./analyzer.js";
-import { computeHash } from "./hash.js";
-import { loadConfig, mergeConfig, shouldExclude } from "./config.js";
+import { TypeScriptAnalyzer } from "./analyzer.ts";
+import {
+  isPathAllowed,
+  loadConfig,
+  mergeConfig,
+  shouldExclude,
+} from "./config.ts";
+import { GraphStore } from "./db.ts";
+import { computeHash } from "./hash.ts";
 
 const DEFAULT_DB_PATH = ".mycelium/graph.db";
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -16,7 +21,10 @@ const DEBUG_TIMING = process.env.MYCELIUM_DEBUG_TIMING === "1";
 function time(label: string): () => void {
   if (!DEBUG_TIMING) return () => {};
   const start = performance.now();
-  return () => console.error(`[timing] ${label}: ${(performance.now() - start).toFixed(0)}ms`);
+  return () =>
+    console.error(
+      `[timing] ${label}: ${(performance.now() - start).toFixed(0)}ms`,
+    );
 }
 
 /**
@@ -245,14 +253,22 @@ program
     endAnalyze();
 
     // Filter out excluded entities and relations
-    const entities = result.entities.filter(e => !shouldExclude(e.file_path, config.exclude));
-    const entityIds = new Set(entities.map(e => e.id));
-    const relations = result.relations.filter(r => entityIds.has(r.from_id) && entityIds.has(r.to_id));
-    const callArguments = result.callArguments.filter(ca => entityIds.has(ca.caller_id));
+    const entities = result.entities.filter(
+      (e) => !shouldExclude(e.file_path, config.exclude),
+    );
+    const entityIds = new Set(entities.map((e) => e.id));
+    const relations = result.relations.filter(
+      (r) => entityIds.has(r.from_id) && entityIds.has(r.to_id),
+    );
+    const callArguments = result.callArguments.filter((ca) =>
+      entityIds.has(ca.caller_id),
+    );
 
     if (config.exclude.length > 0) {
       const excluded = result.entities.length - entities.length;
-      console.log(`Excluded ${excluded} entities from ${config.exclude.length} pattern(s)`);
+      console.log(
+        `Excluded ${excluded} entities from ${config.exclude.length} pattern(s)`,
+      );
     }
 
     console.log(`Found ${entities.length} entities`);
@@ -266,7 +282,13 @@ program
     let inserted = 0;
     let skipped = 0;
     for (const entity of entities) {
-      if (store.isEntityUnchanged(entity.id, entity.signature_hash, entity.impl_hash)) {
+      if (
+        store.isEntityUnchanged(
+          entity.id,
+          entity.signature_hash,
+          entity.impl_hash,
+        )
+      ) {
         skipped++;
       } else {
         store.insertEntity(entity);
@@ -292,12 +314,16 @@ program
 
     // Compute and store file hashes for staleness detection
     const endFileHashes = time("file hashes");
-    const filePaths = new Set(entities.map(e => e.file_path));
+    const filePaths = new Set(entities.map((e) => e.file_path));
     for (const filePath of filePaths) {
       try {
         const content = readFileSync(filePath, "utf-8");
         const contentHash = computeHash(content);
-        store.insertFile({ path: filePath, content_hash: contentHash, commit_sha: commitSha });
+        store.insertFile({
+          path: filePath,
+          content_hash: contentHash,
+          commit_sha: commitSha,
+        });
       } catch {
         // Skip files that can't be read (e.g., virtual files)
       }
@@ -305,10 +331,29 @@ program
     endFileHashes();
     console.log(`Tracked ${filePaths.size} files`);
 
+    // Prune entities that no longer match include/exclude patterns
+    // Check both relative path (as stored) and absolute path (resolved)
+    const endPrune = time("prune stale entities");
+    const pruned = store.pruneEntities((filePath) => {
+      // Check relative path first (matches glob patterns like "src/**/*.ts")
+      if (isPathAllowed(filePath, config.include, config.exclude)) {
+        return false; // Keep it
+      }
+      // Also check absolute path (matches explicit file paths)
+      const absolutePath = resolve(config.configDir, filePath);
+      return !isPathAllowed(absolutePath, config.include, config.exclude);
+    });
+    endPrune();
+    if (pruned > 0) {
+      console.log(`Pruned ${pruned} stale entities`);
+    }
+
     // Detect entry points
     const endEntryPoints = time("entry points");
     const entryPointIds = store.findEntryPoints(commitSha);
-    console.log(`Found ${entryPointIds.length} entry points (call graph roots)`);
+    console.log(
+      `Found ${entryPointIds.length} entry points (call graph roots)`,
+    );
 
     for (const entityId of entryPointIds) {
       store.insertEntryPoint({
@@ -328,10 +373,12 @@ program
   .command("find")
   .description("Search for entities by name (outputs IDs, one per line)")
   .argument("<pattern>", "Search pattern (partial match)")
-  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("-c, --config <path>", "Path to mycelium.config.json")
   .option("--desc", "Search in descriptions instead of names")
-  .action((pattern, options) => {
-    const store = new GraphStore(resolve(options.db));
+  .action(async (pattern, options) => {
+    const loaded = await loadConfig(options.config);
+    const config = mergeConfig(loaded, { db: options.db });
+    const store = new GraphStore(resolve(config.db));
     const entities = store.getEntities();
 
     const lower = pattern.toLowerCase();
@@ -339,13 +386,17 @@ program
 
     if (options.desc) {
       const descriptions = store.getAllDescriptions();
-      const descMap = new Map(descriptions.map((d) => [d.entity_id, d.content]));
-      matches = entities.filter((e) => descMap.get(e.id)?.toLowerCase().includes(lower));
+      const descMap = new Map(
+        descriptions.map((d) => [d.entity_id, d.content]),
+      );
+      matches = entities.filter((e) =>
+        descMap.get(e.id)?.toLowerCase().includes(lower),
+      );
     } else {
       matches = entities.filter(
         (e) =>
           e.name.toLowerCase().includes(lower) ||
-          e.id.toLowerCase().includes(lower)
+          e.id.toLowerCase().includes(lower),
       );
     }
 
@@ -379,7 +430,9 @@ program
 
     if (!entity) {
       console.error(`error: entity not found: ${idArg}`);
-      console.error(`hint: use 'mycelium find <pattern>' to discover entity IDs`);
+      console.error(
+        `hint: use 'mycelium find <pattern>' to discover entity IDs`,
+      );
       store.close();
       process.exit(1);
     }
@@ -426,7 +479,11 @@ program
       }
 
       // Update file hash
-      store.insertFile({ path: entity.file_path, content_hash: currentHash, commit_sha: commitSha });
+      store.insertFile({
+        path: entity.file_path,
+        content_hash: currentHash,
+        commit_sha: commitSha,
+      });
 
       // Re-fetch entity with updated line numbers
       const updated = store.getEntityById(entity.id);
@@ -473,7 +530,9 @@ program
 
     if (!entity) {
       console.error(`error: entity not found: ${idArg}`);
-      console.error(`hint: use 'mycelium find <pattern>' to discover entity IDs`);
+      console.error(
+        `hint: use 'mycelium find <pattern>' to discover entity IDs`,
+      );
       store.close();
       process.exit(1);
     }
@@ -530,7 +589,11 @@ program
 
     // Update file hash
     const newHash = computeHash(newContent);
-    store.insertFile({ path: entity.file_path, content_hash: newHash, commit_sha: commitSha });
+    store.insertFile({
+      path: entity.file_path,
+      content_hash: newHash,
+      commit_sha: commitSha,
+    });
 
     // Output confirmation
     console.log(`wrote: ${entity.id}`);
@@ -605,7 +668,11 @@ program
 
     // Store file hash
     const contentHash = computeHash(content);
-    store.insertFile({ path: filePath, content_hash: contentHash, commit_sha: commitSha });
+    store.insertFile({
+      path: filePath,
+      content_hash: contentHash,
+      commit_sha: commitSha,
+    });
 
     // Output created entities
     console.log(`created: ${filePath}`);
@@ -634,7 +701,9 @@ program
 
     if (!entity) {
       console.error(`error: entity not found: ${idArg}`);
-      console.error(`hint: use 'mycelium find <pattern>' to discover entity IDs`);
+      console.error(
+        `hint: use 'mycelium find <pattern>' to discover entity IDs`,
+      );
       store.close();
       process.exit(1);
     }
@@ -704,7 +773,11 @@ program
 
       // Update file hash
       const newHash = computeHash(newContent);
-      store.insertFile({ path: entity.file_path, content_hash: newHash, commit_sha: commitSha });
+      store.insertFile({
+        path: entity.file_path,
+        content_hash: newHash,
+        commit_sha: commitSha,
+      });
 
       console.log(`synced: ${result.entities.length} entities remaining`);
     }
@@ -735,9 +808,15 @@ function hasWildcards(pattern: string): boolean {
 program
   .command("query")
   .description("Query entities by ID or pattern (supports % and _ wildcards)")
-  .argument("<pattern>", "Entity ID or pattern (e.g., src/db.ts::%, %::create%)")
+  .argument(
+    "<pattern>",
+    "Entity ID or pattern (e.g., src/db.ts::%, %::create%)",
+  )
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
-  .option("--kind <type>", "Filter by entity kind (function, variable, class, etc.)")
+  .option(
+    "--kind <type>",
+    "Filter by entity kind (function, variable, class, etc.)",
+  )
   .option("--orphans", "Only show entities with no relations")
   .option("--calls", "Show what the entity calls")
   .option("--callers", "Show what calls the entity")
@@ -789,7 +868,9 @@ program
       console.log(`\nEntities matching "${pattern}" (${matches.length}):\n`);
       for (const e of matches) {
         const desc = descMap.get(e.id);
-        const descStr = desc ? ` - ${desc.slice(0, 50)}${desc.length > 50 ? "..." : ""}` : "";
+        const descStr = desc
+          ? ` - ${desc.slice(0, 50)}${desc.length > 50 ? "..." : ""}`
+          : "";
         console.log(`  ${e.id}`);
         console.log(`    [${e.kind}] ${e.file_path}:${e.start_line}${descStr}`);
       }
@@ -801,7 +882,9 @@ program
     const entity = entities.find((e) => e.id === pattern);
     if (!entity) {
       console.error(`Entity not found: ${pattern}`);
-      console.error(`Use wildcards (e.g., %${pattern}%) or 'mycelium find <pattern>' to search`);
+      console.error(
+        `Use wildcards (e.g., %${pattern}%) or 'mycelium find <pattern>' to search`,
+      );
       store.close();
       process.exit(1);
     }
@@ -957,7 +1040,9 @@ program
     // --all-deps: show all transitive dependencies
     if (options.allDeps) {
       const allDeps = store.getAllDependencies(entity.id);
-      console.log(`\n${entity.id} transitively depends on (${allDeps.length}):\n`);
+      console.log(
+        `\n${entity.id} transitively depends on (${allDeps.length}):\n`,
+      );
       for (const e of allDeps) {
         console.log(`  ← ${e.id}`);
       }
@@ -1005,7 +1090,9 @@ program
 
       // BFS to find path
       const visited = new Set<string>();
-      const queue: { id: string; path: string[] }[] = [{ id: entity.id, path: [entity.id] }];
+      const queue: { id: string; path: string[] }[] = [
+        { id: entity.id, path: [entity.id] },
+      ];
       let found: string[] | null = null;
 
       while (queue.length > 0 && !found) {
@@ -1056,7 +1143,9 @@ program
 
       console.log(`\n${entity.name}`);
       console.log(`${"─".repeat(60)}`);
-      console.log(`File: ${entity.file_path}:${entity.start_line}-${entity.end_line}\n`);
+      console.log(
+        `File: ${entity.file_path}:${entity.start_line}-${entity.end_line}\n`,
+      );
 
       // Print with line numbers
       for (let i = 0; i < sourceLines.length; i++) {
@@ -1077,7 +1166,9 @@ program
     console.log(`${"─".repeat(40)}`);
     console.log(`ID:        ${entity.id}`);
     console.log(`Kind:      ${entity.kind}`);
-    console.log(`Location:  ${entity.file_path}:${entity.start_line}-${entity.end_line}`);
+    console.log(
+      `Location:  ${entity.file_path}:${entity.start_line}-${entity.end_line}`,
+    );
     console.log(`Signature: ${entity.signature}`);
 
     // Show system membership
@@ -1085,7 +1176,10 @@ program
     if (systems.length > 0) {
       const systemStr = systems
         .map((s) => {
-          const conf = s.confidence !== null ? ` (${(s.confidence * 100).toFixed(0)}%)` : "";
+          const conf =
+            s.confidence !== null
+              ? ` (${(s.confidence * 100).toFixed(0)}%)`
+              : "";
           return `${s.system.name}${conf}`;
         })
         .join(", ");
@@ -1226,7 +1320,12 @@ program
       console.log();
     }
 
-    if (!added.length && !removed.length && !signatureChanged.length && !implChanged.length) {
+    if (
+      !added.length &&
+      !removed.length &&
+      !signatureChanged.length &&
+      !implChanged.length
+    ) {
       console.log("No changes.");
     }
 
@@ -1236,7 +1335,10 @@ program
 program
   .command("describe")
   .description("Get or set description for an entity")
-  .argument("<entity-id>", "Entity ID (e.g., src/db.ts::GraphStore.getEntities)")
+  .argument(
+    "<entity-id>",
+    "Entity ID (e.g., src/db.ts::GraphStore.getEntities)",
+  )
   .argument("[description]", "Description text (omit to show current)")
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
   .option("--stdin", "Read description from stdin")
@@ -1324,7 +1426,9 @@ program
   .description("Check or update JSDoc comments from descriptions")
   .argument("<mode>", "Mode: check | sync")
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
-  .option("-p, --pattern <patterns...>", "Glob patterns for source files", ["src/**/*.ts"])
+  .option("-p, --pattern <patterns...>", "Glob patterns for source files", [
+    "src/**/*.ts",
+  ])
   .action((mode, options) => {
     if (mode !== "check" && mode !== "sync") {
       console.error("Mode must be 'check' or 'sync'");
@@ -1386,15 +1490,17 @@ program
             jsdocStart = i;
             break;
           }
-          if (jsdocEnd === -1 && !trimmed.startsWith("*") && !trimmed.startsWith("//")) {
+          if (
+            jsdocEnd === -1 &&
+            !trimmed.startsWith("*") &&
+            !trimmed.startsWith("//")
+          ) {
             break;
           }
         }
 
         if (jsdocStart !== -1 && jsdocEnd !== -1) {
-          existingJsdoc = lines
-            .slice(jsdocStart, jsdocEnd + 1)
-            .join("\n");
+          existingJsdoc = lines.slice(jsdocStart, jsdocEnd + 1).join("\n");
         }
 
         // Extract description text from existing JSDoc
@@ -1469,7 +1575,10 @@ program
     const descMap = new Map(descriptions.map((d) => [d.entity_id, d]));
 
     // Deduplicate edges by source+target+kind
-    const edgeMap = new Map<string, { source: string; target: string; kind: string }>();
+    const edgeMap = new Map<
+      string,
+      { source: string; target: string; kind: string }
+    >();
     for (const r of relations) {
       const key = `${r.from_id}::${r.to_id}::${r.kind}`;
       if (!edgeMap.has(key)) {
@@ -1492,7 +1601,9 @@ program
     };
 
     writeFileSync(resolve(options.output), JSON.stringify(graphData, null, 2));
-    console.log(`Exported ${graphData.nodes.length} nodes and ${graphData.edges.length} edges to ${options.output}`);
+    console.log(
+      `Exported ${graphData.nodes.length} nodes and ${graphData.edges.length} edges to ${options.output}`,
+    );
 
     store.close();
   });
@@ -1506,7 +1617,9 @@ program
     const clientDir = join(__dirname, "..", "client");
 
     if (!existsSync(clientDir)) {
-      console.error("Client directory not found. Make sure the package is installed correctly.");
+      console.error(
+        "Client directory not found. Make sure the package is installed correctly.",
+      );
       process.exit(1);
     }
 
@@ -1517,7 +1630,10 @@ program
     const descriptions = store.getAllDescriptions();
     const descMap = new Map(descriptions.map((d) => [d.entity_id, d]));
 
-    const edgeMap = new Map<string, { source: string; target: string; kind: string }>();
+    const edgeMap = new Map<
+      string,
+      { source: string; target: string; kind: string }
+    >();
     for (const r of relations) {
       const key = `${r.from_id}::${r.to_id}::${r.kind}`;
       if (!edgeMap.has(key)) {
@@ -1541,11 +1657,15 @@ program
 
     const graphPath = join(clientDir, "public", "graph.json");
     writeFileSync(graphPath, JSON.stringify(graphData, null, 2));
-    console.log(`Exported ${graphData.nodes.length} nodes and ${graphData.edges.length} edges`);
+    console.log(
+      `Exported ${graphData.nodes.length} nodes and ${graphData.edges.length} edges`,
+    );
     store.close();
 
     // Start vite dev server
-    console.log(`\nStarting visualization at http://localhost:${options.port}/`);
+    console.log(
+      `\nStarting visualization at http://localhost:${options.port}/`,
+    );
     const vite = spawn("npx", ["vite", "--port", options.port], {
       cwd: clientDir,
       stdio: "inherit",
@@ -1568,9 +1688,13 @@ communityCmd
   .description("Run community detection algorithm on the call graph")
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
   .option("-a, --algorithm <name>", "Algorithm to use (louvain)", "louvain")
-  .option("-r, --resolution <number>", "Resolution parameter (higher = more communities)", "1")
+  .option(
+    "-r, --resolution <number>",
+    "Resolution parameter (higher = more communities)",
+    "1",
+  )
   .action(async (options) => {
-    const { getDetector, buildGraph } = await import("./community/index.js");
+    const { getDetector, buildGraph } = await import("./community/index.ts");
 
     const store = new GraphStore(resolve(options.db));
     const commitSha = getGitCommitSha();
@@ -1589,11 +1713,31 @@ communityCmd
 
     // Build graph for community detection - include all entity kinds and relation types
     const graph = buildGraph(entities, relations, {
-      edgeTypes: ["calls", "reads", "writes", "aliases", "depends_on", "uses_type", "exports", "imports"],
-      nodeKinds: ["function", "variable", "class", "interface", "type", "module", "property", "parameter"],
+      edgeTypes: [
+        "calls",
+        "reads",
+        "writes",
+        "aliases",
+        "depends_on",
+        "uses_type",
+        "exports",
+        "imports",
+      ],
+      nodeKinds: [
+        "function",
+        "variable",
+        "class",
+        "interface",
+        "type",
+        "module",
+        "property",
+        "parameter",
+      ],
     });
 
-    console.log(`Graph: ${graph.nodes.length} nodes, ${graph.edges.length} edges`);
+    console.log(
+      `Graph: ${graph.nodes.length} nodes, ${graph.edges.length} edges`,
+    );
 
     if (graph.nodes.length === 0) {
       console.error("No nodes found in graph.");
@@ -1625,7 +1769,9 @@ communityCmd
       }
     }
 
-    console.log(`Detected ${communityGroups.size} communities (${orphanCount} orphan nodes)`);
+    console.log(
+      `Detected ${communityGroups.size} communities (${orphanCount} orphan nodes)`,
+    );
 
     // Get user-named systems before clearing (for overlap matching)
     const userNamedSystems = store.getUserNamedSystemsWithMembers();
@@ -1633,15 +1779,23 @@ communityCmd
     // Calculate overlap between new communities and old user-named systems
     // overlap = intersection / union (Jaccard index)
     const OVERLAP_THRESHOLD = 0.7;
-    const nameAssignments = new Map<number, { name: string; description: string | null; overlap: number }>();
+    const nameAssignments = new Map<
+      number,
+      { name: string; description: string | null; overlap: number }
+    >();
 
     if (userNamedSystems.length > 0) {
-      console.log(`\nMatching against ${userNamedSystems.length} user-named systems...`);
+      console.log(
+        `\nMatching against ${userNamedSystems.length} user-named systems...`,
+      );
 
       // For each user-named system, find the best matching new community
       const claimedNames = new Set<string>();
 
-      for (const { system: oldSystem, memberIds: oldMembers } of userNamedSystems) {
+      for (const {
+        system: oldSystem,
+        memberIds: oldMembers,
+      } of userNamedSystems) {
         const oldSet = new Set(oldMembers);
         let bestMatch: { communityId: number; overlap: number } | null = null;
 
@@ -1672,7 +1826,9 @@ communityCmd
               overlap: bestMatch.overlap,
             });
             claimedNames.add(oldSystem.name);
-            console.log(`  "${oldSystem.name}" → community ${bestMatch.communityId} (${(bestMatch.overlap * 100).toFixed(0)}% overlap)`);
+            console.log(
+              `  "${oldSystem.name}" → community ${bestMatch.communityId} (${(bestMatch.overlap * 100).toFixed(0)}% overlap)`,
+            );
           }
         }
       }
@@ -1700,11 +1856,15 @@ communityCmd
         for (const memberId of memberIds) {
           const entity = entities.find((e) => e.id === memberId);
           if (entity) {
-            const dir = entity.file_path.split("/").slice(0, -1).join("/") || entity.file_path;
+            const dir =
+              entity.file_path.split("/").slice(0, -1).join("/") ||
+              entity.file_path;
             fileCounts.set(dir, (fileCounts.get(dir) || 0) + 1);
           }
         }
-        const topDir = [...fileCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "unknown";
+        const topDir =
+          [...fileCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ||
+          "unknown";
         name = `${topDir.split("/").pop() || "system"}-${communityId}`;
         nameSource = "auto";
       }
@@ -1742,9 +1902,15 @@ communityCmd
   .command("list")
   .description("List all detected communities")
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
-  .option("-u, --unnamed", "Only show auto-named communities (not user-renamed)")
+  .option(
+    "-u, --unnamed",
+    "Only show auto-named communities (not user-renamed)",
+  )
   .option("-m, --members", "Show all members of each community")
-  .option("--min-members <n>", "Minimum members to include (default: 2 for --unnamed, 1 otherwise)")
+  .option(
+    "--min-members <n>",
+    "Minimum members to include (default: 2 for --unnamed, 1 otherwise)",
+  )
   .action((options) => {
     const store = new GraphStore(resolve(options.db));
     let systems = store.getSystems();
@@ -1757,14 +1923,20 @@ communityCmd
     }
 
     // Filter by minimum members (default 2 for --unnamed, 1 otherwise)
-    const minMembers = options.minMembers ? parseInt(options.minMembers) : (options.unnamed ? 2 : 1);
+    const minMembers = options.minMembers
+      ? parseInt(options.minMembers)
+      : options.unnamed
+        ? 2
+        : 1;
     systems = systems.filter((s) => (countMap.get(s.id) || 0) >= minMembers);
 
     if (systems.length === 0) {
       if (options.unnamed) {
         console.log("No unnamed communities. All communities have been named.");
       } else {
-        console.log("No communities detected. Run 'mycelium community detect' first.");
+        console.log(
+          "No communities detected. Run 'mycelium community detect' first.",
+        );
       }
       store.close();
       return;
@@ -1796,7 +1968,9 @@ communityCmd
         if (entryPoints.length > 0) {
           console.log(`  Entry points:`);
           for (const ep of entryPoints.slice(0, 3)) {
-            console.log(`    → ${ep.entity.name} (${ep.entity.file_path}:${ep.entity.start_line})`);
+            console.log(
+              `    → ${ep.entity.name} (${ep.entity.file_path}:${ep.entity.start_line})`,
+            );
           }
           if (entryPoints.length > 3) {
             console.log(`    ... and ${entryPoints.length - 3} more`);
@@ -1820,7 +1994,9 @@ communityCmd
 
     if (!system) {
       console.error(`Community not found: ${name}`);
-      console.error("Use 'mycelium community list' to see available communities.");
+      console.error(
+        "Use 'mycelium community list' to see available communities.",
+      );
       store.close();
       process.exit(1);
     }
@@ -1831,7 +2007,9 @@ communityCmd
     if (system.description) {
       console.log(`  ${system.description}`);
     }
-    console.log(`  Algorithm: ${system.algorithm}, Resolution: ${system.resolution}`);
+    console.log(
+      `  Algorithm: ${system.algorithm}, Resolution: ${system.resolution}`,
+    );
     console.log(`\nMembers (${members.length}):\n`);
 
     // Group by file
@@ -1846,7 +2024,8 @@ communityCmd
     for (const [file, fileMembers] of byFile) {
       console.log(`  ${file}:`);
       for (const m of fileMembers) {
-        const conf = m.confidence !== null ? ` (${(m.confidence * 100).toFixed(0)}%)` : "";
+        const conf =
+          m.confidence !== null ? ` (${(m.confidence * 100).toFixed(0)}%)` : "";
         console.log(`    - ${m.entity.name}:${m.entity.start_line}${conf}`);
       }
     }

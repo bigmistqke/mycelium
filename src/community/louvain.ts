@@ -5,7 +5,7 @@ import type {
   CommunityDetector,
   HierarchicalCommunities,
   Graph as MyceliumGraph,
-} from "./types.js";
+} from "./types.ts";
 
 type LouvainFn = (
   graph: DirectedGraph,

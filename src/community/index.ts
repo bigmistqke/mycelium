@@ -1,8 +1,8 @@
-export * from "./types.js";
-export { LouvainDetector, type LouvainOptions } from "./louvain.js";
+export { LouvainDetector, type LouvainOptions } from "./louvain.ts";
+export * from "./types.ts";
 
-import type { CommunityDetector } from "./types.js";
-import { LouvainDetector } from "./louvain.js";
+import { LouvainDetector } from "./louvain.ts";
+import type { CommunityDetector } from "./types.ts";
 
 /**
  * Available community detection algorithms.
@@ -22,7 +22,9 @@ const algorithms: Record<AlgorithmName, () => CommunityDetector> = {
 export function getDetector(name: AlgorithmName): CommunityDetector {
   const factory = algorithms[name];
   if (!factory) {
-    throw new Error(`Unknown algorithm: ${name}. Available: ${Object.keys(algorithms).join(", ")}`);
+    throw new Error(
+      `Unknown algorithm: ${name}. Available: ${Object.keys(algorithms).join(", ")}`,
+    );
   }
   return factory();
 }

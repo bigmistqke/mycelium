@@ -1,7 +1,13 @@
-export { GraphStore, createDatabase } from "./db.js";
-export type { Entity, Relation, EntryPoint, System, Description } from "./db.js";
+export { createDatabase, GraphStore } from "./db.ts";
+export type {
+  Description,
+  Entity,
+  EntryPoint,
+  Relation,
+  System,
+} from "./db.ts";
 
-export { TypeScriptAnalyzer } from "./analyzer.js";
-export type { AnalysisResult } from "./analyzer.js";
+export { TypeScriptAnalyzer } from "./analyzer.ts";
+export type { AnalysisResult } from "./analyzer.ts";
 
-export { computeHash, computeSignatureHash, computeImplHash } from "./hash.js";
+export { computeHash, computeImplHash, computeSignatureHash } from "./hash.ts";

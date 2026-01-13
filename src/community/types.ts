@@ -1,4 +1,4 @@
-import type { Entity, Relation } from "../db.js";
+import type { Entity, Relation } from "../db.ts";
 
 /**
  * A graph representation suitable for community detection algorithms.
@@ -65,7 +65,10 @@ export interface CommunityDetector {
    * @param options - Algorithm-specific options (varies by implementation)
    * @returns Community assignments for each node
    */
-  detect(graph: Graph, options?: Record<string, unknown>): Promise<CommunityAssignment>;
+  detect(
+    graph: Graph,
+    options?: Record<string, unknown>,
+  ): Promise<CommunityAssignment>;
 
   /**
    * Whether this algorithm supports hierarchical community detection.
@@ -76,7 +79,10 @@ export interface CommunityDetector {
    * Detect hierarchical communities (if supported).
    * Falls back to flat detection wrapped in single-level hierarchy if not supported.
    */
-  detectHierarchical?(graph: Graph, options?: Record<string, unknown>): Promise<HierarchicalCommunities>;
+  detectHierarchical?(
+    graph: Graph,
+    options?: Record<string, unknown>,
+  ): Promise<HierarchicalCommunities>;
 }
 
 /**
@@ -85,7 +91,7 @@ export interface CommunityDetector {
 export function buildGraph(
   entities: Entity[],
   relations: Relation[],
-  options: CommunityDetectorOptions = {}
+  options: CommunityDetectorOptions = {},
 ): Graph {
   const {
     edgeTypes = ["calls"],
@@ -115,7 +121,8 @@ export function buildGraph(
 
   for (const relation of relations) {
     if (!edgeTypeSet.has(relation.kind)) continue;
-    if (!nodeMap.has(relation.from_id) || !nodeMap.has(relation.to_id)) continue;
+    if (!nodeMap.has(relation.from_id) || !nodeMap.has(relation.to_id))
+      continue;
 
     // Count edges for weight (multiple relations = higher weight)
     const key = `${relation.from_id}:${relation.to_id}:${relation.kind}`;
@@ -126,7 +133,8 @@ export function buildGraph(
   const seenEdges = new Set<string>();
   for (const relation of relations) {
     if (!edgeTypeSet.has(relation.kind)) continue;
-    if (!nodeMap.has(relation.from_id) || !nodeMap.has(relation.to_id)) continue;
+    if (!nodeMap.has(relation.from_id) || !nodeMap.has(relation.to_id))
+      continue;
 
     const key = `${relation.from_id}:${relation.to_id}:${relation.kind}`;
     if (seenEdges.has(key)) continue;

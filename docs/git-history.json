@@ -1,19 +1,75 @@
 [
   {
+    "hash": "c54ba4e9d28b22a308a2678d20ab07f653734d11",
+    "short_hash": "c54ba4e",
+    "author": "bigmistqke",
+    "date": "2026-01-13T20:00:56+01:00",
+    "message": "feat: replace --tsconfig with -c/--config for unified configuration\n\n- Add mycelium.config.json for project-level settings (db, tsconfig, include/exclude patterns)\n- Add src/config.ts for loading and merging config files\n- Replace --tsconfig option with -c/--config in sync, read, write, create, delete commands\n- Paths are now resolved relative to config file directory\n- Update tests to use new -c flag",
+    "files_changed": 5
+  },
+  {
+    "hash": "8398f57d6d279d301adce8b12b21d980cb6a2969",
+    "short_hash": "8398f57",
+    "author": "bigmistqke",
+    "date": "2026-01-13T18:32:48+01:00",
+    "message": "feat: add create/delete CLI commands with tests\n\n- create: writes stdin to file, syncs to graph (--force to overwrite)\n- delete: removes entity from file, syncs (--file to remove empty files)\n- Added debug timing infrastructure for performance profiling\n- Tests use isolated tsconfig for 3x faster execution",
+    "files_changed": 2
+  },
+  {
+    "hash": "8398f57d6d279d301adce8b12b21d980cb6a2969",
+    "short_hash": "8398f57",
+    "author": "bigmistqke",
+    "date": "2026-01-13T18:32:48+01:00",
+    "message": "feat: add create/delete CLI commands with tests\n\n- create: writes stdin to file, syncs to graph (--force to overwrite)\n- delete: removes entity from file, syncs (--file to remove empty files)\n- Added debug timing infrastructure for performance profiling\n- Tests use isolated tsconfig for 3x faster execution",
+    "files_changed": 2
+  },
+  {
+    "hash": "aa05425fa095dc1608ee523e7b8c24d2a331f1a3",
+    "short_hash": "aa05425",
+    "author": "bigmistqke",
+    "date": "2026-01-13T17:58:00+01:00",
+    "message": "feat: add write command with exact ID requirement for read/write\n\n- write command replaces entity source and auto-syncs\n- read/write now require exact entity IDs (no fuzzy matching)\n- helpful hint to use 'mycelium find' when entity not found\n- tests use temp directory for safe isolation",
+    "files_changed": 2
+  },
+  {
+    "hash": "f01ddd2a9060ff04a3490375d47cc212eaf3f7ca",
+    "short_hash": "f01ddd2",
+    "author": "bigmistqke",
+    "date": "2026-01-13T17:42:31+01:00",
+    "message": "feat: add file freshness tracking with auto-sync read command\n\n- Track file content hashes in files table during sync\n- read command auto-syncs stale files before returning source\n- Plain text output format: header block + separator + source",
+    "files_changed": 2
+  },
+  {
+    "hash": "0f08b14dc741d085d01d62db4ce2865197b6cf6b",
+    "short_hash": "0f08b14",
+    "author": "bigmistqke",
+    "date": "2026-01-13T17:23:58+01:00",
+    "message": "fix: update tests to match current entity naming conventions\n\n- Object methods use `.` separator: api.fetchData\n- Call argument syntax: {line:col}funcName<arg:N>.methodName\n- Nested functions inside methods: .start::helper",
+    "files_changed": 1
+  },
+  {
+    "hash": "b33eda33e59f361c9c7f949fdf1dfc95a4e0d16c",
+    "short_hash": "b33eda3",
+    "author": "bigmistqke",
+    "date": "2026-01-13T17:19:20+01:00",
+    "message": "feat: add call-site argument tracking for transitive dependencies\n\nTracks what entities are passed as arguments at each call site,\nenabling resolution of function parameters to their concrete values\nduring transitive dependency queries.",
+    "files_changed": 7
+  },
+  {
+    "hash": "2c93b901e5f339fdd39d14903c6098d7058c44c6",
+    "short_hash": "2c93b90",
+    "author": "bigmistqke",
+    "date": "2026-01-13T16:38:28+01:00",
+    "message": "feat: add namespace imports and re-exports support\n\n- Create <namespace> entity for each module\n- Handle namespace imports: import * as utils from './mod'\n- Handle named re-exports: export { foo } from './mod'\n- Handle renamed re-exports: export { foo as bar } from './mod'\n- Handle default re-exports: export { default as name } from './mod'\n- Handle star re-exports: export * from './mod'",
+    "files_changed": 5
+  },
+  {
     "hash": "691ae0c1897280643852cf95e61986de5614e050",
     "short_hash": "691ae0c",
     "author": "bigmistqke",
     "date": "2026-01-13T16:25:24+01:00",
     "message": "feat: add depends_on relation for data-flow tracking\n\n- Create <return> entities for functions to represent return values\n- Track return statement dependencies (what <return> depends on)\n- Track variable initialization dependencies (const x = a + b)\n- Track call site dependencies (result depends on callee<return>)\n- Add --depends-on, --dependents, --all-deps CLI flags",
     "files_changed": 6
-  },
-  {
-    "hash": "d67931f60ccb0826345963b36b5ee7d8bb7f90d4",
-    "short_hash": "d67931f",
-    "author": "bigmistqke",
-    "date": "2026-01-13T16:08:10+01:00",
-    "message": "feat: track imports/exports as aliases\n\n- Default exports create <default> entity that aliases the named entity\n- Default imports alias the source module's <default>\n- Named imports alias the source module's entity directly\n- Renamed imports (import { foo as bar }) handled correctly\n- Import bindings created as entities for queryability\n\nExample chain:\n  imports.ts::mainFn → exports.ts::<default> → exports.ts::mainFunction",
-    "files_changed": 3
   },
   {
     "hash": "d67931f60ccb0826345963b36b5ee7d8bb7f90d4",

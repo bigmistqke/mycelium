@@ -1062,6 +1062,39 @@ export class GraphStore {
   }
 
   /**
+   * Deletes all entities and related data for files matching a predicate.
+   * Returns the number of entities deleted.
+   */
+  pruneEntities(shouldDelete: (filePath: string) => boolean): number {
+    const entities = this.getEntities();
+    const toDelete = entities.filter(e => shouldDelete(e.file_path));
+
+    if (toDelete.length === 0) return 0;
+
+    const entityIds = toDelete.map(e => e.id);
+    const filePaths = [...new Set(toDelete.map(e => e.file_path))];
+
+    // Delete in order to respect foreign key constraints
+    for (const id of entityIds) {
+      this.db.prepare(`DELETE FROM descriptions WHERE entity_id = ?`).run(id);
+      this.db.prepare(`DELETE FROM entry_points WHERE entity_id = ?`).run(id);
+      this.db.prepare(`DELETE FROM system_members WHERE entity_id = ?`).run(id);
+      this.db.prepare(`DELETE FROM call_arguments WHERE caller_id = ?`).run(id);
+      this.db.prepare(`DELETE FROM relations WHERE from_id = ? OR to_id = ?`).run(id, id);
+    }
+
+    for (const id of entityIds) {
+      this.db.prepare(`DELETE FROM entities WHERE id = ?`).run(id);
+    }
+
+    for (const path of filePaths) {
+      this.db.prepare(`DELETE FROM files WHERE path = ?`).run(path);
+    }
+
+    return toDelete.length;
+  }
+
+  /**
    * Closes the database connection. Should be called when done with queries to release resources.
    */
   close(): void {

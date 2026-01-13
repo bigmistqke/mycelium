@@ -1880,6 +1880,127 @@
       "created_at": "2026-01-13T16:25:46.582715+01:00",
       "updated_at": "2026-01-13T16:25:46.582715+01:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"691ae0c\",\"confidence\":95}"
+    },
+    {
+      "id": 172,
+      "change_id": "c4d98f3e-4df0-4119-9344-ee34baa6f36a",
+      "node_type": "outcome",
+      "title": "Namespace imports and re-exports implemented",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T16:38:33.780957+01:00",
+      "updated_at": "2026-01-13T16:38:33.780957+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"2c93b90\",\"confidence\":95}"
+    },
+    {
+      "id": 173,
+      "change_id": "c84f4726-5bcf-4738-b4b8-421232b818f3",
+      "node_type": "observation",
+      "title": "Private fields (#foo) already work - tracked as entities with read/write analysis",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T16:41:51.433376+01:00",
+      "updated_at": "2026-01-13T16:41:51.433376+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":100}"
+    },
+    {
+      "id": 174,
+      "change_id": "52a331f1-61bc-438e-9253-fc19adde41fe",
+      "node_type": "observation",
+      "title": "Getters/setters (get/set) not yet tracked as entities",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T16:41:51.461906+01:00",
+      "updated_at": "2026-01-13T16:41:51.461906+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":100}"
+    },
+    {
+      "id": 175,
+      "change_id": "cb49f3c9-910c-4e7c-a38b-f26c36df9258",
+      "node_type": "action",
+      "title": "Implemented call-site argument tracking for transitive dependency resolution",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T17:19:27.959333+01:00",
+      "updated_at": "2026-01-13T17:19:27.959333+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"b33eda3\",\"confidence\":95}"
+    },
+    {
+      "id": 176,
+      "change_id": "650dd253-07d8-43d6-9600-a8868894786f",
+      "node_type": "outcome",
+      "title": "Fixed failing tests - updated naming conventions",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T17:29:50.284062+01:00",
+      "updated_at": "2026-01-13T17:29:50.284062+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"0f08b14\",\"confidence\":95}"
+    },
+    {
+      "id": 177,
+      "change_id": "934263f0-562d-4c08-84bd-d10a47a49b62",
+      "node_type": "action",
+      "title": "Implemented file freshness tracking with auto-sync read command",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T17:42:58.853311+01:00",
+      "updated_at": "2026-01-13T17:42:58.853311+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"f01ddd2\",\"confidence\":95}"
+    },
+    {
+      "id": 178,
+      "change_id": "23392a58-97f2-4a80-be3d-0d21c542929a",
+      "node_type": "action",
+      "title": "Added write command with exact ID requirement",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T17:58:08.373169+01:00",
+      "updated_at": "2026-01-13T17:58:08.373169+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"aa05425\",\"confidence\":95}"
+    },
+    {
+      "id": 179,
+      "change_id": "89f92640-8551-4fe7-a35d-a6276823f1b6",
+      "node_type": "outcome",
+      "title": "Committed: feat: add create/delete CLI commands with tests",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T18:33:00.165550+01:00",
+      "updated_at": "2026-01-13T18:33:00.165550+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"8398f57\",\"confidence\":95}"
+    },
+    {
+      "id": 180,
+      "change_id": "207d1ad1-3ee2-4647-bc9f-c3356fe520f0",
+      "node_type": "action",
+      "title": "Replaced --tsconfig with -c/--config for unified configuration",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T20:01:07.837194+01:00",
+      "updated_at": "2026-01-13T20:01:07.837194+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"c54ba4e\",\"confidence\":95}"
+    },
+    {
+      "id": 181,
+      "change_id": "965efc35-9bec-485f-a270-b042f5cfe34d",
+      "node_type": "observation",
+      "title": "Source storage gap resolved by read command - AI uses 'mycelium read <id>' instead of filesystem access. Combined with auto-sync on stale files, this provides reliable source access through the graph interface.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T20:04:12.669263+01:00",
+      "updated_at": "2026-01-13T20:04:12.669263+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 182,
+      "change_id": "83d7c9aa-219e-4846-b83b-ce4f09e2e3d5",
+      "node_type": "observation",
+      "title": "Orphan communities reveal missing higher-order function dataflow",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T22:49:40.210256+01:00",
+      "updated_at": "2026-01-13T23:05:13.805856+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90,\"prompt\":\"Small 2-member communities (callback param + return) appear disconnected from broader dataflow.\\n\\nKEY INSIGHT: Let analysis branch out, don't try to capture conditionality.\\n\\nThe rule:\\n1. CAN trace method (user code) → follow actual dataflow inside\\n2. CAN'T trace method (built-ins like .map/.filter, externals) → branch with \\\"may depend\\\" edge\\n\\nFor `toDelete.map(e => e.file_path)`:\\n- .map() is built-in, can't trace its implementation\\n- So branch: `e` may receive from `toDelete`, result may depend on callback return\\n- DON'T model: iteration semantics, just acknowledge the data connection\\n\\nFor user-defined functions:\\n- CAN trace, so follow the actual parameter → usage → return flow\\n- Get precise edges, not approximations\\n\\nCurrent gap: Not branching at all for opaque HOFs - stopping entirely at boundary.\\nFix: When method is opaque + has callback, create \\\"may depend\\\" edges.\"}"
     }
   ],
   "edges": [
@@ -3664,6 +3785,149 @@
       "weight": 1.0,
       "rationale": "Gap filled",
       "created_at": "2026-01-13T16:08:17.013342+01:00"
+    },
+    {
+      "id": 163,
+      "from_node_id": 163,
+      "to_node_id": 171,
+      "from_change_id": "fc18f112-e893-4836-b87d-c005b7a3b709",
+      "to_change_id": "a21cf965-69dd-45ef-a8ae-6f58bbfb22cb",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implemented",
+      "created_at": "2026-01-13T16:25:52.384136+01:00"
+    },
+    {
+      "id": 164,
+      "from_node_id": 156,
+      "to_node_id": 173,
+      "from_change_id": "17f4f61e-53cc-4bd7-a1e5-59122e2197ba",
+      "to_change_id": "c84f4726-5bcf-4738-b4b8-421232b818f3",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Private fields checked",
+      "created_at": "2026-01-13T16:42:02.354028+01:00"
+    },
+    {
+      "id": 165,
+      "from_node_id": 156,
+      "to_node_id": 174,
+      "from_change_id": "17f4f61e-53cc-4bd7-a1e5-59122e2197ba",
+      "to_change_id": "52a331f1-61bc-438e-9253-fc19adde41fe",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Getter/setter gap identified",
+      "created_at": "2026-01-13T16:42:02.363200+01:00"
+    },
+    {
+      "id": 166,
+      "from_node_id": 154,
+      "to_node_id": 175,
+      "from_change_id": "67d13408-14e0-41f6-a0e3-d0b1dff82853",
+      "to_change_id": "cb49f3c9-910c-4e7c-a38b-f26c36df9258",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation step",
+      "created_at": "2026-01-13T17:19:30.998982+01:00"
+    },
+    {
+      "id": 167,
+      "from_node_id": 175,
+      "to_node_id": 176,
+      "from_change_id": "cb49f3c9-910c-4e7c-a38b-f26c36df9258",
+      "to_change_id": "650dd253-07d8-43d6-9600-a8868894786f",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Fix",
+      "created_at": "2026-01-13T17:29:50.305424+01:00"
+    },
+    {
+      "id": 168,
+      "from_node_id": 154,
+      "to_node_id": 177,
+      "from_change_id": "67d13408-14e0-41f6-a0e3-d0b1dff82853",
+      "to_change_id": "934263f0-562d-4c08-84bd-d10a47a49b62",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation",
+      "created_at": "2026-01-13T17:42:58.876276+01:00"
+    },
+    {
+      "id": 169,
+      "from_node_id": 154,
+      "to_node_id": 178,
+      "from_change_id": "67d13408-14e0-41f6-a0e3-d0b1dff82853",
+      "to_change_id": "23392a58-97f2-4a80-be3d-0d21c542929a",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation",
+      "created_at": "2026-01-13T17:58:08.406521+01:00"
+    },
+    {
+      "id": 170,
+      "from_node_id": 154,
+      "to_node_id": 179,
+      "from_change_id": "67d13408-14e0-41f6-a0e3-d0b1dff82853",
+      "to_change_id": "89f92640-8551-4fe7-a35d-a6276823f1b6",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation",
+      "created_at": "2026-01-13T18:33:04.638053+01:00"
+    },
+    {
+      "id": 171,
+      "from_node_id": 154,
+      "to_node_id": 180,
+      "from_change_id": "67d13408-14e0-41f6-a0e3-d0b1dff82853",
+      "to_change_id": "207d1ad1-3ee2-4647-bc9f-c3356fe520f0",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Config file support improves developer experience",
+      "created_at": "2026-01-13T20:01:13.146915+01:00"
+    },
+    {
+      "id": 172,
+      "from_node_id": 156,
+      "to_node_id": 181,
+      "from_change_id": "17f4f61e-53cc-4bd7-a1e5-59122e2197ba",
+      "to_change_id": "965efc35-9bec-485f-a270-b042f5cfe34d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Source storage gap resolved",
+      "created_at": "2026-01-13T20:04:18.034597+01:00"
+    },
+    {
+      "id": 173,
+      "from_node_id": 177,
+      "to_node_id": 181,
+      "from_change_id": "934263f0-562d-4c08-84bd-d10a47a49b62",
+      "to_change_id": "965efc35-9bec-485f-a270-b042f5cfe34d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Read command provides source access",
+      "created_at": "2026-01-13T20:04:18.164731+01:00"
+    },
+    {
+      "id": 174,
+      "from_node_id": 182,
+      "to_node_id": 75,
+      "from_change_id": "83d7c9aa-219e-4846-b83b-ce4f09e2e3d5",
+      "to_change_id": "dbc92498-ae36-4065-9e3f-203787c11c6d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Identifies gap in dataflow tracking for higher-order functions",
+      "created_at": "2026-01-13T22:50:03.581923+01:00"
+    },
+    {
+      "id": 175,
+      "from_node_id": 182,
+      "to_node_id": 1,
+      "from_change_id": "83d7c9aa-219e-4846-b83b-ce4f09e2e3d5",
+      "to_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Fundamental limitation in current analyzer architecture",
+      "created_at": "2026-01-13T22:50:07.798308+01:00"
     }
   ]
 }

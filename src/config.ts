@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "fs";
-import { resolve, dirname } from "path";
+import { dirname, resolve } from "path";
 import { pathToFileURL } from "url";
 
 /**
@@ -25,7 +25,11 @@ export interface LoadedConfig {
   configDir: string;
 }
 
-const CONFIG_FILES = ["mycelium.config.ts", "mycelium.config.js", "mycelium.config.json"];
+const CONFIG_FILES = [
+  "mycelium.config.ts",
+  "mycelium.config.ts",
+  "mycelium.config.json",
+];
 
 /**
  * Load mycelium config.
@@ -40,14 +44,20 @@ export async function loadConfig(configPath?: string): Promise<LoadedConfig> {
       console.error(`Config file not found: ${resolvedPath}`);
       return { config: {}, configDir: process.cwd() };
     }
-    return { config: await loadConfigFile(resolvedPath), configDir: dirname(resolvedPath) };
+    return {
+      config: await loadConfigFile(resolvedPath),
+      configDir: dirname(resolvedPath),
+    };
   }
 
   // Otherwise, search for config files in cwd
   for (const configFile of CONFIG_FILES) {
     const filePath = resolve(process.cwd(), configFile);
     if (!existsSync(filePath)) continue;
-    return { config: await loadConfigFile(filePath), configDir: dirname(filePath) };
+    return {
+      config: await loadConfigFile(filePath),
+      configDir: dirname(filePath),
+    };
   }
 
   // Return defaults if no config found
@@ -77,8 +87,9 @@ async function loadConfigFile(configPath: string): Promise<MyceliumConfig> {
  */
 export function mergeConfig(
   loaded: LoadedConfig,
-  cliOptions: Partial<Omit<MyceliumConfig, "tsconfig">>
-): Required<Pick<MyceliumConfig, "include" | "exclude" | "db">> & Pick<MyceliumConfig, "tsconfig"> & { configDir: string } {
+  cliOptions: Partial<Omit<MyceliumConfig, "tsconfig">>,
+): Required<Pick<MyceliumConfig, "include" | "exclude" | "db">> &
+  Pick<MyceliumConfig, "tsconfig"> & { configDir: string } {
   return {
     include: cliOptions.include ?? loaded.config.include ?? ["src/**/*.ts"],
     exclude: cliOptions.exclude ?? loaded.config.exclude ?? [],
@@ -91,7 +102,10 @@ export function mergeConfig(
 /**
  * Filter file paths based on exclude patterns.
  */
-export function shouldExclude(filePath: string, excludePatterns: string[]): boolean {
+export function shouldExclude(
+  filePath: string,
+  excludePatterns: string[],
+): boolean {
   if (excludePatterns.length === 0) return false;
 
   // Convert glob patterns to regex
@@ -105,14 +119,48 @@ export function shouldExclude(filePath: string, excludePatterns: string[]): bool
 }
 
 /**
+ * Check if a file path matches any of the include patterns.
+ */
+export function shouldInclude(
+  filePath: string,
+  includePatterns: string[],
+): boolean {
+  if (includePatterns.length === 0) return true;
+
+  for (const pattern of includePatterns) {
+    const regex = globToRegex(pattern);
+    if (regex.test(filePath)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Check if a file path is allowed by the config (matches include and doesn't match exclude).
+ */
+export function isPathAllowed(
+  filePath: string,
+  includePatterns: string[],
+  excludePatterns: string[],
+): boolean {
+  return (
+    shouldInclude(filePath, includePatterns) &&
+    !shouldExclude(filePath, excludePatterns)
+  );
+}
+
+/**
  * Convert a glob pattern to a regex.
  * Supports * (any chars except /) and ** (any chars including /)
  */
 function globToRegex(pattern: string): RegExp {
   const escaped = pattern
     .replace(/[.+^${}()|[\]\\]/g, "\\$&") // Escape regex special chars
-    .replace(/\*\*/g, "{{GLOBSTAR}}") // Temp placeholder for **
+    .replace(/\*\*\//g, "{{GLOBSTAR_SLASH}}") // **/ means "any path or none"
+    .replace(/\*\*/g, "{{GLOBSTAR}}") // ** at end means "anything"
     .replace(/\*/g, "[^/]*") // * matches anything except /
-    .replace(/{{GLOBSTAR}}/g, ".*"); // ** matches anything
-  return new RegExp(`(^|/)${escaped}($|/)`);
+    .replace(/{{GLOBSTAR_SLASH}}/g, "(.*\\/)?") // **/ -> optional path with slash
+    .replace(/{{GLOBSTAR}}/g, ".*"); // ** -> anything
+  return new RegExp(`(^|/)${escaped}$`);
 }
