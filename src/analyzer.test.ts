@@ -44,7 +44,8 @@ describe("TypeScriptAnalyzer", () => {
       analyzer.addSourceFiles(["src/test-fixtures/object-literals.ts"]);
       const result = analyzer.analyze("test-commit");
 
-      const method = result.entities.find(e => e.name === "api::fetchData");
+      // Object methods use . separator: api.fetchData
+      const method = result.entities.find(e => e.name === "api.fetchData");
       expect(method).toBeDefined();
       expect(method?.kind).toBe("function");
     });
@@ -53,7 +54,8 @@ describe("TypeScriptAnalyzer", () => {
       analyzer.addSourceFiles(["src/test-fixtures/object-literals.ts"]);
       const result = analyzer.analyze("test-commit");
 
-      const method = result.entities.find(e => e.name === "api::postData");
+      // Object methods use . separator: api.postData
+      const method = result.entities.find(e => e.name === "api.postData");
       expect(method).toBeDefined();
       expect(method?.kind).toBe("function");
     });
@@ -62,14 +64,14 @@ describe("TypeScriptAnalyzer", () => {
       analyzer.addSourceFiles(["src/test-fixtures/object-literals.ts"]);
       const result = analyzer.analyze("test-commit");
 
-      // Should find a method with the [line:col]funcName(argIdx)::methodName pattern
+      // Pattern: {line:col}funcName<arg:N>.methodName
       const method = result.entities.find(e =>
-        e.name.includes("expose") && e.name.includes("::start")
+        e.name.includes("expose<arg:0>.start")
       );
       expect(method).toBeDefined();
       expect(method?.kind).toBe("function");
-      // Verify the naming pattern
-      expect(method?.name).toMatch(/\[\d+:\d+\]expose\(0\)::start/);
+      // Verify the naming pattern: {line:col}expose<arg:0>.start
+      expect(method?.name).toMatch(/\{\d+:\d+\}expose<arg:0>\.start/);
     });
 
     it("tracks calls from object literal methods", () => {
@@ -78,7 +80,7 @@ describe("TypeScriptAnalyzer", () => {
 
       // The start method should call helperFunction
       const callRelation = result.relations.find(r =>
-        r.from_id.includes("::start") && r.to_id.includes("::helperFunction")
+        r.from_id.includes(".start") && r.to_id.includes("::helperFunction")
       );
       expect(callRelation).toBeDefined();
       expect(callRelation?.kind).toBe("calls");
@@ -88,9 +90,9 @@ describe("TypeScriptAnalyzer", () => {
       analyzer.addSourceFiles(["src/test-fixtures/object-literals.ts"]);
       const result = analyzer.analyze("test-commit");
 
-      // Find method inside a function scope
+      // Pattern: outerFunction::{line:col}register<arg:0>.init
       const nestedMethod = result.entities.find(e =>
-        e.name.includes("outerFunction") && e.name.includes("register") && e.name.includes("::init")
+        e.name.includes("outerFunction::") && e.name.includes("register<arg:0>.init")
       );
       expect(nestedMethod).toBeDefined();
     });
@@ -100,8 +102,9 @@ describe("TypeScriptAnalyzer", () => {
       const result = analyzer.analyze("test-commit");
 
       // curry({ a() {} }).next({ b() {} }) should create two distinct methods
-      const methodA = result.entities.find(e => e.name.includes("curry") && e.name.includes("::a"));
-      const methodB = result.entities.find(e => e.name.includes("next") && e.name.includes("::b"));
+      // Patterns: {line:col}curry<arg:0>.a and {line:col}next<arg:0>.b
+      const methodA = result.entities.find(e => e.name.includes("curry<arg:0>.a"));
+      const methodB = result.entities.find(e => e.name.includes("next<arg:0>.b"));
 
       expect(methodA).toBeDefined();
       expect(methodB).toBeDefined();
@@ -124,9 +127,10 @@ describe("TypeScriptAnalyzer", () => {
       analyzer.addSourceFiles(["src/test-fixtures/object-literals.ts"]);
       const result = analyzer.analyze("test-commit");
 
-      // The start method has a nested isCurrentSession function
+      // The start method has a nested helper function
+      // Pattern: {line:col}expose<arg:0>.start::helper
       const nested = result.entities.find(e =>
-        e.name.includes("::start::") && e.name.includes("helper")
+        e.name.includes(".start::helper")
       );
       expect(nested).toBeDefined();
     });
