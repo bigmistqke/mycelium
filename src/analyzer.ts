@@ -219,7 +219,12 @@ export class TypeScriptAnalyzer {
 
       // Try to resolve the callee to a known function
       for (const [id, fn] of functionMap) {
-        if (fn.name === calleeName || id.endsWith(`::${calleeName}`)) {
+        // Match: exact name, id ending with ::name, or method name (ClassName.methodName ending with .calleeName)
+        if (
+          fn.name === calleeName ||
+          id.endsWith(`::${calleeName}`) ||
+          fn.name.endsWith(`.${calleeName}`)
+        ) {
           calls.push(id);
           break;
         }
