@@ -1,0 +1,411 @@
+{
+  "nodes": [
+    {
+      "id": "src/analyzer.ts::TypeScriptAnalyzer.addSourceFiles",
+      "name": "TypeScriptAnalyzer.addSourceFiles",
+      "kind": "function",
+      "file_path": "src/analyzer.ts",
+      "signature": "(patterns: string[]) => void",
+      "start_line": 51,
+      "end_line": 53,
+      "description": "Adds source files to the ts-morph Project using glob patterns. Called before analyze() to define the analysis scope."
+    },
+    {
+      "id": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
+      "name": "TypeScriptAnalyzer.analyze",
+      "kind": "function",
+      "file_path": "src/analyzer.ts",
+      "signature": "(commitSha: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/analyzer\").AnalysisResult",
+      "start_line": 55,
+      "end_line": 101,
+      "description": "Main analysis entry point. Performs two passes: first extracts all functions, then builds the call graph by resolving call expressions to known functions."
+    },
+    {
+      "id": "src/analyzer.ts::TypeScriptAnalyzer.createFunctionInfo",
+      "name": "TypeScriptAnalyzer.createFunctionInfo",
+      "kind": "function",
+      "file_path": "src/analyzer.ts",
+      "signature": "(fn: FunctionDeclaration | FunctionExpression | Node, name: string, filePath: string) => FunctionInfo",
+      "start_line": 148,
+      "end_line": 171,
+      "description": "Creates a FunctionInfo record from a function declaration or method. Extracts signature, body, and location for storage."
+    },
+    {
+      "id": "src/analyzer.ts::TypeScriptAnalyzer.createFunctionInfoFromVar",
+      "name": "TypeScriptAnalyzer.createFunctionInfoFromVar",
+      "kind": "function",
+      "file_path": "src/analyzer.ts",
+      "signature": "(varDecl: VariableDeclaration, fn: ArrowFunction | FunctionExpression, name: string, filePath: string) => FunctionInfo",
+      "start_line": 173,
+      "end_line": 189,
+      "description": "Creates FunctionInfo for arrow functions and function expressions assigned to variables. Handles the different AST structure compared to declarations."
+    },
+    {
+      "id": "src/analyzer.ts::TypeScriptAnalyzer.extractCalls",
+      "name": "TypeScriptAnalyzer.extractCalls",
+      "kind": "function",
+      "file_path": "src/analyzer.ts",
+      "signature": "(node: Node, functionMap: Map<string, FunctionInfo>) => string[]",
+      "start_line": 212,
+      "end_line": 235,
+      "description": "Finds all call expressions within a function and resolves them to known function IDs. Returns deduplicated list of callee IDs for building the call graph."
+    },
+    {
+      "id": "src/analyzer.ts::TypeScriptAnalyzer.extractFunctions",
+      "name": "TypeScriptAnalyzer.extractFunctions",
+      "kind": "function",
+      "file_path": "src/analyzer.ts",
+      "signature": "(sourceFile: SourceFile, filePath: string) => FunctionInfo[]",
+      "start_line": 107,
+      "end_line": 146,
+      "description": "Extracts all function-like entities from a source file: named functions, exported arrow functions, and class methods. Returns FunctionInfo for each."
+    },
+    {
+      "id": "src/analyzer.ts::TypeScriptAnalyzer.getCalleeName",
+      "name": "TypeScriptAnalyzer.getCalleeName",
+      "kind": "function",
+      "file_path": "src/analyzer.ts",
+      "signature": "(call: CallExpression) => string | null",
+      "start_line": 211,
+      "end_line": 224,
+      "description": "Extracts the function name from a CallExpression AST node. Handles both simple identifiers and property access (obj.method)."
+    },
+    {
+      "id": "src/analyzer.ts::TypeScriptAnalyzer.getRelativePath",
+      "name": "TypeScriptAnalyzer.getRelativePath",
+      "kind": "function",
+      "file_path": "src/analyzer.ts",
+      "signature": "(absolutePath: string) => string",
+      "start_line": 103,
+      "end_line": 105,
+      "description": "Converts absolute file paths to paths relative to the project root. Ensures consistent entity IDs across different machines."
+    },
+    {
+      "id": "src/cli.ts::createInlineTemplate",
+      "name": "createInlineTemplate",
+      "kind": "function",
+      "file_path": "src/cli.ts",
+      "signature": "(dest: string, name: string) => void",
+      "start_line": 112,
+      "end_line": 167,
+      "description": "Fallback template creator when packaged template files are not found. Writes minimal Claude command templates inline."
+    },
+    {
+      "id": "src/cli.ts::findTsConfig",
+      "name": "findTsConfig",
+      "kind": "function",
+      "file_path": "src/cli.ts",
+      "signature": "() => string | undefined",
+      "start_line": 21,
+      "end_line": 29,
+      "description": "Searches for tsconfig.json or tsconfig.build.json in the current directory. Returns undefined if none found."
+    },
+    {
+      "id": "src/cli.ts::getGitCommitSha",
+      "name": "getGitCommitSha",
+      "kind": "function",
+      "file_path": "src/cli.ts",
+      "signature": "() => string",
+      "start_line": 13,
+      "end_line": 19,
+      "description": "Gets the current git HEAD commit SHA. Falls back to a timestamp-based ID if not in a git repository."
+    },
+    {
+      "id": "src/db.ts::GraphStore.close",
+      "name": "GraphStore.close",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "() => void",
+      "start_line": 301,
+      "end_line": 303,
+      "description": "Closes the database connection. Should be called when done with queries to release resources."
+    },
+    {
+      "id": "src/db.ts::GraphStore.findEntryPoints",
+      "name": "GraphStore.findEntryPoints",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(commitSha: string) => string[]",
+      "start_line": 257,
+      "end_line": 274,
+      "description": "Identifies call graph roots - functions that make outgoing calls but receive no incoming calls. These represent system entry points like CLI commands or API handlers."
+    },
+    {
+      "id": "src/db.ts::GraphStore.getAllDescriptions",
+      "name": "GraphStore.getAllDescriptions",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "() => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Description[]",
+      "start_line": 297,
+      "end_line": 299,
+      "description": "Returns all stored descriptions. Used by the descriptions command to show documented entities."
+    },
+    {
+      "id": "src/db.ts::GraphStore.getCallees",
+      "name": "GraphStore.getCallees",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(entityId: string, commitSha?: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity[]",
+      "start_line": 228,
+      "end_line": 240,
+      "description": "Finds all functions called by a given entity. Used to trace execution flow downward from entry points."
+    },
+    {
+      "id": "src/db.ts::GraphStore.getCallers",
+      "name": "GraphStore.getCallers",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(entityId: string, commitSha?: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity[]",
+      "start_line": 214,
+      "end_line": 226,
+      "description": "Finds all functions that call a given entity. Essential for impact analysis - understanding what would break if this function changes."
+    },
+    {
+      "id": "src/db.ts::GraphStore.getCommits",
+      "name": "GraphStore.getCommits",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "() => string[]",
+      "start_line": 276,
+      "end_line": 281,
+      "description": "Returns all unique commit SHAs in the database, ordered by creation time. Used to list available snapshots for temporal queries."
+    },
+    {
+      "id": "src/db.ts::GraphStore.getDescription",
+      "name": "GraphStore.getDescription",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(entityId: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Description | undefined",
+      "start_line": 283,
+      "end_line": 287,
+      "description": "Retrieves the stored description for an entity. Returns undefined if no description has been set."
+    },
+    {
+      "id": "src/db.ts::GraphStore.getEntities",
+      "name": "GraphStore.getEntities",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(commitSha?: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity[]",
+      "start_line": 175,
+      "end_line": 192,
+      "description": "Retrieves all entities from the database. If commitSha is provided, returns entities at that specific commit. Otherwise returns the latest version of each entity."
+    },
+    {
+      "id": "src/db.ts::GraphStore.getEntitiesNeedingDescriptions",
+      "name": "GraphStore.getEntitiesNeedingDescriptions",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "() => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity[]",
+      "start_line": 372,
+      "end_line": 376,
+      "description": "Returns entities that need descriptions: either missing entirely or stale (implementation changed since last description)."
+    },
+    {
+      "id": "src/db.ts::GraphStore.getEntityById",
+      "name": "GraphStore.getEntityById",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(id: string, commitSha?: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity | undefined",
+      "start_line": 194,
+      "end_line": 203,
+      "description": "Retrieves a single entity by ID, optionally at a specific commit. Returns the latest version if no commit specified."
+    },
+    {
+      "id": "src/db.ts::GraphStore.getEntryPoints",
+      "name": "GraphStore.getEntryPoints",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(commitSha?: string) => (import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").EntryPoint & { entity: import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Entity; })[]",
+      "start_line": 242,
+      "end_line": 255,
+      "description": "Returns entry points with their associated entity data. Entry points define the main flows through the codebase."
+    },
+    {
+      "id": "src/db.ts::GraphStore.getRelations",
+      "name": "GraphStore.getRelations",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(commitSha?: string) => import(\"/Users/bigmistqke/Documents/GitHub/mycelium/src/db\").Relation[]",
+      "start_line": 205,
+      "end_line": 212,
+      "description": "Returns all relationship edges, optionally filtered by commit. Used for building the full call graph visualization."
+    },
+    {
+      "id": "src/db.ts::GraphStore.insertEntity",
+      "name": "GraphStore.insertEntity",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(entity: Omit<Entity, \"created_at\">) => void",
+      "start_line": 134,
+      "end_line": 151,
+      "description": "Persists a code entity (function, type, etc.) to the database. Uses INSERT OR REPLACE to update existing entities for the same commit."
+    },
+    {
+      "id": "src/db.ts::GraphStore.insertEntryPoint",
+      "name": "GraphStore.insertEntryPoint",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(entryPoint: EntryPoint) => void",
+      "start_line": 167,
+      "end_line": 173,
+      "description": "Marks a function as an entry point (call graph root). Entry points are functions with outgoing calls but no callers."
+    },
+    {
+      "id": "src/db.ts::GraphStore.insertRelation",
+      "name": "GraphStore.insertRelation",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(relation: Omit<Relation, \"id\">) => void",
+      "start_line": 153,
+      "end_line": 165,
+      "description": "Records a relationship between entities (calls, uses_type, exports, imports). Uses INSERT OR IGNORE to prevent duplicate edges."
+    },
+    {
+      "id": "src/db.ts::GraphStore.isDescriptionStale",
+      "name": "GraphStore.isDescriptionStale",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(entityId: string) => boolean",
+      "start_line": 356,
+      "end_line": 367,
+      "description": "Checks if an entity's description is stale (impl_hash changed since description was written or was never tracked)."
+    },
+    {
+      "id": "src/db.ts::GraphStore.isEntityUnchanged",
+      "name": "GraphStore.isEntityUnchanged",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(id: string, signatureHash: string, implHash: string | null) => boolean",
+      "start_line": 142,
+      "end_line": 149,
+      "description": "Checks if an entity exists with identical signature and implementation hashes. Used to skip redundant inserts during sync."
+    },
+    {
+      "id": "src/db.ts::GraphStore.setDescription",
+      "name": "GraphStore.setDescription",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(entityId: string, content: string, implHash?: string | null) => void",
+      "start_line": 345,
+      "end_line": 351,
+      "description": "Stores or updates a description for an entity. Descriptions are AI-generated or manually written and persist across syncs."
+    },
+    {
+      "id": "src/db.ts::createDatabase",
+      "name": "createDatabase",
+      "kind": "function",
+      "file_path": "src/db.ts",
+      "signature": "(dbPath: string) => BetterSqlite3.Database",
+      "start_line": 51,
+      "end_line": 130,
+      "description": "Creates and initializes the SQLite database with all required tables (entities, relations, entry_points, systems, descriptions). Sets up WAL mode for better concurrent access."
+    },
+    {
+      "id": "src/hash.ts::computeHash",
+      "name": "computeHash",
+      "kind": "function",
+      "file_path": "src/hash.ts",
+      "signature": "(content: string) => string",
+      "start_line": 7,
+      "end_line": 9,
+      "description": "Computes a SHA-256 hash of the input string, returning the first 16 hex characters. Used as the base hashing function for both signature and implementation hashes."
+    },
+    {
+      "id": "src/hash.ts::computeImplHash",
+      "name": "computeImplHash",
+      "kind": "function",
+      "file_path": "src/hash.ts",
+      "signature": "(body: string) => string",
+      "start_line": 24,
+      "end_line": 26,
+      "description": "Computes a hash of function body source text to detect implementation changes. Simpler than AST-based hashing, catches any code modification including formatting."
+    },
+    {
+      "id": "src/hash.ts::computeSignatureHash",
+      "name": "computeSignatureHash",
+      "kind": "function",
+      "file_path": "src/hash.ts",
+      "signature": "(signature: string) => string",
+      "start_line": 15,
+      "end_line": 18,
+      "description": "Computes a deterministic hash for function/type signatures by normalizing whitespace before hashing. Used to detect when a function's interface changes between commits."
+    }
+  ],
+  "edges": [
+    {
+      "source": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
+      "target": "src/hash.ts::computeSignatureHash",
+      "kind": "calls"
+    },
+    {
+      "source": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
+      "target": "src/hash.ts::computeImplHash",
+      "kind": "calls"
+    },
+    {
+      "source": "src/hash.ts::computeSignatureHash",
+      "target": "src/hash.ts::computeHash",
+      "kind": "calls"
+    },
+    {
+      "source": "src/hash.ts::computeImplHash",
+      "target": "src/hash.ts::computeHash",
+      "kind": "calls"
+    },
+    {
+      "source": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
+      "target": "src/analyzer.ts::TypeScriptAnalyzer.getRelativePath",
+      "kind": "calls"
+    },
+    {
+      "source": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
+      "target": "src/analyzer.ts::TypeScriptAnalyzer.extractFunctions",
+      "kind": "calls"
+    },
+    {
+      "source": "src/analyzer.ts::TypeScriptAnalyzer.analyze",
+      "target": "src/analyzer.ts::TypeScriptAnalyzer.extractCalls",
+      "kind": "calls"
+    },
+    {
+      "source": "src/analyzer.ts::TypeScriptAnalyzer.extractFunctions",
+      "target": "src/analyzer.ts::TypeScriptAnalyzer.createFunctionInfo",
+      "kind": "calls"
+    },
+    {
+      "source": "src/analyzer.ts::TypeScriptAnalyzer.extractFunctions",
+      "target": "src/analyzer.ts::TypeScriptAnalyzer.createFunctionInfoFromVar",
+      "kind": "calls"
+    },
+    {
+      "source": "src/analyzer.ts::TypeScriptAnalyzer.extractCalls",
+      "target": "src/analyzer.ts::TypeScriptAnalyzer.getCalleeName",
+      "kind": "calls"
+    },
+    {
+      "source": "src/db.ts::GraphStore.isDescriptionStale",
+      "target": "src/db.ts::GraphStore.getEntityById",
+      "kind": "calls"
+    },
+    {
+      "source": "src/db.ts::GraphStore.isDescriptionStale",
+      "target": "src/db.ts::GraphStore.getDescription",
+      "kind": "calls"
+    },
+    {
+      "source": "src/db.ts::GraphStore.getEntitiesNeedingDescriptions",
+      "target": "src/db.ts::GraphStore.getEntities",
+      "kind": "calls"
+    },
+    {
+      "source": "src/db.ts::GraphStore.getEntitiesNeedingDescriptions",
+      "target": "src/db.ts::GraphStore.isDescriptionStale",
+      "kind": "calls"
+    },
+    {
+      "source": "src/db.ts::GraphStore.close",
+      "target": "src/db.ts::GraphStore.close",
+      "kind": "calls"
+    }
+  ]
+}
