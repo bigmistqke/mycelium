@@ -1,5 +1,101 @@
 [
   {
+    "hash": "ebcbfc6662c65757450db5890527421ee50f61de",
+    "short_hash": "ebcbfc6",
+    "author": "bigmistqke",
+    "date": "2026-01-13T14:42:07+01:00",
+    "message": "feat: track class constructors as entities\n\nExtractors now detect class constructors and track them as entities\nwith the naming convention `ClassName.<constructor>`. This allows\ntracking constructor dependencies like `GraphStore.<constructor>`\ncalling `createDatabase`, reducing false orphan counts.",
+    "files_changed": 1
+  },
+  {
+    "hash": "a64ddd81956bd9e7d22462c5b7dd490d0bb941ab",
+    "short_hash": "a64ddd8",
+    "author": "bigmistqke",
+    "date": "2026-01-13T14:17:14+01:00",
+    "message": "feat: add wildcard pattern support to query command (% and _)",
+    "files_changed": 1
+  },
+  {
+    "hash": "a64ddd81956bd9e7d22462c5b7dd490d0bb941ab",
+    "short_hash": "a64ddd8",
+    "author": "bigmistqke",
+    "date": "2026-01-13T14:17:14+01:00",
+    "message": "feat: add wildcard pattern support to query command (% and _)",
+    "files_changed": 1
+  },
+  {
+    "hash": "59a9132b7b8bdea8222a70c99d9557316d92f1c5",
+    "short_hash": "59a9132",
+    "author": "bigmistqke",
+    "date": "2026-01-13T13:53:40+01:00",
+    "message": "fix: use fixed seed for reproducible community detection",
+    "files_changed": 1
+  },
+  {
+    "hash": "b4bd2ec50f98f2d679cf4628c0577c986c292ba4",
+    "short_hash": "b4bd2ec",
+    "author": "bigmistqke",
+    "date": "2026-01-13T13:34:46+01:00",
+    "message": "feat: add /mycelium-community Claude command template",
+    "files_changed": 2
+  },
+  {
+    "hash": "e73407f0ee0c6068a647972699744f1416e4a015",
+    "short_hash": "e73407f",
+    "author": "bigmistqke",
+    "date": "2026-01-13T13:31:00+01:00",
+    "message": "feat: add community naming workflow with overlap preservation\n\n- Add --unnamed flag to filter auto-named communities\n- Add --members flag to show all members (AI-friendly)\n- Add --min-members flag (default 2 for --unnamed)\n- Preserve user names on re-detect via Jaccard overlap matching (70%+)\n- Track name_source (auto/user) in systems table",
+    "files_changed": 2
+  },
+  {
+    "hash": "16715690a4a0d2dc80fbadc7dfe7fc6dcd2238b4",
+    "short_hash": "1671569",
+    "author": "bigmistqke",
+    "date": "2026-01-13T13:16:20+01:00",
+    "message": "refactor: remove infomap support (requires web workers)",
+    "files_changed": 4
+  },
+  {
+    "hash": "445393b2d3414e0aa9c8ca9c3a2e9da947da6aae",
+    "short_hash": "445393b",
+    "author": "bigmistqke",
+    "date": "2026-01-13T12:25:55+01:00",
+    "message": "feat: add pluggable community detection (Louvain, Infomap)\n\nAdds architecture for auto-detecting systems via graph clustering:\n- CommunityDetector interface with detect() and detectHierarchical()\n- LouvainDetector using graphology-communities-louvain\n- InfomapDetector using @mapequation/infomap (hierarchical)\n- buildGraph() to convert entities/relations to algorithm-friendly format",
+    "files_changed": 8
+  },
+  {
+    "hash": "4382b8703fc93d7f8201193d30da6d02f98a3eb2",
+    "short_hash": "4382b87",
+    "author": "bigmistqke",
+    "date": "2026-01-13T11:41:32+01:00",
+    "message": "feat: add class property tracking (this.x reads/writes)\n\n- Extract class properties as \"property\" entities\n- Track this.x reads/writes in class methods\n- Handle assignment, increment/decrement, and mutating methods\n- Add 9 new tests for class property tracking\n- Total: 51 tests passing",
+    "files_changed": 4
+  },
+  {
+    "hash": "3284eb1c00d4006752023eb8a0faedc292fe47e5",
+    "short_hash": "3284eb1",
+    "author": "bigmistqke",
+    "date": "2026-01-13T11:34:31+01:00",
+    "message": "test: add comprehensive tests for all analyzer features\n\nNew test coverage:\n- Module-level variables (let, const, var, destructuring)\n- Side-effect tracking (reads/writes via assignment, property mutation, mutating methods)\n- Closure variable detection (mutated closures, multi-level nesting)\n- Hash computation (signature_hash, impl_hash)\n- Cross-file function calls\n- Entity and relation metadata\n\nTotal: 42 tests passing",
+    "files_changed": 5
+  },
+  {
+    "hash": "3570f0390116a6642a2380ef130a4f84d2c0c327",
+    "short_hash": "3570f03",
+    "author": "bigmistqke",
+    "date": "2026-01-13T11:24:44+01:00",
+    "message": "test: add vitest tests for analyzer\n\nAdds tests covering:\n- Named function declarations\n- Arrow functions and function expressions\n- Class methods\n- Object literal methods (shorthand and property assignment)\n- Call argument methods with [line:col]funcName(argIdx) naming\n- Nested functions\n- Call graph tracking",
+    "files_changed": 5
+  },
+  {
+    "hash": "b411924e00c3968378756db0a87d1a6ad07572b7",
+    "short_hash": "b411924",
+    "author": "bigmistqke",
+    "date": "2026-01-13T11:20:19+01:00",
+    "message": "feat: extract methods from object literals in analyzer\n\nAdds support for two patterns:\n- Assigned objects: const api = { method() {} } → file.ts::api::method\n- Call arguments: expose({ start() {} }) → file.ts::[line:col]expose(0)::start\n\nFixes missing call graph edges for worker patterns like expose({ ... })",
+    "files_changed": 2
+  },
+  {
     "hash": "51819223152fa422be121431c00dbf4cedf78139",
     "short_hash": "5181922",
     "author": "bigmistqke",
