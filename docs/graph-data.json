@@ -758,6 +758,50 @@
       "created_at": "2026-01-13T01:38:23.123108+01:00",
       "updated_at": "2026-01-13T01:38:23.123108+01:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":60,\"prompt\":\"Given an error stack trace, map lines to graph entities\"}"
+    },
+    {
+      "id": 70,
+      "change_id": "f60c3561-b9ac-41eb-b734-8f8fff576330",
+      "node_type": "outcome",
+      "title": "Added serve command for web visualization",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:52:14.848124+01:00",
+      "updated_at": "2026-01-13T01:52:14.848124+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"6f63782\",\"confidence\":95}"
+    },
+    {
+      "id": 71,
+      "change_id": "211d8c43-83fc-4d05-b01d-0a237db2c5b6",
+      "node_type": "outcome",
+      "title": "Rewrote query command with smart search and interactive select",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:52:29.806074+01:00",
+      "updated_at": "2026-01-13T01:52:29.806074+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"6712a27\",\"confidence\":95}"
+    },
+    {
+      "id": 72,
+      "change_id": "2a6f784f-8732-4831-b055-6b7dccf085b9",
+      "node_type": "goal",
+      "title": "Add type dependency graph to track type usage, not just calls",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:54:49.121365+01:00",
+      "updated_at": "2026-01-13T01:54:49.121365+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":70,\"prompt\":\"Type dependency graph - track which functions use which types, enabling impact analysis for type changes\"}"
+    },
+    {
+      "id": 73,
+      "change_id": "b46f13bb-58f4-4280-a814-37bfb7102db4",
+      "node_type": "outcome",
+      "title": "Added --source flag to query command",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T01:56:49.717381+01:00",
+      "updated_at": "2026-01-13T01:56:49.717381+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"1c4b7f7\",\"confidence\":95}"
     }
   ],
   "edges": [
@@ -1486,6 +1530,39 @@
       "weight": 1.0,
       "rationale": "Web client implementation",
       "created_at": "2026-01-13T01:18:39.786564+01:00"
+    },
+    {
+      "id": 67,
+      "from_node_id": 60,
+      "to_node_id": 70,
+      "from_change_id": "9cf027d1-1c08-4b25-b8e6-6eb1f252962c",
+      "to_change_id": "f60c3561-b9ac-41eb-b734-8f8fff576330",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Serve command implementation",
+      "created_at": "2026-01-13T01:52:19.830749+01:00"
+    },
+    {
+      "id": 68,
+      "from_node_id": 64,
+      "to_node_id": 71,
+      "from_change_id": "292f0f60-f513-479e-8077-6582cd7b520e",
+      "to_change_id": "211d8c43-83fc-4d05-b01d-0a237db2c5b6",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation",
+      "created_at": "2026-01-13T01:52:29.818966+01:00"
+    },
+    {
+      "id": 69,
+      "from_node_id": 65,
+      "to_node_id": 73,
+      "from_change_id": "ec38a7d8-a130-4a73-8cde-7b0e0419e692",
+      "to_change_id": "b46f13bb-58f4-4280-a814-37bfb7102db4",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation",
+      "created_at": "2026-01-13T01:56:49.728055+01:00"
     }
   ]
 }

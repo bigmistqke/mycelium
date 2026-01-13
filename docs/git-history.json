@@ -1,5 +1,29 @@
 [
   {
+    "hash": "1c4b7f73aa470fd7609ab7a6cf7daad6fd0901f0",
+    "short_hash": "1c4b7f7",
+    "author": "bigmistqke",
+    "date": "2026-01-13T01:56:43+01:00",
+    "message": "feat: add --source flag to query command for viewing source code",
+    "files_changed": 1
+  },
+  {
+    "hash": "6712a27c8897c979744b0f3ef9f8bf7424ac895a",
+    "short_hash": "6712a27",
+    "author": "bigmistqke",
+    "date": "2026-01-13T01:52:24+01:00",
+    "message": "feat: rewrite query with smart search and interactive select",
+    "files_changed": 3
+  },
+  {
+    "hash": "6f637823773c9c6f71b56f626e62cfc7f1b462b8",
+    "short_hash": "6f63782",
+    "author": "bigmistqke",
+    "date": "2026-01-13T01:52:09+01:00",
+    "message": "feat: add serve command for web visualization",
+    "files_changed": 1
+  },
+  {
     "hash": "95b3d52858a544d254628c4838cde4e563bc32d4",
     "short_hash": "95b3d52",
     "author": "bigmistqke",
