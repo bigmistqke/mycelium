@@ -618,4 +618,46 @@ program
     store.close();
   });
 
+program
+  .command("export")
+  .description("Export graph data as JSON for visualization")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("-o, --output <path>", "Output file path", "graph.json")
+  .action((options) => {
+    const store = new GraphStore(resolve(options.db));
+    const entities = store.getEntities();
+    const relations = store.getRelations();
+    const descriptions = store.getAllDescriptions();
+    const descMap = new Map(descriptions.map((d) => [d.entity_id, d]));
+
+    // Deduplicate edges by source+target
+    const edgeMap = new Map<string, { source: string; target: string; kind: string }>();
+    for (const r of relations) {
+      if (r.kind !== "calls") continue;
+      const key = `${r.from_id}::${r.to_id}`;
+      if (!edgeMap.has(key)) {
+        edgeMap.set(key, { source: r.from_id, target: r.to_id, kind: r.kind });
+      }
+    }
+
+    const graphData = {
+      nodes: entities.map((e) => ({
+        id: e.id,
+        name: e.name,
+        kind: e.kind,
+        file_path: e.file_path,
+        signature: e.signature,
+        start_line: e.start_line,
+        end_line: e.end_line,
+        description: descMap.get(e.id)?.content,
+      })),
+      edges: Array.from(edgeMap.values()),
+    };
+
+    writeFileSync(resolve(options.output), JSON.stringify(graphData, null, 2));
+    console.log(`Exported ${graphData.nodes.length} nodes and ${graphData.edges.length} edges to ${options.output}`);
+
+    store.close();
+  });
+
 program.parse();
