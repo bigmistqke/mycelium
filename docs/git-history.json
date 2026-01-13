@@ -1,18 +1,50 @@
 [
   {
+    "hash": "d67931f60ccb0826345963b36b5ee7d8bb7f90d4",
+    "short_hash": "d67931f",
+    "author": "bigmistqke",
+    "date": "2026-01-13T16:08:10+01:00",
+    "message": "feat: track imports/exports as aliases\n\n- Default exports create <default> entity that aliases the named entity\n- Default imports alias the source module's <default>\n- Named imports alias the source module's entity directly\n- Renamed imports (import { foo as bar }) handled correctly\n- Import bindings created as entities for queryability\n\nExample chain:\n  imports.ts::mainFn → exports.ts::<default> → exports.ts::mainFunction",
+    "files_changed": 3
+  },
+  {
+    "hash": "c54a381d347af947e5cb279e8269d775b319ed2c",
+    "short_hash": "c54a381",
+    "author": "bigmistqke",
+    "date": "2026-01-13T15:51:52+01:00",
+    "message": "refactor: change location syntax from [line:col] to {line:col}\n\nAvoids conflict with computed properties and Symbol methods.\nExample: {42:1}action(0)<anonymous> instead of [42:1]action(0)<anonymous>",
+    "files_changed": 1
+  },
+  {
+    "hash": "c54a381d347af947e5cb279e8269d775b319ed2c",
+    "short_hash": "c54a381",
+    "author": "bigmistqke",
+    "date": "2026-01-13T15:51:52+01:00",
+    "message": "refactor: change location syntax from [line:col] to {line:col}\n\nAvoids conflict with computed properties and Symbol methods.\nExample: {42:1}action(0)<anonymous> instead of [42:1]action(0)<anonymous>",
+    "files_changed": 1
+  },
+  {
+    "hash": "fd6225cf3db399488c6b717f15a861af0f0922c7",
+    "short_hash": "fd6225c",
+    "author": "bigmistqke",
+    "date": "2026-01-13T15:26:32+01:00",
+    "message": "feat: track anonymous functions passed as call arguments\n\n- Anonymous callbacks tracked as [line:col]callee(argIdx)<anonymous>\n- Nested functions inside tracked as ...<anonymous>::nestedFn\n- Extends existing object literal tracking to also handle arrow/function expressions\n\nExamples:\n- program.action(() => { ... }) → [42:1]action(0)<anonymous>\n- process((x) => { function helper() {} }) → [46:1]process(0)<anonymous>::helper",
+    "files_changed": 2
+  },
+  {
+    "hash": "7e85118ec5055c18e33d508a557210cc2132a607",
+    "short_hash": "7e85118",
+    "author": "bigmistqke",
+    "date": "2026-01-13T15:07:29+01:00",
+    "message": "feat: add alias tracking with single-hop relations\n\n- Add 'aliases' relation kind for tracking variable aliases\n- Extract alias relations lazily from variable declarations\n- Follow identifier references (const b = a) and property access (const x = utils.helper)\n- Add --aliases and --aliased-by flags to query command\n- Change object literal method naming from :: to . for consistency\n  (e.g., utils.helper instead of utils::helper)\n\nAlias chains are stored as single-hop relations and resolved at query time.",
+    "files_changed": 4
+  },
+  {
     "hash": "ebcbfc6662c65757450db5890527421ee50f61de",
     "short_hash": "ebcbfc6",
     "author": "bigmistqke",
     "date": "2026-01-13T14:42:07+01:00",
     "message": "feat: track class constructors as entities\n\nExtractors now detect class constructors and track them as entities\nwith the naming convention `ClassName.<constructor>`. This allows\ntracking constructor dependencies like `GraphStore.<constructor>`\ncalling `createDatabase`, reducing false orphan counts.",
-    "files_changed": 1
-  },
-  {
-    "hash": "a64ddd81956bd9e7d22462c5b7dd490d0bb941ab",
-    "short_hash": "a64ddd8",
-    "author": "bigmistqke",
-    "date": "2026-01-13T14:17:14+01:00",
-    "message": "feat: add wildcard pattern support to query command (% and _)",
     "files_changed": 1
   },
   {

@@ -1726,6 +1726,149 @@
       "created_at": "2026-01-13T14:42:37.370452+01:00",
       "updated_at": "2026-01-13T14:42:37.370452+01:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"ebcbfc6\",\"confidence\":95}"
+    },
+    {
+      "id": 158,
+      "change_id": "b34acd9d-b6c9-402f-a38f-414a49b7dbd8",
+      "node_type": "decision",
+      "title": "Alias tracking via single-hop relations",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T14:59:32.962334+01:00",
+      "updated_at": "2026-01-13T14:59:32.962334+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":80}"
+    },
+    {
+      "id": 159,
+      "change_id": "697bf9d5-8aa1-4ada-85f5-08130b4cd44a",
+      "node_type": "observation",
+      "title": "Store each alias as explicit relation: const b = a creates 'b aliases a'. Chain followed at query time, not analysis time.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T14:59:39.099981+01:00",
+      "updated_at": "2026-01-13T14:59:39.099981+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 160,
+      "change_id": "d38473e6-b100-44fd-85fd-a5537bd5fcbb",
+      "node_type": "observation",
+      "title": "Benefits: graph reflects actual code structure, each edge is simple single-hop, query decides resolution depth, debugging shows full chain",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T14:59:39.240149+01:00",
+      "updated_at": "2026-01-13T14:59:39.240149+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 161,
+      "change_id": "d6a9e6aa-fa4c-48a4-ab36-7839cbf78d9b",
+      "node_type": "outcome",
+      "title": "Alias tracking implemented with single-hop relations",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T15:07:35.293463+01:00",
+      "updated_at": "2026-01-13T15:07:35.293463+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"7e85118\",\"confidence\":90}"
+    },
+    {
+      "id": 162,
+      "change_id": "a2ccdeb1-f254-4de0-bd2a-9f3c9b101ee2",
+      "node_type": "observation",
+      "title": "Naming convention: :: for scope nesting (file contains, function contains), . for member access (object/class has method)",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T15:07:43.033592+01:00",
+      "updated_at": "2026-01-13T15:07:43.033592+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 163,
+      "change_id": "fc18f112-e893-4836-b87d-c005b7a3b709",
+      "node_type": "decision",
+      "title": "Data-flow tracking syntax design",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T15:24:42.675743+01:00",
+      "updated_at": "2026-01-13T15:24:42.675743+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":60}"
+    },
+    {
+      "id": 164,
+      "change_id": "fa486c44-807e-42b5-8c0f-1794d0576293",
+      "node_type": "observation",
+      "title": "Proposed syntax: <return> for function return values, <param:name> for parameter flow. E.g., createApi<return>.fetch for method on returned object",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T15:24:50.817830+01:00",
+      "updated_at": "2026-01-13T15:24:50.817830+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":70}"
+    },
+    {
+      "id": 165,
+      "change_id": "ac5390f9-04a1-4299-8e2e-ae09d0e0878d",
+      "node_type": "observation",
+      "title": "Deferred: return value tracking adds complexity. Focus first on direct structures (object literals, anonymous fns) and aliases.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T15:24:50.961069+01:00",
+      "updated_at": "2026-01-13T15:24:50.961069+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":80}"
+    },
+    {
+      "id": 166,
+      "change_id": "5c487269-ac2b-4cfb-b20c-88e88442f962",
+      "node_type": "outcome",
+      "title": "Anonymous callback tracking implemented",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T15:26:38.142142+01:00",
+      "updated_at": "2026-01-13T15:26:38.142142+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"fd6225c\",\"confidence\":90}"
+    },
+    {
+      "id": 167,
+      "change_id": "faf49451-f6e7-43d6-b12a-54048b62d11e",
+      "node_type": "observation",
+      "title": "Proposed: use param names instead of indices at call sites. [42:1]process<arg:handler>.run instead of [42:1]process(0).run. More semantic, links to definition, handles overloads.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T15:28:46.515946+01:00",
+      "updated_at": "2026-01-13T15:28:46.515946+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":75}"
+    },
+    {
+      "id": 168,
+      "change_id": "d6918ef1-78b5-4f1c-883c-3e4e3c6e4610",
+      "node_type": "observation",
+      "title": "Index-based arg naming preferred over param names. <arg:a> is ambiguous between destructured prop and positional arg. foo(0).a is unambiguous.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T15:33:52.073226+01:00",
+      "updated_at": "2026-01-13T15:33:52.073226+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 169,
+      "change_id": "f704d695-10cb-4ed5-a15c-0de48a8921fb",
+      "node_type": "outcome",
+      "title": "Location syntax changed from [] to {} to avoid conflicts",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T15:51:59.621319+01:00",
+      "updated_at": "2026-01-13T15:51:59.621319+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"c54a381\",\"confidence\":95}"
+    },
+    {
+      "id": 170,
+      "change_id": "260071fb-5979-4d6c-bcf5-43b794d1010f",
+      "node_type": "outcome",
+      "title": "Import/export tracking implemented as aliases",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T16:08:17.002757+01:00",
+      "updated_at": "2026-01-13T16:08:17.002757+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"d67931f\",\"confidence\":95}"
     }
   ],
   "edges": [
@@ -3367,6 +3510,149 @@
       "weight": 1.0,
       "rationale": "Constructor tracking fills one of the identified gaps",
       "created_at": "2026-01-13T14:42:51.075359+01:00"
+    },
+    {
+      "id": 150,
+      "from_node_id": 148,
+      "to_node_id": 158,
+      "from_change_id": "4e738f61-57c7-4fb4-9f19-49a5074fd66d",
+      "to_change_id": "b34acd9d-b6c9-402f-a38f-414a49b7dbd8",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Chosen approach for alias tracking",
+      "created_at": "2026-01-13T14:59:45.444215+01:00"
+    },
+    {
+      "id": 151,
+      "from_node_id": 158,
+      "to_node_id": 159,
+      "from_change_id": "b34acd9d-b6c9-402f-a38f-414a49b7dbd8",
+      "to_change_id": "697bf9d5-8aa1-4ada-85f5-08130b4cd44a",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "How it works",
+      "created_at": "2026-01-13T14:59:45.561790+01:00"
+    },
+    {
+      "id": 152,
+      "from_node_id": 158,
+      "to_node_id": 160,
+      "from_change_id": "b34acd9d-b6c9-402f-a38f-414a49b7dbd8",
+      "to_change_id": "d38473e6-b100-44fd-85fd-a5537bd5fcbb",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Why this approach",
+      "created_at": "2026-01-13T14:59:45.685157+01:00"
+    },
+    {
+      "id": 153,
+      "from_node_id": 158,
+      "to_node_id": 161,
+      "from_change_id": "b34acd9d-b6c9-402f-a38f-414a49b7dbd8",
+      "to_change_id": "d6a9e6aa-fa4c-48a4-ab36-7839cbf78d9b",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation complete",
+      "created_at": "2026-01-13T15:07:35.423984+01:00"
+    },
+    {
+      "id": 154,
+      "from_node_id": 158,
+      "to_node_id": 162,
+      "from_change_id": "b34acd9d-b6c9-402f-a38f-414a49b7dbd8",
+      "to_change_id": "a2ccdeb1-f254-4de0-bd2a-9f3c9b101ee2",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Design decision",
+      "created_at": "2026-01-13T15:07:43.151215+01:00"
+    },
+    {
+      "id": 155,
+      "from_node_id": 163,
+      "to_node_id": 164,
+      "from_change_id": "fc18f112-e893-4836-b87d-c005b7a3b709",
+      "to_change_id": "fa486c44-807e-42b5-8c0f-1794d0576293",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Proposed syntax",
+      "created_at": "2026-01-13T15:24:56.970602+01:00"
+    },
+    {
+      "id": 156,
+      "from_node_id": 163,
+      "to_node_id": 165,
+      "from_change_id": "fc18f112-e893-4836-b87d-c005b7a3b709",
+      "to_change_id": "ac5390f9-04a1-4299-8e2e-ae09d0e0878d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Current scope",
+      "created_at": "2026-01-13T15:24:56.979578+01:00"
+    },
+    {
+      "id": 157,
+      "from_node_id": 158,
+      "to_node_id": 163,
+      "from_change_id": "b34acd9d-b6c9-402f-a38f-414a49b7dbd8",
+      "to_change_id": "fc18f112-e893-4836-b87d-c005b7a3b709",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Future extension",
+      "created_at": "2026-01-13T15:24:56.987837+01:00"
+    },
+    {
+      "id": 158,
+      "from_node_id": 158,
+      "to_node_id": 166,
+      "from_change_id": "b34acd9d-b6c9-402f-a38f-414a49b7dbd8",
+      "to_change_id": "5c487269-ac2b-4cfb-b20c-88e88442f962",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Callback tracking enabled",
+      "created_at": "2026-01-13T15:26:38.151812+01:00"
+    },
+    {
+      "id": 159,
+      "from_node_id": 163,
+      "to_node_id": 167,
+      "from_change_id": "fc18f112-e893-4836-b87d-c005b7a3b709",
+      "to_change_id": "faf49451-f6e7-43d6-b12a-54048b62d11e",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Call-site naming refinement",
+      "created_at": "2026-01-13T15:28:46.649611+01:00"
+    },
+    {
+      "id": 160,
+      "from_node_id": 167,
+      "to_node_id": 168,
+      "from_change_id": "faf49451-f6e7-43d6-b12a-54048b62d11e",
+      "to_change_id": "d6918ef1-78b5-4f1c-883c-3e4e3c6e4610",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Supersedes",
+      "created_at": "2026-01-13T15:33:52.200976+01:00"
+    },
+    {
+      "id": 161,
+      "from_node_id": 163,
+      "to_node_id": 169,
+      "from_change_id": "fc18f112-e893-4836-b87d-c005b7a3b709",
+      "to_change_id": "f704d695-10cb-4ed5-a15c-0de48a8921fb",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Syntax refinement",
+      "created_at": "2026-01-13T15:51:59.632648+01:00"
+    },
+    {
+      "id": 162,
+      "from_node_id": 154,
+      "to_node_id": 170,
+      "from_change_id": "67d13408-14e0-41f6-a0e3-d0b1dff82853",
+      "to_change_id": "260071fb-5979-4d6c-bcf5-43b794d1010f",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Gap filled",
+      "created_at": "2026-01-13T16:08:17.013342+01:00"
     }
   ]
 }

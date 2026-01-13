@@ -328,6 +328,9 @@ program
   .option("--trace <to>", "Find call path to another entity")
   .option("--aliases", "Show what the entity aliases (follow alias chain)")
   .option("--aliased-by", "Show what entities alias this one")
+  .option("--depends-on", "Show what the entity depends on (data-flow)")
+  .option("--dependents", "Show what depends on this entity")
+  .option("--all-deps", "Show all transitive dependencies")
   .option("--source", "Show source code of the entity")
   .action((pattern, options) => {
     const store = new GraphStore(resolve(options.db));
@@ -500,6 +503,44 @@ program
         console.log(`    ${e.file_path}:${e.start_line}`);
       }
       if (aliasedBy.length === 0) console.log("  (nothing aliases this)");
+      store.close();
+      return;
+    }
+
+    // --depends-on: show what the entity depends on
+    if (options.dependsOn) {
+      const deps = store.getDependencies(entity.id);
+      console.log(`\n${entity.id} depends on:\n`);
+      for (const e of deps) {
+        console.log(`  ← ${e.id}`);
+        console.log(`    ${e.file_path}:${e.start_line}`);
+      }
+      if (deps.length === 0) console.log("  (no dependencies)");
+      store.close();
+      return;
+    }
+
+    // --dependents: show what depends on this entity
+    if (options.dependents) {
+      const dependents = store.getDependents(entity.id);
+      console.log(`\n${entity.id} is depended on by:\n`);
+      for (const e of dependents) {
+        console.log(`  → ${e.id}`);
+        console.log(`    ${e.file_path}:${e.start_line}`);
+      }
+      if (dependents.length === 0) console.log("  (nothing depends on this)");
+      store.close();
+      return;
+    }
+
+    // --all-deps: show all transitive dependencies
+    if (options.allDeps) {
+      const allDeps = store.getAllDependencies(entity.id);
+      console.log(`\n${entity.id} transitively depends on (${allDeps.length}):\n`);
+      for (const e of allDeps) {
+        console.log(`  ← ${e.id}`);
+      }
+      if (allDeps.length === 0) console.log("  (no dependencies)");
       store.close();
       return;
     }

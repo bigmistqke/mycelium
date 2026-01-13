@@ -12,6 +12,7 @@ import {
   ObjectLiteralExpression,
   PropertyAssignment,
   MethodDeclaration,
+  ReturnStatement,
 } from "ts-morph";
 import { computeSignatureHash, computeImplHash } from "./hash.js";
 import type { Entity, Relation } from "./db.js";
@@ -68,6 +69,11 @@ interface VariableAccess {
   variableName: string;
   variableId: string;
   kind: "reads" | "writes";
+}
+
+interface Dependency {
+  fromId: string;
+  toId: string;
 }
 
 export class TypeScriptAnalyzer {
@@ -303,6 +309,59 @@ export class TypeScriptAnalyzer {
       const imports = this.extractImports(sourceFile, filePath, commitSha);
       entities.push(...imports.entities);
       relations.push(...imports.aliases);
+    }
+
+    // Fifth pass: extract dependencies (data-flow)
+    // Build a complete ID set including newly added entities
+    const allEntityIdsWithImports = new Set([
+      ...allEntityIds,
+      ...entities.map(e => e.id),
+    ]);
+
+    // Create <return> entities and track return statement dependencies
+    for (const [fnId, fn] of functionMap) {
+      const returnEntity = this.createReturnEntity(fn, fnId, commitSha);
+      entities.push(returnEntity);
+      allEntityIdsWithImports.add(returnEntity.id);
+
+      // Track what the return depends on
+      const returnDeps = this.extractReturnDependencies(
+        fn.node,
+        fnId,
+        allEntityIdsWithImports,
+        variableMap,
+        functionMap
+      );
+      for (const dep of returnDeps) {
+        relations.push({
+          from_id: dep.fromId,
+          to_id: dep.toId,
+          kind: "depends_on",
+          commit_sha: commitSha,
+          metadata: null,
+        });
+      }
+    }
+
+    // Track variable initialization dependencies
+    for (const v of variableMap.values()) {
+      const deps = this.extractInitializerDependencies(
+        v.node,
+        v.id,
+        v.filePath,
+        allEntityIdsWithImports,
+        variableMap,
+        functionMap
+      );
+      for (const dep of deps) {
+        relations.push({
+          from_id: dep.fromId,
+          to_id: dep.toId,
+          kind: "depends_on",
+          commit_sha: commitSha,
+          metadata: null,
+        });
+      }
     }
 
     return { entities, relations };
@@ -1761,5 +1820,350 @@ export class TypeScriptAnalyzer {
     } catch {
       return null;
     }
+  }
+
+  // ==================== Dependency Tracking ====================
+
+  /**
+   * Creates a <return> entity for a function.
+   * This entity represents the function's return value for dependency tracking.
+   */
+  private createReturnEntity(
+    fn: FunctionInfo,
+    fnId: string,
+    commitSha: string
+  ): Omit<Entity, "created_at"> {
+    const returnId = `${fnId}<return>`;
+    return {
+      id: returnId,
+      kind: "variable", // Return values are treated as synthetic variables
+      name: "<return>",
+      file_path: fn.filePath,
+      start_line: fn.startLine,
+      end_line: fn.endLine,
+      signature: `${fn.name}<return>`,
+      signature_hash: computeSignatureHash("<return>"),
+      impl_hash: null,
+      commit_sha: commitSha,
+    };
+  }
+
+  /**
+   * Extracts dependencies for a function's return value.
+   * Finds all return statements and tracks what they depend on.
+   */
+  private extractReturnDependencies(
+    functionNode: Node,
+    fnId: string,
+    allEntityIds: Set<string>,
+    variableMap: Map<string, VariableInfo>,
+    functionMap: Map<string, FunctionInfo>
+  ): Dependency[] {
+    const dependencies: Dependency[] = [];
+    const returnId = `${fnId}<return>`;
+    const body = this.getFunctionBody(functionNode);
+    if (!body) return dependencies;
+
+    const seen = new Set<string>();
+
+    // Find all return statements
+    const returnStatements = body.getDescendantsOfKind(SyntaxKind.ReturnStatement);
+    for (const returnStmt of returnStatements) {
+      // Skip if inside a nested function
+      if (this.hasIntermediateFunction(body, returnStmt)) continue;
+
+      const expr = returnStmt.getExpression();
+      if (!expr) continue;
+
+      // Extract all entity references from the return expression
+      const refs = this.extractExpressionDependencies(
+        expr,
+        fnId,
+        allEntityIds,
+        variableMap,
+        functionMap
+      );
+
+      for (const refId of refs) {
+        if (!seen.has(refId)) {
+          seen.add(refId);
+          dependencies.push({ fromId: returnId, toId: refId });
+        }
+      }
+    }
+
+    // Handle implicit return for arrow functions with expression body
+    if (Node.isArrowFunction(functionNode)) {
+      const arrowBody = functionNode.getBody();
+      if (arrowBody && !Node.isBlock(arrowBody)) {
+        // Expression body: () => expr
+        const refs = this.extractExpressionDependencies(
+          arrowBody,
+          fnId,
+          allEntityIds,
+          variableMap,
+          functionMap
+        );
+
+        for (const refId of refs) {
+          if (!seen.has(refId)) {
+            seen.add(refId);
+            dependencies.push({ fromId: returnId, toId: refId });
+          }
+        }
+      }
+    }
+
+    return dependencies;
+  }
+
+  /**
+   * Extracts dependencies for a variable's initializer.
+   * const x = a + b → x depends on a, b
+   * const x = foo() → x depends on foo<return>
+   */
+  private extractInitializerDependencies(
+    varNode: Node,
+    varId: string,
+    filePath: string,
+    allEntityIds: Set<string>,
+    variableMap: Map<string, VariableInfo>,
+    functionMap: Map<string, FunctionInfo>
+  ): Dependency[] {
+    if (!Node.isVariableDeclaration(varNode)) return [];
+
+    const initializer = varNode.getInitializer();
+    if (!initializer) return [];
+
+    // Skip function expressions - they're not dependencies
+    if (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer)) {
+      return [];
+    }
+
+    const dependencies: Dependency[] = [];
+    const seen = new Set<string>();
+
+    const refs = this.extractExpressionDependencies(
+      initializer,
+      filePath, // Use filePath as context for resolving identifiers
+      allEntityIds,
+      variableMap,
+      functionMap
+    );
+
+    for (const refId of refs) {
+      if (!seen.has(refId)) {
+        seen.add(refId);
+        dependencies.push({ fromId: varId, toId: refId });
+      }
+    }
+
+    return dependencies;
+  }
+
+  /**
+   * Extracts all entity references from an expression.
+   * Handles identifiers, call expressions, property access, etc.
+   */
+  private extractExpressionDependencies(
+    expr: Node,
+    contextId: string,
+    allEntityIds: Set<string>,
+    variableMap: Map<string, VariableInfo>,
+    functionMap: Map<string, FunctionInfo>
+  ): string[] {
+    const refs: string[] = [];
+
+    // Get the file path from context
+    const filePath = contextId.split("::")[0];
+
+    // Handle call expressions: foo() → depends on foo<return>
+    if (Node.isCallExpression(expr)) {
+      const callee = expr.getExpression();
+      const calleeFnId = this.resolveCalleeId(callee, filePath, allEntityIds, variableMap, functionMap);
+      if (calleeFnId) {
+        // Depend on the function's <return> entity
+        refs.push(`${calleeFnId}<return>`);
+      }
+
+      // Also recurse into arguments
+      for (const arg of expr.getArguments()) {
+        refs.push(...this.extractExpressionDependencies(arg, contextId, allEntityIds, variableMap, functionMap));
+      }
+      return refs;
+    }
+
+    // Handle identifiers: x → depends on x
+    if (Node.isIdentifier(expr)) {
+      const name = expr.getText();
+      // Check if it's a known variable
+      const varInfo = variableMap.get(name);
+      if (varInfo && allEntityIds.has(varInfo.id)) {
+        refs.push(varInfo.id);
+        return refs;
+      }
+      // Check if it's a known function (depends on its <return>)
+      for (const [id, fn] of functionMap) {
+        if (fn.name === name || id.endsWith(`::${name}`)) {
+          // For function references without call, we reference the function itself
+          refs.push(id);
+          return refs;
+        }
+      }
+      // Check by full ID
+      const fullId = `${filePath}::${name}`;
+      if (allEntityIds.has(fullId)) {
+        refs.push(fullId);
+      }
+      return refs;
+    }
+
+    // Handle property access: obj.prop
+    if (Node.isPropertyAccessExpression(expr)) {
+      const path = this.getPropertyAccessPath(expr);
+      if (path) {
+        const fullId = `${filePath}::${path}`;
+        if (allEntityIds.has(fullId)) {
+          refs.push(fullId);
+          return refs;
+        }
+      }
+      // Recurse into the object
+      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap));
+      return refs;
+    }
+
+    // Handle binary expressions: a + b
+    if (Node.isBinaryExpression(expr)) {
+      refs.push(...this.extractExpressionDependencies(expr.getLeft(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getRight(), contextId, allEntityIds, variableMap, functionMap));
+      return refs;
+    }
+
+    // Handle array literals: [a, b, c]
+    if (Node.isArrayLiteralExpression(expr)) {
+      for (const element of expr.getElements()) {
+        refs.push(...this.extractExpressionDependencies(element, contextId, allEntityIds, variableMap, functionMap));
+      }
+      return refs;
+    }
+
+    // Handle object literals: { x: a, y: b }
+    if (Node.isObjectLiteralExpression(expr)) {
+      for (const prop of expr.getProperties()) {
+        if (Node.isPropertyAssignment(prop)) {
+          const init = prop.getInitializer();
+          if (init) {
+            refs.push(...this.extractExpressionDependencies(init, contextId, allEntityIds, variableMap, functionMap));
+          }
+        } else if (Node.isShorthandPropertyAssignment(prop)) {
+          const name = prop.getName();
+          const varInfo = variableMap.get(name);
+          if (varInfo && allEntityIds.has(varInfo.id)) {
+            refs.push(varInfo.id);
+          }
+        }
+      }
+      return refs;
+    }
+
+    // Handle template literals: `${a} and ${b}`
+    if (Node.isTemplateExpression(expr)) {
+      for (const span of expr.getTemplateSpans()) {
+        refs.push(...this.extractExpressionDependencies(span.getExpression(), contextId, allEntityIds, variableMap, functionMap));
+      }
+      return refs;
+    }
+
+    // Handle conditional: a ? b : c
+    if (Node.isConditionalExpression(expr)) {
+      refs.push(...this.extractExpressionDependencies(expr.getCondition(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getWhenTrue(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getWhenFalse(), contextId, allEntityIds, variableMap, functionMap));
+      return refs;
+    }
+
+    // Handle parenthesized: (a + b)
+    if (Node.isParenthesizedExpression(expr)) {
+      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap));
+      return refs;
+    }
+
+    // Handle prefix/postfix: !a, a++
+    if (Node.isPrefixUnaryExpression(expr)) {
+      refs.push(...this.extractExpressionDependencies(expr.getOperand(), contextId, allEntityIds, variableMap, functionMap));
+      return refs;
+    }
+    if (Node.isPostfixUnaryExpression(expr)) {
+      refs.push(...this.extractExpressionDependencies(expr.getOperand(), contextId, allEntityIds, variableMap, functionMap));
+      return refs;
+    }
+
+    // Handle spread: ...arr
+    if (Node.isSpreadElement(expr)) {
+      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap));
+      return refs;
+    }
+
+    // Handle await: await promise
+    if (Node.isAwaitExpression(expr)) {
+      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap));
+      return refs;
+    }
+
+    // Handle element access: arr[0]
+    if (Node.isElementAccessExpression(expr)) {
+      refs.push(...this.extractExpressionDependencies(expr.getExpression(), contextId, allEntityIds, variableMap, functionMap));
+      refs.push(...this.extractExpressionDependencies(expr.getArgumentExpression()!, contextId, allEntityIds, variableMap, functionMap));
+      return refs;
+    }
+
+    return refs;
+  }
+
+  /**
+   * Resolves a callee expression to a function ID.
+   */
+  private resolveCalleeId(
+    callee: Node,
+    filePath: string,
+    allEntityIds: Set<string>,
+    variableMap: Map<string, VariableInfo>,
+    functionMap: Map<string, FunctionInfo>
+  ): string | null {
+    // Simple identifier: foo()
+    if (Node.isIdentifier(callee)) {
+      const name = callee.getText();
+      // Check functions
+      for (const [id, fn] of functionMap) {
+        if (fn.name === name || id.endsWith(`::${name}`)) {
+          return id;
+        }
+      }
+      // Check variables (might be aliased function)
+      const varInfo = variableMap.get(name);
+      if (varInfo) {
+        return varInfo.id;
+      }
+    }
+
+    // Property access: obj.method()
+    if (Node.isPropertyAccessExpression(callee)) {
+      const path = this.getPropertyAccessPath(callee);
+      if (path) {
+        const fullId = `${filePath}::${path}`;
+        if (allEntityIds.has(fullId)) {
+          return fullId;
+        }
+        // Check for methods in function map
+        for (const [id] of functionMap) {
+          if (id.endsWith(`::${path}`)) {
+            return id;
+          }
+        }
+      }
+    }
+
+    return null;
   }
 }

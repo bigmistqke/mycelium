@@ -20,7 +20,7 @@ export interface Relation {
   id: number;
   from_id: string;
   to_id: string;
-  kind: "calls" | "uses_type" | "exports" | "imports" | "reads" | "writes" | "aliases";
+  kind: "calls" | "uses_type" | "exports" | "imports" | "reads" | "writes" | "aliases" | "depends_on";
   commit_sha: string;
   metadata: string | null;
 }
@@ -734,6 +734,70 @@ export class GraphStore {
     return commitSha
       ? (this.db.prepare(query).all(entityId, commitSha, commitSha) as Entity[])
       : (this.db.prepare(query).all(entityId) as Entity[]);
+  }
+
+  // ==================== Dependency Methods ====================
+
+  /**
+   * Gets entities that this entity directly depends on.
+   * Used for data-flow analysis - what values influence this entity.
+   */
+  getDependencies(entityId: string, commitSha?: string): Entity[] {
+    const query = commitSha
+      ? `SELECT e.* FROM entities e
+         JOIN relations r ON e.id = r.to_id
+         WHERE r.from_id = ? AND r.kind = 'depends_on' AND r.commit_sha = ? AND e.commit_sha = ?`
+      : `SELECT DISTINCT e.* FROM entities e
+         JOIN relations r ON e.id = r.to_id
+         WHERE r.from_id = ? AND r.kind = 'depends_on'`;
+
+    return commitSha
+      ? (this.db.prepare(query).all(entityId, commitSha, commitSha) as Entity[])
+      : (this.db.prepare(query).all(entityId) as Entity[]);
+  }
+
+  /**
+   * Gets entities that depend on this entity (reverse lookup).
+   * Used for impact analysis - what would be affected if this value changes.
+   */
+  getDependents(entityId: string, commitSha?: string): Entity[] {
+    const query = commitSha
+      ? `SELECT e.* FROM entities e
+         JOIN relations r ON e.id = r.from_id
+         WHERE r.to_id = ? AND r.kind = 'depends_on' AND r.commit_sha = ? AND e.commit_sha = ?`
+      : `SELECT DISTINCT e.* FROM entities e
+         JOIN relations r ON e.id = r.from_id
+         WHERE r.to_id = ? AND r.kind = 'depends_on'`;
+
+    return commitSha
+      ? (this.db.prepare(query).all(entityId, commitSha, commitSha) as Entity[])
+      : (this.db.prepare(query).all(entityId) as Entity[]);
+  }
+
+  /**
+   * Recursively gets all dependencies (transitive closure).
+   * Follows the dependency graph to find all upstream values.
+   */
+  getAllDependencies(entityId: string, commitSha?: string, maxDepth = 50): Entity[] {
+    const visited = new Set<string>();
+    const result: Entity[] = [];
+    const queue: Array<{ id: string; depth: number }> = [{ id: entityId, depth: 0 }];
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      if (visited.has(current.id) || current.depth > maxDepth) continue;
+      visited.add(current.id);
+
+      const deps = this.getDependencies(current.id, commitSha);
+      for (const dep of deps) {
+        if (!visited.has(dep.id)) {
+          result.push(dep);
+          queue.push({ id: dep.id, depth: current.depth + 1 });
+        }
+      }
+    }
+
+    return result;
   }
 
   /**
