@@ -35,6 +35,15 @@ export interface System {
   id: string;
   name: string;
   description: string | null;
+  algorithm: string | null;
+  resolution: number | null;
+  commit_sha: string;
+}
+
+export interface SystemMember {
+  system_id: string;
+  entity_id: string;
+  confidence: number | null;
   commit_sha: string;
 }
 
@@ -98,6 +107,8 @@ export function createDatabase(dbPath: string): Database.Database {
       id TEXT NOT NULL,
       name TEXT NOT NULL,
       description TEXT,
+      algorithm TEXT,
+      resolution REAL,
       commit_sha TEXT NOT NULL,
       PRIMARY KEY (id, commit_sha)
     );
@@ -108,6 +119,18 @@ export function createDatabase(dbPath: string): Database.Database {
       commit_sha TEXT NOT NULL,
       PRIMARY KEY (system_id, entry_point_id, commit_sha)
     );
+
+    -- System members (which entities belong to which systems)
+    CREATE TABLE IF NOT EXISTS system_members (
+      system_id TEXT NOT NULL,
+      entity_id TEXT NOT NULL,
+      confidence REAL,
+      commit_sha TEXT NOT NULL,
+      PRIMARY KEY (system_id, entity_id, commit_sha)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_system_members_entity ON system_members(entity_id);
+    CREATE INDEX IF NOT EXISTS idx_system_members_system ON system_members(system_id);
 
     -- Descriptions for entities (AI-generated or manual)
     CREATE TABLE IF NOT EXISTS descriptions (
@@ -448,6 +471,186 @@ export class GraphStore {
     return commitSha
       ? (this.db.prepare(query).all(variableId, commitSha, commitSha) as Entity[])
       : (this.db.prepare(query).all(variableId) as Entity[]);
+  }
+
+  // ==================== Community/System Methods ====================
+
+  /**
+   * Clears existing systems and members for a commit before inserting new detection results.
+   */
+  clearSystems(commitSha: string): void {
+    this.db.prepare("DELETE FROM system_members WHERE commit_sha = ?").run(commitSha);
+    this.db.prepare("DELETE FROM system_entry_points WHERE commit_sha = ?").run(commitSha);
+    this.db.prepare("DELETE FROM systems WHERE commit_sha = ?").run(commitSha);
+  }
+
+  /**
+   * Inserts a detected system (community) into the database.
+   */
+  insertSystem(system: Omit<System, "description"> & { description?: string | null }): void {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO systems (id, name, description, algorithm, resolution, commit_sha)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      system.id,
+      system.name,
+      system.description ?? null,
+      system.algorithm,
+      system.resolution,
+      system.commit_sha
+    );
+  }
+
+  /**
+   * Inserts a system member (entity belonging to a system).
+   */
+  insertSystemMember(member: SystemMember): void {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO system_members (system_id, entity_id, confidence, commit_sha)
+      VALUES (?, ?, ?, ?)
+    `);
+    stmt.run(member.system_id, member.entity_id, member.confidence, member.commit_sha);
+  }
+
+  /**
+   * Returns all systems, optionally filtered by commit.
+   */
+  getSystems(commitSha?: string): System[] {
+    if (commitSha) {
+      return this.db
+        .prepare("SELECT * FROM systems WHERE commit_sha = ?")
+        .all(commitSha) as System[];
+    }
+    // Get latest version of each system
+    return this.db
+      .prepare(`
+        SELECT s.* FROM systems s
+        INNER JOIN (
+          SELECT id, MAX(rowid) as max_rowid
+          FROM systems
+          GROUP BY id
+        ) latest ON s.id = latest.id AND s.rowid = latest.max_rowid
+      `)
+      .all() as System[];
+  }
+
+  /**
+   * Returns a system by ID or name.
+   */
+  getSystemByIdOrName(idOrName: string, commitSha?: string): System | undefined {
+    const query = commitSha
+      ? "SELECT * FROM systems WHERE (id = ? OR name = ?) AND commit_sha = ? LIMIT 1"
+      : "SELECT * FROM systems WHERE (id = ? OR name = ?) ORDER BY rowid DESC LIMIT 1";
+
+    return commitSha
+      ? (this.db.prepare(query).get(idOrName, idOrName, commitSha) as System | undefined)
+      : (this.db.prepare(query).get(idOrName, idOrName) as System | undefined);
+  }
+
+  /**
+   * Returns all members of a system with their entity data.
+   */
+  getSystemMembers(systemId: string, commitSha?: string): Array<SystemMember & { entity: Entity }> {
+    const query = commitSha
+      ? `SELECT sm.*, e.* FROM system_members sm
+         JOIN entities e ON sm.entity_id = e.id
+         WHERE sm.system_id = ? AND sm.commit_sha = ?`
+      : `SELECT sm.*, e.* FROM system_members sm
+         JOIN entities e ON sm.entity_id = e.id
+         WHERE sm.system_id = ?`;
+
+    const rows = commitSha
+      ? this.db.prepare(query).all(systemId, commitSha)
+      : this.db.prepare(query).all(systemId);
+
+    return (rows as Record<string, unknown>[]).map((row) => ({
+      system_id: row.system_id as string,
+      entity_id: row.entity_id as string,
+      confidence: row.confidence as number | null,
+      commit_sha: row.commit_sha as string,
+      entity: {
+        id: row.id as string,
+        kind: row.kind as Entity["kind"],
+        name: row.name as string,
+        file_path: row.file_path as string,
+        start_line: row.start_line as number,
+        end_line: row.end_line as number,
+        signature: row.signature as string,
+        signature_hash: row.signature_hash as string,
+        impl_hash: row.impl_hash as string | null,
+        commit_sha: row.commit_sha as string,
+        created_at: row.created_at as string,
+      },
+    }));
+  }
+
+  /**
+   * Returns the systems an entity belongs to.
+   */
+  getEntitySystems(entityId: string, commitSha?: string): Array<{ system: System; confidence: number | null }> {
+    const query = commitSha
+      ? `SELECT s.*, sm.confidence FROM systems s
+         JOIN system_members sm ON s.id = sm.system_id AND s.commit_sha = sm.commit_sha
+         WHERE sm.entity_id = ? AND sm.commit_sha = ?`
+      : `SELECT s.*, sm.confidence FROM systems s
+         JOIN system_members sm ON s.id = sm.system_id
+         WHERE sm.entity_id = ?`;
+
+    const rows = commitSha
+      ? this.db.prepare(query).all(entityId, commitSha)
+      : this.db.prepare(query).all(entityId);
+
+    return (rows as Record<string, unknown>[]).map((row) => ({
+      system: {
+        id: row.id as string,
+        name: row.name as string,
+        description: row.description as string | null,
+        algorithm: row.algorithm as string | null,
+        resolution: row.resolution as number | null,
+        commit_sha: row.commit_sha as string,
+      },
+      confidence: row.confidence as number | null,
+    }));
+  }
+
+  /**
+   * Updates a system's name.
+   */
+  renameSystem(idOrName: string, newName: string): boolean {
+    const system = this.getSystemByIdOrName(idOrName);
+    if (!system) return false;
+
+    this.db
+      .prepare("UPDATE systems SET name = ? WHERE id = ? AND commit_sha = ?")
+      .run(newName, system.id, system.commit_sha);
+    return true;
+  }
+
+  /**
+   * Updates a system's description.
+   */
+  describeSystem(idOrName: string, description: string): boolean {
+    const system = this.getSystemByIdOrName(idOrName);
+    if (!system) return false;
+
+    this.db
+      .prepare("UPDATE systems SET description = ? WHERE id = ? AND commit_sha = ?")
+      .run(description, system.id, system.commit_sha);
+    return true;
+  }
+
+  /**
+   * Returns count of members per system.
+   */
+  getSystemMemberCounts(commitSha?: string): Array<{ system_id: string; count: number }> {
+    const query = commitSha
+      ? "SELECT system_id, COUNT(*) as count FROM system_members WHERE commit_sha = ? GROUP BY system_id"
+      : "SELECT system_id, COUNT(*) as count FROM system_members GROUP BY system_id";
+
+    return commitSha
+      ? (this.db.prepare(query).all(commitSha) as Array<{ system_id: string; count: number }>)
+      : (this.db.prepare(query).all() as Array<{ system_id: string; count: number }>);
   }
 
   /**

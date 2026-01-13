@@ -489,6 +489,19 @@ program
     console.log(`Kind:      ${entity.kind}`);
     console.log(`Location:  ${entity.file_path}:${entity.start_line}-${entity.end_line}`);
     console.log(`Signature: ${entity.signature}`);
+
+    // Show system membership
+    const systems = store.getEntitySystems(entity.id);
+    if (systems.length > 0) {
+      const systemStr = systems
+        .map((s) => {
+          const conf = s.confidence !== null ? ` (${(s.confidence * 100).toFixed(0)}%)` : "";
+          return `${s.system.name}${conf}`;
+        })
+        .join(", ");
+      console.log(`Systems:   ${systemStr}`);
+    }
+
     if (desc) {
       console.log(`\nDescription:\n  ${desc}`);
     }
@@ -953,6 +966,241 @@ program
       console.error("Failed to start dev server:", err.message);
       process.exit(1);
     });
+  });
+
+// Community detection commands
+const communityCmd = program
+  .command("community")
+  .description("Detect and manage code communities (systems)");
+
+communityCmd
+  .command("detect")
+  .description("Run community detection algorithm on the call graph")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("-a, --algorithm <name>", "Algorithm to use (louvain)", "louvain")
+  .option("-r, --resolution <number>", "Resolution parameter (higher = more communities)", "1")
+  .action(async (options) => {
+    const { getDetector, buildGraph } = await import("./community/index.js");
+
+    const store = new GraphStore(resolve(options.db));
+    const commitSha = getGitCommitSha();
+
+    console.log(`Detecting communities using ${options.algorithm}...`);
+
+    // Get entities and relations
+    const entities = store.getEntities();
+    const relations = store.getRelations();
+
+    if (entities.length === 0) {
+      console.error("No entities in database. Run 'mycelium sync' first.");
+      store.close();
+      process.exit(1);
+    }
+
+    // Build graph for community detection
+    const graph = buildGraph(entities, relations, {
+      edgeTypes: ["calls"],
+      nodeKinds: ["function"],
+    });
+
+    console.log(`Graph: ${graph.nodes.length} nodes, ${graph.edges.length} edges`);
+
+    if (graph.nodes.length === 0) {
+      console.error("No function nodes found.");
+      store.close();
+      process.exit(1);
+    }
+
+    // Run detection
+    const detector = getDetector(options.algorithm as "louvain");
+    const resolution = parseFloat(options.resolution);
+    const communities = await detector.detect(graph, { resolution });
+
+    // Group by community
+    const communityGroups = new Map<number, string[]>();
+    for (const [entityId, communityId] of communities) {
+      const group = communityGroups.get(communityId) || [];
+      group.push(entityId);
+      communityGroups.set(communityId, group);
+    }
+
+    console.log(`Detected ${communityGroups.size} communities`);
+
+    // Clear existing and insert new
+    store.clearSystems(commitSha);
+
+    for (const [communityId, memberIds] of communityGroups) {
+      const systemId = `community-${communityId}`;
+
+      // Auto-generate name from most common file path
+      const fileCounts = new Map<string, number>();
+      for (const memberId of memberIds) {
+        const entity = entities.find((e) => e.id === memberId);
+        if (entity) {
+          const dir = entity.file_path.split("/").slice(0, -1).join("/") || entity.file_path;
+          fileCounts.set(dir, (fileCounts.get(dir) || 0) + 1);
+        }
+      }
+      const topDir = [...fileCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "unknown";
+      const autoName = `${topDir.split("/").pop() || "system"}-${communityId}`;
+
+      // Insert system
+      store.insertSystem({
+        id: systemId,
+        name: autoName,
+        algorithm: options.algorithm,
+        resolution,
+        commit_sha: commitSha,
+      });
+
+      // Insert members
+      for (const memberId of memberIds) {
+        store.insertSystemMember({
+          system_id: systemId,
+          entity_id: memberId,
+          confidence: null, // Louvain doesn't provide confidence scores
+          commit_sha: commitSha,
+        });
+      }
+
+      console.log(`  ${autoName}: ${memberIds.length} members`);
+    }
+
+    store.close();
+    console.log("\nDone! Use 'mycelium community list' to see results.");
+  });
+
+communityCmd
+  .command("list")
+  .description("List all detected communities")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .action((options) => {
+    const store = new GraphStore(resolve(options.db));
+    const systems = store.getSystems();
+    const counts = store.getSystemMemberCounts();
+    const countMap = new Map(counts.map((c) => [c.system_id, c.count]));
+
+    if (systems.length === 0) {
+      console.log("No communities detected. Run 'mycelium community detect' first.");
+      store.close();
+      return;
+    }
+
+    console.log(`\nCommunities (${systems.length}):\n`);
+
+    for (const system of systems) {
+      const count = countMap.get(system.id) || 0;
+      const desc = system.description ? ` - ${system.description}` : "";
+      console.log(`  ${system.id}: "${system.name}" (${count} members)${desc}`);
+      console.log(`    Algorithm: ${system.algorithm}, Resolution: ${system.resolution}`);
+
+      // Show entry points (functions with no incoming calls within the system)
+      const members = store.getSystemMembers(system.id);
+      const memberIds = new Set(members.map((m) => m.entity_id));
+      const entryPoints = members.filter((m) => {
+        const callers = store.getCallers(m.entity_id);
+        // Entry point = no callers from within the same system
+        return !callers.some((c) => memberIds.has(c.id));
+      });
+
+      if (entryPoints.length > 0) {
+        console.log(`    Entry points:`);
+        for (const ep of entryPoints.slice(0, 3)) {
+          console.log(`      → ${ep.entity.name} (${ep.entity.file_path}:${ep.entity.start_line})`);
+        }
+        if (entryPoints.length > 3) {
+          console.log(`      ... and ${entryPoints.length - 3} more`);
+        }
+      }
+      console.log();
+    }
+
+    store.close();
+  });
+
+communityCmd
+  .command("show")
+  .description("Show all members of a community")
+  .argument("<name>", "Community ID or name")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .action((name, options) => {
+    const store = new GraphStore(resolve(options.db));
+    const system = store.getSystemByIdOrName(name);
+
+    if (!system) {
+      console.error(`Community not found: ${name}`);
+      console.error("Use 'mycelium community list' to see available communities.");
+      store.close();
+      process.exit(1);
+    }
+
+    const members = store.getSystemMembers(system.id);
+
+    console.log(`\n${system.name} (${system.id})`);
+    if (system.description) {
+      console.log(`  ${system.description}`);
+    }
+    console.log(`  Algorithm: ${system.algorithm}, Resolution: ${system.resolution}`);
+    console.log(`\nMembers (${members.length}):\n`);
+
+    // Group by file
+    const byFile = new Map<string, typeof members>();
+    for (const member of members) {
+      const file = member.entity.file_path;
+      const list = byFile.get(file) || [];
+      list.push(member);
+      byFile.set(file, list);
+    }
+
+    for (const [file, fileMembers] of byFile) {
+      console.log(`  ${file}:`);
+      for (const m of fileMembers) {
+        const conf = m.confidence !== null ? ` (${(m.confidence * 100).toFixed(0)}%)` : "";
+        console.log(`    - ${m.entity.name}:${m.entity.start_line}${conf}`);
+      }
+    }
+
+    store.close();
+  });
+
+communityCmd
+  .command("rename")
+  .description("Rename a community")
+  .argument("<id>", "Community ID or current name")
+  .argument("<name>", "New name")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .action((id, name, options) => {
+    const store = new GraphStore(resolve(options.db));
+    const success = store.renameSystem(id, name);
+
+    if (success) {
+      console.log(`Renamed "${id}" to "${name}"`);
+    } else {
+      console.error(`Community not found: ${id}`);
+      process.exit(1);
+    }
+
+    store.close();
+  });
+
+communityCmd
+  .command("describe")
+  .description("Set description for a community")
+  .argument("<id>", "Community ID or name")
+  .argument("<description>", "Description text")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .action((id, description, options) => {
+    const store = new GraphStore(resolve(options.db));
+    const success = store.describeSystem(id, description);
+
+    if (success) {
+      console.log(`Description set for "${id}"`);
+    } else {
+      console.error(`Community not found: ${id}`);
+      process.exit(1);
+    }
+
+    store.close();
   });
 
 program.parse();
