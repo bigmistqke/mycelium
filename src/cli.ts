@@ -291,11 +291,33 @@ program
     store.close();
   });
 
+/**
+ * Convert a SQL-like pattern to a regex.
+ * Supports % (any chars) and _ (single char), like SQL LIKE.
+ * Uses % instead of * to avoid shell glob expansion.
+ */
+function patternToRegex(pattern: string): RegExp {
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\*?]/g, "\\$&") // Escape regex special chars (including * and ?)
+    .replace(/%/g, ".*") // % -> .*
+    .replace(/_/g, "."); // _ -> .
+  return new RegExp(`^${escaped}$`, "i");
+}
+
+/**
+ * Check if a pattern contains wildcards.
+ */
+function hasWildcards(pattern: string): boolean {
+  return pattern.includes("%") || pattern.includes("_");
+}
+
 program
   .command("query")
-  .description("Query an entity by exact ID")
-  .argument("<id>", "Entity ID (use 'find' to search)")
+  .description("Query entities by ID or pattern (supports % and _ wildcards)")
+  .argument("<pattern>", "Entity ID or pattern (e.g., src/db.ts::%, %::create%)")
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("--kind <type>", "Filter by entity kind (function, variable, class, etc.)")
+  .option("--orphans", "Only show entities with no relations")
   .option("--calls", "Show what the entity calls")
   .option("--callers", "Show what calls the entity")
   .option("--reads", "Show what variables the function reads")
@@ -305,16 +327,55 @@ program
   .option("--side-effects", "Show all side-effects (reads + writes)")
   .option("--trace <to>", "Find call path to another entity")
   .option("--source", "Show source code of the entity")
-  .action((id, options) => {
+  .action((pattern, options) => {
     const store = new GraphStore(resolve(options.db));
-    const entities = store.getEntities();
+    let entities = store.getEntities();
     const descriptions = store.getAllDescriptions();
     const descMap = new Map(descriptions.map((d) => [d.entity_id, d.content]));
 
-    const entity = entities.find((e) => e.id === id);
+    // Check if pattern contains wildcards
+    if (hasWildcards(pattern)) {
+      const regex = patternToRegex(pattern);
+      let matches = entities.filter((e) => regex.test(e.id));
+
+      // Apply --kind filter
+      if (options.kind) {
+        matches = matches.filter((e) => e.kind === options.kind);
+      }
+
+      // Apply --orphans filter
+      if (options.orphans) {
+        const entitiesInRelations = new Set<string>();
+        const relations = store.getRelations();
+        for (const r of relations) {
+          entitiesInRelations.add(r.from_id);
+          entitiesInRelations.add(r.to_id);
+        }
+        matches = matches.filter((e) => !entitiesInRelations.has(e.id));
+      }
+
+      if (matches.length === 0) {
+        console.log(`No entities match pattern: ${pattern}`);
+        store.close();
+        return;
+      }
+
+      console.log(`\nEntities matching "${pattern}" (${matches.length}):\n`);
+      for (const e of matches) {
+        const desc = descMap.get(e.id);
+        const descStr = desc ? ` - ${desc.slice(0, 50)}${desc.length > 50 ? "..." : ""}` : "";
+        console.log(`  ${e.id}`);
+        console.log(`    [${e.kind}] ${e.file_path}:${e.start_line}${descStr}`);
+      }
+      store.close();
+      return;
+    }
+
+    // Exact match mode
+    const entity = entities.find((e) => e.id === pattern);
     if (!entity) {
-      console.error(`Entity not found: ${id}`);
-      console.error(`Use 'mycelium find <pattern>' to search for entities`);
+      console.error(`Entity not found: ${pattern}`);
+      console.error(`Use wildcards (e.g., %${pattern}%) or 'mycelium find <pattern>' to search`);
       store.close();
       process.exit(1);
     }
