@@ -484,4 +484,107 @@ describe("TypeScriptAnalyzer", () => {
       expect(callRelation?.to_id).toContain("functions.ts");
     });
   });
+
+  describe("class properties", () => {
+    it("extracts class properties as entities", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/classes.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      const countProp = result.entities.find(e => e.name === "count" && e.kind === "property");
+      expect(countProp).toBeDefined();
+      expect(countProp?.id).toContain("Counter.count");
+    });
+
+    it("extracts readonly properties", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/classes.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      const maxCountProp = result.entities.find(e => e.name === "maxCount" && e.kind === "property");
+      expect(maxCountProp).toBeDefined();
+      expect(maxCountProp?.signature).toContain("readonly");
+    });
+
+    it("extracts array properties", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/classes.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      const itemsProp = result.entities.find(
+        e => e.name === "items" && e.kind === "property" && e.id.includes("Counter")
+      );
+      expect(itemsProp).toBeDefined();
+    });
+
+    it("tracks writes to this.x via assignment", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/classes.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      // reset() writes to this.count
+      const writeRelation = result.relations.find(
+        r => r.from_id.includes("Counter.reset") &&
+             r.to_id.includes("Counter.count") &&
+             r.kind === "writes"
+      );
+      expect(writeRelation).toBeDefined();
+    });
+
+    it("tracks writes to this.x via increment/decrement", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/classes.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      // increment() writes to this.count via ++
+      const writeRelation = result.relations.find(
+        r => r.from_id.includes("Counter.increment") &&
+             r.to_id.includes("Counter.count") &&
+             r.kind === "writes"
+      );
+      expect(writeRelation).toBeDefined();
+    });
+
+    it("tracks reads from this.x", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/classes.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      // getCount() reads this.count
+      const readRelation = result.relations.find(
+        r => r.from_id.includes("Counter.getCount") &&
+             r.to_id.includes("Counter.count") &&
+             r.kind === "reads"
+      );
+      expect(readRelation).toBeDefined();
+    });
+
+    it("tracks writes to this.x via mutating methods", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/classes.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      // addItem() writes to this.items via push
+      const writeRelation = result.relations.find(
+        r => r.from_id.includes("Counter.addItem") &&
+             r.to_id.includes("Counter.items") &&
+             r.kind === "writes"
+      );
+      expect(writeRelation).toBeDefined();
+    });
+
+    it("tracks multiple property accesses in a single method", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/classes.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      // summary() reads this.count, this.maxCount, and this.items
+      const summaryReads = result.relations.filter(
+        r => r.from_id.includes("Counter.summary") && r.kind === "reads"
+      );
+      expect(summaryReads.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("extracts static properties", () => {
+      analyzer.addSourceFiles(["src/test-fixtures/classes.ts"]);
+      const result = analyzer.analyze("test-commit");
+
+      const versionProp = result.entities.find(
+        e => e.name === "version" && e.id.includes("Config")
+      );
+      expect(versionProp).toBeDefined();
+    });
+  });
 });

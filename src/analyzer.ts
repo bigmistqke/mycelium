@@ -46,6 +46,18 @@ interface VariableInfo {
   ownerFunctionId?: string;
 }
 
+interface ClassPropertyInfo {
+  id: string;
+  name: string;
+  className: string;
+  filePath: string;
+  startLine: number;
+  endLine: number;
+  isReadonly: boolean;
+  initialValue: string | null;
+  node: Node;
+}
+
 interface ScopeContext {
   localVariables: Set<string>;
   parameters: Set<string>;
@@ -95,6 +107,8 @@ export class TypeScriptAnalyzer {
     const variableMap = new Map<string, VariableInfo>();
     // closureVariablesByOwner: maps owner function ID -> Map<varName, VariableInfo>
     const closureVariablesByOwner = new Map<string, Map<string, VariableInfo>>();
+    // classPropertiesMap: maps className -> Map<propertyName, ClassPropertyInfo>
+    const classPropertiesMap = new Map<string, Map<string, ClassPropertyInfo>>();
 
     // First pass: collect all functions and module-level variables
     for (const sourceFile of this.project.getSourceFiles()) {
@@ -162,6 +176,29 @@ export class TypeScriptAnalyzer {
           commit_sha: commitSha,
         });
       }
+
+      // Extract class properties
+      const classProperties = this.extractClassProperties(sourceFile, filePath);
+      for (const prop of classProperties) {
+        // Add to class properties lookup
+        if (!classPropertiesMap.has(prop.className)) {
+          classPropertiesMap.set(prop.className, new Map());
+        }
+        classPropertiesMap.get(prop.className)!.set(prop.name, prop);
+
+        entities.push({
+          id: prop.id,
+          kind: "property",
+          name: prop.name,
+          file_path: filePath,
+          start_line: prop.startLine,
+          end_line: prop.endLine,
+          signature: prop.isReadonly ? `readonly ${prop.name}` : prop.name,
+          signature_hash: computeSignatureHash(prop.isReadonly ? "readonly" : "property"),
+          impl_hash: prop.initialValue ? computeImplHash(prop.initialValue) : null,
+          commit_sha: commitSha,
+        });
+      }
     }
 
     // Second pass: build call graph and track variable accesses
@@ -204,6 +241,24 @@ export class TypeScriptAnalyzer {
           commit_sha: commitSha,
           metadata: null,
         });
+      }
+
+      // Extract this.x accesses for class methods
+      const className = this.getOwningClassName(caller.node);
+      if (className) {
+        const classProps = classPropertiesMap.get(className);
+        if (classProps) {
+          const propAccesses = this.extractThisPropertyAccesses(caller.node, classProps, caller.filePath);
+          for (const access of propAccesses) {
+            relations.push({
+              from_id: callerId,
+              to_id: access.variableId,
+              kind: access.kind,
+              commit_sha: commitSha,
+              metadata: null,
+            });
+          }
+        }
       }
     }
 
@@ -640,6 +695,143 @@ export class TypeScriptAnalyzer {
     }
 
     return variables;
+  }
+
+  /**
+   * Extracts class properties (instance and static) from all classes in a source file.
+   */
+  extractClassProperties(sourceFile: SourceFile, filePath: string): ClassPropertyInfo[] {
+    const properties: ClassPropertyInfo[] = [];
+
+    for (const classDecl of sourceFile.getClasses()) {
+      const className = classDecl.getName() ?? "AnonymousClass";
+
+      for (const prop of classDecl.getProperties()) {
+        const name = prop.getName();
+        const isReadonly = prop.isReadonly();
+        const initializer = prop.getInitializer();
+
+        properties.push({
+          id: `${filePath}::${className}.${name}`,
+          name,
+          className,
+          filePath,
+          startLine: prop.getStartLineNumber(),
+          endLine: prop.getEndLineNumber(),
+          isReadonly,
+          initialValue: initializer?.getText() ?? null,
+          node: prop,
+        });
+      }
+    }
+
+    return properties;
+  }
+
+  /**
+   * Gets the class name that owns a method node, or null if not a class method.
+   */
+  private getOwningClassName(node: Node): string | null {
+    let current = node.getParent();
+    while (current) {
+      if (Node.isClassDeclaration(current)) {
+        return current.getName() ?? "AnonymousClass";
+      }
+      current = current.getParent();
+    }
+    return null;
+  }
+
+  /**
+   * Extracts this.x property accesses (reads/writes) from a class method body.
+   */
+  private extractThisPropertyAccesses(
+    methodNode: Node,
+    classProps: Map<string, ClassPropertyInfo>,
+    filePath: string
+  ): VariableAccess[] {
+    const accesses: VariableAccess[] = [];
+    const body = this.getFunctionBody(methodNode);
+    if (!body) return accesses;
+
+    const writtenProps = new Set<string>();
+
+    // Track assignments to this.x
+    for (const propAccess of body.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)) {
+      if (this.hasIntermediateFunction(body, propAccess)) continue;
+
+      const expr = propAccess.getExpression();
+      if (expr.getKind() !== SyntaxKind.ThisKeyword) continue;
+
+      const propName = propAccess.getName();
+      const propInfo = classProps.get(propName);
+      if (!propInfo) continue;
+
+      // Check if this is a write position
+      const parent = propAccess.getParent();
+      if (parent && Node.isBinaryExpression(parent)) {
+        const left = parent.getLeft();
+        if (left === propAccess && this.isAssignmentOperator(parent.getOperatorToken().getKind())) {
+          writtenProps.add(propName);
+          accesses.push({
+            variableName: propName,
+            variableId: propInfo.id,
+            kind: "writes",
+          });
+          continue;
+        }
+      }
+
+      // Check for prefix/postfix operators
+      if (parent && (Node.isPrefixUnaryExpression(parent) || Node.isPostfixUnaryExpression(parent))) {
+        const op = parent.getOperatorToken();
+        if (op === SyntaxKind.PlusPlusToken || op === SyntaxKind.MinusMinusToken) {
+          writtenProps.add(propName);
+          accesses.push({
+            variableName: propName,
+            variableId: propInfo.id,
+            kind: "writes",
+          });
+          continue;
+        }
+      }
+
+      // Check for mutating method calls (this.arr.push)
+      const grandParent = parent?.getParent();
+      if (grandParent && Node.isCallExpression(grandParent)) {
+        const callExpr = grandParent.getExpression();
+        if (Node.isPropertyAccessExpression(callExpr)) {
+          const methodName = callExpr.getName();
+          if (this.MUTATING_METHODS.has(methodName)) {
+            writtenProps.add(propName);
+            accesses.push({
+              variableName: propName,
+              variableId: propInfo.id,
+              kind: "writes",
+            });
+            continue;
+          }
+        }
+      }
+
+      // Otherwise it's a read (if not already tracked as write)
+      if (!writtenProps.has(propName)) {
+        accesses.push({
+          variableName: propName,
+          variableId: propInfo.id,
+          kind: "reads",
+        });
+      }
+    }
+
+    // Deduplicate accesses
+    const seen = new Set<string>();
+    return accesses.filter(a => {
+      const key = `${a.variableId}:${a.kind}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
   /**

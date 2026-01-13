@@ -4,7 +4,7 @@ import { dirname } from "path";
 
 export interface Entity {
   id: string;
-  kind: "function" | "type" | "interface" | "class" | "variable" | "module";
+  kind: "function" | "type" | "interface" | "class" | "variable" | "module" | "property";
   name: string;
   file_path: string;
   start_line: number;
