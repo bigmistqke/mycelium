@@ -524,9 +524,9 @@ export class TypeScriptAnalyzer {
   /**
    * Extracts functions from call arguments: object literals and anonymous functions.
    * Naming scheme:
-   * - Object literal methods: [line:col]funcName(argIdx).methodName
-   * - Anonymous functions: [line:col]funcName(argIdx)<anonymous>
-   * - Nested inside anonymous: [line:col]funcName(argIdx)<anonymous>::nestedFn
+   * - Object literal methods: {line:col}funcName(argIdx).methodName
+   * - Anonymous functions: {line:col}funcName(argIdx)<anonymous>
+   * - Nested inside anonymous: {line:col}funcName(argIdx)<anonymous>::nestedFn
    */
   private extractCallArgumentMethods(sourceFile: SourceFile, filePath: string): FunctionInfo[] {
     const functions: FunctionInfo[] = [];
@@ -553,8 +553,8 @@ export class TypeScriptAnalyzer {
           : call.getStart();
         const { line, column } = sourceFile.getLineAndColumnAtPos(callPos);
 
-        // Build the synthetic name base: [line:col]funcName(argIdx)
-        const syntheticBase = `[${line}:${column}]${calleeName}(${argIdx})`;
+        // Build the synthetic name base: {line:col}funcName(argIdx)
+        const syntheticBase = `{${line}:${column}}${calleeName}(${argIdx})`;
 
         // Determine nesting context
         const scopePrefix = this.getScopePrefix(call, filePath);
