@@ -277,6 +277,11 @@ program
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
   .option("--calls", "Show what the entity calls")
   .option("--callers", "Show what calls the entity")
+  .option("--reads", "Show what variables the function reads")
+  .option("--writes", "Show what variables the function writes")
+  .option("--readers", "Show what functions read this variable")
+  .option("--writers", "Show what functions write to this variable")
+  .option("--side-effects", "Show all side-effects (reads + writes)")
   .option("--trace <to>", "Find call path to another entity")
   .option("--source", "Show source code of the entity")
   .action((id, options) => {
@@ -315,6 +320,86 @@ program
         console.log(`    ${e.file_path}:${e.start_line}`);
       }
       if (callers.length === 0) console.log("  (nothing)");
+      store.close();
+      return;
+    }
+
+    // --reads: show what variables the function reads
+    if (options.reads) {
+      const reads = store.getReads(entity.id);
+      console.log(`\n${entity.id} reads:\n`);
+      for (const e of reads) {
+        console.log(`  ⟵ ${e.id}`);
+        console.log(`    ${e.file_path}:${e.start_line}`);
+      }
+      if (reads.length === 0) console.log("  (no external variables read)");
+      store.close();
+      return;
+    }
+
+    // --writes: show what variables the function writes
+    if (options.writes) {
+      const writes = store.getWrites(entity.id);
+      console.log(`\n${entity.id} writes:\n`);
+      for (const e of writes) {
+        console.log(`  ⟶ ${e.id}`);
+        console.log(`    ${e.file_path}:${e.start_line}`);
+      }
+      if (writes.length === 0) console.log("  (no external variables written)");
+      store.close();
+      return;
+    }
+
+    // --readers: show what functions read this variable
+    if (options.readers) {
+      const readers = store.getReaders(entity.id);
+      console.log(`\n${entity.id} is read by:\n`);
+      for (const e of readers) {
+        console.log(`  ⟵ ${e.id}`);
+        console.log(`    ${e.file_path}:${e.start_line}`);
+      }
+      if (readers.length === 0) console.log("  (no functions read this)");
+      store.close();
+      return;
+    }
+
+    // --writers: show what functions write to this variable
+    if (options.writers) {
+      const writers = store.getWriters(entity.id);
+      console.log(`\n${entity.id} is written by:\n`);
+      for (const e of writers) {
+        console.log(`  ⟶ ${e.id}`);
+        console.log(`    ${e.file_path}:${e.start_line}`);
+      }
+      if (writers.length === 0) console.log("  (no functions write to this)");
+      store.close();
+      return;
+    }
+
+    // --side-effects: show all reads and writes
+    if (options.sideEffects) {
+      const reads = store.getReads(entity.id);
+      const writes = store.getWrites(entity.id);
+      console.log(`\n${entity.id} side-effects:\n`);
+
+      if (reads.length > 0) {
+        console.log("Reads:");
+        for (const e of reads) {
+          console.log(`  ⟵ ${e.name} (${e.file_path}:${e.start_line})`);
+        }
+      }
+
+      if (writes.length > 0) {
+        console.log("Writes:");
+        for (const e of writes) {
+          console.log(`  ⟶ ${e.name} (${e.file_path}:${e.start_line})`);
+        }
+      }
+
+      if (reads.length === 0 && writes.length === 0) {
+        console.log("  (pure function - no side effects)");
+      }
+
       store.close();
       return;
     }
@@ -401,6 +486,7 @@ program
     console.log(`\n${entity.name}`);
     console.log(`${"─".repeat(40)}`);
     console.log(`ID:        ${entity.id}`);
+    console.log(`Kind:      ${entity.kind}`);
     console.log(`Location:  ${entity.file_path}:${entity.start_line}-${entity.end_line}`);
     console.log(`Signature: ${entity.signature}`);
     if (desc) {
@@ -416,6 +502,42 @@ program
       console.log(`\nCalls (${callees.length}):`);
       for (const e of callees) {
         console.log(`  → ${e.name} (${e.file_path}:${e.start_line})`);
+      }
+    }
+
+    // Show side-effects for functions
+    if (entity.kind === "function") {
+      const reads = store.getReads(entity.id);
+      const writes = store.getWrites(entity.id);
+      if (reads.length > 0) {
+        console.log(`\nReads (${reads.length}):`);
+        for (const e of reads) {
+          console.log(`  ⟵ ${e.name} (${e.file_path}:${e.start_line})`);
+        }
+      }
+      if (writes.length > 0) {
+        console.log(`\nWrites (${writes.length}):`);
+        for (const e of writes) {
+          console.log(`  ⟶ ${e.name} (${e.file_path}:${e.start_line})`);
+        }
+      }
+    }
+
+    // Show readers/writers for variables
+    if (entity.kind === "variable") {
+      const readers = store.getReaders(entity.id);
+      const writers = store.getWriters(entity.id);
+      if (readers.length > 0) {
+        console.log(`\nRead by (${readers.length}):`);
+        for (const e of readers) {
+          console.log(`  ⟵ ${e.name} (${e.file_path}:${e.start_line})`);
+        }
+      }
+      if (writers.length > 0) {
+        console.log(`\nWritten by (${writers.length}):`);
+        for (const e of writers) {
+          console.log(`  ⟶ ${e.name} (${e.file_path}:${e.start_line})`);
+        }
       }
     }
 

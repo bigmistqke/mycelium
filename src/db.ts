@@ -20,7 +20,7 @@ export interface Relation {
   id: number;
   from_id: string;
   to_id: string;
-  kind: "calls" | "uses_type" | "exports" | "imports";
+  kind: "calls" | "uses_type" | "exports" | "imports" | "reads" | "writes";
   commit_sha: string;
   metadata: string | null;
 }
@@ -380,6 +380,74 @@ export class GraphStore {
    */
   getAllDescriptions(): Description[] {
     return this.db.prepare("SELECT * FROM descriptions").all() as Description[];
+  }
+
+  /**
+   * Finds all variables read by a given function.
+   */
+  getReads(entityId: string, commitSha?: string): Entity[] {
+    const query = commitSha
+      ? `SELECT e.* FROM entities e
+         JOIN relations r ON e.id = r.to_id
+         WHERE r.from_id = ? AND r.kind = 'reads' AND r.commit_sha = ? AND e.commit_sha = ?`
+      : `SELECT DISTINCT e.* FROM entities e
+         JOIN relations r ON e.id = r.to_id
+         WHERE r.from_id = ? AND r.kind = 'reads'`;
+
+    return commitSha
+      ? (this.db.prepare(query).all(entityId, commitSha, commitSha) as Entity[])
+      : (this.db.prepare(query).all(entityId) as Entity[]);
+  }
+
+  /**
+   * Finds all variables written by a given function.
+   */
+  getWrites(entityId: string, commitSha?: string): Entity[] {
+    const query = commitSha
+      ? `SELECT e.* FROM entities e
+         JOIN relations r ON e.id = r.to_id
+         WHERE r.from_id = ? AND r.kind = 'writes' AND r.commit_sha = ? AND e.commit_sha = ?`
+      : `SELECT DISTINCT e.* FROM entities e
+         JOIN relations r ON e.id = r.to_id
+         WHERE r.from_id = ? AND r.kind = 'writes'`;
+
+    return commitSha
+      ? (this.db.prepare(query).all(entityId, commitSha, commitSha) as Entity[])
+      : (this.db.prepare(query).all(entityId) as Entity[]);
+  }
+
+  /**
+   * Finds all functions that read a given variable.
+   */
+  getReaders(variableId: string, commitSha?: string): Entity[] {
+    const query = commitSha
+      ? `SELECT e.* FROM entities e
+         JOIN relations r ON e.id = r.from_id
+         WHERE r.to_id = ? AND r.kind = 'reads' AND r.commit_sha = ? AND e.commit_sha = ?`
+      : `SELECT DISTINCT e.* FROM entities e
+         JOIN relations r ON e.id = r.from_id
+         WHERE r.to_id = ? AND r.kind = 'reads'`;
+
+    return commitSha
+      ? (this.db.prepare(query).all(variableId, commitSha, commitSha) as Entity[])
+      : (this.db.prepare(query).all(variableId) as Entity[]);
+  }
+
+  /**
+   * Finds all functions that write to a given variable.
+   */
+  getWriters(variableId: string, commitSha?: string): Entity[] {
+    const query = commitSha
+      ? `SELECT e.* FROM entities e
+         JOIN relations r ON e.id = r.from_id
+         WHERE r.to_id = ? AND r.kind = 'writes' AND r.commit_sha = ? AND e.commit_sha = ?`
+      : `SELECT DISTINCT e.* FROM entities e
+         JOIN relations r ON e.id = r.from_id
+         WHERE r.to_id = ? AND r.kind = 'writes'`;
+
+    return commitSha
+      ? (this.db.prepare(query).all(variableId, commitSha, commitSha) as Entity[])
+      : (this.db.prepare(query).all(variableId) as Entity[]);
   }
 
   /**

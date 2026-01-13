@@ -1,5 +1,29 @@
 [
   {
+    "hash": "465475c30acd33b60a2534120eead08b150ac86a",
+    "short_hash": "465475c",
+    "author": "bigmistqke",
+    "date": "2026-01-13T02:43:41+01:00",
+    "message": "feat: add side-effect variable tracking (reads/writes)\n\n- Extract module-level variables as entities\n- Track reads/writes relations for function → variable\n- Detect closure variables mutated by nested functions\n- Add CLI query options: --reads, --writes, --side-effects, --readers, --writers",
+    "files_changed": 5
+  },
+  {
+    "hash": "fa29f84d0b8733d59ec4829ac6a5cfd56f19caf4",
+    "short_hash": "fa29f84",
+    "author": "bigmistqke",
+    "date": "2026-01-13T02:18:18+01:00",
+    "message": "refactor: split find and query commands",
+    "files_changed": 3
+  },
+  {
+    "hash": "9f82f765f873bab6546e52d4b582b974f238e7fd",
+    "short_hash": "9f82f76",
+    "author": "bigmistqke",
+    "date": "2026-01-13T02:12:20+01:00",
+    "message": "feat: support nested functions in analyzer with :: separator",
+    "files_changed": 1
+  },
+  {
     "hash": "1c4b7f73aa470fd7609ab7a6cf7daad6fd0901f0",
     "short_hash": "1c4b7f7",
     "author": "bigmistqke",
