@@ -34,6 +34,7 @@ export interface EntryPoint {
 export interface System {
   id: string;
   name: string;
+  name_source: "auto" | "user";
   description: string | null;
   algorithm: string | null;
   resolution: number | null;
@@ -106,6 +107,7 @@ export function createDatabase(dbPath: string): Database.Database {
     CREATE TABLE IF NOT EXISTS systems (
       id TEXT NOT NULL,
       name TEXT NOT NULL,
+      name_source TEXT NOT NULL DEFAULT 'auto',
       description TEXT,
       algorithm TEXT,
       resolution REAL,
@@ -489,12 +491,13 @@ export class GraphStore {
    */
   insertSystem(system: Omit<System, "description"> & { description?: string | null }): void {
     const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO systems (id, name, description, algorithm, resolution, commit_sha)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO systems (id, name, name_source, description, algorithm, resolution, commit_sha)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       system.id,
       system.name,
+      system.name_source,
       system.description ?? null,
       system.algorithm,
       system.resolution,
@@ -605,6 +608,7 @@ export class GraphStore {
       system: {
         id: row.id as string,
         name: row.name as string,
+        name_source: (row.name_source as "auto" | "user") || "auto",
         description: row.description as string | null,
         algorithm: row.algorithm as string | null,
         resolution: row.resolution as number | null,
@@ -615,16 +619,37 @@ export class GraphStore {
   }
 
   /**
-   * Updates a system's name.
+   * Updates a system's name and marks it as user-named.
    */
   renameSystem(idOrName: string, newName: string): boolean {
     const system = this.getSystemByIdOrName(idOrName);
     if (!system) return false;
 
     this.db
-      .prepare("UPDATE systems SET name = ? WHERE id = ? AND commit_sha = ?")
+      .prepare("UPDATE systems SET name = ?, name_source = 'user' WHERE id = ? AND commit_sha = ?")
       .run(newName, system.id, system.commit_sha);
     return true;
+  }
+
+  /**
+   * Returns all user-named systems with their member entity IDs.
+   * Used for overlap matching when re-running community detection.
+   */
+  getUserNamedSystemsWithMembers(): Array<{ system: System; memberIds: string[] }> {
+    const systems = this.db
+      .prepare("SELECT * FROM systems WHERE name_source = 'user'")
+      .all() as System[];
+
+    return systems.map((system) => {
+      const members = this.db
+        .prepare("SELECT entity_id FROM system_members WHERE system_id = ?")
+        .all(system.id) as Array<{ entity_id: string }>;
+
+      return {
+        system,
+        memberIds: members.map((m) => m.entity_id),
+      };
+    });
   }
 
   /**

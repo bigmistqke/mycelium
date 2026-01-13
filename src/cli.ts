@@ -1026,28 +1026,94 @@ communityCmd
 
     console.log(`Detected ${communityGroups.size} communities`);
 
+    // Get user-named systems before clearing (for overlap matching)
+    const userNamedSystems = store.getUserNamedSystemsWithMembers();
+
+    // Calculate overlap between new communities and old user-named systems
+    // overlap = intersection / union (Jaccard index)
+    const OVERLAP_THRESHOLD = 0.7;
+    const nameAssignments = new Map<number, { name: string; description: string | null; overlap: number }>();
+
+    if (userNamedSystems.length > 0) {
+      console.log(`\nMatching against ${userNamedSystems.length} user-named systems...`);
+
+      // For each user-named system, find the best matching new community
+      const claimedNames = new Set<string>();
+
+      for (const { system: oldSystem, memberIds: oldMembers } of userNamedSystems) {
+        const oldSet = new Set(oldMembers);
+        let bestMatch: { communityId: number; overlap: number } | null = null;
+
+        for (const [communityId, newMembers] of communityGroups) {
+          // Skip if this community already claimed a name with higher overlap
+          const existing = nameAssignments.get(communityId);
+          if (existing && existing.overlap >= OVERLAP_THRESHOLD) continue;
+
+          const newSet = new Set(newMembers);
+          const intersection = [...oldSet].filter((x) => newSet.has(x)).length;
+          const union = new Set([...oldSet, ...newSet]).size;
+          const overlap = union > 0 ? intersection / union : 0;
+
+          if (overlap >= OVERLAP_THRESHOLD) {
+            if (!bestMatch || overlap > bestMatch.overlap) {
+              bestMatch = { communityId, overlap };
+            }
+          }
+        }
+
+        if (bestMatch && !claimedNames.has(oldSystem.name)) {
+          // Check if this community already has a better assignment
+          const existing = nameAssignments.get(bestMatch.communityId);
+          if (!existing || bestMatch.overlap > existing.overlap) {
+            nameAssignments.set(bestMatch.communityId, {
+              name: oldSystem.name,
+              description: oldSystem.description,
+              overlap: bestMatch.overlap,
+            });
+            claimedNames.add(oldSystem.name);
+            console.log(`  "${oldSystem.name}" → community ${bestMatch.communityId} (${(bestMatch.overlap * 100).toFixed(0)}% overlap)`);
+          }
+        }
+      }
+    }
+
     // Clear existing and insert new
     store.clearSystems(commitSha);
 
     for (const [communityId, memberIds] of communityGroups) {
       const systemId = `community-${communityId}`;
 
-      // Auto-generate name from most common file path
-      const fileCounts = new Map<string, number>();
-      for (const memberId of memberIds) {
-        const entity = entities.find((e) => e.id === memberId);
-        if (entity) {
-          const dir = entity.file_path.split("/").slice(0, -1).join("/") || entity.file_path;
-          fileCounts.set(dir, (fileCounts.get(dir) || 0) + 1);
+      // Check if we have a name assignment from overlap matching
+      const assignment = nameAssignments.get(communityId);
+      let name: string;
+      let nameSource: "auto" | "user";
+      let description: string | null = null;
+
+      if (assignment) {
+        name = assignment.name;
+        nameSource = "user";
+        description = assignment.description;
+      } else {
+        // Auto-generate name from most common file path
+        const fileCounts = new Map<string, number>();
+        for (const memberId of memberIds) {
+          const entity = entities.find((e) => e.id === memberId);
+          if (entity) {
+            const dir = entity.file_path.split("/").slice(0, -1).join("/") || entity.file_path;
+            fileCounts.set(dir, (fileCounts.get(dir) || 0) + 1);
+          }
         }
+        const topDir = [...fileCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "unknown";
+        name = `${topDir.split("/").pop() || "system"}-${communityId}`;
+        nameSource = "auto";
       }
-      const topDir = [...fileCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "unknown";
-      const autoName = `${topDir.split("/").pop() || "system"}-${communityId}`;
 
       // Insert system
       store.insertSystem({
         id: systemId,
-        name: autoName,
+        name,
+        name_source: nameSource,
+        description,
         algorithm: options.algorithm,
         resolution,
         commit_sha: commitSha,
@@ -1063,7 +1129,8 @@ communityCmd
         });
       }
 
-      console.log(`  ${autoName}: ${memberIds.length} members`);
+      const preserved = assignment ? " (preserved)" : "";
+      console.log(`  ${name}: ${memberIds.length} members${preserved}`);
     }
 
     store.close();
@@ -1074,42 +1141,65 @@ communityCmd
   .command("list")
   .description("List all detected communities")
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("-u, --unnamed", "Only show auto-named communities (not user-renamed)")
+  .option("-m, --members", "Show all members of each community")
+  .option("--min-members <n>", "Minimum members to include (default: 2 for --unnamed, 1 otherwise)")
   .action((options) => {
     const store = new GraphStore(resolve(options.db));
-    const systems = store.getSystems();
+    let systems = store.getSystems();
     const counts = store.getSystemMemberCounts();
     const countMap = new Map(counts.map((c) => [c.system_id, c.count]));
 
+    // Filter to unnamed only if requested
+    if (options.unnamed) {
+      systems = systems.filter((s) => s.name_source === "auto");
+    }
+
+    // Filter by minimum members (default 2 for --unnamed, 1 otherwise)
+    const minMembers = options.minMembers ? parseInt(options.minMembers) : (options.unnamed ? 2 : 1);
+    systems = systems.filter((s) => (countMap.get(s.id) || 0) >= minMembers);
+
     if (systems.length === 0) {
-      console.log("No communities detected. Run 'mycelium community detect' first.");
+      if (options.unnamed) {
+        console.log("No unnamed communities. All communities have been named.");
+      } else {
+        console.log("No communities detected. Run 'mycelium community detect' first.");
+      }
       store.close();
       return;
     }
 
-    console.log(`\nCommunities (${systems.length}):\n`);
+    const label = options.unnamed ? "Unnamed communities" : "Communities";
+    console.log(`\n${label} (${systems.length}):\n`);
 
     for (const system of systems) {
       const count = countMap.get(system.id) || 0;
       const desc = system.description ? ` - ${system.description}` : "";
-      console.log(`  ${system.id}: "${system.name}" (${count} members)${desc}`);
-      console.log(`    Algorithm: ${system.algorithm}, Resolution: ${system.resolution}`);
+      console.log(`${system.name} (${count} members)${desc}`);
 
-      // Show entry points (functions with no incoming calls within the system)
-      const members = store.getSystemMembers(system.id);
-      const memberIds = new Set(members.map((m) => m.entity_id));
-      const entryPoints = members.filter((m) => {
-        const callers = store.getCallers(m.entity_id);
-        // Entry point = no callers from within the same system
-        return !callers.some((c) => memberIds.has(c.id));
-      });
-
-      if (entryPoints.length > 0) {
-        console.log(`    Entry points:`);
-        for (const ep of entryPoints.slice(0, 3)) {
-          console.log(`      → ${ep.entity.name} (${ep.entity.file_path}:${ep.entity.start_line})`);
+      if (options.members) {
+        // Show all members
+        const members = store.getSystemMembers(system.id);
+        for (const member of members) {
+          console.log(`  ${member.entity.id}`);
         }
-        if (entryPoints.length > 3) {
-          console.log(`      ... and ${entryPoints.length - 3} more`);
+      } else {
+        // Show entry points only (default behavior)
+        const members = store.getSystemMembers(system.id);
+        const memberIds = new Set(members.map((m) => m.entity_id));
+        const entryPoints = members.filter((m) => {
+          const callers = store.getCallers(m.entity_id);
+          return !callers.some((c) => memberIds.has(c.id));
+        });
+
+        if (entryPoints.length > 0) {
+          console.log(`  Entry points:`);
+          for (const ep of entryPoints.slice(0, 3)) {
+            console.log(`    → ${ep.entity.name} (${ep.entity.file_path}:${ep.entity.start_line})`);
+          }
+          if (entryPoints.length > 3) {
+            console.log(`    ... and ${entryPoints.length - 3} more`);
+          }
         }
       }
       console.log();
