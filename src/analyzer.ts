@@ -360,6 +360,7 @@ export class TypeScriptAnalyzer {
         accessibleVars,
         parametersByFunction,
         localVariablesByFunction,
+        functionMap,
         commitSha,
       );
       relations.push(...localVarDeps);
@@ -1441,12 +1442,14 @@ export class TypeScriptAnalyzer {
    * Extracts dependency edges from local variables to their initialization sources.
    * For `const x = y.method()`, creates edge: x depends_on y
    * For `const x = y`, creates edge: x depends_on y
+   * For `const x = foo()`, creates edge: x depends_on foo<return>
    */
   private extractLocalVariableDependencies(
     callerFn: FunctionInfo,
     accessibleVars: Map<string, VariableInfo>,
     parametersByFunction: Map<string, Map<string, ParameterInfo>>,
     localVariablesByFunction: Map<string, Map<string, VariableInfo>>,
+    functionMap: Map<string, FunctionInfo>,
     commitSha: string | null,
   ): Array<Omit<Relation, "id">> {
     const relations: Array<Omit<Relation, "id">> = [];
@@ -1471,6 +1474,7 @@ export class TypeScriptAnalyzer {
         accessibleVars,
         parametersByFunction,
         localVariablesByFunction,
+        functionMap,
       );
 
       for (const depId of deps) {
@@ -1499,6 +1503,7 @@ export class TypeScriptAnalyzer {
     accessibleVars: Map<string, VariableInfo>,
     parametersByFunction: Map<string, Map<string, ParameterInfo>>,
     localVariablesByFunction: Map<string, Map<string, VariableInfo>>,
+    functionMap: Map<string, FunctionInfo>,
   ): string[] {
     const deps: string[] = [];
     const seen = new Set<string>();
@@ -1543,7 +1548,55 @@ export class TypeScriptAnalyzer {
       }
     }
 
+    // Find CallExpressions and add dependencies on their return values
+    const callExprs = initializer.getDescendantsOfKind(SyntaxKind.CallExpression);
+
+    // Also check if initializer itself is a call (or await of a call)
+    let rootExpr = initializer;
+    if (Node.isAwaitExpression(initializer)) {
+      rootExpr = initializer.getExpression();
+    }
+    if (Node.isCallExpression(rootExpr)) {
+      const returnId = this.resolveCallReturnId(rootExpr, functionMap);
+      if (returnId && !seen.has(returnId)) {
+        deps.push(returnId);
+        seen.add(returnId);
+      }
+    }
+
+    for (const call of callExprs) {
+      const returnId = this.resolveCallReturnId(call, functionMap);
+      if (returnId && !seen.has(returnId)) {
+        deps.push(returnId);
+        seen.add(returnId);
+      }
+    }
+
     return deps;
+  }
+
+  /**
+   * Resolves a CallExpression to the return entity ID of the called function.
+   */
+  private resolveCallReturnId(
+    call: CallExpression,
+    functionMap: Map<string, FunctionInfo>,
+  ): string | null {
+    const calleeName = this.getCalleeName(call);
+    if (!calleeName) return null;
+
+    // Try to resolve the callee to a known function
+    for (const [id, fn] of functionMap) {
+      if (
+        fn.name === calleeName ||
+        id.endsWith(`::${calleeName}`) ||
+        fn.name.endsWith(`.${calleeName}`)
+      ) {
+        return `${id}<return>`;
+      }
+    }
+
+    return null;
   }
 
   /**
