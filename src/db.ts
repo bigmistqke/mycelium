@@ -63,6 +63,12 @@ export interface CallArgument {
   commit_sha: string;
 }
 
+export interface FileRecord {
+  path: string;           // relative file path
+  content_hash: string;   // hash of file content at sync time
+  commit_sha: string;
+}
+
 /**
  * Creates and initializes the SQLite database with all required tables (entities, relations, entry_points, systems, descriptions). Sets up WAL mode for better concurrent access.
  */
@@ -158,6 +164,14 @@ export function createDatabase(dbPath: string): Database.Database {
       arg_entity_id TEXT NOT NULL,
       commit_sha TEXT NOT NULL,
       PRIMARY KEY (caller_id, callee_id, param_index, commit_sha)
+    );
+
+    -- File hashes: tracks file content at sync time for staleness detection
+    CREATE TABLE IF NOT EXISTS files (
+      path TEXT NOT NULL,
+      content_hash TEXT NOT NULL,
+      commit_sha TEXT NOT NULL,
+      PRIMARY KEY (path, commit_sha)
     );
 
     -- Indexes for common queries
@@ -979,6 +993,72 @@ export class GraphStore {
       : (this.db.prepare(query).all(entityId) as Array<{ to_id: string }>);
 
     return rows.map(r => r.to_id);
+  }
+
+  // ==================== File Methods ====================
+
+  /**
+   * Inserts or updates a file record with its content hash.
+   */
+  insertFile(file: FileRecord): void {
+    this.db
+      .prepare(
+        `INSERT OR REPLACE INTO files (path, content_hash, commit_sha)
+         VALUES (?, ?, ?)`
+      )
+      .run(file.path, file.content_hash, file.commit_sha);
+  }
+
+  /**
+   * Gets the stored file record for a path.
+   */
+  getFile(path: string, commitSha?: string): FileRecord | undefined {
+    const query = commitSha
+      ? `SELECT * FROM files WHERE path = ? AND commit_sha = ?`
+      : `SELECT * FROM files WHERE path = ? ORDER BY rowid DESC LIMIT 1`;
+
+    return commitSha
+      ? (this.db.prepare(query).get(path, commitSha) as FileRecord | undefined)
+      : (this.db.prepare(query).get(path) as FileRecord | undefined);
+  }
+
+  /**
+   * Checks if a file is fresh (content hash matches current file).
+   * Returns { fresh: true } if hash matches, { fresh: false, reason } if stale.
+   */
+  checkFileFreshness(
+    path: string,
+    currentHash: string,
+    commitSha?: string
+  ): { fresh: boolean; reason?: string; storedHash?: string } {
+    const record = this.getFile(path, commitSha);
+
+    if (!record) {
+      return { fresh: false, reason: "file not in database" };
+    }
+
+    if (record.content_hash !== currentHash) {
+      return {
+        fresh: false,
+        reason: "file content changed since last sync",
+        storedHash: record.content_hash,
+      };
+    }
+
+    return { fresh: true };
+  }
+
+  /**
+   * Gets all stored files, optionally filtered by commit.
+   */
+  getFiles(commitSha?: string): FileRecord[] {
+    const query = commitSha
+      ? `SELECT * FROM files WHERE commit_sha = ?`
+      : `SELECT * FROM files`;
+
+    return commitSha
+      ? (this.db.prepare(query).all(commitSha) as FileRecord[])
+      : (this.db.prepare(query).all() as FileRecord[]);
   }
 
   /**

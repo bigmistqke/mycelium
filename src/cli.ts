@@ -6,6 +6,7 @@ import { resolve, dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { GraphStore } from "./db.js";
 import { TypeScriptAnalyzer } from "./analyzer.js";
+import { computeHash } from "./hash.js";
 
 const DEFAULT_DB_PATH = ".mycelium/graph.db";
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -242,6 +243,19 @@ program
     }
     console.log(`Found ${result.callArguments.length} call arguments`);
 
+    // Compute and store file hashes for staleness detection
+    const filePaths = new Set(result.entities.map(e => e.file_path));
+    for (const filePath of filePaths) {
+      try {
+        const content = readFileSync(filePath, "utf-8");
+        const contentHash = computeHash(content);
+        store.insertFile({ path: filePath, content_hash: contentHash, commit_sha: commitSha });
+      } catch {
+        // Skip files that can't be read (e.g., virtual files)
+      }
+    }
+    console.log(`Tracked ${filePaths.size} files`);
+
     // Detect entry points
     const entryPointIds = store.findEntryPoints(commitSha);
     console.log(`Found ${entryPointIds.length} entry points (call graph roots)`);
@@ -292,6 +306,96 @@ program
         }
         console.log();
       }
+    }
+
+    store.close();
+  });
+
+program
+  .command("read")
+  .description("Read source code of an entity (auto-syncs if stale)")
+  .argument("<id>", "Entity ID or name")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("--tsconfig <path>", "Path to tsconfig.json")
+  .action((idArg, options) => {
+    const store = new GraphStore(resolve(options.db));
+
+    // Find entity by ID or name
+    let entities = store.getEntities();
+    let entity = entities.find(
+      (e) => e.id === idArg || e.name === idArg || e.id.endsWith(`::${idArg}`)
+    );
+
+    if (!entity) {
+      console.error(`error: entity not found: ${idArg}`);
+      store.close();
+      process.exit(1);
+    }
+
+    const filePath = resolve(entity.file_path);
+
+    // Check file existence
+    if (!existsSync(filePath)) {
+      console.error(`error: file not found: ${filePath}`);
+      store.close();
+      process.exit(1);
+    }
+
+    // Read file content and check freshness
+    let content = readFileSync(filePath, "utf-8");
+    const currentHash = computeHash(content);
+    const freshness = store.checkFileFreshness(entity.file_path, currentHash);
+
+    // If stale, re-sync this file
+    if (!freshness.fresh) {
+      const commitSha = getGitCommitSha();
+      const tsConfigPath = options.tsconfig ?? findTsConfig();
+      const analyzer = new TypeScriptAnalyzer(tsConfigPath);
+      analyzer.addSourceFiles([entity.file_path]);
+      const result = analyzer.analyze(commitSha);
+
+      // Update entities from this file
+      for (const e of result.entities) {
+        store.insertEntity(e);
+      }
+
+      // Update relations from this file
+      for (const r of result.relations) {
+        store.insertRelation(r);
+      }
+
+      // Update call arguments
+      for (const ca of result.callArguments) {
+        store.insertCallArgument(ca);
+      }
+
+      // Update file hash
+      store.insertFile({ path: entity.file_path, content_hash: currentHash, commit_sha: commitSha });
+
+      // Re-fetch entity with updated line numbers
+      entities = store.getEntities();
+      const updated = entities.find((e) => e.id === entity!.id);
+      if (updated) {
+        entity = updated;
+      }
+    }
+
+    // Extract source lines
+    const lines = content.split("\n");
+    const startLine = entity.start_line - 1; // 0-indexed
+    const endLine = entity.end_line;
+    const sourceLines = lines.slice(startLine, endLine);
+
+    // Output: header block + source
+    console.log(`id: ${entity.id}`);
+    console.log(`name: ${entity.name}`);
+    console.log(`kind: ${entity.kind}`);
+    console.log(`file: ${entity.file_path}`);
+    console.log(`lines: ${entity.start_line}-${entity.end_line}`);
+    console.log(`signature: ${entity.signature}`);
+    console.log(`---`);
+    for (const line of sourceLines) {
+      console.log(line);
     }
 
     store.close();
