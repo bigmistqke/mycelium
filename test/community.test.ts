@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { LouvainDetector } from "./louvain.js";
-import { buildGraph, type Graph } from "./types.js";
+import { describe, expect, it } from "vitest";
+import { LouvainDetector } from "../src/community/louvain.ts";
+import { buildGraph, type Graph } from "../src/community/types.ts";
 
 // Simple test graph: two clusters connected by one edge
 function createTestGraph(): Graph {
@@ -74,11 +74,42 @@ describe("LouvainDetector", () => {
 describe("buildGraph", () => {
   it("filters nodes by kind", () => {
     const entities = [
-      { id: "f1", kind: "function" as const, name: "f1", file_path: "a.ts", start_line: 1, end_line: 5, signature: "", signature_hash: "", impl_hash: null, commit_sha: "abc", created_at: "" },
-      { id: "t1", kind: "type" as const, name: "T1", file_path: "a.ts", start_line: 10, end_line: 12, signature: "", signature_hash: "", impl_hash: null, commit_sha: "abc", created_at: "" },
+      {
+        id: "f1",
+        kind: "function" as const,
+        name: "f1",
+        file_path: "a.ts",
+        start_line: 1,
+        end_line: 5,
+        signature: "",
+        signature_hash: "",
+        impl_hash: null,
+        commit_sha: "abc",
+        created_at: "",
+      },
+      {
+        id: "t1",
+        kind: "type" as const,
+        name: "T1",
+        file_path: "a.ts",
+        start_line: 10,
+        end_line: 12,
+        signature: "",
+        signature_hash: "",
+        impl_hash: null,
+        commit_sha: "abc",
+        created_at: "",
+      },
     ];
     const relations = [
-      { id: 1, from_id: "f1", to_id: "t1", kind: "uses_type" as const, commit_sha: "abc", metadata: null },
+      {
+        id: 1,
+        from_id: "f1",
+        to_id: "t1",
+        kind: "uses_type" as const,
+        commit_sha: "abc",
+        metadata: null,
+      },
     ];
 
     // Default: only functions
@@ -87,12 +118,17 @@ describe("buildGraph", () => {
     expect(graph1.edges).toHaveLength(0); // t1 filtered out, so edge is dropped
 
     // Include both
-    const graph2 = buildGraph(entities, relations, { nodeKinds: ["function", "type"] });
+    const graph2 = buildGraph(entities, relations, {
+      nodeKinds: ["function", "type"],
+    });
     expect(graph2.nodes).toHaveLength(2);
     expect(graph2.edges).toHaveLength(0); // edge type "uses_type" not in default edgeTypes
 
     // Include uses_type edges
-    const graph3 = buildGraph(entities, relations, { nodeKinds: ["function", "type"], edgeTypes: ["uses_type"] });
+    const graph3 = buildGraph(entities, relations, {
+      nodeKinds: ["function", "type"],
+      edgeTypes: ["uses_type"],
+    });
     expect(graph3.nodes).toHaveLength(2);
     expect(graph3.edges).toHaveLength(1);
   });

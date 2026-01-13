@@ -1,8 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, cpSync, readFileSync, rmSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
 import { execSync } from "child_process";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+const mycelium = "node src/cli.ts";
 
 describe("CLI read/write commands", () => {
   let tempDir: string;
@@ -24,10 +32,13 @@ describe("CLI read/write commands", () => {
     writeFileSync(tsconfigPath, '{"compilerOptions":{}}');
 
     // Create mycelium config that references tsconfig
-    writeFileSync(configPath, JSON.stringify({
-      tsconfig: tsconfigPath,
-      db: dbPath,
-    }));
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        tsconfig: tsconfigPath,
+        db: dbPath,
+      }),
+    );
 
     // Create a simple test file
     writeFileSync(
@@ -39,22 +50,22 @@ describe("CLI read/write commands", () => {
 export function add(a: number, b: number): number {
   return a + b;
 }
-`
+`,
     );
 
     // Sync the test file
-    execSync(`node dist/cli.js sync -p "${fixturePath}" -c "${configPath}"`, {
+    execSync(`${mycelium} sync -p "${fixturePath}" -c "${configPath}"`, {
       encoding: "utf-8",
     });
 
     // find outputs IDs one per line - get the first match (function, not params/return)
-    greetId = execSync(`node dist/cli.js find greet -d "${dbPath}"`, {
+    greetId = execSync(`${mycelium} find greet --config "${configPath}"`, {
       encoding: "utf-8",
-    }).split('\n')[0];
+    }).split("\n")[0];
 
-    addId = execSync(`node dist/cli.js find add -d "${dbPath}"`, {
+    addId = execSync(`${mycelium} find add --config "${configPath}"`, {
       encoding: "utf-8",
-    }).split('\n')[0];
+    }).split("\n")[0];
   });
 
   afterEach(() => {
@@ -65,8 +76,8 @@ export function add(a: number, b: number): number {
   describe("read command", () => {
     it("reads entity source code", () => {
       const output = execSync(
-        `node dist/cli.js read "${greetId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `${mycelium} read "${greetId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       expect(output).toContain("id:");
@@ -78,8 +89,8 @@ export function add(a: number, b: number): number {
 
     it("includes correct line numbers", () => {
       const output = execSync(
-        `node dist/cli.js read "${greetId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `${mycelium} read "${greetId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       expect(output).toContain("lines: 1-3");
@@ -90,13 +101,13 @@ export function add(a: number, b: number): number {
       const content = readFileSync(fixturePath, "utf-8");
       writeFileSync(
         fixturePath,
-        content.replace('return "Hello, "', 'return "Hi, "')
+        content.replace('return "Hello, "', 'return "Hi, "'),
       );
 
       // Read should auto-sync and return updated content
       const output = execSync(
-        `node dist/cli.js read "${greetId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `${mycelium} read "${greetId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       expect(output).toContain('return "Hi, " + name');
@@ -104,7 +115,7 @@ export function add(a: number, b: number): number {
 
     it("fails with helpful message for non-existent entity", () => {
       try {
-        execSync(`node dist/cli.js read "nonexistent" -c "${configPath}"`, {
+        execSync(`${mycelium} read "nonexistent" -c "${configPath}"`, {
           encoding: "utf-8",
           stdio: "pipe",
         });
@@ -123,8 +134,8 @@ export function add(a: number, b: number): number {
 }`;
 
       execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `echo '${newSource}' | node src/cli.ts write "${greetId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       // Verify file was updated
@@ -139,8 +150,8 @@ export function add(a: number, b: number): number {
 }`;
 
       execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `echo '${newSource}' | node src/cli.ts write "${greetId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       // Verify add function is still there
@@ -158,21 +169,21 @@ export function add(a: number, b: number): number {
 }`;
 
       execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `echo '${newSource}' | node src/cli.ts write "${greetId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       // Read greet - should have more lines now
       const greetOutput = execSync(
-        `node dist/cli.js read "${greetId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `${mycelium} read "${greetId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
       expect(greetOutput).toContain("lines: 1-5");
 
       // Read add - should have shifted line numbers
       const addOutput = execSync(
-        `node dist/cli.js read "${addId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `${mycelium} read "${addId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
       expect(addOutput).toContain("lines: 7-9");
     });
@@ -183,8 +194,8 @@ export function add(a: number, b: number): number {
 }`;
 
       const output = execSync(
-        `echo '${newSource}' | node dist/cli.js write "${greetId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `echo '${newSource}' | node src/cli.ts write "${greetId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       expect(output).toContain("wrote:");
@@ -196,8 +207,8 @@ export function add(a: number, b: number): number {
     it("can read, modify, and write back", () => {
       // Read original
       const readOutput = execSync(
-        `node dist/cli.js read "${addId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `${mycelium} read "${addId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       // Extract source (after ---)
@@ -207,14 +218,14 @@ export function add(a: number, b: number): number {
       // Modify and write back
       const modified = source.replace("a + b", "a * b");
       execSync(
-        `echo '${modified}' | node dist/cli.js write "${addId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `echo '${modified}' | node src/cli.ts write "${addId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       // Read again to verify
       const verifyOutput = execSync(
-        `node dist/cli.js read "${addId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `${mycelium} read "${addId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
       expect(verifyOutput).toContain("return a * b");
     });
@@ -228,8 +239,8 @@ export function add(a: number, b: number): number {
 }`;
 
       const output = execSync(
-        `echo '${newSource}' | node dist/cli.js create "${newFilePath}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `echo '${newSource}' | node src/cli.ts create "${newFilePath}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       expect(output).toContain("created:");
@@ -244,8 +255,8 @@ export function add(a: number, b: number): number {
     it("fails if file already exists without --force", () => {
       try {
         execSync(
-          `echo 'content' | node dist/cli.js create "${fixturePath}" -c "${configPath}"`,
-          { encoding: "utf-8", stdio: "pipe" }
+          `echo 'content' | node src/cli.ts create "${fixturePath}" -c "${configPath}"`,
+          { encoding: "utf-8", stdio: "pipe" },
         );
         expect.fail("Should have thrown");
       } catch (e: any) {
@@ -259,8 +270,8 @@ export function add(a: number, b: number): number {
 }`;
 
       execSync(
-        `echo '${newSource}' | node dist/cli.js create "${fixturePath}" --force -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `echo '${newSource}' | node src/cli.ts create "${fixturePath}" --force -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       const content = readFileSync(fixturePath, "utf-8");
@@ -273,8 +284,8 @@ export function add(a: number, b: number): number {
       const source = `export const CONSTANT = 42;`;
 
       execSync(
-        `echo '${source}' | node dist/cli.js create "${nestedPath}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `echo '${source}' | node src/cli.ts create "${nestedPath}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       const content = readFileSync(nestedPath, "utf-8");
@@ -286,8 +297,8 @@ export function add(a: number, b: number): number {
     it("deletes an entity from file", () => {
       // Delete greet function
       const output = execSync(
-        `node dist/cli.js delete "${greetId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `${mycelium} delete "${greetId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       expect(output).toContain("deleted:");
@@ -300,14 +311,14 @@ export function add(a: number, b: number): number {
 
     it("updates line numbers of remaining entities", () => {
       // Delete greet (lines 1-3)
-      execSync(`node dist/cli.js delete "${greetId}" -c "${configPath}"`, {
+      execSync(`${mycelium} delete "${greetId}" -c "${configPath}"`, {
         encoding: "utf-8",
       });
 
       // Read add - should now be at different lines
       const output = execSync(
-        `node dist/cli.js read "${addId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `${mycelium} read "${addId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       // add should now start earlier in the file
@@ -320,18 +331,20 @@ export function add(a: number, b: number): number {
       const singlePath = join(tempDir, "single.ts");
       writeFileSync(singlePath, `export function only(): void {}`);
 
-      execSync(`node dist/cli.js sync -p "${singlePath}" -c "${configPath}"`, {
+      execSync(`${mycelium} sync -p "${singlePath}" -c "${configPath}"`, {
         encoding: "utf-8",
       });
 
       const onlyId = execSync(
-        `node dist/cli.js find only -d "${dbPath}"`,
-        { encoding: "utf-8" }
-      ).split('\n')[0];
+        `${mycelium} find only --config "${configPath}"`,
+        {
+          encoding: "utf-8",
+        },
+      ).split("\n")[0];
 
       const output = execSync(
-        `node dist/cli.js delete "${onlyId}" -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `${mycelium} delete "${onlyId}" -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       expect(output).toContain("warning:");
@@ -343,18 +356,18 @@ export function add(a: number, b: number): number {
       const singlePath = join(tempDir, "to-delete.ts");
       writeFileSync(singlePath, `export function toDelete(): void {}`);
 
-      execSync(`node dist/cli.js sync -p "${singlePath}" -c "${configPath}"`, {
+      execSync(`${mycelium} sync -p "${singlePath}" -c "${configPath}"`, {
         encoding: "utf-8",
       });
 
       const deleteId = execSync(
-        `node dist/cli.js find toDelete -d "${dbPath}"`,
-        { encoding: "utf-8" }
-      ).split('\n')[0];
+        `${mycelium} find toDelete --config "${configPath}"`,
+        { encoding: "utf-8" },
+      ).split("\n")[0];
 
       const output = execSync(
-        `node dist/cli.js delete "${deleteId}" --file -c "${configPath}"`,
-        { encoding: "utf-8" }
+        `${mycelium} delete "${deleteId}" --file -c "${configPath}"`,
+        { encoding: "utf-8" },
       );
 
       expect(output).toContain("removed:");
@@ -366,7 +379,7 @@ export function add(a: number, b: number): number {
 
     it("fails with helpful message for non-existent entity", () => {
       try {
-        execSync(`node dist/cli.js delete "nonexistent" -c "${configPath}"`, {
+        execSync(`${mycelium} delete "nonexistent" -c "${configPath}"`, {
           encoding: "utf-8",
           stdio: "pipe",
         });
