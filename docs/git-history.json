@@ -1,5 +1,13 @@
 [
   {
+    "hash": "f30aa3eef4990bc79c7f32c232550a58ebfc334b",
+    "short_hash": "f30aa3e",
+    "author": "bigmistqke",
+    "date": "2026-01-13T09:49:14+01:00",
+    "message": "feat: add variable nodes and read/write edges to graph visualization\n\n- Variable nodes shown as yellow ellipses\n- Read edges shown as dashed blue lines\n- Write edges shown as red lines\n- Entry point detection now only considers call edges",
+    "files_changed": 1
+  },
+  {
     "hash": "465475c30acd33b60a2534120eead08b150ac86a",
     "short_hash": "465475c",
     "author": "bigmistqke",

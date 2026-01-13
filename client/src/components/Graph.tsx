@@ -71,6 +71,17 @@ export function Graph(props: GraphProps) {
           },
         },
         {
+          selector: "node.variable",
+          style: {
+            "background-color": "#ffd43b",
+            "text-outline-color": "#ffd43b",
+            color: "#1a1a2e",
+            shape: "ellipse",
+            width: "120px",
+            height: "30px",
+          },
+        },
+        {
           selector: "node.filtered-out",
           style: {
             opacity: 0.2,
@@ -87,6 +98,21 @@ export function Graph(props: GraphProps) {
           },
         },
         {
+          selector: "edge.reads",
+          style: {
+            "line-color": "#74c0fc",
+            "target-arrow-color": "#74c0fc",
+            "line-style": "dashed",
+          },
+        },
+        {
+          selector: "edge.writes",
+          style: {
+            "line-color": "#ff8787",
+            "target-arrow-color": "#ff8787",
+          },
+        },
+        {
           selector: "edge.filtered-out",
           style: {
             opacity: 0.1,
@@ -94,10 +120,10 @@ export function Graph(props: GraphProps) {
         },
       ],
       layout: {
-        name: "cose",
-        fit: true,
-        padding: 30,
-        spacingFactor: 2,
+        name: "breadthfirst",
+        directed: true,
+        padding: 20,
+        spacingFactor: 0.2,
       },
     });
 
@@ -129,6 +155,7 @@ export function Graph(props: GraphProps) {
           ...node,
           label: node.name,
         },
+        classes: node.kind === "variable" ? "variable" : undefined,
       })),
       ...props.data.edges.map((edge, i) => ({
         data: {
@@ -137,26 +164,30 @@ export function Graph(props: GraphProps) {
           target: edge.target,
           kind: edge.kind,
         },
+        classes: edge.kind === "reads" ? "reads" : edge.kind === "writes" ? "writes" : undefined,
       })),
     ];
 
     cy.elements().remove();
     cy.add(elements);
 
-    // Mark entry points (nodes with outgoing edges but no incoming)
+    // Mark entry points (function nodes with outgoing call edges but no incoming calls)
     cy.nodes().forEach((node) => {
-      const hasOutgoing = node.outgoers("edge").length > 0;
-      const hasIncoming = node.incomers("edge").length > 0;
-      if (hasOutgoing && !hasIncoming) {
+      const data = node.data() as GraphNode;
+      if (data.kind === "variable") return; // Variables aren't entry points
+
+      const hasOutgoingCalls = node.outgoers("edge").some((e) => e.data("kind") === "calls");
+      const hasIncomingCalls = node.incomers("edge").some((e) => e.data("kind") === "calls");
+      if (hasOutgoingCalls && !hasIncomingCalls) {
         node.addClass("entry-point");
       }
     });
 
     cy.layout({
-      name: "cose",
-      fit: true,
-      padding: 30,
-      spacingFactor: 1.5,
+      name: "breadthfirst",
+      directed: true,
+      padding: 10,
+      spacingFactor: 0.8,
     }).run();
 
     cy.fit(undefined, 10);
