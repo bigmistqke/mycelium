@@ -865,11 +865,10 @@ program
     const descriptions = store.getAllDescriptions();
     const descMap = new Map(descriptions.map((d) => [d.entity_id, d]));
 
-    // Deduplicate edges by source+target
+    // Deduplicate edges by source+target+kind
     const edgeMap = new Map<string, { source: string; target: string; kind: string }>();
     for (const r of relations) {
-      if (r.kind !== "calls") continue;
-      const key = `${r.from_id}::${r.to_id}`;
+      const key = `${r.from_id}::${r.to_id}::${r.kind}`;
       if (!edgeMap.has(key)) {
         edgeMap.set(key, { source: r.from_id, target: r.to_id, kind: r.kind });
       }
@@ -917,8 +916,7 @@ program
 
     const edgeMap = new Map<string, { source: string; target: string; kind: string }>();
     for (const r of relations) {
-      if (r.kind !== "calls") continue;
-      const key = `${r.from_id}::${r.to_id}`;
+      const key = `${r.from_id}::${r.to_id}::${r.kind}`;
       if (!edgeMap.has(key)) {
         edgeMap.set(key, { source: r.from_id, target: r.to_id, kind: r.kind });
       }

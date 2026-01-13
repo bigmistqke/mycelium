@@ -1,5 +1,13 @@
 [
   {
+    "hash": "51819223152fa422be121431c00dbf4cedf78139",
+    "short_hash": "5181922",
+    "author": "bigmistqke",
+    "date": "2026-01-13T09:57:48+01:00",
+    "message": "fix: include reads/writes edges in graph export",
+    "files_changed": 1
+  },
+  {
     "hash": "36f1af699e0b430af76e0e1a430396245b80bd6f",
     "short_hash": "36f1af6",
     "author": "bigmistqke",
