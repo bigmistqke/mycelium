@@ -44,7 +44,7 @@ export class LouvainDetector implements CommunityDetector {
       resolution = 1,
       fastLocalMoves = true,
       randomWalk = true,
-      seed,
+      seed = 42, // Fixed seed for reproducible results
     } = options;
 
     // Build graphology graph (directed)
