@@ -9,6 +9,9 @@ import {
   CallExpression,
   SyntaxKind,
   Node,
+  ObjectLiteralExpression,
+  PropertyAssignment,
+  MethodDeclaration,
 } from "ts-morph";
 import { computeSignatureHash, computeImplHash } from "./hash.js";
 import type { Entity, Relation } from "./db.js";
@@ -246,6 +249,11 @@ export class TypeScriptAnalyzer {
         // Extract nested functions
         functions.push(...this.extractNestedFunctions(initializer, name, filePath));
       }
+      // Object literals with methods: const api = { method() {}, handler: () => {} }
+      else if (Node.isObjectLiteralExpression(initializer)) {
+        const objName = varDecl.getName();
+        functions.push(...this.extractObjectLiteralMethods(initializer, objName, filePath, sourceFile));
+      }
     }
 
     // Class methods
@@ -261,6 +269,9 @@ export class TypeScriptAnalyzer {
         functions.push(...this.extractNestedFunctions(method, fullName, filePath));
       }
     }
+
+    // Object literals passed as call arguments: expose({ start() {} })
+    functions.push(...this.extractCallArgumentMethods(sourceFile, filePath));
 
     return functions;
   }
@@ -310,6 +321,146 @@ export class TypeScriptAnalyzer {
     }
 
     return functions;
+  }
+
+  /**
+   * Extracts methods from an object literal assigned to a variable.
+   * Handles both shorthand methods: { method() {} } and property assignments: { method: () => {} }
+   */
+  private extractObjectLiteralMethods(
+    objLiteral: ObjectLiteralExpression,
+    objName: string,
+    filePath: string,
+    sourceFile: SourceFile
+  ): FunctionInfo[] {
+    const functions: FunctionInfo[] = [];
+
+    for (const prop of objLiteral.getProperties()) {
+      // Shorthand methods: { method() {} }
+      if (Node.isMethodDeclaration(prop)) {
+        const methodName = prop.getName();
+        const fullName = `${objName}::${methodName}`;
+        const info = this.createFunctionInfo(prop, fullName, filePath);
+        functions.push(info);
+        // Extract nested functions within the method
+        functions.push(...this.extractNestedFunctions(prop, fullName, filePath));
+      }
+      // Property assignments with function values: { method: () => {} } or { method: function() {} }
+      else if (Node.isPropertyAssignment(prop)) {
+        const init = prop.getInitializer();
+        if (init && (Node.isArrowFunction(init) || Node.isFunctionExpression(init))) {
+          const methodName = prop.getName();
+          const fullName = `${objName}::${methodName}`;
+          const info = this.createFunctionInfoFromMethod(prop, init, fullName, filePath);
+          functions.push(info);
+          // Extract nested functions within the method
+          functions.push(...this.extractNestedFunctions(init, fullName, filePath));
+        }
+      }
+    }
+
+    return functions;
+  }
+
+  /**
+   * Extracts methods from object literals passed as call arguments.
+   * Uses naming scheme: [line:col]funcName(argIdx)::methodName
+   */
+  private extractCallArgumentMethods(sourceFile: SourceFile, filePath: string): FunctionInfo[] {
+    const functions: FunctionInfo[] = [];
+    const processedObjects = new Set<ObjectLiteralExpression>();
+
+    for (const call of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
+      const args = call.getArguments();
+
+      for (let argIdx = 0; argIdx < args.length; argIdx++) {
+        const arg = args[argIdx];
+        if (!Node.isObjectLiteralExpression(arg)) continue;
+        if (processedObjects.has(arg)) continue;
+        processedObjects.add(arg);
+
+        // Get the callee name and position
+        const callee = call.getExpression();
+        const calleeName = Node.isIdentifier(callee)
+          ? callee.getText()
+          : Node.isPropertyAccessExpression(callee)
+            ? callee.getName()
+            : "call";
+
+        // For chained calls, get the position of the method name
+        const callPos = Node.isPropertyAccessExpression(callee)
+          ? callee.getNameNode().getStart()
+          : call.getStart();
+        const { line, column } = sourceFile.getLineAndColumnAtPos(callPos);
+
+        // Build the synthetic object name: [line:col]funcName(argIdx)
+        const syntheticObjName = `[${line}:${column}]${calleeName}(${argIdx})`;
+
+        // Determine nesting context
+        const scopePrefix = this.getScopePrefix(call, filePath);
+        const fullObjName = scopePrefix ? `${scopePrefix}::${syntheticObjName}` : syntheticObjName;
+
+        // Extract methods from the object literal
+        functions.push(...this.extractObjectLiteralMethods(arg, fullObjName, filePath, sourceFile));
+      }
+    }
+
+    return functions;
+  }
+
+  /**
+   * Gets the scope prefix for a node (e.g., "outerFn::innerFn" if inside nested functions).
+   */
+  private getScopePrefix(node: Node, filePath: string): string | null {
+    const scopes: string[] = [];
+    let current = node.getParent();
+
+    while (current) {
+      if (Node.isFunctionDeclaration(current)) {
+        const name = current.getName();
+        if (name) scopes.unshift(name);
+      } else if (Node.isArrowFunction(current) || Node.isFunctionExpression(current)) {
+        // Check if assigned to a variable
+        const parent = current.getParent();
+        if (parent && Node.isVariableDeclaration(parent)) {
+          scopes.unshift(parent.getName());
+        }
+      } else if (Node.isMethodDeclaration(current)) {
+        const name = current.getName();
+        // Check if in a class
+        const classParent = current.getParent();
+        if (classParent && Node.isClassDeclaration(classParent)) {
+          const className = classParent.getName() ?? "AnonymousClass";
+          scopes.unshift(`${className}.${name}`);
+        } else {
+          scopes.unshift(name);
+        }
+      }
+      current = current.getParent();
+    }
+
+    return scopes.length > 0 ? scopes.join("::") : null;
+  }
+
+  /**
+   * Creates FunctionInfo for a method defined as a property assignment with a function value.
+   */
+  private createFunctionInfoFromMethod(
+    prop: PropertyAssignment,
+    fn: ArrowFunction | FunctionExpression,
+    name: string,
+    filePath: string
+  ): FunctionInfo {
+    const startLine = prop.getStartLineNumber();
+    const endLine = prop.getEndLineNumber();
+    const id = `${filePath}::${name}`;
+
+    const params = fn.getParameters().map((p) => p.getText()).join(", ");
+    const returnType = fn.getReturnType().getText();
+    const signature = `(${params}) => ${returnType}`;
+    const body = fn.getBody()?.getText() ?? null;
+
+    return { id, name, filePath, startLine, endLine, signature, body, node: fn };
   }
 
   /**

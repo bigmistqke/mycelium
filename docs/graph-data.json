@@ -1066,6 +1066,160 @@
       "created_at": "2026-01-13T09:57:54.320321+01:00",
       "updated_at": "2026-01-13T09:57:54.320321+01:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"5181922\",\"confidence\":95}"
+    },
+    {
+      "id": 98,
+      "change_id": "e524d49c-d777-49fe-9e8c-2edcac4a8e76",
+      "node_type": "goal",
+      "title": "Support object literal methods in analyzer",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T10:35:23.236469+01:00",
+      "updated_at": "2026-01-13T10:35:23.236469+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90,\"prompt\":\"let's add tests for mycelium -> in results in ../eddy i can still see some failures, for example copyVideoFrameToBuffer not being called anywhere while it is called by the start-method in capture.worker.ts\"}"
+    },
+    {
+      "id": 99,
+      "change_id": "b81d8304-9999-43b5-8a2d-54075b236b05",
+      "node_type": "observation",
+      "title": "Root cause: expose({start(){}}) methods not extracted - shorthand methods in object literals missing from analyzer",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T10:35:28.004486+01:00",
+      "updated_at": "2026-01-13T10:35:28.004486+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 100,
+      "change_id": "8554f6e7-08bd-4320-9a46-1ebf80228e77",
+      "node_type": "decision",
+      "title": "Which object literal patterns to support",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T10:35:35.747902+01:00",
+      "updated_at": "2026-01-13T10:35:35.747902+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 101,
+      "change_id": "8ef57854-a0a6-47c4-892e-285ae0e6d3c3",
+      "node_type": "option",
+      "title": "All three: exported objects, non-exported assigned objects, objects as function arguments",
+      "description": null,
+      "status": "chosen",
+      "created_at": "2026-01-13T10:35:40.135038+01:00",
+      "updated_at": "2026-01-13T11:10:43.151364+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 102,
+      "change_id": "612d8f25-e9e6-4f8b-bbbf-e52230ae483d",
+      "node_type": "option",
+      "title": "Only assigned objects (export const api = {}, const utils = {})",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T10:35:40.161324+01:00",
+      "updated_at": "2026-01-13T10:35:40.161324+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":70}"
+    },
+    {
+      "id": 103,
+      "change_id": "ac4f86a8-a921-4a5a-b0bf-1f4236a35856",
+      "node_type": "option",
+      "title": "Only exported objects (export const api = {})",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T10:35:40.187905+01:00",
+      "updated_at": "2026-01-13T10:35:40.187905+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":50}"
+    },
+    {
+      "id": 104,
+      "change_id": "6a91057f-939e-46e3-bdf3-637755d9bcdb",
+      "node_type": "decision",
+      "title": "Naming scheme for object literal methods",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T10:35:48.059469+01:00",
+      "updated_at": "2026-01-13T10:35:48.059469+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 105,
+      "change_id": "14d2f05e-2fb3-4143-8140-e091321e978d",
+      "node_type": "option",
+      "title": "Use :: consistently: file.ts::api::method for assigned, file.ts::expose(0)::start for arguments",
+      "description": null,
+      "status": "chosen",
+      "created_at": "2026-01-13T10:35:52.840225+01:00",
+      "updated_at": "2026-01-13T11:10:43.141114+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 106,
+      "change_id": "0e5de4e4-f33d-4432-b21a-f0a628c92f7c",
+      "node_type": "option",
+      "title": "Use dot notation: file.ts::api.method (like class methods)",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T10:35:52.867512+01:00",
+      "updated_at": "2026-01-13T10:35:52.867512+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":60}"
+    },
+    {
+      "id": 107,
+      "change_id": "cdb9d5e9-7522-4dd6-8d94-8eef3691d5ca",
+      "node_type": "observation",
+      "title": "All function forms are equivalent: function X, const x = function, const x = () =>, { method(){} }, { method: () => } - only 'this' binding differs (not tracked by mycelium)",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T10:36:02.819601+01:00",
+      "updated_at": "2026-01-13T10:36:02.819601+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 108,
+      "change_id": "b494f0bf-612b-495d-8723-27e162ed5206",
+      "node_type": "observation",
+      "title": "For anonymous objects as arguments: use functionName(argIndex) as synthetic variable name, e.g. expose(0)::start for first arg's start method",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T10:36:10.669652+01:00",
+      "updated_at": "2026-01-13T10:36:10.669652+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 109,
+      "change_id": "dbda325e-54f1-4d3a-bd12-cb5256cc3c70",
+      "node_type": "observation",
+      "title": "For anonymous objects: include LOC to differentiate multiple calls. Format: file.ts::LOC:funcName(argIdx)::method e.g. file.ts::10:expose(0)::start",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T10:40:27.824170+01:00",
+      "updated_at": "2026-01-13T10:40:27.824170+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 110,
+      "change_id": "50e21344-0a7e-48fc-ae40-b0dfe57654e4",
+      "node_type": "observation",
+      "title": "Final naming scheme for anonymous object args: file.ts::scope::[line:col]funcName(argIdx)::method - brackets clearly mark call-site location, separates from :: hierarchy",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T11:09:49.490254+01:00",
+      "updated_at": "2026-01-13T11:09:49.490254+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 111,
+      "change_id": "c62560e8-a77e-4db5-8cbb-c0bfb087d950",
+      "node_type": "observation",
+      "title": "Example: curry({ a(){} }).next({ b(){} }) at line 20 becomes file.ts::[20:0]curry(0)::a and file.ts::[20:18]next(0)::b",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-13T11:09:59.671370+01:00",
+      "updated_at": "2026-01-13T11:09:59.671370+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
     }
   ],
   "edges": [
@@ -2069,6 +2223,149 @@
       "weight": 1.0,
       "rationale": "Bug fix",
       "created_at": "2026-01-13T09:57:54.331095+01:00"
+    },
+    {
+      "id": 92,
+      "from_node_id": 98,
+      "to_node_id": 99,
+      "from_change_id": "e524d49c-d777-49fe-9e8c-2edcac4a8e76",
+      "to_change_id": "b81d8304-9999-43b5-8a2d-54075b236b05",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Investigation finding",
+      "created_at": "2026-01-13T10:35:31.914560+01:00"
+    },
+    {
+      "id": 93,
+      "from_node_id": 98,
+      "to_node_id": 100,
+      "from_change_id": "e524d49c-d777-49fe-9e8c-2edcac4a8e76",
+      "to_change_id": "8554f6e7-08bd-4320-9a46-1ebf80228e77",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Scope decision",
+      "created_at": "2026-01-13T10:35:44.661887+01:00"
+    },
+    {
+      "id": 94,
+      "from_node_id": 100,
+      "to_node_id": 101,
+      "from_change_id": "8554f6e7-08bd-4320-9a46-1ebf80228e77",
+      "to_change_id": "8ef57854-a0a6-47c4-892e-285ae0e6d3c3",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Preferred - full coverage",
+      "created_at": "2026-01-13T10:35:44.670237+01:00"
+    },
+    {
+      "id": 95,
+      "from_node_id": 100,
+      "to_node_id": 102,
+      "from_change_id": "8554f6e7-08bd-4320-9a46-1ebf80228e77",
+      "to_change_id": "612d8f25-e9e6-4f8b-bbbf-e52230ae483d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Alternative - simpler",
+      "created_at": "2026-01-13T10:35:44.678654+01:00"
+    },
+    {
+      "id": 96,
+      "from_node_id": 100,
+      "to_node_id": 103,
+      "from_change_id": "8554f6e7-08bd-4320-9a46-1ebf80228e77",
+      "to_change_id": "ac4f86a8-a921-4a5a-b0bf-1f4236a35856",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Minimal scope",
+      "created_at": "2026-01-13T10:35:44.687070+01:00"
+    },
+    {
+      "id": 97,
+      "from_node_id": 98,
+      "to_node_id": 104,
+      "from_change_id": "e524d49c-d777-49fe-9e8c-2edcac4a8e76",
+      "to_change_id": "6a91057f-939e-46e3-bdf3-637755d9bcdb",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Naming decision",
+      "created_at": "2026-01-13T10:35:56.970709+01:00"
+    },
+    {
+      "id": 98,
+      "from_node_id": 104,
+      "to_node_id": 105,
+      "from_change_id": "6a91057f-939e-46e3-bdf3-637755d9bcdb",
+      "to_change_id": "14d2f05e-2fb3-4143-8140-e091321e978d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Preferred - consistent hierarchy",
+      "created_at": "2026-01-13T10:35:56.979169+01:00"
+    },
+    {
+      "id": 99,
+      "from_node_id": 104,
+      "to_node_id": 106,
+      "from_change_id": "6a91057f-939e-46e3-bdf3-637755d9bcdb",
+      "to_change_id": "0e5de4e4-f33d-4432-b21a-f0a628c92f7c",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Alternative - matches class syntax",
+      "created_at": "2026-01-13T10:35:57.001852+01:00"
+    },
+    {
+      "id": 100,
+      "from_node_id": 98,
+      "to_node_id": 107,
+      "from_change_id": "e524d49c-d777-49fe-9e8c-2edcac4a8e76",
+      "to_change_id": "cdb9d5e9-7522-4dd6-8d94-8eef3691d5ca",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Design principle",
+      "created_at": "2026-01-13T10:36:06.567867+01:00"
+    },
+    {
+      "id": 101,
+      "from_node_id": 105,
+      "to_node_id": 108,
+      "from_change_id": "14d2f05e-2fb3-4143-8140-e091321e978d",
+      "to_change_id": "b494f0bf-612b-495d-8723-27e162ed5206",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation detail",
+      "created_at": "2026-01-13T10:36:14.142064+01:00"
+    },
+    {
+      "id": 102,
+      "from_node_id": 108,
+      "to_node_id": 109,
+      "from_change_id": "b494f0bf-612b-495d-8723-27e162ed5206",
+      "to_change_id": "dbda325e-54f1-4d3a-bd12-cb5256cc3c70",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Refinement - adds LOC for uniqueness",
+      "created_at": "2026-01-13T10:40:32.410963+01:00"
+    },
+    {
+      "id": 103,
+      "from_node_id": 109,
+      "to_node_id": 110,
+      "from_change_id": "dbda325e-54f1-4d3a-bd12-cb5256cc3c70",
+      "to_change_id": "50e21344-0a7e-48fc-ae40-b0dfe57654e4",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Refinement - adds column for same-line disambiguation",
+      "created_at": "2026-01-13T11:09:54.639510+01:00"
+    },
+    {
+      "id": 104,
+      "from_node_id": 110,
+      "to_node_id": 111,
+      "from_change_id": "50e21344-0a7e-48fc-ae40-b0dfe57654e4",
+      "to_change_id": "c62560e8-a77e-4db5-8cbb-c0bfb087d950",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Concrete example",
+      "created_at": "2026-01-13T11:10:03.384988+01:00"
     }
   ]
 }
