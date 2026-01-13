@@ -522,21 +522,22 @@ export class TypeScriptAnalyzer {
   }
 
   /**
-   * Extracts methods from object literals passed as call arguments.
-   * Uses naming scheme: [line:col]funcName(argIdx)::methodName
+   * Extracts functions from call arguments: object literals and anonymous functions.
+   * Naming scheme:
+   * - Object literal methods: [line:col]funcName(argIdx).methodName
+   * - Anonymous functions: [line:col]funcName(argIdx)<anonymous>
+   * - Nested inside anonymous: [line:col]funcName(argIdx)<anonymous>::nestedFn
    */
   private extractCallArgumentMethods(sourceFile: SourceFile, filePath: string): FunctionInfo[] {
     const functions: FunctionInfo[] = [];
-    const processedObjects = new Set<ObjectLiteralExpression>();
+    const processedNodes = new Set<Node>();
 
     for (const call of sourceFile.getDescendantsOfKind(SyntaxKind.CallExpression)) {
       const args = call.getArguments();
 
       for (let argIdx = 0; argIdx < args.length; argIdx++) {
         const arg = args[argIdx];
-        if (!Node.isObjectLiteralExpression(arg)) continue;
-        if (processedObjects.has(arg)) continue;
-        processedObjects.add(arg);
+        if (processedNodes.has(arg)) continue;
 
         // Get the callee name and position
         const callee = call.getExpression();
@@ -552,15 +553,27 @@ export class TypeScriptAnalyzer {
           : call.getStart();
         const { line, column } = sourceFile.getLineAndColumnAtPos(callPos);
 
-        // Build the synthetic object name: [line:col]funcName(argIdx)
-        const syntheticObjName = `[${line}:${column}]${calleeName}(${argIdx})`;
+        // Build the synthetic name base: [line:col]funcName(argIdx)
+        const syntheticBase = `[${line}:${column}]${calleeName}(${argIdx})`;
 
         // Determine nesting context
         const scopePrefix = this.getScopePrefix(call, filePath);
-        const fullObjName = scopePrefix ? `${scopePrefix}::${syntheticObjName}` : syntheticObjName;
+        const fullBase = scopePrefix ? `${scopePrefix}::${syntheticBase}` : syntheticBase;
 
-        // Extract methods from the object literal
-        functions.push(...this.extractObjectLiteralMethods(arg, fullObjName, filePath, sourceFile));
+        // Handle object literals: { method() {} }
+        if (Node.isObjectLiteralExpression(arg)) {
+          processedNodes.add(arg);
+          functions.push(...this.extractObjectLiteralMethods(arg, fullBase, filePath, sourceFile));
+        }
+        // Handle anonymous functions: (args) => {} or function(args) {}
+        else if (Node.isArrowFunction(arg) || Node.isFunctionExpression(arg)) {
+          processedNodes.add(arg);
+          const anonName = `${fullBase}<anonymous>`;
+          const info = this.createFunctionInfo(arg, anonName, filePath);
+          functions.push(info);
+          // Extract nested functions within the anonymous function
+          functions.push(...this.extractNestedFunctions(arg, anonName, filePath));
+        }
       }
     }
 
