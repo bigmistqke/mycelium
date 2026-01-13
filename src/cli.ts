@@ -4,7 +4,6 @@ import { execSync, spawn } from "child_process";
 import { existsSync, readFileSync, mkdirSync, writeFileSync, cpSync } from "fs";
 import { resolve, dirname, join } from "path";
 import { fileURLToPath } from "url";
-import enquirer from "enquirer";
 import { GraphStore } from "./db.js";
 import { TypeScriptAnalyzer } from "./analyzer.js";
 
@@ -233,80 +232,69 @@ program
   });
 
 program
-  .command("query")
-  .description("Smart query: search, show context, or query relationships")
-  .argument("<target>", "Search pattern or entity ID")
+  .command("find")
+  .description("Search for entities by name or description")
+  .argument("<pattern>", "Search pattern (partial match)")
   .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
-  .option("--calls", "Show what the entity calls")
-  .option("--callers", "Show what calls the entity")
-  .option("--trace <to>", "Find call path to another entity")
   .option("--desc", "Search in descriptions instead of names")
-  .option("--fuzzy", "List all matches instead of selecting")
-  .option("--source", "Show source code of the entity")
-  .action(async (target, options) => {
+  .action((pattern, options) => {
     const store = new GraphStore(resolve(options.db));
     const entities = store.getEntities();
     const descriptions = store.getAllDescriptions();
     const descMap = new Map(descriptions.map((d) => [d.entity_id, d.content]));
 
-    // Helper: find entities matching a pattern
-    const findMatches = (pattern: string) => {
-      const lower = pattern.toLowerCase();
-      if (options.desc) {
-        return entities.filter((e) => {
-          const desc = descMap.get(e.id);
-          return desc?.toLowerCase().includes(lower);
-        });
-      }
-      return entities.filter(
-        (e) =>
-          e.name.toLowerCase().includes(lower) ||
-          e.id.toLowerCase().includes(lower)
-      );
-    };
+    const lower = pattern.toLowerCase();
+    const matches = options.desc
+      ? entities.filter((e) => descMap.get(e.id)?.toLowerCase().includes(lower))
+      : entities.filter(
+          (e) =>
+            e.name.toLowerCase().includes(lower) ||
+            e.id.toLowerCase().includes(lower)
+        );
 
-    // Helper: resolve pattern to single entity (with interactive select if ambiguous)
-    const resolveEntity = async (pattern: string) => {
-      // Exact match if pattern contains ::
-      if (pattern.includes("::")) {
-        const entity = entities.find((e) => e.id === pattern);
-        if (!entity) {
-          console.error(`Entity not found: ${pattern}`);
-          console.error(`Use --fuzzy to search for partial matches`);
-          process.exit(1);
+    if (matches.length === 0) {
+      console.log(`No entities found matching "${pattern}"`);
+    } else {
+      console.log(`\nFound ${matches.length} entities:\n`);
+      for (const e of matches) {
+        console.log(`  ${e.id}`);
+        console.log(`    ${e.file_path}:${e.start_line}-${e.end_line}`);
+        const desc = descMap.get(e.id);
+        if (desc) {
+          console.log(`    ${desc.slice(0, 60)}${desc.length > 60 ? "..." : ""}`);
         }
-        return entity;
+        console.log();
       }
-      const matches = findMatches(pattern);
-      if (matches.length === 0) {
-        console.error(`No entities found matching "${pattern}"`);
-        process.exit(1);
-      }
-      if (matches.length === 1) {
-        return matches[0];
-      }
-      // Multiple matches - interactive select
-      const { Select } = enquirer as any;
-      const prompt = new Select({
-        name: "entity",
-        message: `Multiple matches for "${pattern}":`,
-        choices: matches.slice(0, 15).map((e) => ({
-          name: e.id,
-          message: `${e.name} (${e.file_path}:${e.start_line})`,
-          value: e.id,
-        })),
-      });
-      try {
-        const selected = await prompt.run();
-        return matches.find((e) => e.id === selected)!;
-      } catch {
-        process.exit(0);
-      }
-    };
+    }
+
+    store.close();
+  });
+
+program
+  .command("query")
+  .description("Query an entity by exact ID")
+  .argument("<id>", "Entity ID (use 'find' to search)")
+  .option("-d, --db <path>", "Database path", DEFAULT_DB_PATH)
+  .option("--calls", "Show what the entity calls")
+  .option("--callers", "Show what calls the entity")
+  .option("--trace <to>", "Find call path to another entity")
+  .option("--source", "Show source code of the entity")
+  .action((id, options) => {
+    const store = new GraphStore(resolve(options.db));
+    const entities = store.getEntities();
+    const descriptions = store.getAllDescriptions();
+    const descMap = new Map(descriptions.map((d) => [d.entity_id, d.content]));
+
+    const entity = entities.find((e) => e.id === id);
+    if (!entity) {
+      console.error(`Entity not found: ${id}`);
+      console.error(`Use 'mycelium find <pattern>' to search for entities`);
+      store.close();
+      process.exit(1);
+    }
 
     // --calls: show what entity calls
     if (options.calls) {
-      const entity = await resolveEntity(target);
       const callees = store.getCallees(entity.id);
       console.log(`\n${entity.id} calls:\n`);
       for (const e of callees) {
@@ -320,7 +308,6 @@ program
 
     // --callers: show what calls entity
     if (options.callers) {
-      const entity = await resolveEntity(target);
       const callers = store.getCallers(entity.id);
       console.log(`\n${entity.id} is called by:\n`);
       for (const e of callers) {
@@ -332,26 +319,30 @@ program
       return;
     }
 
-    // --trace: find path between entities
+    // --trace: find path to another entity
     if (options.trace) {
-      const from = await resolveEntity(target);
-      const to = await resolveEntity(options.trace);
+      const toEntity = entities.find((e) => e.id === options.trace);
+      if (!toEntity) {
+        console.error(`Target entity not found: ${options.trace}`);
+        store.close();
+        process.exit(1);
+      }
 
       // BFS to find path
       const visited = new Set<string>();
-      const queue: { id: string; path: string[] }[] = [{ id: from.id, path: [from.id] }];
+      const queue: { id: string; path: string[] }[] = [{ id: entity.id, path: [entity.id] }];
       let found: string[] | null = null;
 
       while (queue.length > 0 && !found) {
-        const { id, path } = queue.shift()!;
-        if (id === to.id) {
+        const { id: currentId, path } = queue.shift()!;
+        if (currentId === toEntity.id) {
           found = path;
           break;
         }
-        if (visited.has(id)) continue;
-        visited.add(id);
+        if (visited.has(currentId)) continue;
+        visited.add(currentId);
 
-        const callees = store.getCallees(id);
+        const callees = store.getCallees(currentId);
         for (const callee of callees) {
           if (!visited.has(callee.id)) {
             queue.push({ id: callee.id, path: [...path, callee.id] });
@@ -360,35 +351,13 @@ program
       }
 
       if (found) {
-        console.log(`\nPath from ${from.name} to ${to.name}:\n`);
+        console.log(`\nPath from ${entity.name} to ${toEntity.name}:\n`);
         for (let i = 0; i < found.length; i++) {
           const prefix = i === 0 ? "  " : "  → ";
           console.log(`${prefix}${found[i]}`);
         }
       } else {
-        console.log(`\nNo path found from ${from.id} to ${to.id}`);
-      }
-      store.close();
-      return;
-    }
-
-    // --fuzzy: list all matches
-    if (options.fuzzy) {
-      const matches = findMatches(target);
-      if (matches.length === 0) {
-        console.log(`No entities found matching "${target}"`);
-      } else {
-        console.log(`\nFound ${matches.length} entities:\n`);
-        for (const e of matches) {
-          console.log(`  ${e.id}`);
-          console.log(`    ${e.file_path}:${e.start_line}-${e.end_line}`);
-          console.log(`    ${e.signature}`);
-          const desc = descMap.get(e.id);
-          if (desc) {
-            console.log(`    ${desc.slice(0, 80)}${desc.length > 80 ? "..." : ""}`);
-          }
-          console.log();
-        }
+        console.log(`\nNo path found from ${entity.id} to ${toEntity.id}`);
       }
       store.close();
       return;
@@ -396,7 +365,6 @@ program
 
     // --source: show source code
     if (options.source) {
-      const entity = await resolveEntity(target);
       const filePath = resolve(entity.file_path);
 
       if (!existsSync(filePath)) {
@@ -425,8 +393,7 @@ program
       return;
     }
 
-    // No flags: resolve entity and show context
-    const entity = await resolveEntity(target);
+    // No flags: show context
     const desc = descMap.get(entity.id);
     const callers = store.getCallers(entity.id);
     const callees = store.getCallees(entity.id);
