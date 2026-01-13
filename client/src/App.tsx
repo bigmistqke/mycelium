@@ -63,6 +63,7 @@ function App() {
               <div class="no-selection">
                 <p>Click a node to see details</p>
                 <div class="legend">
+                  <h4>Nodes</h4>
                   <div class="legend-item">
                     <span class="legend-dot entry-point" />
                     <span>Entry point</span>
@@ -70,6 +71,23 @@ function App() {
                   <div class="legend-item">
                     <span class="legend-dot regular" />
                     <span>Function</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-dot variable" />
+                    <span>Variable</span>
+                  </div>
+                  <h4>Edges</h4>
+                  <div class="legend-item">
+                    <span class="legend-line calls" />
+                    <span>Calls</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-line reads" />
+                    <span>Reads</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-line writes" />
+                    <span>Writes</span>
                   </div>
                 </div>
               </div>

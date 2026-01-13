@@ -1,5 +1,13 @@
 [
   {
+    "hash": "36f1af699e0b430af76e0e1a430396245b80bd6f",
+    "short_hash": "36f1af6",
+    "author": "bigmistqke",
+    "date": "2026-01-13T09:50:47+01:00",
+    "message": "feat: update legend with variable nodes and edge types",
+    "files_changed": 2
+  },
+  {
     "hash": "f30aa3eef4990bc79c7f32c232550a58ebfc334b",
     "short_hash": "f30aa3e",
     "author": "bigmistqke",
