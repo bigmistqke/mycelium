@@ -1,48 +1,9 @@
 {
-  "name": "@bigmistqke/mycelium",
-  "version": "0.1.0",
-  "description": "Semantic code graph for TypeScript codebases with multi-resolution understanding",
-  "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.d.ts",
-  "engines": {
-    "node": ">=24"
-  },
-  "bin": {
-    "mycelium": "src/cli.ts"
-  },
-  "files": [
-    "src",
-    "templates"
-  ],
+  "name": "mycelium",
+  "private": true,
+  "description": "Intent-driven programming substrate",
   "scripts": {
-    "build": "tsc",
-    "test": "vitest run",
-    "sync": "node src/cli.ts sync"
-  },
-  "keywords": [
-    "typescript",
-    "code-analysis",
-    "knowledge-graph",
-    "sqlite"
-  ],
-  "license": "MIT",
-  "dependencies": {
-    "better-sqlite3": "^12.6.0",
-    "commander": "^14.0.2",
-    "graphology": "^0.26.0",
-    "graphology-communities-louvain": "^2.0.2",
-    "ts-morph": "^27.0.2",
-    "typescript": "^5.9.3"
-  },
-  "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^25.0.6",
-    "vitest": "^4.0.17"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3"
-    ]
+    "test": "pnpm -r test",
+    "build": "pnpm -r build"
   }
 }

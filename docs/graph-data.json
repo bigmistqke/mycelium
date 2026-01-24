@@ -2045,6 +2045,193 @@
       "created_at": "2026-01-13T23:22:44.907639+01:00",
       "updated_at": "2026-01-13T23:22:44.907639+01:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"1ee4e66\",\"confidence\":90}"
+    },
+    {
+      "id": 187,
+      "change_id": "531a552b-0557-431e-a6ab-b42e9ffdb9e8",
+      "node_type": "goal",
+      "title": "Rethink architecture: scopes + side-effects + data-flow",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-14T14:14:13.331400+01:00",
+      "updated_at": "2026-01-14T14:14:13.331400+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":80,\"prompt\":\"i was thinking the following: we are mixing up different contexts and i propose to split the problem up and explore the problem space from a scaling perspective: 1. instead of functions and reads/writes -> let's think in SCOPES and side-effects 2. let's think in data-flow within scopes and sub-scopes -> we are trying to capture flow and dependencies\"}"
+    },
+    {
+      "id": 188,
+      "change_id": "4bffc2ca-546e-4fe7-9606-31da4c4b545c",
+      "node_type": "observation",
+      "title": "Scopes = JS scopes exactly: module, function, block. Binding belongs to one scope. Reference crossing = side-effect. Severity = boundaries crossed.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-14T14:16:15.901860+01:00",
+      "updated_at": "2026-01-14T14:16:15.901860+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 189,
+      "change_id": "8975e9b1-7f1e-4c88-8883-114861cb41d3",
+      "node_type": "observation",
+      "title": "Composition: scopes as components with ports. Captures = input ports (from parent). Yields = output ports (to parent). Each scope only tracks own bindings. Cross-scope via port edges.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-14T14:27:52.538391+01:00",
+      "updated_at": "2026-01-14T14:27:52.538391+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 190,
+      "change_id": "1c6f6543-90d1-4ce7-a63a-25a96405ec9f",
+      "node_type": "observation",
+      "title": "Separate data-flow (values through bindings) from control-flow (how execution exits). Scopes have multiple exit points: return, break, yield, throw. Each exit has associated data-flow.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-14T14:29:45.036127+01:00",
+      "updated_at": "2026-01-14T14:29:45.036127+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":80}"
+    },
+    {
+      "id": 191,
+      "change_id": "ee5edefb-60ef-4d46-9a51-1a033425fa54",
+      "node_type": "observation",
+      "title": "Use case unclear. Complete control-flow capture impossible in dynamic JS. Value is in net of relations + scope boundary crossings - reveals codebase structure that reading cannot.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-14T14:33:13.860504+01:00",
+      "updated_at": "2026-01-14T14:33:13.860504+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 192,
+      "change_id": "710feecd-75ec-4f4f-81fe-1be045fde922",
+      "node_type": "decision",
+      "title": "Mycelium as topology analyzer, not semantic analyzer",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-14T14:36:43.435002+01:00",
+      "updated_at": "2026-01-14T14:36:43.435002+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 193,
+      "change_id": "fd835e4b-3bac-40dd-b089-a0023ce89263",
+      "node_type": "option",
+      "title": "Focus on scope boundaries and crossing patterns rather than execution semantics",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-14T14:36:46.921649+01:00",
+      "updated_at": "2026-01-14T14:36:46.921649+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 194,
+      "change_id": "17c95ae7-75ab-470f-a6bd-3ceed1a4236b",
+      "node_type": "observation",
+      "title": "Two layers: 1) Static topology (scopes/crossings) 2) Data-flow within scope (input→output chains). Can 'execute' dataflow to get transitive dependencies of outputs.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-14T14:38:18.542705+01:00",
+      "updated_at": "2026-01-14T14:38:18.542705+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 195,
+      "change_id": "f7676109-a1a1-4ecc-a8c6-c8fdbc21f709",
+      "node_type": "observation",
+      "title": "Branches: capture all paths, don't resolve which. Output depends on union of all possible paths. Conservative/sound - shows everything that COULD affect output.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-14T14:40:00.418573+01:00",
+      "updated_at": "2026-01-14T14:40:00.418573+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 196,
+      "change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "node_type": "observation",
+      "title": "Intent-first programming: code should be a derivative of intent, not a separate artifact requiring constant interpretation. Current LLM workflows are noisy because they reverse-engineer intent from code.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:26:20.435889+01:00",
+      "updated_at": "2026-01-24T01:26:20.435889+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 197,
+      "change_id": "40ad819f-bdee-4fcb-bb34-83f2565b88fd",
+      "node_type": "observation",
+      "title": "GAN metaphor for human-AI collaboration: humans specify structure/blocks (macro), AI fills in detail (micro). Like sketching composition and having model paint texture. Token-based LLM interface is wrong abstraction layer.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:26:21.073697+01:00",
+      "updated_at": "2026-01-24T01:26:21.073697+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 198,
+      "change_id": "25954be0-cd62-48dc-b6ed-be25940771e6",
+      "node_type": "observation",
+      "title": "WASM/WAT as compilation target: minimal syntax (S-expressions = trees), type-safe, portable (browser/server/edge), AI-friendly. Graph nodes → WAT functions/structs, edges → references/calls. Human rarely touches WAT directly.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:26:21.662457+01:00",
+      "updated_at": "2026-01-24T01:26:21.662457+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 199,
+      "change_id": "73b3bf89-6f22-4315-a744-1c38ffc458cd",
+      "node_type": "observation",
+      "title": "Bidirectional mapping is critical: changes to intent graph update code, changes to code update intent graph. Without bidirectionality, architectural drift still happens - AI paints on top of mistakes.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:26:22.287859+01:00",
+      "updated_at": "2026-01-24T01:26:22.287859+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 200,
+      "change_id": "b4d25c6a-ad4e-40ba-8904-a456140e4b5d",
+      "node_type": "observation",
+      "title": "Static analysis + constraint validation underutilized in LLM workflows. AI could drive CLI tools to: cluster similar constraints, highlight conflicts, track invariants against code, enforce conventions. Type-checking for intent, not just syntax.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:26:22.762324+01:00",
+      "updated_at": "2026-01-24T01:26:22.762324+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 201,
+      "change_id": "7731edca-9122-4af4-8422-168119c6da89",
+      "node_type": "observation",
+      "title": "Mycelium as foundation for intent-first programming: already tracks semantic structure (scopes, crossings, data-flow). Missing pieces: constraint encoding, simulation layer, bidirectional sync with source, LLM-driven synthesis from graph.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:26:23.076547+01:00",
+      "updated_at": "2026-01-24T01:26:23.076547+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 202,
+      "change_id": "7548c063-fa34-4f0c-83c9-47d920aa9e96",
+      "node_type": "observation",
+      "title": "Layered architecture vision: Human Intent (words/constraints) → Shared Intent Graph (nodes/edges) → AI Synthesis + Static Analysis → Code/Artifacts. Feedback loops close the gap: simulation → graph → human refinement.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:26:23.272156+01:00",
+      "updated_at": "2026-01-24T01:26:23.272156+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 203,
+      "change_id": "04b78827-bccc-408f-a178-6c7f1f215cef",
+      "node_type": "observation",
+      "title": "Deciduous captures decisions, mycelium captures code topology. Together they could form the 'shared intent substrate' - deciduous tracks why (reasoning/goals), mycelium tracks what (semantic structure).",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:26:23.446149+01:00",
+      "updated_at": "2026-01-24T01:26:23.446149+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
     }
   ],
   "edges": [
@@ -4016,6 +4203,193 @@
       "weight": 1.0,
       "rationale": "Continued dataflow tracking",
       "created_at": "2026-01-13T23:22:44.918721+01:00"
+    },
+    {
+      "id": 180,
+      "from_node_id": 1,
+      "to_node_id": 187,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "531a552b-0557-431e-a6ab-b42e9ffdb9e8",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Fundamental architectural reframe",
+      "created_at": "2026-01-14T14:14:17.643769+01:00"
+    },
+    {
+      "id": 181,
+      "from_node_id": 187,
+      "to_node_id": 188,
+      "from_change_id": "531a552b-0557-431e-a6ab-b42e9ffdb9e8",
+      "to_change_id": "4bffc2ca-546e-4fe7-9606-31da4c4b545c",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Clarifies scope model",
+      "created_at": "2026-01-14T14:16:19.856531+01:00"
+    },
+    {
+      "id": 182,
+      "from_node_id": 188,
+      "to_node_id": 189,
+      "from_change_id": "4bffc2ca-546e-4fe7-9606-31da4c4b545c",
+      "to_change_id": "8975e9b1-7f1e-4c88-8883-114861cb41d3",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Solves duplication via composition",
+      "created_at": "2026-01-14T14:27:55.538664+01:00"
+    },
+    {
+      "id": 183,
+      "from_node_id": 189,
+      "to_node_id": 190,
+      "from_change_id": "8975e9b1-7f1e-4c88-8883-114861cb41d3",
+      "to_change_id": "1c6f6543-90d1-4ce7-a63a-25a96405ec9f",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Control-flow complicates simple yields model",
+      "created_at": "2026-01-14T14:29:50.018865+01:00"
+    },
+    {
+      "id": 184,
+      "from_node_id": 190,
+      "to_node_id": 191,
+      "from_change_id": "1c6f6543-90d1-4ce7-a63a-25a96405ec9f",
+      "to_change_id": "ee5edefb-60ef-4d46-9a51-1a033425fa54",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Refocuses on core value proposition",
+      "created_at": "2026-01-14T14:33:16.890340+01:00"
+    },
+    {
+      "id": 185,
+      "from_node_id": 191,
+      "to_node_id": 192,
+      "from_change_id": "ee5edefb-60ef-4d46-9a51-1a033425fa54",
+      "to_change_id": "710feecd-75ec-4f4f-81fe-1be045fde922",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Leads to purpose clarification",
+      "created_at": "2026-01-14T14:36:50.083823+01:00"
+    },
+    {
+      "id": 186,
+      "from_node_id": 192,
+      "to_node_id": 193,
+      "from_change_id": "710feecd-75ec-4f4f-81fe-1be045fde922",
+      "to_change_id": "fd835e4b-3bac-40dd-b089-a0023ce89263",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Chosen direction",
+      "created_at": "2026-01-14T14:36:50.094169+01:00"
+    },
+    {
+      "id": 187,
+      "from_node_id": 193,
+      "to_node_id": 194,
+      "from_change_id": "fd835e4b-3bac-40dd-b089-a0023ce89263",
+      "to_change_id": "17c95ae7-75ab-470f-a6bd-3ceed1a4236b",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Adds data-flow layer on top of topology",
+      "created_at": "2026-01-14T14:38:23.295430+01:00"
+    },
+    {
+      "id": 188,
+      "from_node_id": 194,
+      "to_node_id": 195,
+      "from_change_id": "17c95ae7-75ab-470f-a6bd-3ceed1a4236b",
+      "to_change_id": "f7676109-a1a1-4ecc-a8c6-c8fdbc21f709",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Clarifies branching behavior",
+      "created_at": "2026-01-14T14:40:05.978710+01:00"
+    },
+    {
+      "id": 189,
+      "from_node_id": 1,
+      "to_node_id": 196,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Vision exploration from ChatGPT conversation",
+      "created_at": "2026-01-24T01:26:34.779610+01:00"
+    },
+    {
+      "id": 190,
+      "from_node_id": 196,
+      "to_node_id": 197,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "40ad819f-bdee-4fcb-bb34-83f2565b88fd",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Metaphor for how intent-first could work",
+      "created_at": "2026-01-24T01:26:34.919757+01:00"
+    },
+    {
+      "id": 191,
+      "from_node_id": 196,
+      "to_node_id": 198,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "25954be0-cd62-48dc-b6ed-be25940771e6",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Concrete compilation target for intent-derived code",
+      "created_at": "2026-01-24T01:26:35.053474+01:00"
+    },
+    {
+      "id": 192,
+      "from_node_id": 196,
+      "to_node_id": 199,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "73b3bf89-6f22-4315-a744-1c38ffc458cd",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Key requirement for intent-first to work",
+      "created_at": "2026-01-24T01:26:35.187051+01:00"
+    },
+    {
+      "id": 193,
+      "from_node_id": 196,
+      "to_node_id": 200,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "b4d25c6a-ad4e-40ba-8904-a456140e4b5d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Validation layer for intent-derived code",
+      "created_at": "2026-01-24T01:26:35.326313+01:00"
+    },
+    {
+      "id": 194,
+      "from_node_id": 196,
+      "to_node_id": 202,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "7548c063-fa34-4f0c-83c9-47d920aa9e96",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Architecture for the intent-first stack",
+      "created_at": "2026-01-24T01:26:35.462038+01:00"
+    },
+    {
+      "id": 195,
+      "from_node_id": 1,
+      "to_node_id": 201,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "7731edca-9122-4af4-8422-168119c6da89",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "How mycelium fits into intent-first vision",
+      "created_at": "2026-01-24T01:26:35.599126+01:00"
+    },
+    {
+      "id": 196,
+      "from_node_id": 1,
+      "to_node_id": 203,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "04b78827-bccc-408f-a178-6c7f1f215cef",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Deciduous + mycelium = shared intent substrate",
+      "created_at": "2026-01-24T01:26:35.739655+01:00"
     }
   ]
 }
