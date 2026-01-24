@@ -28,7 +28,7 @@ intent → graph → code (derived)
 
 Code becomes a compilation target. Intent becomes the source. The graph is the shared substrate where both humans and AI operate.
 
-**Key principle: Mycelium is NOT a new language.** The graph is the abstraction layer; output is existing languages (WAT, TypeScript, Rust, etc.). We build on shoulders of giants, not compete with them. This avoids the adoption barrier that killed Intentional Programming.
+**Key principle: Mycelium is NOT a new language.** The graph is the abstraction layer; output is existing languages (WAT, TypeScript, Rust, etc.). We build on shoulders of giants, not compete with them.
 
 ## v0: Analyzing What Exists
 

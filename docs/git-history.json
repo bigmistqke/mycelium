@@ -1,10 +1,10 @@
 [
   {
-    "hash": "ab086efa2d7404044b5b99f5e388f94fce5b1d90",
-    "short_hash": "ab086ef",
+    "hash": "92eb157870ff6418c74a0ad1f972c5942e190d9a",
+    "short_hash": "92eb157",
     "author": "bigmistqke",
-    "date": "2026-01-24T12:36:39+01:00",
-    "message": "docs: sync decision graph with expanded prior art",
+    "date": "2026-01-24T12:49:30+01:00",
+    "message": "docs: sync decision graph",
     "files_changed": 2
   },
   {
