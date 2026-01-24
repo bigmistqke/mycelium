@@ -172,6 +172,52 @@ The intent graph is the "schematic" of software. Code is the "layout"—derived,
 
 Software has none of this. We write code directly, then try to reverse-engineer whether it matches intent.
 
+## AI Techniques Beyond LLMs
+
+LLMs are stochastic approximators, not solvers. They're good at fuzzy reasoning and synthesis, but constraint enforcement needs deterministic tools. The future stack likely combines multiple AI approaches:
+
+### Relevant Techniques
+
+**Diffusion models / iterative refinement**
+Not single-shot generation, but a loop: propose → critique → refine → converge. Maps well to architecture evolution.
+
+**Editable latent spaces**
+Edit intent directly without patching artifacts. Today's LLMs only let you edit the output (code), not the latent intent that produced it.
+
+**Neuro-symbolic systems**
+Symbolic structures (graphs, constraints, types) + neural models share state:
+- Symbolic = discrete logic, hard constraints
+- Neural = fuzzy generative detail
+- Together = intent ↔ implementation bridge
+
+**Differentiable programming**
+Optimize over intent → execution mappings. Declare "minimize latency under throughput constraint X" and let the compiler search the implementation space.
+
+**World-model AIs**
+Persistent understanding of states, goals, actions, consequences. Avoids stateless LLM drift where each session starts fresh.
+
+**Tool-using agents**
+Model invokes: solvers, CLI, compilers, simulators, verifiers. Offloads precise work to deterministic tools instead of hallucinating.
+
+### The Pattern
+
+Human and machine operate on the **same representation of the problem**, not just the artifact.
+
+Today we only share artifacts (tokens, code, diffs). We don't share the latent intent space. The graph is that shared space.
+
+### Division of Labor
+
+| Task | Tool |
+|------|------|
+| Fuzzy reasoning, ideation | LLMs |
+| Structure manipulation | Graph operations |
+| Constraint solving | SAT/SMT solvers |
+| Type checking | Type systems |
+| Simulation | Deterministic execution |
+| Synthesis | Compiler/codegen |
+
+LLMs are the "texture generator" — they fill in detail. But the structure comes from the graph, and validation comes from solvers.
+
 ## Compilation Targets
 
 Syntax is noise. The ideal target is:
