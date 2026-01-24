@@ -1,10 +1,18 @@
 [
   {
-    "hash": "96475fe5eb05f085690c200b7737ad93730b3de6",
-    "short_hash": "96475fe",
+    "hash": "c4d592fb31d617c33696a0aeabca1c8096823827",
+    "short_hash": "c4d592f",
     "author": "bigmistqke",
-    "date": "2026-01-24T01:57:16+01:00",
-    "message": "docs: sync decision graph with AI techniques observations",
+    "date": "2026-01-24T02:04:13+01:00",
+    "message": "feat: initialize v1 package with graph, WAT, and constraints scaffolding\n\nv1 scope: Graph ↔ WAT + Simple Constraints\n- Graph schema (nodes, edges, constraint attributes)\n- Graph → WAT generation (stub)\n- WAT → Graph parsing (stub)\n- Constraint validation (must_call, must_not_call, pure, no_side_effects)\n\nProves: graph is primary, code is derived, constraints validated deterministically.",
+    "files_changed": 8
+  },
+  {
+    "hash": "e0aa8b13b84d1fa98e9a2e5884f3df47d94b387d",
+    "short_hash": "e0aa8b1",
+    "author": "bigmistqke",
+    "date": "2026-01-24T01:58:54+01:00",
+    "message": "docs: sync decision graph",
     "files_changed": 2
   },
   {

@@ -2419,6 +2419,39 @@
       "created_at": "2026-01-24T01:58:29.151529+01:00",
       "updated_at": "2026-01-24T01:58:29.151529+01:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 221,
+      "change_id": "36a72268-5c34-45db-a06e-2d7cb0744b42",
+      "node_type": "goal",
+      "title": "v1: Graph ↔ WAT + Simple Constraints - prove graph is primary, code is derived, constraints validated deterministically",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T02:03:15.470498+01:00",
+      "updated_at": "2026-01-24T02:03:15.470498+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 222,
+      "change_id": "b754e3a6-d658-4c0f-a91a-9795fc321a0d",
+      "node_type": "decision",
+      "title": "v1 scope: graph schema, graph→WAT generation, WAT→graph parsing, constraint validation CLI. No LLM, no UI, no simulation.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T02:03:15.746518+01:00",
+      "updated_at": "2026-01-24T02:03:15.746518+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 223,
+      "change_id": "2330e5f7-1ecd-440b-adbc-2d999bcb6c2c",
+      "node_type": "action",
+      "title": "Scaffolded v1 package: graph schema, WAT generation/parsing stubs, constraint validation",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T02:04:20.012849+01:00",
+      "updated_at": "2026-01-24T02:04:20.012849+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"c4d592f\",\"confidence\":95}"
     }
   ],
   "edges": [
@@ -4764,6 +4797,39 @@
       "weight": 1.0,
       "rationale": "Automation reduces burden",
       "created_at": "2026-01-24T01:58:34.321497+01:00"
+    },
+    {
+      "id": 214,
+      "from_node_id": 1,
+      "to_node_id": 221,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "36a72268-5c34-45db-a06e-2d7cb0744b42",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Next major version",
+      "created_at": "2026-01-24T02:03:22.310313+01:00"
+    },
+    {
+      "id": 215,
+      "from_node_id": 221,
+      "to_node_id": 222,
+      "from_change_id": "36a72268-5c34-45db-a06e-2d7cb0744b42",
+      "to_change_id": "b754e3a6-d658-4c0f-a91a-9795fc321a0d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Scope definition",
+      "created_at": "2026-01-24T02:03:22.344481+01:00"
+    },
+    {
+      "id": 216,
+      "from_node_id": 222,
+      "to_node_id": 223,
+      "from_change_id": "b754e3a6-d658-4c0f-a91a-9795fc321a0d",
+      "to_change_id": "2330e5f7-1ecd-440b-adbc-2d999bcb6c2c",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Initial implementation",
+      "created_at": "2026-01-24T02:04:20.270525+01:00"
     }
   ]
 }
