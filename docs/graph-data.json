@@ -3233,6 +3233,17 @@
       "created_at": "2026-01-24T17:44:50.447073+01:00",
       "updated_at": "2026-01-24T17:44:50.447073+01:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 295,
+      "change_id": "4d558160-8c41-4f1e-ae89-4e6968e235b3",
+      "node_type": "outcome",
+      "title": "v2: examples (max, abs, calculator), dataflow→WAT compiler, protocol command",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T17:49:42.594403+01:00",
+      "updated_at": "2026-01-24T17:49:42.594403+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"23930b1\",\"confidence\":95}"
     }
   ],
   "edges": [
@@ -6502,6 +6513,17 @@
       "weight": 1.0,
       "rationale": "Potential backend",
       "created_at": "2026-01-24T17:44:56.222803+01:00"
+    },
+    {
+      "id": 298,
+      "from_node_id": 274,
+      "to_node_id": 295,
+      "from_change_id": "fca8a060-f02f-4655-bc0e-faf27813b0a2",
+      "to_change_id": "4d558160-8c41-4f1e-ae89-4e6968e235b3",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation",
+      "created_at": "2026-01-24T17:49:48.309599+01:00"
     }
   ]
 }

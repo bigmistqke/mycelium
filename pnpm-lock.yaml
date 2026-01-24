@@ -55,6 +55,15 @@ importers:
         specifier: ^4.0.0
         version: 4.0.18(@types/node@22.19.7)
 
+  packages/v2:
+    devDependencies:
+      vite:
+        specifier: ^7.3.1
+        version: 7.3.1(@types/node@25.0.10)
+      wabt:
+        specifier: ^1.0.39
+        version: 1.0.39
+
 packages:
 
   '@esbuild/aix-ppc64@0.27.2':
@@ -761,6 +770,10 @@ packages:
       jsdom:
         optional: true
 
+  wabt@1.0.39:
+    resolution: {integrity: sha512-ba+dRL/75VQQY7RkU/CgriGbkoWAfS8TDyUlJfJhJ8KhtXgMl5dhNvoPNUcQ9IWRhW8u41glMSuZeTvsYq2rRg==}
+    hasBin: true
+
   why-is-node-running@2.3.0:
     resolution: {integrity: sha512-hUrmaWBdVDcxvYqnyh09zunKzROWjbZTiNy8dBEjkS7ehEDQibXJ7XvlmtbwuTclUiIyN+CyXQD4Vmko8fNm8w==}
     engines: {node: '>=8'}
@@ -1419,6 +1432,8 @@ snapshots:
       - terser
       - tsx
       - yaml
+
+  wabt@1.0.39: {}
 
   why-is-node-running@2.3.0:
     dependencies:

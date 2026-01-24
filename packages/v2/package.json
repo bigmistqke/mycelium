@@ -1,0 +1,22 @@
+{
+  "name": "@mycelium/v2",
+  "version": "0.0.1",
+  "description": "v2: Full gradient experiment - vision to AST",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "compile": "tsx src/dataflow-to-wat.ts"
+  },
+  "keywords": [
+    "intent-graph",
+    "wasm",
+    "dataflow",
+    "compiler"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^7.3.1",
+    "wabt": "^1.0.39"
+  }
+}

@@ -1,5 +1,13 @@
 [
   {
+    "hash": "23930b182d936375896a849e3b02b60d920e663c",
+    "short_hash": "23930b1",
+    "author": "bigmistqke",
+    "date": "2026-01-24T17:49:36+01:00",
+    "message": "feat(v2): add examples, dataflow→WAT compiler, and protocol command\n\n- Add 00_max.json, 01_abs.json, 02_calculator.json examples\n- Implement simple dataflow→WAT compiler (~100 lines)\n- Add /mycelium-v2-example protocol command\n- Rename v0 commands with mycelium-v0- prefix\n- Sync decision graph observations",
+    "files_changed": 14
+  },
+  {
     "hash": "d15eab3cac99c1e27891a12e19df4758f9e0b057",
     "short_hash": "d15eab3",
     "author": "bigmistqke",
@@ -8,12 +16,12 @@
     "files_changed": 5
   },
   {
-    "hash": "544756bf9188fa5c4db4dbfd704bf75514654ca0",
-    "short_hash": "544756b",
+    "hash": "d15eab3cac99c1e27891a12e19df4758f9e0b057",
+    "short_hash": "d15eab3",
     "author": "bigmistqke",
-    "date": "2026-01-24T13:36:25+01:00",
-    "message": "refactor(v1): use commander for CLI instead of custom parseArgs",
-    "files_changed": 3
+    "date": "2026-01-24T15:05:31+01:00",
+    "message": "feat(v2): add full gradient experiment with calculator example\n\nv2 explores the full gradient from vision to AST:\n- Vision/Architecture/Component/Function layers have descriptions (intent)\n- Dataflow layer is flat DAG with explicit wiring and shared nodes\n- AST layer is nested tree structure, code generated from it\n\nKey insight: dataflow shows data dependencies, AST shows syntactic\nstructure. Function layer is the boundary between described intent\nand structural implementation.\n\nAlso adds READMEs documenting v1 (structural skeleton) and v2 (full gradient).",
+    "files_changed": 5
   },
   {
     "hash": "544756bf9188fa5c4db4dbfd704bf75514654ca0",
