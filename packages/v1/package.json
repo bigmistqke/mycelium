@@ -19,7 +19,9 @@
     "synthesis"
   ],
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "commander": "^14.0.2"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.9.3",
