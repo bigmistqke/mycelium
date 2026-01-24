@@ -1,19 +1,27 @@
 [
   {
+    "hash": "3f56f96753f04a496596995b5726c2943f7c0ca5",
+    "short_hash": "3f56f96",
+    "author": "bigmistqke",
+    "date": "2026-01-24T12:03:21+01:00",
+    "message": "refactor: recursive box model for graph schema\n\nSame structure at every zoom level (Russian doll):\n- Ports (inputs/outputs)\n- Children (nested nodes = implementation)\n- Edges (connections between ports)\n- Constraints (contracts at this level)\n\nNode with children = module, leaf = function.\nGraph is just a root node. Zoom in/out by expanding/collapsing.",
+    "files_changed": 3
+  },
+  {
+    "hash": "9cf3acecfff9c30fc239b0c612181331529fa796",
+    "short_hash": "9cf3ace",
+    "author": "bigmistqke",
+    "date": "2026-01-24T02:04:26+01:00",
+    "message": "docs: sync decision graph with v1 scaffolding",
+    "files_changed": 2
+  },
+  {
     "hash": "c4d592fb31d617c33696a0aeabca1c8096823827",
     "short_hash": "c4d592f",
     "author": "bigmistqke",
     "date": "2026-01-24T02:04:13+01:00",
     "message": "feat: initialize v1 package with graph, WAT, and constraints scaffolding\n\nv1 scope: Graph ↔ WAT + Simple Constraints\n- Graph schema (nodes, edges, constraint attributes)\n- Graph → WAT generation (stub)\n- WAT → Graph parsing (stub)\n- Constraint validation (must_call, must_not_call, pure, no_side_effects)\n\nProves: graph is primary, code is derived, constraints validated deterministically.",
     "files_changed": 8
-  },
-  {
-    "hash": "e0aa8b13b84d1fa98e9a2e5884f3df47d94b387d",
-    "short_hash": "e0aa8b1",
-    "author": "bigmistqke",
-    "date": "2026-01-24T01:58:54+01:00",
-    "message": "docs: sync decision graph",
-    "files_changed": 2
   },
   {
     "hash": "1df7c15cbc06f6adf56fc7711ae4053a10fac1c1",
