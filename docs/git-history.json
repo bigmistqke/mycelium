@@ -1,19 +1,19 @@
 [
   {
+    "hash": "f4e35933280e07bc24ed74247abccfe4be17362a",
+    "short_hash": "f4e3593",
+    "author": "bigmistqke",
+    "date": "2026-01-24T12:03:40+01:00",
+    "message": "docs: sync decision graph with recursive box model",
+    "files_changed": 2
+  },
+  {
     "hash": "3f56f96753f04a496596995b5726c2943f7c0ca5",
     "short_hash": "3f56f96",
     "author": "bigmistqke",
     "date": "2026-01-24T12:03:21+01:00",
     "message": "refactor: recursive box model for graph schema\n\nSame structure at every zoom level (Russian doll):\n- Ports (inputs/outputs)\n- Children (nested nodes = implementation)\n- Edges (connections between ports)\n- Constraints (contracts at this level)\n\nNode with children = module, leaf = function.\nGraph is just a root node. Zoom in/out by expanding/collapsing.",
     "files_changed": 3
-  },
-  {
-    "hash": "9cf3acecfff9c30fc239b0c612181331529fa796",
-    "short_hash": "9cf3ace",
-    "author": "bigmistqke",
-    "date": "2026-01-24T02:04:26+01:00",
-    "message": "docs: sync decision graph with v1 scaffolding",
-    "files_changed": 2
   },
   {
     "hash": "c4d592fb31d617c33696a0aeabca1c8096823827",

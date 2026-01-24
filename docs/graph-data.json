@@ -2474,6 +2474,28 @@
       "created_at": "2026-01-24T12:03:28.643731+01:00",
       "updated_at": "2026-01-24T12:03:28.643731+01:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"3f56f96\",\"confidence\":95}"
+    },
+    {
+      "id": 226,
+      "change_id": "87a9ca64-8eb3-49fa-8736-734b71e439f5",
+      "node_type": "observation",
+      "title": "Graph embeddings: project nodes into n-dimensional vector space based on structure, ports, constraints, neighborhood. Similar components cluster. Enables pattern detection, anti-pattern detection, abstraction candidates, semantic search.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:19:51.870584+01:00",
+      "updated_at": "2026-01-24T12:19:51.870584+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 227,
+      "change_id": "fa31aa85-e4fa-49a7-b1d9-fd0f30d6079a",
+      "node_type": "observation",
+      "title": "Embedding space IS the editable latent space from neuro-symbolic vision. Symbolic graph + neural embeddings. Diffusion models could work in this space. AI-driven cleanup via clustering.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:19:52.189324+01:00",
+      "updated_at": "2026-01-24T12:19:52.189324+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
     }
   ],
   "edges": [
@@ -4874,6 +4896,28 @@
       "weight": 1.0,
       "rationale": "Implementation",
       "created_at": "2026-01-24T12:03:33.568246+01:00"
+    },
+    {
+      "id": 219,
+      "from_node_id": 211,
+      "to_node_id": 226,
+      "from_change_id": "e7176801-25e8-4997-9a31-738deec96fc4",
+      "to_change_id": "87a9ca64-8eb3-49fa-8736-734b71e439f5",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Concrete realization of editable latent space",
+      "created_at": "2026-01-24T12:19:56.889153+01:00"
+    },
+    {
+      "id": 220,
+      "from_node_id": 226,
+      "to_node_id": 227,
+      "from_change_id": "87a9ca64-8eb3-49fa-8736-734b71e439f5",
+      "to_change_id": "fa31aa85-e4fa-49a7-b1d9-fd0f30d6079a",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Connection to neuro-symbolic",
+      "created_at": "2026-01-24T12:19:56.899861+01:00"
     }
   ]
 }
