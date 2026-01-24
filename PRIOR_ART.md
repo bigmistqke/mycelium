@@ -178,7 +178,18 @@ Programs stored as intention trees, not text files.
 - [Microsoft Research Paper](https://www.microsoft.com/en-us/research/publication/the-death-of-computer-languages-the-birth-of-intentional-programming/)
 - [Intentional Programming (Wikipedia)](https://en.wikipedia.org/wiki/Intentional_programming)
 
-**Relevance to mycelium:** Directly aligned vision - intent as primary artifact. Simonyi proved it could work at scale (1.7M nodes). We can learn from why it didn't ship.
+**Why it didn't ship:**
+1. **Strategic deprioritization**: Microsoft chose C#/.NET over IP in 2001 to counter Java
+2. **Never finished**: Intentional Software ran 10+ years without shipping a product
+3. **Adoption barrier**: Simonyi noted new languages "even more difficult to get adopted" — requires rewriting legacy AND changing skills
+4. **Technical challenge**: Intent → code transformation hard to make reliable
+5. **Not novel enough**: Language workbenches existed; not enough differentiation
+
+**Lessons for mycelium:**
+- Need a forcing function for adoption (LLMs might be it)
+- Must ship incrementally — 10 years without product = death
+- Graph → code must be reliable
+- Consider interop with existing code vs requiring rewrite
 
 ---
 
