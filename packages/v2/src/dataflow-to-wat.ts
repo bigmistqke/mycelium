@@ -27,7 +27,7 @@ interface Dataflow {
 interface FunctionInfo {
   name: string
   params: { name: string; type: string }[]
-  result: string
+  results: string[]
 }
 
 /**
@@ -48,20 +48,23 @@ export function dataflowToWat(dataflow: Dataflow, func: FunctionInfo): string {
     }
   }
 
-  // Find output node
-  const outputNode = nodes.find(n => n.kind === 'output')
-  if (!outputNode) throw new Error('No output node')
+  // Find all output nodes (preserve order from nodes array)
+  const outputNodes = nodes.filter(n => n.kind === 'output')
+  if (outputNodes.length === 0) throw new Error('No output nodes')
 
   // Generate WAT
   const lines: string[] = []
 
   // Function signature
   const params = func.params.map(p => `(param $${p.name} ${p.type})`).join(' ')
-  lines.push(`(func $${func.name} ${params} (result ${func.result})`)
+  const results = func.results.map(r => `(result ${r})`).join(' ')
+  lines.push(`(func $${func.name} ${params} ${results}`)
 
-  // Generate expression for output
-  const expr = generateExpr(outputNode.id, nodes, inputs, func)
-  lines.push(`  ${expr}`)
+  // Generate expression for each output (in order - values left on stack)
+  for (const outputNode of outputNodes) {
+    const expr = generateExpr(outputNode.id, nodes, inputs, func)
+    lines.push(`  ${expr}`)
+  }
 
   lines.push(`)`)
 
@@ -174,7 +177,7 @@ async function main() {
   const func: FunctionInfo = {
     name: funcNode.title,
     params,
-    result: funcNode.outputs[0]
+    results: funcNode.outputs
   }
 
   const wat = dataflowToWat(flowNode, func)

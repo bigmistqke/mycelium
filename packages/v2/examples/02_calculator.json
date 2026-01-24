@@ -9,7 +9,7 @@
     {
       "id": "arch-calc",
       "layer": "architecture",
-      "title": "Event-driven WASM calculator"
+      "title": "Functional state-threading calculator"
     },
 
     {
@@ -22,21 +22,34 @@
       "id": "func-on-key",
       "layer": "function",
       "title": "on_key",
-      "inputs": ["keycode: i32"],
-      "outputs": ["void"],
-      "description": "Handles keypress: digits accumulate input, +/- set operation, = executes, c clears",
-      "imports": ["display: (i32) -> void"],
-      "exports": ["on_key"],
+      "inputs": ["acc: i32", "buf: i32", "op: i32", "key: i32"],
+      "outputs": ["i32", "i32", "i32"],
+      "description": "Pure function: takes current state + keycode, returns new state. Digits accumulate in buffer, +/- set operation, enter executes.",
       "tests": [
         {
-          "sequence": [
-            { "key": 53 },
-            { "key": 187 },
-            { "key": 51 },
-            { "key": 13 }
-          ],
-          "displays": [5, 5, 3, 8],
-          "note": "5 + 3 = 8 (keycodes: 5, +, 3, enter)"
+          "in": { "acc": 0, "buf": 0, "op": 0, "key": 53 },
+          "out": [0, 5, 0],
+          "note": "Press '5' -> buffer becomes 5"
+        },
+        {
+          "in": { "acc": 0, "buf": 5, "op": 0, "key": 187 },
+          "out": [5, 0, 1],
+          "note": "Press '+' -> acc=5, buffer cleared, op=add"
+        },
+        {
+          "in": { "acc": 5, "buf": 0, "op": 1, "key": 51 },
+          "out": [5, 3, 1],
+          "note": "Press '3' -> buffer becomes 3"
+        },
+        {
+          "in": { "acc": 5, "buf": 3, "op": 1, "key": 13 },
+          "out": [8, 0, 0],
+          "note": "Press enter -> acc = 5+3 = 8, buffer cleared"
+        },
+        {
+          "in": { "acc": 10, "buf": 4, "op": 2, "key": 13 },
+          "out": [6, 0, 0],
+          "note": "Press enter with subtract -> acc = 10-4 = 6"
         }
       ]
     },
@@ -44,138 +57,138 @@
     {
       "id": "flow-on-key",
       "layer": "dataflow",
-      "state": [
-        { "id": "accumulator", "type": "i32", "initial": 0 },
-        { "id": "input_buffer", "type": "i32", "initial": 0 },
-        { "id": "current_op", "type": "i32", "initial": 0 }
-      ],
       "nodes": [
-        { "id": "keycode", "kind": "input" },
-        { "id": "is_digit", "kind": "op", "op": "is_digit" },
-        { "id": "is_plus", "kind": "op", "op": "i32.eq", "args": ["keycode", 187] },
-        { "id": "is_minus", "kind": "op", "op": "i32.eq", "args": ["keycode", 189] },
-        { "id": "is_enter", "kind": "op", "op": "i32.eq", "args": ["keycode", 13] },
-        { "id": "is_clear", "kind": "op", "op": "i32.eq", "args": ["keycode", 67] },
-        { "id": "dispatch", "kind": "switch" },
-        { "id": "handle_digit", "kind": "block" },
-        { "id": "handle_op", "kind": "block" },
-        { "id": "handle_execute", "kind": "block" },
-        { "id": "handle_clear", "kind": "block" },
-        { "id": "display", "kind": "effect", "op": "display" }
+        { "id": "acc", "kind": "input" },
+        { "id": "buf", "kind": "input" },
+        { "id": "op", "kind": "input" },
+        { "id": "key", "kind": "input" },
+
+        { "id": "key_minus_48", "kind": "op", "op": "i32.sub" },
+        { "id": "const_48", "kind": "const", "value": 48 },
+        { "id": "buf_times_10", "kind": "op", "op": "i32.mul" },
+        { "id": "const_10", "kind": "const", "value": 10 },
+        { "id": "new_buf_digit", "kind": "op", "op": "i32.add" },
+
+        { "id": "is_digit", "kind": "op", "op": "i32.and" },
+        { "id": "gte_48", "kind": "op", "op": "i32.ge_u" },
+        { "id": "lte_57", "kind": "op", "op": "i32.le_u" },
+        { "id": "const_57", "kind": "const", "value": 57 },
+
+        { "id": "is_plus", "kind": "op", "op": "i32.eq" },
+        { "id": "const_187", "kind": "const", "value": 187 },
+        { "id": "is_minus", "kind": "op", "op": "i32.eq" },
+        { "id": "const_189", "kind": "const", "value": 189 },
+        { "id": "is_enter", "kind": "op", "op": "i32.eq" },
+        { "id": "const_13", "kind": "const", "value": 13 },
+
+        { "id": "const_0", "kind": "const", "value": 0 },
+        { "id": "const_1", "kind": "const", "value": 1 },
+        { "id": "const_2", "kind": "const", "value": 2 },
+
+        { "id": "add_result", "kind": "op", "op": "i32.add" },
+        { "id": "sub_result", "kind": "op", "op": "i32.sub" },
+        { "id": "is_add_op", "kind": "op", "op": "i32.eq" },
+        { "id": "exec_result", "kind": "select" },
+
+        { "id": "is_op_key", "kind": "op", "op": "i32.or" },
+
+        { "id": "new_acc_on_op", "kind": "select" },
+        { "id": "new_acc_on_enter", "kind": "select" },
+        { "id": "new_acc", "kind": "select" },
+
+        { "id": "new_buf_on_digit", "kind": "select" },
+        { "id": "new_buf_on_enter", "kind": "select" },
+        { "id": "new_buf", "kind": "select" },
+
+        { "id": "new_op_plus", "kind": "select" },
+        { "id": "new_op_minus", "kind": "select" },
+        { "id": "new_op", "kind": "select" },
+
+        { "id": "out_acc", "kind": "output" },
+        { "id": "out_buf", "kind": "output" },
+        { "id": "out_op", "kind": "output" }
       ],
       "edges": [
-        { "from": "keycode", "to": "is_digit" },
-        { "from": "keycode", "to": "is_plus" },
-        { "from": "keycode", "to": "is_minus" },
-        { "from": "keycode", "to": "is_enter" },
-        { "from": "keycode", "to": "is_clear" },
-        { "from": "is_digit", "to": "dispatch", "port": "digit" },
-        { "from": "is_plus", "to": "dispatch", "port": "plus" },
-        { "from": "is_minus", "to": "dispatch", "port": "minus" },
-        { "from": "is_enter", "to": "dispatch", "port": "enter" },
-        { "from": "is_clear", "to": "dispatch", "port": "clear" },
-        { "from": "dispatch", "to": "handle_digit", "case": "digit" },
-        { "from": "dispatch", "to": "handle_op", "case": "plus" },
-        { "from": "dispatch", "to": "handle_op", "case": "minus" },
-        { "from": "dispatch", "to": "handle_execute", "case": "enter" },
-        { "from": "dispatch", "to": "handle_clear", "case": "clear" },
-        { "from": "handle_digit", "to": "display" },
-        { "from": "handle_op", "to": "display" },
-        { "from": "handle_execute", "to": "display" },
-        { "from": "handle_clear", "to": "display" }
+        { "from": "key", "to": "gte_48", "port": 0 },
+        { "from": "const_48", "to": "gte_48", "port": 1 },
+        { "from": "key", "to": "lte_57", "port": 0 },
+        { "from": "const_57", "to": "lte_57", "port": 1 },
+        { "from": "gte_48", "to": "is_digit", "port": 0 },
+        { "from": "lte_57", "to": "is_digit", "port": 1 },
+
+        { "from": "key", "to": "key_minus_48", "port": 0 },
+        { "from": "const_48", "to": "key_minus_48", "port": 1 },
+        { "from": "buf", "to": "buf_times_10", "port": 0 },
+        { "from": "const_10", "to": "buf_times_10", "port": 1 },
+        { "from": "buf_times_10", "to": "new_buf_digit", "port": 0 },
+        { "from": "key_minus_48", "to": "new_buf_digit", "port": 1 },
+
+        { "from": "key", "to": "is_plus", "port": 0 },
+        { "from": "const_187", "to": "is_plus", "port": 1 },
+        { "from": "key", "to": "is_minus", "port": 0 },
+        { "from": "const_189", "to": "is_minus", "port": 1 },
+        { "from": "key", "to": "is_enter", "port": 0 },
+        { "from": "const_13", "to": "is_enter", "port": 1 },
+
+        { "from": "is_plus", "to": "is_op_key", "port": 0 },
+        { "from": "is_minus", "to": "is_op_key", "port": 1 },
+
+        { "from": "acc", "to": "add_result", "port": 0 },
+        { "from": "buf", "to": "add_result", "port": 1 },
+        { "from": "acc", "to": "sub_result", "port": 0 },
+        { "from": "buf", "to": "sub_result", "port": 1 },
+        { "from": "op", "to": "is_add_op", "port": 0 },
+        { "from": "const_1", "to": "is_add_op", "port": 1 },
+        { "from": "is_add_op", "to": "exec_result", "port": "condition" },
+        { "from": "add_result", "to": "exec_result", "port": "true" },
+        { "from": "sub_result", "to": "exec_result", "port": "false" },
+
+        { "from": "is_op_key", "to": "new_acc_on_op", "port": "condition" },
+        { "from": "buf", "to": "new_acc_on_op", "port": "true" },
+        { "from": "acc", "to": "new_acc_on_op", "port": "false" },
+
+        { "from": "is_enter", "to": "new_acc_on_enter", "port": "condition" },
+        { "from": "exec_result", "to": "new_acc_on_enter", "port": "true" },
+        { "from": "new_acc_on_op", "to": "new_acc_on_enter", "port": "false" },
+
+        { "from": "is_digit", "to": "new_acc", "port": "condition" },
+        { "from": "acc", "to": "new_acc", "port": "true" },
+        { "from": "new_acc_on_enter", "to": "new_acc", "port": "false" },
+
+        { "from": "is_digit", "to": "new_buf_on_digit", "port": "condition" },
+        { "from": "new_buf_digit", "to": "new_buf_on_digit", "port": "true" },
+        { "from": "buf", "to": "new_buf_on_digit", "port": "false" },
+
+        { "from": "is_enter", "to": "new_buf_on_enter", "port": "condition" },
+        { "from": "const_0", "to": "new_buf_on_enter", "port": "true" },
+        { "from": "new_buf_on_digit", "to": "new_buf_on_enter", "port": "false" },
+
+        { "from": "is_op_key", "to": "new_buf", "port": "condition" },
+        { "from": "const_0", "to": "new_buf", "port": "true" },
+        { "from": "new_buf_on_enter", "to": "new_buf", "port": "false" },
+
+        { "from": "is_plus", "to": "new_op_plus", "port": "condition" },
+        { "from": "const_1", "to": "new_op_plus", "port": "true" },
+        { "from": "op", "to": "new_op_plus", "port": "false" },
+
+        { "from": "is_minus", "to": "new_op_minus", "port": "condition" },
+        { "from": "const_2", "to": "new_op_minus", "port": "true" },
+        { "from": "new_op_plus", "to": "new_op_minus", "port": "false" },
+
+        { "from": "is_enter", "to": "new_op", "port": "condition" },
+        { "from": "const_0", "to": "new_op", "port": "true" },
+        { "from": "new_op_minus", "to": "new_op", "port": "false" },
+
+        { "from": "new_acc", "to": "out_acc" },
+        { "from": "new_buf", "to": "out_buf" },
+        { "from": "new_op", "to": "out_op" }
       ]
     },
 
     {
       "id": "ast-on-key",
       "layer": "ast",
-      "imports": [
-        { "module": "env", "name": "display", "kind": "func", "params": ["i32"], "result": null }
-      ],
-      "globals": [
-        { "name": "accumulator", "type": "i32", "mutable": true, "initial": 0 },
-        { "name": "input_buffer", "type": "i32", "mutable": true, "initial": 0 },
-        { "name": "current_op", "type": "i32", "mutable": true, "initial": 0 }
-      ],
-      "root": {
-        "kind": "func",
-        "name": "on_key",
-        "export": true,
-        "params": [{ "name": "keycode", "type": "i32" }],
-        "result": null,
-        "body": {
-          "kind": "block",
-          "children": [
-            {
-              "kind": "if",
-              "condition": { "kind": "call", "fn": "is_digit", "args": [{ "kind": "local.get", "name": "keycode" }] },
-              "then": {
-                "kind": "block",
-                "children": [
-                  { "kind": "global.set", "name": "input_buffer",
-                    "value": { "kind": "op", "op": "i32.add",
-                      "args": [
-                        { "kind": "op", "op": "i32.mul", "args": [{ "kind": "global.get", "name": "input_buffer" }, { "kind": "const", "value": 10 }] },
-                        { "kind": "call", "fn": "digit_value", "args": [{ "kind": "local.get", "name": "keycode" }] }
-                      ]
-                    }
-                  },
-                  { "kind": "call", "fn": "display", "args": [{ "kind": "global.get", "name": "input_buffer" }] }
-                ]
-              }
-            },
-            {
-              "kind": "if",
-              "condition": { "kind": "op", "op": "i32.eq", "args": [{ "kind": "local.get", "name": "keycode" }, { "kind": "const", "value": 187 }] },
-              "then": {
-                "kind": "block",
-                "children": [
-                  { "kind": "global.set", "name": "accumulator", "value": { "kind": "global.get", "name": "input_buffer" } },
-                  { "kind": "global.set", "name": "input_buffer", "value": { "kind": "const", "value": 0 } },
-                  { "kind": "global.set", "name": "current_op", "value": { "kind": "const", "value": 1 } }
-                ]
-              }
-            },
-            {
-              "kind": "if",
-              "condition": { "kind": "op", "op": "i32.eq", "args": [{ "kind": "local.get", "name": "keycode" }, { "kind": "const", "value": 189 }] },
-              "then": {
-                "kind": "block",
-                "children": [
-                  { "kind": "global.set", "name": "accumulator", "value": { "kind": "global.get", "name": "input_buffer" } },
-                  { "kind": "global.set", "name": "input_buffer", "value": { "kind": "const", "value": 0 } },
-                  { "kind": "global.set", "name": "current_op", "value": { "kind": "const", "value": 2 } }
-                ]
-              }
-            },
-            {
-              "kind": "if",
-              "condition": { "kind": "op", "op": "i32.eq", "args": [{ "kind": "local.get", "name": "keycode" }, { "kind": "const", "value": 13 }] },
-              "then": {
-                "kind": "block",
-                "children": [
-                  {
-                    "kind": "if",
-                    "condition": { "kind": "op", "op": "i32.eq", "args": [{ "kind": "global.get", "name": "current_op" }, { "kind": "const", "value": 1 }] },
-                    "then": { "kind": "global.set", "name": "accumulator",
-                      "value": { "kind": "op", "op": "i32.add", "args": [{ "kind": "global.get", "name": "accumulator" }, { "kind": "global.get", "name": "input_buffer" }] }
-                    }
-                  },
-                  {
-                    "kind": "if",
-                    "condition": { "kind": "op", "op": "i32.eq", "args": [{ "kind": "global.get", "name": "current_op" }, { "kind": "const", "value": 2 }] },
-                    "then": { "kind": "global.set", "name": "accumulator",
-                      "value": { "kind": "op", "op": "i32.sub", "args": [{ "kind": "global.get", "name": "accumulator" }, { "kind": "global.get", "name": "input_buffer" }] }
-                    }
-                  },
-                  { "kind": "global.set", "name": "input_buffer", "value": { "kind": "const", "value": 0 } },
-                  { "kind": "call", "fn": "display", "args": [{ "kind": "global.get", "name": "accumulator" }] }
-                ]
-              }
-            }
-          ]
-        }
-      }
+      "note": "Can be derived from dataflow - multi-value return with nested selects"
     }
   ],
 

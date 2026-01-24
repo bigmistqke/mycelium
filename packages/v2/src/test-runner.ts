@@ -15,7 +15,7 @@ async function runTests() {
   const wabtModule = await wabt()
 
   // Load examples
-  const examples = ['00_max', '01_abs']
+  const examples = ['00_max', '01_abs', '02_calculator']
 
   for (const name of examples) {
     log(`<h2>Testing: ${name}</h2>`)
@@ -43,17 +43,19 @@ async function runTests() {
       const func = {
         name: funcNode.title,
         params,
-        result: funcNode.outputs[0]
+        results: funcNode.outputs as string[]
       }
 
       // Generate WAT
       const watBody = dataflowToWat(flowNode, func)
 
-      // Wrap in module
+      // Wrap in module (note: multi-value returns are supported in modern WASM)
       const wat = `(module
   ${watBody}
   (export "${func.name}" (func $${func.name}))
 )`
+
+      const isMultiValue = func.results.length > 1
 
       log(`<pre class="wat">${escapeHtml(wat)}</pre>`)
 
@@ -70,13 +72,32 @@ async function runTests() {
         for (const test of funcNode.tests) {
           const args = params.map((p: { name: string }) => test.in[p.name])
           const result = wasmFunc(...args)
-          const pass = result === test.out
+
+          // Compare results (handle both single and multi-value returns)
+          let pass: boolean
+          let resultStr: string
+          let expectedStr: string
+
+          if (isMultiValue) {
+            // Multi-value: result is an array
+            const resultArr = Array.isArray(result) ? result : [result]
+            const expectedArr = test.out as number[]
+            pass = resultArr.length === expectedArr.length &&
+                   resultArr.every((v: number, i: number) => v === expectedArr[i])
+            resultStr = `[${resultArr.join(', ')}]`
+            expectedStr = `[${expectedArr.join(', ')}]`
+          } else {
+            // Single value
+            pass = result === test.out
+            resultStr = String(result)
+            expectedStr = String(test.out)
+          }
 
           const status = pass
             ? `<span class="pass">✓ PASS</span>`
             : `<span class="fail">✗ FAIL</span>`
 
-          log(`<pre>${status} ${func.name}(${args.join(', ')}) = ${result} (expected: ${test.out})</pre>`)
+          log(`<pre>${status} ${func.name}(${args.join(', ')}) = ${resultStr} (expected: ${expectedStr})</pre>`)
         }
       }
 
