@@ -190,8 +190,20 @@ Symbolic structures (graphs, constraints, types) + neural models share state:
 - Neural = fuzzy generative detail
 - Together = intent ↔ implementation bridge
 
-**Differentiable programming**
-Optimize over intent → execution mappings. Declare "minimize latency under throughput constraint X" and let the compiler search the implementation space.
+**Differentiable programming / compilers**
+Make programs differentiable so gradient-based optimization can search the implementation space.
+
+Traditional compilation:
+```
+source → fixed rules → output
+```
+
+Differentiable compilation:
+```
+intent + constraints → gradient search → optimal implementation
+```
+
+Declare "minimize latency under memory budget X" — instead of hand-optimizing, the compiler explores valid implementations and converges on one satisfying constraints. Relevant tools: JAX, Halide, TVM/MLIR, program synthesis via gradient descent.
 
 **World-model AIs**
 Persistent understanding of states, goals, actions, consequences. Avoids stateless LLM drift where each session starts fresh.
