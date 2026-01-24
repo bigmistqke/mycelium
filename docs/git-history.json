@@ -1,10 +1,10 @@
 [
   {
-    "hash": "92eb157870ff6418c74a0ad1f972c5942e190d9a",
-    "short_hash": "92eb157",
+    "hash": "40c459460e2554e831166c20f954847e46ea7acb",
+    "short_hash": "40c4594",
     "author": "bigmistqke",
-    "date": "2026-01-24T12:49:30+01:00",
-    "message": "docs: sync decision graph",
+    "date": "2026-01-24T12:52:20+01:00",
+    "message": "docs: mycelium is NOT a new language - graph is abstraction, outputs are existing languages",
     "files_changed": 2
   },
   {

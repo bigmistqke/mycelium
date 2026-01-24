@@ -2716,6 +2716,72 @@
       "created_at": "2026-01-24T12:51:31.831910+01:00",
       "updated_at": "2026-01-24T12:51:31.831910+01:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 248,
+      "change_id": "50d2540f-f894-4a5a-8772-f4c34355070d",
+      "node_type": "observation",
+      "title": "Graph is queryable database, not drawable canvas. Programmer queries ('what calls X?', 'show dataflow'), system generates view. No manual node arrangement. Views are projections, not source.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T13:10:48.203470+01:00",
+      "updated_at": "2026-01-24T13:10:48.203470+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 249,
+      "change_id": "ff0b47e8-7f58-4ae9-ac3c-ebd885313b80",
+      "node_type": "observation",
+      "title": "Whiteboard metaphor: annotation layer floats on top of auto-generated visualization. Human can select nodes, add comments, draw. Annotations don't fight layout - they anchor to nodes or become orphaned if structure changes.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T13:10:48.946154+01:00",
+      "updated_at": "2026-01-24T13:10:48.946154+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 250,
+      "change_id": "b3599f6d-dd1a-47b3-92d8-234c5ecb341c",
+      "node_type": "observation",
+      "title": "Time travel via git + deciduous: 'show me the graph at decision #42'. Git commits snapshot state, deciduous nodes capture reasoning, conversations link to both. Full provenance chain.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T13:10:49.662742+01:00",
+      "updated_at": "2026-01-24T13:10:49.662742+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 251,
+      "change_id": "df7373b4-80dc-4b29-b3bd-7f73d7733ff2",
+      "node_type": "observation",
+      "title": "UI flow: conversation + canvas side by side. Chat for intent/discussion with LLM. Canvas for visualization/annotation. Comments on canvas link to chat messages. Chat links to timeline (git, deciduous).",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T13:10:50.553736+01:00",
+      "updated_at": "2026-01-24T13:10:50.553736+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 252,
+      "change_id": "f3fc5a76-d335-4567-b1a8-a1a543f225f5",
+      "node_type": "observation",
+      "title": "The loop: (1) converse - describe intent, (2) synthesize - LLM adds constraints to graph, (3) visualize - explore macro/micro/dataflow, (4) annotate - draw on canvas, (5) persist - chat→deciduous, state→git, (6) time travel, (7) iterate.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T13:10:51.406952+01:00",
+      "updated_at": "2026-01-24T13:10:51.406952+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 253,
+      "change_id": "41e69efe-be66-425a-bcbb-4a31742936a2",
+      "node_type": "observation",
+      "title": "Everything links to everything: canvas annotation → chat message → deciduous observation → git commit → graph state. Full bidirectional provenance. No orphaned context.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T13:10:52.120632+01:00",
+      "updated_at": "2026-01-24T13:10:52.120632+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
     }
   ],
   "edges": [
@@ -5369,6 +5435,72 @@
       "weight": 1.0,
       "rationale": "Architectural constraint for v1",
       "created_at": "2026-01-24T12:51:39.543782+01:00"
+    },
+    {
+      "id": 242,
+      "from_node_id": 218,
+      "to_node_id": 248,
+      "from_change_id": "0b8e64f9-b212-4662-94bd-4211d2f59bc0",
+      "to_change_id": "50d2540f-f894-4a5a-8772-f4c34355070d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "How to avoid messy graph",
+      "created_at": "2026-01-24T13:11:00.068989+01:00"
+    },
+    {
+      "id": 243,
+      "from_node_id": 248,
+      "to_node_id": 249,
+      "from_change_id": "50d2540f-f894-4a5a-8772-f4c34355070d",
+      "to_change_id": "ff0b47e8-7f58-4ae9-ac3c-ebd885313b80",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Annotation layer on top",
+      "created_at": "2026-01-24T13:11:00.079910+01:00"
+    },
+    {
+      "id": 244,
+      "from_node_id": 249,
+      "to_node_id": 250,
+      "from_change_id": "ff0b47e8-7f58-4ae9-ac3c-ebd885313b80",
+      "to_change_id": "b3599f6d-dd1a-47b3-92d8-234c5ecb341c",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Time dimension",
+      "created_at": "2026-01-24T13:11:00.093323+01:00"
+    },
+    {
+      "id": 245,
+      "from_node_id": 250,
+      "to_node_id": 251,
+      "from_change_id": "b3599f6d-dd1a-47b3-92d8-234c5ecb341c",
+      "to_change_id": "df7373b4-80dc-4b29-b3bd-7f73d7733ff2",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "UI realization",
+      "created_at": "2026-01-24T13:11:00.104810+01:00"
+    },
+    {
+      "id": 246,
+      "from_node_id": 251,
+      "to_node_id": 252,
+      "from_change_id": "df7373b4-80dc-4b29-b3bd-7f73d7733ff2",
+      "to_change_id": "f3fc5a76-d335-4567-b1a8-a1a543f225f5",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The workflow",
+      "created_at": "2026-01-24T13:11:00.116257+01:00"
+    },
+    {
+      "id": 247,
+      "from_node_id": 252,
+      "to_node_id": 253,
+      "from_change_id": "f3fc5a76-d335-4567-b1a8-a1a543f225f5",
+      "to_change_id": "41e69efe-be66-425a-bcbb-4a31742936a2",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Linking it all",
+      "created_at": "2026-01-24T13:11:00.127867+01:00"
     }
   ]
 }
