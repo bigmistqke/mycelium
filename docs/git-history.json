@@ -1,19 +1,19 @@
 [
   {
+    "hash": "e483d150967144cf0461728e47368c36d6741bb0",
+    "short_hash": "e483d15",
+    "author": "bigmistqke",
+    "date": "2026-01-24T01:54:36+01:00",
+    "message": "docs: add AI techniques section - neuro-symbolic, diffusion, solvers",
+    "files_changed": 1
+  },
+  {
     "hash": "1df7c15cbc06f6adf56fc7711ae4053a10fac1c1",
     "short_hash": "1df7c15",
     "author": "bigmistqke",
     "date": "2026-01-24T01:35:10+01:00",
     "message": "docs: add VISION.md outlining intent-first programming goals",
     "files_changed": 1
-  },
-  {
-    "hash": "67dd1e6dcf23325d247caef447c75686f461c065",
-    "short_hash": "67dd1e6",
-    "author": "bigmistqke",
-    "date": "2026-01-24T01:32:07+01:00",
-    "message": "docs: sync decision graph after monorepo restructure",
-    "files_changed": 2
   },
   {
     "hash": "54b8fd2a6844754d188dc7c08304489ed0ae945d",

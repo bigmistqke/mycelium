@@ -2298,6 +2298,83 @@
       "created_at": "2026-01-24T01:35:15.842374+01:00",
       "updated_at": "2026-01-24T01:35:15.842374+01:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"1df7c15\",\"confidence\":95}"
+    },
+    {
+      "id": 210,
+      "change_id": "21d67411-7859-431d-ba38-4ad2ab73c71d",
+      "node_type": "observation",
+      "title": "Diffusion models for code: iterative refinement (propose → critique → refine → converge) instead of single-shot generation. Maps well to architecture evolution.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:56:57.729021+01:00",
+      "updated_at": "2026-01-24T01:56:57.729021+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 211,
+      "change_id": "e7176801-25e8-4997-9a31-738deec96fc4",
+      "node_type": "observation",
+      "title": "Editable latent spaces: edit intent directly without patching artifacts. Today's LLMs only let you edit output (code), not the latent intent that produced it. The graph IS the editable latent space.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:56:57.976793+01:00",
+      "updated_at": "2026-01-24T01:56:57.976793+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 212,
+      "change_id": "ddd6dbb5-0aa6-42bb-8dd8-67e9d0eef029",
+      "node_type": "observation",
+      "title": "Neuro-symbolic systems: symbolic (graphs, constraints, types) + neural (fuzzy generative detail) share state. Symbolic = discrete logic. Neural = fills in texture. Together = intent ↔ implementation bridge.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:56:58.230541+01:00",
+      "updated_at": "2026-01-24T01:56:58.230541+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 213,
+      "change_id": "231abeec-e0b8-436a-856f-101030756af8",
+      "node_type": "observation",
+      "title": "Differentiable programming/compilers: gradient-based optimization over implementation space. Declare constraints ('minimize latency under budget X'), compiler searches for optimal implementation. Tools: JAX, Halide, TVM/MLIR.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:56:58.457648+01:00",
+      "updated_at": "2026-01-24T01:56:58.457648+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 214,
+      "change_id": "9dcecdb7-53ab-488e-ad22-ceea1aadba71",
+      "node_type": "observation",
+      "title": "World-model AIs: persistent understanding of states, goals, actions, consequences. Avoids stateless LLM drift. The graph serves as the world model - persists across sessions.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:56:58.773024+01:00",
+      "updated_at": "2026-01-24T01:56:58.773024+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 215,
+      "change_id": "1edb5243-81ef-4973-bb28-55c5518b5d2f",
+      "node_type": "observation",
+      "title": "Tool-using agents: LLM invokes solvers, CLI, compilers, simulators, verifiers. Offloads precise work to deterministic tools. LLMs reason; tools verify. Division of labor is key.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:56:58.998234+01:00",
+      "updated_at": "2026-01-24T01:56:58.998234+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 216,
+      "change_id": "0b03cabd-2eed-4227-8eb4-37bc37a10d7c",
+      "node_type": "observation",
+      "title": "LLMs are stochastic approximators, not solvers. Good for fuzzy reasoning and synthesis. Constraint enforcement needs deterministic tools (SAT/SMT solvers, type checkers, simulators).",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:56:59.243638+01:00",
+      "updated_at": "2026-01-24T01:56:59.243638+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
     }
   ],
   "edges": [
@@ -4522,6 +4599,83 @@
       "weight": 1.0,
       "rationale": "Document created and committed",
       "created_at": "2026-01-24T01:35:16.018210+01:00"
+    },
+    {
+      "id": 203,
+      "from_node_id": 196,
+      "to_node_id": 210,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "21d67411-7859-431d-ba38-4ad2ab73c71d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "AI technique for intent-first",
+      "created_at": "2026-01-24T01:57:05.540677+01:00"
+    },
+    {
+      "id": 204,
+      "from_node_id": 196,
+      "to_node_id": 211,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "e7176801-25e8-4997-9a31-738deec96fc4",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "AI technique for intent-first",
+      "created_at": "2026-01-24T01:57:05.552174+01:00"
+    },
+    {
+      "id": 205,
+      "from_node_id": 196,
+      "to_node_id": 212,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "ddd6dbb5-0aa6-42bb-8dd8-67e9d0eef029",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "AI technique for intent-first",
+      "created_at": "2026-01-24T01:57:05.562414+01:00"
+    },
+    {
+      "id": 206,
+      "from_node_id": 196,
+      "to_node_id": 213,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "231abeec-e0b8-436a-856f-101030756af8",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "AI technique for intent-first",
+      "created_at": "2026-01-24T01:57:05.572546+01:00"
+    },
+    {
+      "id": 207,
+      "from_node_id": 196,
+      "to_node_id": 214,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "9dcecdb7-53ab-488e-ad22-ceea1aadba71",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "AI technique for intent-first",
+      "created_at": "2026-01-24T01:57:05.583505+01:00"
+    },
+    {
+      "id": 208,
+      "from_node_id": 196,
+      "to_node_id": 215,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "1edb5243-81ef-4973-bb28-55c5518b5d2f",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "AI technique for intent-first",
+      "created_at": "2026-01-24T01:57:05.593434+01:00"
+    },
+    {
+      "id": 209,
+      "from_node_id": 196,
+      "to_node_id": 216,
+      "from_change_id": "9cfd32f4-6072-438e-989e-deb8b2236ef7",
+      "to_change_id": "0b03cabd-2eed-4227-8eb4-37bc37a10d7c",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "AI technique for intent-first",
+      "created_at": "2026-01-24T01:57:05.603600+01:00"
     }
   ]
 }
