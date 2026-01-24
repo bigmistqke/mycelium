@@ -250,6 +250,19 @@ Persistent understanding of states, goals, actions, consequences. Avoids statele
 **Tool-using agents**
 Model invokes: solvers, CLI, compilers, simulators, verifiers. Offloads precise work to deterministic tools instead of hallucinating.
 
+**Graph embeddings**
+Project nodes into n-dimensional vector space based on structure, ports, constraints, neighborhood. Similar components cluster together.
+
+Enables:
+- Pattern detection (what structures repeat?)
+- Anti-pattern detection (outliers)
+- Abstraction candidates (clusters = merge opportunities)
+- Semantic search ("find modules similar to X")
+
+Techniques: node2vec, GraphSAGE, GNNs, dimensionality reduction (t-SNE, UMAP).
+
+This embedding space IS the "editable latent space" — the bridge between symbolic graph and neural models. Diffusion could work here.
+
 ### The Pattern
 
 Human and machine operate on the **same representation of the problem**, not just the artifact.
