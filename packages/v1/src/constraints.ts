@@ -1,9 +1,9 @@
 // Constraint validation
 //
-// Check that generated WAT satisfies graph constraints
+// Check that graph satisfies its constraints (recursive)
 // Deterministic tools, not LLM
 
-import type { Graph, Node, Constraint } from './graph.js'
+import type { Graph, Node, Constraint, Edge } from './graph.js'
 
 export interface ValidationResult {
   valid: boolean
@@ -11,85 +11,134 @@ export interface ValidationResult {
 }
 
 export interface Violation {
-  node: string
+  nodeId: string
+  nodeName: string
   constraint: Constraint
   message: string
 }
 
-export function validateConstraints(graph: Graph, wat: string): ValidationResult {
+// Validate all constraints in the graph (recursive)
+export function validateConstraints(graph: Graph): ValidationResult {
   const violations: Violation[] = []
-
-  for (const node of graph.nodes) {
-    if (!node.constraints) continue
-
-    for (const constraint of node.constraints) {
-      const violation = checkConstraint(node, constraint, graph, wat)
-      if (violation) {
-        violations.push(violation)
-      }
-    }
-  }
-
+  validateNode(graph, violations)
   return {
     valid: violations.length === 0,
     violations
   }
 }
 
-function checkConstraint(
-  node: Node,
-  constraint: Constraint,
-  graph: Graph,
-  wat: string
-): Violation | null {
+function validateNode(node: Node, violations: Violation[]): void {
+  // Check constraints on this node
+  if (node.constraints) {
+    for (const constraint of node.constraints) {
+      const violation = checkConstraint(node, constraint)
+      if (violation) {
+        violations.push(violation)
+      }
+    }
+  }
+
+  // Recurse into children
+  if (node.children) {
+    for (const child of node.children) {
+      validateNode(child, violations)
+    }
+  }
+}
+
+function checkConstraint(node: Node, constraint: Constraint): Violation | null {
   switch (constraint.kind) {
-    case 'must_call':
-      return checkMustCall(node, constraint, graph)
-    case 'must_not_call':
-      return checkMustNotCall(node, constraint, graph)
+    case 'must_connect':
+      return checkMustConnect(node, constraint)
+    case 'must_not_connect':
+      return checkMustNotConnect(node, constraint)
     case 'pure':
-      return checkPure(node, graph)
+      return checkPure(node)
     case 'no_side_effects':
-      return checkNoSideEffects(node, graph)
+      return checkNoSideEffects(node)
     default:
       return null
   }
 }
 
-function checkMustCall(node: Node, constraint: Constraint, graph: Graph): Violation | null {
-  const calls = graph.edges.filter(e => e.from === node.id && e.kind === 'calls')
-  const callsTarget = calls.some(e => e.to === constraint.target)
-
-  if (!callsTarget) {
+function checkMustConnect(node: Node, constraint: Constraint): Violation | null {
+  if (!constraint.target) return null
+  if (!node.edges) {
     return {
-      node: node.id,
+      nodeId: node.id,
+      nodeName: node.name,
       constraint,
-      message: `${node.name} must call ${constraint.target}`
+      message: `${node.name} must connect to ${constraint.target} but has no edges`
+    }
+  }
+
+  const connected = node.edges.some(
+    e => e.from.includes(constraint.target!) || e.to.includes(constraint.target!)
+  )
+
+  if (!connected) {
+    return {
+      nodeId: node.id,
+      nodeName: node.name,
+      constraint,
+      message: `${node.name} must connect to ${constraint.target}`
     }
   }
   return null
 }
 
-function checkMustNotCall(node: Node, constraint: Constraint, graph: Graph): Violation | null {
-  const calls = graph.edges.filter(e => e.from === node.id && e.kind === 'calls')
-  const callsTarget = calls.some(e => e.to === constraint.target)
+function checkMustNotConnect(node: Node, constraint: Constraint): Violation | null {
+  if (!constraint.target) return null
+  if (!node.edges) return null
 
-  if (callsTarget) {
+  const connected = node.edges.some(
+    e => e.from.includes(constraint.target!) || e.to.includes(constraint.target!)
+  )
+
+  if (connected) {
     return {
-      node: node.id,
+      nodeId: node.id,
+      nodeName: node.name,
       constraint,
-      message: `${node.name} must not call ${constraint.target}`
+      message: `${node.name} must not connect to ${constraint.target}`
     }
   }
   return null
 }
 
-function checkPure(node: Node, graph: Graph): Violation | null {
-  // TODO: check for side effects in the graph
+function checkPure(node: Node): Violation | null {
+  // A pure node should have no side effects
+  // For now: check that all children are also pure or leaves
+  // TODO: more sophisticated purity analysis
   return null
 }
 
-function checkNoSideEffects(node: Node, graph: Graph): Violation | null {
-  // TODO: check for side effects in the graph
+function checkNoSideEffects(node: Node): Violation | null {
+  // Similar to pure but may allow some internal state
+  // TODO: implement side effect detection
   return null
+}
+
+// Utility: collect all edges in the graph (recursive)
+export function collectEdges(node: Node): Edge[] {
+  const edges: Edge[] = [...(node.edges ?? [])]
+  for (const child of node.children ?? []) {
+    edges.push(...collectEdges(child))
+  }
+  return edges
+}
+
+// Utility: collect all constraints in the graph (recursive)
+export function collectConstraints(node: Node): { node: Node; constraint: Constraint }[] {
+  const result: { node: Node; constraint: Constraint }[] = []
+
+  for (const constraint of node.constraints ?? []) {
+    result.push({ node, constraint })
+  }
+
+  for (const child of node.children ?? []) {
+    result.push(...collectConstraints(child))
+  }
+
+  return result
 }
