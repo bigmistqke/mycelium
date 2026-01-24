@@ -1,10 +1,10 @@
 [
   {
-    "hash": "afd14ad81a6c243557d233f8bc860c403832fbac",
-    "short_hash": "afd14ad",
+    "hash": "e41488e8fd845d6bd2e855a9db1d445af3c50279",
+    "short_hash": "e41488e",
     "author": "bigmistqke",
-    "date": "2026-01-24T12:20:16+01:00",
-    "message": "docs: sync decision graph",
+    "date": "2026-01-24T12:26:06+01:00",
+    "message": "docs: sync decision graph with prior art observations",
     "files_changed": 2
   },
   {

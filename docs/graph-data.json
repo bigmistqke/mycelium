@@ -2562,6 +2562,127 @@
       "created_at": "2026-01-24T12:25:03.734516+01:00",
       "updated_at": "2026-01-24T12:25:03.734516+01:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 234,
+      "change_id": "d9a66018-74d8-44c5-8570-0d59691f2fee",
+      "node_type": "observation",
+      "title": "Prior art: Intentional Programming (Simonyi, Microsoft 1991-2001) - programs stored as intention trees, not text. Domain experts describe behavior, system generates code. Acquired by Microsoft 2017.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:30:22.788185+01:00",
+      "updated_at": "2026-01-24T12:30:22.788185+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 235,
+      "change_id": "82c299c0-1bb2-4a82-ad3d-6fa443b26462",
+      "node_type": "observation",
+      "title": "Prior art: JetBrains MPS - projectional editor, no parsing. AST is the source. Supports tables, diagrams, math notation mixed with text. No ambiguity when composing languages. YouTrack, mbeddr built with it.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:30:23.419682+01:00",
+      "updated_at": "2026-01-24T12:30:23.419682+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 236,
+      "change_id": "b2dcc79b-de77-46f0-b3be-e08dc4465e69",
+      "node_type": "observation",
+      "title": "Prior art: Bidirectional transformations / Lenses (Boomerang, UPenn) - programs that work forwards AND backwards. Get/put semantics. Used in parsers/printers, constraint maintainers, schema evolution. Key for graph ↔ code.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:30:23.972170+01:00",
+      "updated_at": "2026-01-24T12:30:23.972170+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 237,
+      "change_id": "3beb525b-3567-4c85-996d-200a4bc0defb",
+      "node_type": "observation",
+      "title": "Prior art: Sketch (Solar-Lezama, MIT) - programmer writes partial program with holes, synthesizer fills them via constraint solving. CEGIS: counterexample-guided inductive synthesis. Scaled to real programs (AES cipher).",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:30:24.517198+01:00",
+      "updated_at": "2026-01-24T12:30:24.517198+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 238,
+      "change_id": "82d7dba2-3a1f-4a3e-b4b1-5927004df5b3",
+      "node_type": "observation",
+      "title": "Prior art: Alloy (Jackson, MIT) - lightweight formal methods. Declarative specs in relational logic. Automatic analysis via SAT solving. Small scope hypothesis: most bugs found with few objects.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:30:25.109087+01:00",
+      "updated_at": "2026-01-24T12:30:25.109087+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 239,
+      "change_id": "524adef0-4c0c-4bd8-9460-0500485e727a",
+      "node_type": "observation",
+      "title": "Prior art: TLA+ (Lamport) - formal specification for concurrent/distributed systems. Model checking finds bugs. Used at AWS, Microsoft. Exhaustively-testable pseudocode, blueprints for software.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:30:25.742469+01:00",
+      "updated_at": "2026-01-24T12:30:25.742469+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 240,
+      "change_id": "9a9940cb-cefa-4d1c-ab23-af6e68ba768a",
+      "node_type": "observation",
+      "title": "Prior art: Racket / Language-Oriented Programming - solve problems by making DSLs. Macros as compiler extension. Any syntax maps to AST. Beautiful Racket book. Datalog, Algol60 as libraries.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:30:26.278325+01:00",
+      "updated_at": "2026-01-24T12:30:26.278325+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 241,
+      "change_id": "bd53723e-fb62-44d9-b7f7-616ae2b68c25",
+      "node_type": "observation",
+      "title": "Prior art: Eve (Chris Granger) - relational/Datalog core, literate programming environment. 30+ iterations. Temporal logic + relational datastore. Shut down 2018 but ideas live on.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:30:26.894305+01:00",
+      "updated_at": "2026-01-24T12:30:26.894305+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":80}"
+    },
+    {
+      "id": 242,
+      "change_id": "caeb15b3-3e36-412b-aa4d-bfe35bc6012d",
+      "node_type": "observation",
+      "title": "Prior art: Dark (Paul Biggar) - deployless, holistic language+editor+infrastructure. Structured editor prevents invalid syntax. 50ms deploys. Language, editor, infra as one thing.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:30:27.663218+01:00",
+      "updated_at": "2026-01-24T12:30:27.663218+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 243,
+      "change_id": "e84178a9-04cf-40e5-bbc3-517f0eb78073",
+      "node_type": "observation",
+      "title": "Prior art: Hazel - live functional programming with typed holes. Incomplete programs typecheck and run. Holes track closures. Integrates LLM synthesis. Distinguished papers at POPL, OOPSLA.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:30:28.572263+01:00",
+      "updated_at": "2026-01-24T12:30:28.572263+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 244,
+      "change_id": "0faa6097-7cf0-45bc-bd45-0b2fada57a73",
+      "node_type": "observation",
+      "title": "Prior art: Subtext (Jonathan Edwards) - program representation IS execution. Like spreadsheet, always live. Edits are semantic transformations. Copy-based programming model.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:30:29.124864+01:00",
+      "updated_at": "2026-01-24T12:30:29.124864+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":80}"
     }
   ],
   "edges": [
@@ -5050,6 +5171,127 @@
       "weight": 1.0,
       "rationale": "Prior art research",
       "created_at": "2026-01-24T12:25:09.564602+01:00"
+    },
+    {
+      "id": 227,
+      "from_node_id": 1,
+      "to_node_id": 234,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "d9a66018-74d8-44c5-8570-0d59691f2fee",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:35:22.771394+01:00"
+    },
+    {
+      "id": 228,
+      "from_node_id": 1,
+      "to_node_id": 235,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "82c299c0-1bb2-4a82-ad3d-6fa443b26462",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:35:22.788698+01:00"
+    },
+    {
+      "id": 229,
+      "from_node_id": 1,
+      "to_node_id": 236,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "b2dcc79b-de77-46f0-b3be-e08dc4465e69",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:35:22.804363+01:00"
+    },
+    {
+      "id": 230,
+      "from_node_id": 1,
+      "to_node_id": 237,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "3beb525b-3567-4c85-996d-200a4bc0defb",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:35:22.822118+01:00"
+    },
+    {
+      "id": 231,
+      "from_node_id": 1,
+      "to_node_id": 238,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "82d7dba2-3a1f-4a3e-b4b1-5927004df5b3",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:35:22.875151+01:00"
+    },
+    {
+      "id": 232,
+      "from_node_id": 1,
+      "to_node_id": 239,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "524adef0-4c0c-4bd8-9460-0500485e727a",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:35:22.896399+01:00"
+    },
+    {
+      "id": 233,
+      "from_node_id": 1,
+      "to_node_id": 240,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "9a9940cb-cefa-4d1c-ab23-af6e68ba768a",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:35:22.914820+01:00"
+    },
+    {
+      "id": 234,
+      "from_node_id": 1,
+      "to_node_id": 241,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "bd53723e-fb62-44d9-b7f7-616ae2b68c25",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:35:22.939281+01:00"
+    },
+    {
+      "id": 235,
+      "from_node_id": 1,
+      "to_node_id": 242,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "caeb15b3-3e36-412b-aa4d-bfe35bc6012d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:35:23.125682+01:00"
+    },
+    {
+      "id": 236,
+      "from_node_id": 1,
+      "to_node_id": 243,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "e84178a9-04cf-40e5-bbc3-517f0eb78073",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:35:23.148162+01:00"
+    },
+    {
+      "id": 237,
+      "from_node_id": 1,
+      "to_node_id": 244,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "0faa6097-7cf0-45bc-bd45-0b2fada57a73",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:35:23.163999+01:00"
     }
   ]
 }
