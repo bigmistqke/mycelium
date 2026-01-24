@@ -65,7 +65,10 @@
       "Bash(npx vitest run:*)",
       "Bash(MYCELIUM_DEBUG_TIMING=1 node:*)",
       "Bash(node:*)",
-      "Skill(recover)"
+      "Skill(recover)",
+      "Bash(for:*)",
+      "Bash(do deciduous link 1 $id -r \"Prior art research\")",
+      "Bash(done)"
     ]
   },
   "gitAttribution": false
