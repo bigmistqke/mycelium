@@ -9,7 +9,7 @@
 // - Ports → params/results
 // - Edges → calls
 
-import type { Graph, Node, Port, isLeaf, getInputs, getOutputs } from './graph.js'
+import type { Graph, Node, Port } from './graph.js'
 
 // Generate WAT from graph (recursive)
 export function graphToWat(graph: Graph): string {
