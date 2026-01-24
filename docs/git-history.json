@@ -1,11 +1,27 @@
 [
   {
-    "hash": "8879c3f7026b9d945228fc4c7b9c7deb256c0eeb",
-    "short_hash": "8879c3f",
+    "hash": "54b8fd2a6844754d188dc7c08304489ed0ae945d",
+    "short_hash": "54b8fd2",
     "author": "bigmistqke",
-    "date": "2026-01-13T23:32:58+01:00",
-    "message": "feat: add return-flow edges for call expressions\n\nWhen a local variable is initialized from a call expression, create\na depends_on edge to the callee's <return> entity.\n\nconst loaded = await loadConfig()  →  loaded depends_on loadConfig<return>\n\nThis connects return entities to the broader dataflow graph.\n228 new return-flow edges, orphans reduced 559 → 489.",
-    "files_changed": 1
+    "date": "2026-01-24T01:31:54+01:00",
+    "message": "refactor: restructure as monorepo with v0 package\n\nv0 = TypeScript static analysis into queryable semantic graph.\nThis is the first exploration - future packages may explore\nintent-first programming where code is derived from intent.\n\n- Move all source to packages/v0/\n- Update workspace config for monorepo structure\n- Add observations from ChatGPT conversation about intent-first vision",
+    "files_changed": 107
+  },
+  {
+    "hash": "6c733516b1b7df4dd62ddea894abbd7c3cbf1aca",
+    "short_hash": "6c73351",
+    "author": "bigmistqke",
+    "date": "2026-01-13T23:34:55+01:00",
+    "message": "docs: sync decision graph and git history exports",
+    "files_changed": 2
+  },
+  {
+    "hash": "6c733516b1b7df4dd62ddea894abbd7c3cbf1aca",
+    "short_hash": "6c73351",
+    "author": "bigmistqke",
+    "date": "2026-01-13T23:34:55+01:00",
+    "message": "docs: sync decision graph and git history exports",
+    "files_changed": 2
   },
   {
     "hash": "1ee4e66a48cc0858cb0e0ae33a307c4c5ec3b317",

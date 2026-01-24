@@ -2232,6 +2232,50 @@
       "created_at": "2026-01-24T01:26:23.446149+01:00",
       "updated_at": "2026-01-24T01:26:23.446149+01:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 204,
+      "change_id": "7c480e1f-0dd9-43f2-9c76-43ab8f6f1aeb",
+      "node_type": "decision",
+      "title": "Restructure repo as monorepo with v0 as first exploration",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:27:55.440274+01:00",
+      "updated_at": "2026-01-24T01:27:55.440274+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 205,
+      "change_id": "1425119b-8df0-4bf6-aa1c-90b6374a41b6",
+      "node_type": "observation",
+      "title": "v0 = TypeScript static analysis → queryable graph. Good foundation but analyzes existing code. Future versions could explore intent → graph → code (the inverse direction from ChatGPT conversation).",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:27:55.620169+01:00",
+      "updated_at": "2026-01-24T01:27:55.620169+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 206,
+      "change_id": "52a20525-ccc9-4788-8ea8-225aad79d751",
+      "node_type": "action",
+      "title": "Restructured repo as monorepo with packages/v0 containing TypeScript analyzer",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:31:43.605536+01:00",
+      "updated_at": "2026-01-24T01:31:43.605536+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"6c73351\",\"confidence\":95}"
+    },
+    {
+      "id": 207,
+      "change_id": "c4b0371b-7b37-4c12-b75c-cc744a0c3f52",
+      "node_type": "outcome",
+      "title": "Monorepo structure in place: packages/v0 contains TypeScript analyzer, root ready for future packages",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T01:32:00.963246+01:00",
+      "updated_at": "2026-01-24T01:32:00.963246+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"54b8fd2\",\"confidence\":95}"
     }
   ],
   "edges": [
@@ -4390,6 +4434,50 @@
       "weight": 1.0,
       "rationale": "Deciduous + mycelium = shared intent substrate",
       "created_at": "2026-01-24T01:26:35.739655+01:00"
+    },
+    {
+      "id": 197,
+      "from_node_id": 1,
+      "to_node_id": 204,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "7c480e1f-0dd9-43f2-9c76-43ab8f6f1aeb",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Architectural pivot based on vision exploration",
+      "created_at": "2026-01-24T01:28:00.406708+01:00"
+    },
+    {
+      "id": 198,
+      "from_node_id": 204,
+      "to_node_id": 205,
+      "from_change_id": "7c480e1f-0dd9-43f2-9c76-43ab8f6f1aeb",
+      "to_change_id": "1425119b-8df0-4bf6-aa1c-90b6374a41b6",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Defines what v0 represents",
+      "created_at": "2026-01-24T01:28:00.418389+01:00"
+    },
+    {
+      "id": 199,
+      "from_node_id": 204,
+      "to_node_id": 206,
+      "from_change_id": "7c480e1f-0dd9-43f2-9c76-43ab8f6f1aeb",
+      "to_change_id": "52a20525-ccc9-4788-8ea8-225aad79d751",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation of monorepo decision",
+      "created_at": "2026-01-24T01:31:43.766632+01:00"
+    },
+    {
+      "id": 200,
+      "from_node_id": 206,
+      "to_node_id": 207,
+      "from_change_id": "52a20525-ccc9-4788-8ea8-225aad79d751",
+      "to_change_id": "c4b0371b-7b37-4c12-b75c-cc744a0c3f52",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Restructure completed successfully",
+      "created_at": "2026-01-24T01:32:01.195315+01:00"
     }
   ]
 }
