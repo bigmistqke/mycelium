@@ -52,33 +52,6 @@
         { "from": "b", "to": "sel", "port": "false" },
         { "from": "sel", "to": "result" }
       ]
-    },
-
-    {
-      "id": "ast-max",
-      "layer": "ast",
-      "root": {
-        "kind": "func",
-        "name": "max",
-        "params": [
-          { "name": "a", "type": "i32" },
-          { "name": "b", "type": "i32" }
-        ],
-        "result": "i32",
-        "body": {
-          "kind": "select",
-          "condition": {
-            "kind": "op",
-            "op": "i32.gt_s",
-            "args": [
-              { "kind": "local.get", "name": "a" },
-              { "kind": "local.get", "name": "b" }
-            ]
-          },
-          "true": { "kind": "local.get", "name": "a" },
-          "false": { "kind": "local.get", "name": "b" }
-        }
-      }
     }
   ],
 

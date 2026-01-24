@@ -183,12 +183,6 @@
         { "from": "new_buf", "to": "out_buf" },
         { "from": "new_op", "to": "out_op" }
       ]
-    },
-
-    {
-      "id": "ast-on-key",
-      "layer": "ast",
-      "note": "Can be derived from dataflow - multi-value return with nested selects"
     }
   ],
 

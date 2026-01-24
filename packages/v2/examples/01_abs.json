@@ -35,37 +35,6 @@
         { "from": "x", "to": "sel", "port": "false" },
         { "from": "sel", "to": "result" }
       ]
-    },
-
-    {
-      "id": "ast-abs",
-      "layer": "ast",
-      "root": {
-        "kind": "func",
-        "name": "abs",
-        "params": [{ "name": "x", "type": "i32" }],
-        "result": "i32",
-        "body": {
-          "kind": "select",
-          "condition": {
-            "kind": "op",
-            "op": "i32.lt_s",
-            "args": [
-              { "kind": "local.get", "name": "x" },
-              { "kind": "const", "type": "i32", "value": 0 }
-            ]
-          },
-          "true": {
-            "kind": "op",
-            "op": "i32.sub",
-            "args": [
-              { "kind": "const", "type": "i32", "value": 0 },
-              { "kind": "local.get", "name": "x" }
-            ]
-          },
-          "false": { "kind": "local.get", "name": "x" }
-        }
-      }
     }
   ],
 
