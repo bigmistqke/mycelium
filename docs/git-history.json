@@ -1,19 +1,27 @@
 [
   {
+    "hash": "1df7c15cbc06f6adf56fc7711ae4053a10fac1c1",
+    "short_hash": "1df7c15",
+    "author": "bigmistqke",
+    "date": "2026-01-24T01:35:10+01:00",
+    "message": "docs: add VISION.md outlining intent-first programming goals",
+    "files_changed": 1
+  },
+  {
+    "hash": "67dd1e6dcf23325d247caef447c75686f461c065",
+    "short_hash": "67dd1e6",
+    "author": "bigmistqke",
+    "date": "2026-01-24T01:32:07+01:00",
+    "message": "docs: sync decision graph after monorepo restructure",
+    "files_changed": 2
+  },
+  {
     "hash": "54b8fd2a6844754d188dc7c08304489ed0ae945d",
     "short_hash": "54b8fd2",
     "author": "bigmistqke",
     "date": "2026-01-24T01:31:54+01:00",
     "message": "refactor: restructure as monorepo with v0 package\n\nv0 = TypeScript static analysis into queryable semantic graph.\nThis is the first exploration - future packages may explore\nintent-first programming where code is derived from intent.\n\n- Move all source to packages/v0/\n- Update workspace config for monorepo structure\n- Add observations from ChatGPT conversation about intent-first vision",
     "files_changed": 107
-  },
-  {
-    "hash": "6c733516b1b7df4dd62ddea894abbd7c3cbf1aca",
-    "short_hash": "6c73351",
-    "author": "bigmistqke",
-    "date": "2026-01-13T23:34:55+01:00",
-    "message": "docs: sync decision graph and git history exports",
-    "files_changed": 2
   },
   {
     "hash": "6c733516b1b7df4dd62ddea894abbd7c3cbf1aca",
