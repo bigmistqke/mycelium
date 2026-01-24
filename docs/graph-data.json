@@ -2496,6 +2496,72 @@
       "created_at": "2026-01-24T12:19:52.189324+01:00",
       "updated_at": "2026-01-24T12:19:52.189324+01:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 228,
+      "change_id": "f2db95c2-564a-457c-83d6-877ad874a229",
+      "node_type": "observation",
+      "title": "Prior art: Neuro-symbolic program synthesis - combines neural nets + symbolic reasoning. Programs invoke neural nets as library routines. GNNs for program analysis. Key refs: UT Austin neurosymbolic programming, SIGPLAN blog.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:25:00.836487+01:00",
+      "updated_at": "2026-01-24T12:25:00.836487+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 229,
+      "change_id": "b97910bf-580a-4d1c-9a18-ff8a99f4c56a",
+      "node_type": "observation",
+      "title": "Prior art: Dataflow/visual programming - LabVIEW (1986), Node-RED, Pure Data. Block diagrams with wires. Execution when inputs available. Inherently parallel. Software engineering motivation, not just parallelism.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:25:01.455134+01:00",
+      "updated_at": "2026-01-24T12:25:01.455134+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 230,
+      "change_id": "8ce99b5c-d954-406c-80af-4cf598670adc",
+      "node_type": "observation",
+      "title": "Prior art: Model-Driven Architecture (OMG) - Platform-independent models → code. Executable UML/fUML. Transformations: PIM → PSM → code. Forward engineering from models.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:25:02.013214+01:00",
+      "updated_at": "2026-01-24T12:25:02.013214+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
+    },
+    {
+      "id": 231,
+      "change_id": "b9d7d1b1-cc7d-476f-be5c-fe7c22bac5ee",
+      "node_type": "observation",
+      "title": "Prior art: Unison language - code identified by hash of AST, not names. Immutable definitions. Eliminates builds and dependency conflicts. Names are pointers to hashes. Distributed programming simplified.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:25:02.629358+01:00",
+      "updated_at": "2026-01-24T12:25:02.629358+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 232,
+      "change_id": "8625e368-2877-4290-b7d6-764b11e39ff2",
+      "node_type": "observation",
+      "title": "Prior art: Synchronous reactive languages - Lustre, Esterel, Signal. Dataflow for reactive systems. Formal semantics enable verification. Used in safety-critical embedded (aerospace, automotive). SCADE industrial tool based on Lustre.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:25:03.200268+01:00",
+      "updated_at": "2026-01-24T12:25:03.200268+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 233,
+      "change_id": "24adeddb-fbf5-441a-b3bb-cd2d0d7fb326",
+      "node_type": "observation",
+      "title": "Prior art: Simulink/SCADE - industrial block diagram tools. Block diagrams → C/C++/CUDA/Verilog. Production-quality embedded code. Simulation before commitment. Hierarchical abstraction.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T12:25:03.734516+01:00",
+      "updated_at": "2026-01-24T12:25:03.734516+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
     }
   ],
   "edges": [
@@ -4918,6 +4984,72 @@
       "weight": 1.0,
       "rationale": "Connection to neuro-symbolic",
       "created_at": "2026-01-24T12:19:56.899861+01:00"
+    },
+    {
+      "id": 221,
+      "from_node_id": 1,
+      "to_node_id": 228,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "f2db95c2-564a-457c-83d6-877ad874a229",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:25:09.514373+01:00"
+    },
+    {
+      "id": 222,
+      "from_node_id": 1,
+      "to_node_id": 229,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "b97910bf-580a-4d1c-9a18-ff8a99f4c56a",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:25:09.525615+01:00"
+    },
+    {
+      "id": 223,
+      "from_node_id": 1,
+      "to_node_id": 230,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "8ce99b5c-d954-406c-80af-4cf598670adc",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:25:09.535398+01:00"
+    },
+    {
+      "id": 224,
+      "from_node_id": 1,
+      "to_node_id": 231,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "b9d7d1b1-cc7d-476f-be5c-fe7c22bac5ee",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:25:09.544769+01:00"
+    },
+    {
+      "id": 225,
+      "from_node_id": 1,
+      "to_node_id": 232,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "8625e368-2877-4290-b7d6-764b11e39ff2",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:25:09.554932+01:00"
+    },
+    {
+      "id": 226,
+      "from_node_id": 1,
+      "to_node_id": 233,
+      "from_change_id": "766333f7-71fc-4286-8b74-d89b338d5f43",
+      "to_change_id": "24adeddb-fbf5-441a-b3bb-cd2d0d7fb326",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Prior art research",
+      "created_at": "2026-01-24T12:25:09.564602+01:00"
     }
   ]
 }

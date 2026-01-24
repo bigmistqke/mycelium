@@ -1,10 +1,10 @@
 [
   {
-    "hash": "f4e35933280e07bc24ed74247abccfe4be17362a",
-    "short_hash": "f4e3593",
+    "hash": "afd14ad81a6c243557d233f8bc860c403832fbac",
+    "short_hash": "afd14ad",
     "author": "bigmistqke",
-    "date": "2026-01-24T12:03:40+01:00",
-    "message": "docs: sync decision graph with recursive box model",
+    "date": "2026-01-24T12:20:16+01:00",
+    "message": "docs: sync decision graph",
     "files_changed": 2
   },
   {
