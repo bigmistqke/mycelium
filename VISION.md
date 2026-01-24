@@ -209,7 +209,7 @@ Human ←→ AI: bounce ideas, explore tradeoffs, drive the graph together
    Artifacts: derived, not primary; updated when graph changes
 ```
 
-AI is a peer from the start—someone to spitball ideas with. It has deep understanding of the graph and keeps the conversation in sync with the structure. But validation is deterministic: static analysis, type checking, CLI tools that can verify constraints without hallucination. LLMs handle the fuzzy high-level reasoning; tools handle the precise verification.
+AI is a peer from the start—exploring ideas, asking questions, proposing structure. It understands the graph and keeps the conversation in sync with what's recorded. Validation is separate: static analysis, type checking, and CLI tools provide deterministic verification. LLMs reason; tools verify.
 
 ## Why This Matters
 
