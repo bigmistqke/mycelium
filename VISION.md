@@ -99,6 +99,45 @@ human intent → shared graph → AI synthesis → executable artifacts
 
 **Simulation before commitment**: Like electrical engineers use SPICE before committing to silicon, simulate the intent graph before deriving code. Run dataflow, check for conflicts, stress-test constraints, explore "what-if" scenarios. Catch architectural mistakes before they become artifacts that AI keeps painting on top of.
 
+## Dual-Mode Representation
+
+The shared intent space has two interlocking layers:
+
+**Linguistic / Narrative Layer**
+- Humans express goals, constraints, rationale
+- Flexible, intuitive, supports brainstorming
+- Ambiguous, hard to compile directly
+
+**Structural / Graph Layer**
+- Explicit nodes/edges for components, dataflow, dependencies
+- Machine-readable, allows simulation and validation
+- Grows combinatorially, requires curation
+
+### Bridging the Two
+
+Words drive graph creation and refinement. Graph operations feed back to narrative ("This node violates constraint X"). The user speaks intent; AI proposes graph structure.
+
+### The Messy Graph Problem
+
+Graphs explode because every node and edge is visible. This is a UX problem, not inherent. Mitigations:
+
+- **Hierarchical abstraction**: Collapse into subgraphs/modules
+- **Semantic folding**: Show only nodes relevant to current focus
+- **Temporal layers**: Older decisions fade unless queried
+- **Hybrid views**: Toggle macro (goals) vs micro (dataflow)
+- **AI-driven cleanup**: Detect redundancy, suggest merges
+
+### Minimizing Maintenance
+
+The burden that kills SPECS.md and architectural diagrams. Reduce it through:
+
+- **Two-way sync**: Edit words → graph updates; edit graph → words summarize
+- **Change tracking**: System highlights inconsistencies
+- **Auto-pruning**: Merge redundant nodes, collapse low-impact decisions
+- **Live feedback**: See consequences before committing
+
+Human resolves conflicts, not redraws everything.
+
 ## Two Graphs, One Substrate
 
 **Deciduous** captures *why*: decisions, goals, options considered, outcomes observed. The reasoning history.
