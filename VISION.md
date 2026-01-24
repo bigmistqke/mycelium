@@ -284,9 +284,44 @@ Syntax is noise. The ideal target is:
 
 But the compilation target is secondary. The primary artifact is the intent graph. Code is one view of it.
 
-## What's Missing
+## Roadmap
 
-To get from v0 to the vision:
+### v1: Graph ↔ WAT + Simple Constraints
+
+Prove: graph is primary, code is derived, constraints validated deterministically.
+
+**In scope:**
+- Simple graph schema (functions, types, modules, calls, dataflow)
+- Constraint attributes ("must call X", "pure", "no side effects")
+- Graph → WAT generation (deterministic synthesis)
+- WAT → Graph parsing (lossless roundtrip)
+- Constraint validation CLI (tools verify, not LLM)
+
+**Not in scope:**
+- LLM integration (v2)
+- UI (CLI only)
+- Simulation
+- Complex constraint solving
+
+### v2: Words → Graph
+
+Layer LLM on top of v1's symbolic foundation.
+
+- Natural language → graph structure
+- LLM interprets intent, proposes nodes/edges
+- More expressive constraints (SAT/SMT solving)
+- Basic simulation
+
+### v3+: Full Vision
+
+- Differentiable compilation
+- Live bidirectional sync
+- Collaborative editing
+- Production runtime
+
+## What's Missing (from full vision)
+
+To get from here to there:
 
 1. **Constraint encoding**: Express invariants in the graph, not just in prose
 2. **Bidirectional sync**: Changes to source update the graph automatically (v0 does this); changes to graph update source (not yet)

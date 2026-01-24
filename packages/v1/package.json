@@ -1,0 +1,28 @@
+{
+  "name": "@mycelium/v1",
+  "version": "0.0.1",
+  "description": "v1: Graph ↔ WAT + Simple Constraints",
+  "type": "module",
+  "main": "src/index.ts",
+  "bin": {
+    "mycelium": "src/cli.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "intent-graph",
+    "wasm",
+    "wat",
+    "constraints",
+    "synthesis"
+  ],
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0"
+  }
+}
