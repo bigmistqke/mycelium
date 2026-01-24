@@ -73,11 +73,11 @@ human intent → shared graph → AI synthesis → executable artifacts
                │
                ▼
 ┌─────────────────────────────────────┐
-│ Layer 2: AI Synthesis + Validation  │
-│ - Graph → code derivation           │
-│ - Static analysis / constraints     │
-│ - Conflict detection, clustering    │
-│ - Simulation and verification       │
+│ Layer 2: Synthesis + Validation     │
+│ - AI: graph → code derivation       │
+│ - Tools: static analysis, types     │
+│ - Tools: conflict detection         │
+│ - Tools: simulation, verification   │
 └──────────────┬──────────────────────┘
                │
                ▼
@@ -95,7 +95,7 @@ human intent → shared graph → AI synthesis → executable artifacts
 
 **Macro/micro layering**: Humans handle structure and constraints (macro). AI fills in implementation details (micro). Like sketching composition and having a model paint in texture.
 
-**Constraint-aware synthesis**: AI doesn't just generate code—it validates against declared invariants. Type-checking for intent, not just syntax.
+**Deterministic validation**: Constraints are checked by static analysis and CLI tools, not LLMs. Type-checking for intent, not just syntax. AI drives the conversation; tools verify the results.
 
 **Simulation before execution**: Run the intent graph to check for conflicts, validate dataflow, stress-test constraints—before committing to artifacts.
 
@@ -139,16 +139,16 @@ To get from v0 to the vision:
 ## The Collaboration Model
 
 ```
-Human ←→ AI: bounce ideas, explore tradeoffs, make decisions together
+Human ←→ AI: bounce ideas, explore tradeoffs, drive the graph together
       ↓
    Graph: persistent, queryable, shared between sessions
       ↓
-   AI: synthesizes details, validates constraints
+   Static analysis / CLI tools: deterministic constraint validation
       ↓
    Artifacts: derived, not primary; updated when graph changes
 ```
 
-AI is a peer from the start—someone to spitball ideas with, not just an executor. It has deep understanding of the graph and keeps the conversation in sync with the structure. The graph is the shared substrate. Both human and AI operate on it, and the AI helps maintain coherence between what's discussed and what's recorded.
+AI is a peer from the start—someone to spitball ideas with. It has deep understanding of the graph and keeps the conversation in sync with the structure. But validation is deterministic: static analysis, type checking, CLI tools that can verify constraints without hallucination. LLMs handle the fuzzy high-level reasoning; tools handle the precise verification.
 
 ## Why This Matters
 
