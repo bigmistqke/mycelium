@@ -423,6 +423,7 @@ Prior art largely focused on:
 - Domain-specific (embedded, control systems)
 - Visual-first (drag and drop blocks)
 - Single direction (model → code)
+- New languages (adoption barrier)
 
 Mycelium aims for:
 - General-purpose (via WAT/WASM)
@@ -431,3 +432,4 @@ Mycelium aims for:
 - AI as peer (not just code generator)
 - Constraints as first-class citizens
 - Recursive box model (same structure at all levels)
+- **NOT a new language** — graph is the abstraction, outputs are existing languages (WAT, TS, Rust, etc.)
