@@ -139,16 +139,16 @@ To get from v0 to the vision:
 ## The Collaboration Model
 
 ```
-Human: shapes structure, declares constraints, makes decisions
-   ↓
-Graph: persistent, queryable, shared between sessions
-   ↓
-AI: proposes refinements, synthesizes details, validates constraints
-   ↓
-Artifacts: derived, not primary; updated when graph changes
+Human ←→ AI: bounce ideas, explore tradeoffs, make decisions together
+      ↓
+   Graph: persistent, queryable, shared between sessions
+      ↓
+   AI: synthesizes details, validates constraints
+      ↓
+   Artifacts: derived, not primary; updated when graph changes
 ```
 
-LLMs become the assistant layer—spitballing ideas, calling CLI tools, synthesizing text—but not the design substrate itself. The graph is the substrate. Both human and AI operate on it.
+AI is a peer from the start—someone to spitball ideas with, not just an executor. It has deep understanding of the graph and keeps the conversation in sync with the structure. The graph is the shared substrate. Both human and AI operate on it, and the AI helps maintain coherence between what's discussed and what's recorded.
 
 ## Why This Matters
 
