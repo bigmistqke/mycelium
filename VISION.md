@@ -111,6 +111,67 @@ Together they form the shared intent substrate:
 - Both are queryable by humans and AI
 - Neither requires constant manual maintenance
 
+## Lessons from Electronic Engineering
+
+Hardware design solved these problems decades ago. Software can learn from it.
+
+### The EE Stack
+
+```
+Specification / Requirements
+        ↓
+Block Diagrams (functional decomposition)
+        ↓
+Behavioral Models (simulate before building)
+        ↓
+RTL / HDL (structural description)
+        ↓
+Synthesis (automated gate-level derivation)
+        ↓
+Physical Layout (the actual artifact)
+```
+
+At every level, engineers can:
+- **Simulate** before committing to the next level
+- **Verify** against constraints from higher levels
+- **Iterate** without touching the final artifact
+
+### What Software Lacks
+
+Software jumps straight from fuzzy intent to implementation:
+
+```
+Vague requirements → Code → Hope it works
+```
+
+We lack:
+- **Behavioral models**: No way to simulate intent before coding
+- **Hierarchical abstraction**: Code is flat; architecture lives in heads
+- **Constraint propagation**: Invariants aren't enforced across levels
+- **Synthesis**: Humans write all the glue; nothing is derived
+
+### Bringing EE Practices to Code
+
+| EE Concept | Software Equivalent |
+|------------|---------------------|
+| Block diagrams | Intent graph (components, dataflow) |
+| Behavioral simulation | Graph execution, "what-if" analysis |
+| Constraint-driven synthesis | Derive code from graph + invariants |
+| Hierarchical refinement | Macro (architecture) → micro (implementation) |
+| Design rule checking | Static analysis against declared constraints |
+| Formal verification | Prove properties hold across the graph |
+
+The intent graph is the "schematic" of software. Code is the "layout"—derived, not primary.
+
+### Why This Works in EE
+
+1. **The model is executable**: You can run a block diagram before building hardware
+2. **Constraints flow down**: High-level requirements constrain low-level choices
+3. **Synthesis is automated**: HDL → gates is done by tools, not humans
+4. **Simulation catches errors early**: Before you commit to expensive artifacts
+
+Software has none of this. We write code directly, then try to reverse-engineer whether it matches intent.
+
 ## Compilation Targets
 
 Syntax is noise. The ideal target is:
