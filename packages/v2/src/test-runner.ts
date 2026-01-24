@@ -1,9 +1,12 @@
 /**
  * Test runner: compiles dataflow → WAT → WASM and runs tests
+ * Now with dataflow visualization!
  */
 
 import { dataflowToWat } from './dataflow-to-wat'
 import wabt from 'wabt'
+import { Network } from 'vis-network'
+import { DataSet } from 'vis-data'
 
 const output = document.getElementById('output')!
 
@@ -11,11 +14,74 @@ function log(html: string) {
   output.innerHTML += html + '\n'
 }
 
+// Node colors by kind
+const nodeColors: Record<string, string> = {
+  input: '#4CAF50',   // green
+  output: '#f44336',  // red
+  const: '#9E9E9E',   // gray
+  op: '#2196F3',      // blue
+  select: '#FF9800',  // orange
+}
+
+function renderDataflow(flowNode: any, containerId: string) {
+  const container = document.getElementById(containerId)
+  if (!container) return
+
+  // Convert dataflow nodes to vis-network format
+  const nodes = new DataSet(
+    flowNode.nodes.map((n: any) => ({
+      id: n.id,
+      label: n.kind === 'const' ? `${n.value}` : n.kind === 'op' ? n.op : n.id,
+      color: nodeColors[n.kind] || '#666',
+      shape: n.kind === 'select' ? 'diamond' : n.kind === 'const' ? 'box' : 'ellipse',
+      font: { color: '#fff', size: 12 },
+    }))
+  )
+
+  // Convert dataflow edges to vis-network format
+  const edges = new DataSet(
+    flowNode.edges.map((e: any, i: number) => ({
+      id: i,
+      from: e.from,
+      to: e.to,
+      arrows: 'to',
+      label: e.port !== undefined ? String(e.port) : undefined,
+      font: { size: 10, color: '#666' },
+    }))
+  )
+
+  const options = {
+    layout: {
+      hierarchical: {
+        enabled: true,
+        direction: 'LR',
+        sortMethod: 'directed',
+        levelSeparation: 120,
+        nodeSpacing: 80,
+      },
+    },
+    physics: false,
+    edges: {
+      color: '#666',
+      smooth: { type: 'cubicBezier' },
+    },
+    nodes: {
+      borderWidth: 2,
+      shadow: true,
+    },
+  }
+
+  new Network(container, { nodes, edges }, options)
+}
+
 async function runTests() {
   const wabtModule = await wabt()
 
   // Load examples
   const examples = ['00_max', '01_abs', '02_calculator']
+
+  // Collect graphs to render after loop
+  const graphsToRender: { flowNode: any; containerId: string }[] = []
 
   for (const name of examples) {
     log(`<h2>Testing: ${name}</h2>`)
@@ -33,6 +99,13 @@ async function runTests() {
         log(`<span class="fail">✗ Missing function or dataflow layer</span>`)
         continue
       }
+
+      // Add graph container
+      const graphId = `graph-${name}`
+      log(`<div id="${graphId}" class="graph-container"></div>`)
+
+      // Queue for rendering after DOM update
+      graphsToRender.push({ flowNode, containerId: graphId })
 
       // Parse function signature
       const params = funcNode.inputs.map((inp: string) => {
@@ -57,7 +130,7 @@ async function runTests() {
 
       const isMultiValue = func.results.length > 1
 
-      log(`<pre class="wat">${escapeHtml(wat)}</pre>`)
+      log(`<details><summary>Generated WAT</summary><pre class="wat">${escapeHtml(wat)}</pre></details>`)
 
       // Compile WAT → WASM
       const wasmModule = wabtModule.parseWat('test.wat', wat)
@@ -108,6 +181,13 @@ async function runTests() {
   }
 
   log(`<h2>Done!</h2>`)
+
+  // Render all graphs after DOM is updated
+  requestAnimationFrame(() => {
+    for (const { flowNode, containerId } of graphsToRender) {
+      renderDataflow(flowNode, containerId)
+    }
+  })
 }
 
 function escapeHtml(text: string): string {
