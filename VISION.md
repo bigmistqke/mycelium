@@ -97,7 +97,7 @@ human intent → shared graph → AI synthesis → executable artifacts
 
 **Deterministic validation**: Constraints are checked by static analysis and CLI tools, not LLMs. Type-checking for intent, not just syntax. AI drives the conversation; tools verify the results.
 
-**Simulation before execution**: Run the intent graph to check for conflicts, validate dataflow, stress-test constraints—before committing to artifacts.
+**Simulation before commitment**: Like electrical engineers use SPICE before committing to silicon, simulate the intent graph before deriving code. Run dataflow, check for conflicts, stress-test constraints, explore "what-if" scenarios. Catch architectural mistakes before they become artifacts that AI keeps painting on top of.
 
 ## Two Graphs, One Substrate
 
