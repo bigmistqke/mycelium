@@ -8,7 +8,7 @@ Code embodies intent but doesn't expose it cleanly. It's optimized for determini
 intent → design → code
 ```
 
-But the only persistent artifact is the last one. Intent and design evaporate into tacit assumptions, mental models, tribal knowledge, and (if you're lucky) comments.
+But the only persistent artifact is the last one. Intent and design evaporate into tacit assumptions, mental models, and tribal knowledge. Comments rarely help—they drift out of sync and often signal that the code itself isn't clear enough.
 
 Reading code becomes an inverse problem:
 
