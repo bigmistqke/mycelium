@@ -24,7 +24,14 @@
       "title": "max",
       "inputs": ["a: i32", "b: i32"],
       "outputs": ["i32"],
-      "description": "Returns the larger of two numbers"
+      "description": "Returns the larger of two numbers",
+      "tests": [
+        { "in": { "a": 3, "b": 5 }, "out": 5 },
+        { "in": { "a": 7, "b": 2 }, "out": 7 },
+        { "in": { "a": 4, "b": 4 }, "out": 4 },
+        { "in": { "a": -3, "b": -7 }, "out": -3 },
+        { "in": { "a": 0, "b": -1 }, "out": 0 }
+      ]
     },
 
     {

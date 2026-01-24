@@ -1,5 +1,13 @@
 [
   {
+    "hash": "d15eab3cac99c1e27891a12e19df4758f9e0b057",
+    "short_hash": "d15eab3",
+    "author": "bigmistqke",
+    "date": "2026-01-24T15:05:31+01:00",
+    "message": "feat(v2): add full gradient experiment with calculator example\n\nv2 explores the full gradient from vision to AST:\n- Vision/Architecture/Component/Function layers have descriptions (intent)\n- Dataflow layer is flat DAG with explicit wiring and shared nodes\n- AST layer is nested tree structure, code generated from it\n\nKey insight: dataflow shows data dependencies, AST shows syntactic\nstructure. Function layer is the boundary between described intent\nand structural implementation.\n\nAlso adds READMEs documenting v1 (structural skeleton) and v2 (full gradient).",
+    "files_changed": 5
+  },
+  {
     "hash": "544756bf9188fa5c4db4dbfd704bf75514654ca0",
     "short_hash": "544756b",
     "author": "bigmistqke",
@@ -8,12 +16,12 @@
     "files_changed": 3
   },
   {
-    "hash": "8313e7addb41a0c57b6cbb78cf5c9dbc156de8bb",
-    "short_hash": "8313e7a",
+    "hash": "544756bf9188fa5c4db4dbfd704bf75514654ca0",
+    "short_hash": "544756b",
     "author": "bigmistqke",
-    "date": "2026-01-24T13:34:55+01:00",
-    "message": "feat(v1): add CLI for graph generation, validation, and parsing\n\n- Add cli.ts with generate, validate, and parse commands\n- Fix constraint validation to check edges at graph level (not node level)\n- Add calculator example (graph.json + generated .wat)\n- Sync decision graph with v1 scope reduction and roundtrip discussion",
-    "files_changed": 7
+    "date": "2026-01-24T13:36:25+01:00",
+    "message": "refactor(v1): use commander for CLI instead of custom parseArgs",
+    "files_changed": 3
   },
   {
     "hash": "8313e7addb41a0c57b6cbb78cf5c9dbc156de8bb",

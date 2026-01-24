@@ -3178,6 +3178,61 @@
       "created_at": "2026-01-24T15:01:38.794931+01:00",
       "updated_at": "2026-01-24T15:01:38.794931+01:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 290,
+      "change_id": "41f86701-d2d2-4c17-a2d6-6e049be2987d",
+      "node_type": "outcome",
+      "title": "v2 full gradient experiment committed: calculator example with vision→architecture→component→function→dataflow→AST layers, READMEs for v1 and v2",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T15:05:37.598204+01:00",
+      "updated_at": "2026-01-24T15:05:37.598204+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"d15eab3\",\"confidence\":95}"
+    },
+    {
+      "id": 291,
+      "change_id": "47bb54c4-f87a-4b26-ba3b-505fcdfb524f",
+      "node_type": "observation",
+      "title": "Verification via mocking: tests live at function layer (last described layer). Lower layers (dataflow, AST) inherit tests through implemented_by edges. Higher layers are organizational, no executable tests. Tests ARE the intent, expressed as examples.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T15:14:01.212641+01:00",
+      "updated_at": "2026-01-24T15:14:01.212641+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 292,
+      "change_id": "3d153e01-47fa-40b2-b180-c252bff3d9c7",
+      "node_type": "observation",
+      "title": "AST layer can be derived from dataflow - not hand-authored. Dataflow is complete enough: state→globals, switch→if-else, effect→call, op→op. The compiles_to edge becomes actual compilation.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T17:40:28.454597+01:00",
+      "updated_at": "2026-01-24T17:40:28.454597+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 293,
+      "change_id": "f0f08137-a00a-4b5a-bd6c-44013efa6c9d",
+      "node_type": "observation",
+      "title": "Authoring boundary: human/AI writes Vision→Architecture→Component→Function→Dataflow. Tools derive AST from dataflow, WAT from AST. Humans describe intent down to dataflow, machines handle the rest.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T17:40:34.862753+01:00",
+      "updated_at": "2026-01-24T17:40:34.862753+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 294,
+      "change_id": "b5188e2b-2af0-4d8b-8859-ff9c73882825",
+      "node_type": "observation",
+      "title": "Binaryen: WASM compiler infrastructure. Tree-based IR (like our AST), Relooper converts CFG→structured WASM, includes optimizer. Used by Emscripten, AssemblyScript. Could be v2+ backend for optimization, but can skip for now and generate WAT directly.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-01-24T17:44:50.447073+01:00",
+      "updated_at": "2026-01-24T17:44:50.447073+01:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
     }
   ],
   "edges": [
@@ -6359,6 +6414,94 @@
       "weight": 1.0,
       "rationale": "v2 example progress",
       "created_at": "2026-01-24T15:01:44.434704+01:00"
+    },
+    {
+      "id": 290,
+      "from_node_id": 274,
+      "to_node_id": 290,
+      "from_change_id": "fca8a060-f02f-4655-bc0e-faf27813b0a2",
+      "to_change_id": "41f86701-d2d2-4c17-a2d6-6e049be2987d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Committed",
+      "created_at": "2026-01-24T15:05:42.440822+01:00"
+    },
+    {
+      "id": 291,
+      "from_node_id": 289,
+      "to_node_id": 290,
+      "from_change_id": "d562a96d-cc44-456b-9076-c90a1797f5bf",
+      "to_change_id": "41f86701-d2d2-4c17-a2d6-6e049be2987d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Committed",
+      "created_at": "2026-01-24T15:05:42.451496+01:00"
+    },
+    {
+      "id": 292,
+      "from_node_id": 288,
+      "to_node_id": 291,
+      "from_change_id": "2e2855db-9032-4c72-8034-a6736da24497",
+      "to_change_id": "47bb54c4-f87a-4b26-ba3b-505fcdfb524f",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Chosen approach",
+      "created_at": "2026-01-24T15:14:09.179318+01:00"
+    },
+    {
+      "id": 293,
+      "from_node_id": 274,
+      "to_node_id": 291,
+      "from_change_id": "fca8a060-f02f-4655-bc0e-faf27813b0a2",
+      "to_change_id": "47bb54c4-f87a-4b26-ba3b-505fcdfb524f",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "v2 verification strategy",
+      "created_at": "2026-01-24T15:14:09.195479+01:00"
+    },
+    {
+      "id": 294,
+      "from_node_id": 289,
+      "to_node_id": 292,
+      "from_change_id": "d562a96d-cc44-456b-9076-c90a1797f5bf",
+      "to_change_id": "3d153e01-47fa-40b2-b180-c252bff3d9c7",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implication",
+      "created_at": "2026-01-24T17:40:41.096299+01:00"
+    },
+    {
+      "id": 295,
+      "from_node_id": 292,
+      "to_node_id": 293,
+      "from_change_id": "3d153e01-47fa-40b2-b180-c252bff3d9c7",
+      "to_change_id": "f0f08137-a00a-4b5a-bd6c-44013efa6c9d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Authoring boundary",
+      "created_at": "2026-01-24T17:40:41.112589+01:00"
+    },
+    {
+      "id": 296,
+      "from_node_id": 274,
+      "to_node_id": 293,
+      "from_change_id": "fca8a060-f02f-4655-bc0e-faf27813b0a2",
+      "to_change_id": "f0f08137-a00a-4b5a-bd6c-44013efa6c9d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "v2 insight",
+      "created_at": "2026-01-24T17:40:41.124603+01:00"
+    },
+    {
+      "id": 297,
+      "from_node_id": 292,
+      "to_node_id": 294,
+      "from_change_id": "3d153e01-47fa-40b2-b180-c252bff3d9c7",
+      "to_change_id": "b5188e2b-2af0-4d8b-8859-ff9c73882825",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Potential backend",
+      "created_at": "2026-01-24T17:44:56.222803+01:00"
     }
   ]
 }
