@@ -1,0 +1,85 @@
+{
+  "nodes": [
+    {
+      "id": "vision-math",
+      "layer": "vision",
+      "title": "Reusable math primitives"
+    },
+
+    {
+      "id": "arch-calculator",
+      "layer": "architecture",
+      "title": "Calculator system"
+    },
+
+    {
+      "id": "comp-arithmetic",
+      "layer": "component",
+      "title": "Arithmetic operations"
+    },
+
+    {
+      "id": "func-max",
+      "layer": "function",
+      "title": "max",
+      "inputs": ["a: i32", "b: i32"],
+      "outputs": ["i32"],
+      "description": "Returns the larger of two numbers"
+    },
+
+    {
+      "id": "flow-max",
+      "layer": "dataflow",
+      "nodes": [
+        { "id": "a", "kind": "input" },
+        { "id": "b", "kind": "input" },
+        { "id": "cmp", "kind": "op", "op": "i32.gt_s" },
+        { "id": "sel", "kind": "select" },
+        { "id": "result", "kind": "output" }
+      ],
+      "edges": [
+        { "from": "a", "to": "cmp", "port": 0 },
+        { "from": "b", "to": "cmp", "port": 1 },
+        { "from": "cmp", "to": "sel", "port": "condition" },
+        { "from": "a", "to": "sel", "port": "true" },
+        { "from": "b", "to": "sel", "port": "false" },
+        { "from": "sel", "to": "result" }
+      ]
+    },
+
+    {
+      "id": "ast-max",
+      "layer": "ast",
+      "root": {
+        "kind": "func",
+        "name": "max",
+        "params": [
+          { "name": "a", "type": "i32" },
+          { "name": "b", "type": "i32" }
+        ],
+        "result": "i32",
+        "body": {
+          "kind": "select",
+          "condition": {
+            "kind": "op",
+            "op": "i32.gt_s",
+            "args": [
+              { "kind": "local.get", "name": "a" },
+              { "kind": "local.get", "name": "b" }
+            ]
+          },
+          "true": { "kind": "local.get", "name": "a" },
+          "false": { "kind": "local.get", "name": "b" }
+        }
+      }
+    }
+  ],
+
+  "edges": [
+    { "from": "vision-math", "to": "arch-calculator", "type": "motivates" },
+    { "from": "arch-calculator", "to": "comp-arithmetic", "type": "contains" },
+    { "from": "comp-arithmetic", "to": "func-max", "type": "exposes" },
+    { "from": "func-max", "to": "flow-max", "type": "implemented_by" },
+    { "from": "flow-max", "to": "ast-max", "type": "compiles_to" }
+  ]
+}

@@ -1,11 +1,27 @@
 [
   {
-    "hash": "be8c24c991fce292aedae9f3335737fb32278069",
-    "short_hash": "be8c24c",
+    "hash": "544756bf9188fa5c4db4dbfd704bf75514654ca0",
+    "short_hash": "544756b",
     "author": "bigmistqke",
-    "date": "2026-01-24T12:52:27+01:00",
-    "message": "docs: sync decision graph",
+    "date": "2026-01-24T13:36:25+01:00",
+    "message": "refactor(v1): use commander for CLI instead of custom parseArgs",
     "files_changed": 3
+  },
+  {
+    "hash": "8313e7addb41a0c57b6cbb78cf5c9dbc156de8bb",
+    "short_hash": "8313e7a",
+    "author": "bigmistqke",
+    "date": "2026-01-24T13:34:55+01:00",
+    "message": "feat(v1): add CLI for graph generation, validation, and parsing\n\n- Add cli.ts with generate, validate, and parse commands\n- Fix constraint validation to check edges at graph level (not node level)\n- Add calculator example (graph.json + generated .wat)\n- Sync decision graph with v1 scope reduction and roundtrip discussion",
+    "files_changed": 7
+  },
+  {
+    "hash": "8313e7addb41a0c57b6cbb78cf5c9dbc156de8bb",
+    "short_hash": "8313e7a",
+    "author": "bigmistqke",
+    "date": "2026-01-24T13:34:55+01:00",
+    "message": "feat(v1): add CLI for graph generation, validation, and parsing\n\n- Add cli.ts with generate, validate, and parse commands\n- Fix constraint validation to check edges at graph level (not node level)\n- Add calculator example (graph.json + generated .wat)\n- Sync decision graph with v1 scope reduction and roundtrip discussion",
+    "files_changed": 7
   },
   {
     "hash": "3f56f96753f04a496596995b5726c2943f7c0ca5",
