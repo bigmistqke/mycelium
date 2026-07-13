@@ -1,19 +1,51 @@
 [
   {
+    "hash": "a9cd41f9de0cf96a19ce98d810c599bc57a33d72",
+    "short_hash": "a9cd41f",
+    "author": "bigmistqke",
+    "date": "2026-07-14T01:40:55+02:00",
+    "message": "docs(v3): add the design for deriving tests from decomposed decisions\n\nAdds a new package directory holding a design document and the two\nexperiments that back it.\n\nThe design proposes that an architectural decision should not be a block\nof prose. It should be broken into individual claims, each carrying a\npredicate over its inputs, the answer it promises, and a record of how it\nis checked: by the type system, by a test, by human review, or not at all.\nClaims can nest, and a test is derived for each leaf. Three checks then\nbecome mechanical rather than a matter of taste: inputs no claim speaks to,\ninputs two claims answer differently, and tests that catch nothing another\ntest already catches.\n\nThe reason for all this is that asking a language model to \"write tests for\nX\" is an unbounded request, so it fills the space with plausible but\nredundant tests. The two scripts in the experiments directory measure that\nclaim rather than assert it.\n\nThe first script breaks the max example's dataflow graph in seven ways,\ncompiles each one through the existing compiler into WebAssembly, and runs\nthe five hand-written tests against every version. Only two of the five\ncatch anything the other tests miss. One of them cannot fail at all: when\nboth inputs are equal, any implementation that returns either input passes.\n\nThe second script takes the three claims an author would naturally write\nfor a clamp function and looks for inputs that no claim covers and inputs\nthat two claims answer differently. It finds ten contradictions, every one\nof them a case where the minimum exceeds the maximum. Nobody had to know\nthat edge case in advance for the check to surface it.\n\nThe handoff note is kept for the survey of the existing packages it\ncontains, but its own proposal is marked superseded by the design.",
+    "files_changed": 4
+  },
+  {
+    "hash": "e139159cd79533f6a374af55800dca6764d2b9cd",
+    "short_hash": "e139159",
+    "author": "bigmistqke",
+    "date": "2026-01-24T18:22:42+01:00",
+    "message": "feat(v2): add dataflow graph visualization with vis-network\n\n- Add vis-network for interactive graph rendering in test runner\n- Color-code nodes by kind: input (green), output (red), op (blue), select (orange), const (gray)\n- Separate CLI into cli.ts, keep dataflow-to-wat.ts as pure library\n- Export FunctionInfo interface for consumers",
+    "files_changed": 6
+  },
+  {
+    "hash": "e139159cd79533f6a374af55800dca6764d2b9cd",
+    "short_hash": "e139159",
+    "author": "bigmistqke",
+    "date": "2026-01-24T18:22:42+01:00",
+    "message": "feat(v2): add dataflow graph visualization with vis-network\n\n- Add vis-network for interactive graph rendering in test runner\n- Color-code nodes by kind: input (green), output (red), op (blue), select (orange), const (gray)\n- Separate CLI into cli.ts, keep dataflow-to-wat.ts as pure library\n- Export FunctionInfo interface for consumers",
+    "files_changed": 6
+  },
+  {
+    "hash": "152917e278ae1e635cc2ccffdd8724e226fdf7da",
+    "short_hash": "152917e",
+    "author": "bigmistqke",
+    "date": "2026-01-24T18:09:56+01:00",
+    "message": "feat(v2): add multi-value return support to dataflow→WAT compiler\n\n- Refactor calculator to pure functional state-threading style:\n  on_key(acc, buf, op, key) → (new_acc, new_buf, new_op)\n- Support multiple output nodes in dataflow graphs\n- Handle array comparisons in test runner for multi-value returns\n- Fix buffer clearing on Enter key in calculator logic",
+    "files_changed": 3
+  },
+  {
+    "hash": "7281c52b13242ada778245e581b7d87db93a5611",
+    "short_hash": "7281c52",
+    "author": "bigmistqke",
+    "date": "2026-01-24T17:52:58+01:00",
+    "message": "feat(v2): add vite test runner for WASM verification\n\n- Add test-runner.ts that compiles dataflow→WAT→WASM\n- Run tests from example JSON against live WASM functions\n- Uses wabt for WAT→WASM compilation in browser\n- All tests pass (max, abs)",
+    "files_changed": 6
+  },
+  {
     "hash": "23930b182d936375896a849e3b02b60d920e663c",
     "short_hash": "23930b1",
     "author": "bigmistqke",
     "date": "2026-01-24T17:49:36+01:00",
     "message": "feat(v2): add examples, dataflow→WAT compiler, and protocol command\n\n- Add 00_max.json, 01_abs.json, 02_calculator.json examples\n- Implement simple dataflow→WAT compiler (~100 lines)\n- Add /mycelium-v2-example protocol command\n- Rename v0 commands with mycelium-v0- prefix\n- Sync decision graph observations",
     "files_changed": 14
-  },
-  {
-    "hash": "d15eab3cac99c1e27891a12e19df4758f9e0b057",
-    "short_hash": "d15eab3",
-    "author": "bigmistqke",
-    "date": "2026-01-24T15:05:31+01:00",
-    "message": "feat(v2): add full gradient experiment with calculator example\n\nv2 explores the full gradient from vision to AST:\n- Vision/Architecture/Component/Function layers have descriptions (intent)\n- Dataflow layer is flat DAG with explicit wiring and shared nodes\n- AST layer is nested tree structure, code generated from it\n\nKey insight: dataflow shows data dependencies, AST shows syntactic\nstructure. Function layer is the boundary between described intent\nand structural implementation.\n\nAlso adds READMEs documenting v1 (structural skeleton) and v2 (full gradient).",
-    "files_changed": 5
   },
   {
     "hash": "d15eab3cac99c1e27891a12e19df4758f9e0b057",
