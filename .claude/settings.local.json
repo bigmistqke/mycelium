@@ -68,7 +68,10 @@
       "Skill(recover)",
       "Bash(for:*)",
       "Bash(do deciduous link 1 $id -r \"Prior art research\")",
-      "Bash(done)"
+      "Bash(done)",
+      "WebFetch(domain:c4model.com)",
+      "Bash(git rm:*)",
+      "Bash(pnpm init)"
     ]
   },
   "gitAttribution": false
