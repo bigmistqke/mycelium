@@ -4014,6 +4014,28 @@
       "created_at": "2026-07-14T03:13:45.710259+02:00",
       "updated_at": "2026-07-14T03:13:45.710259+02:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":88}"
+    },
+    {
+      "id": 366,
+      "change_id": "1451a700-644a-4f6a-9615-716f7c76d3a6",
+      "node_type": "action",
+      "title": "Write the session handoff: what shipped (trace), what was proven with evidence, the four corrections and the pattern they form, the design as it now stands, ranked next steps, open findings in pulse and hive, and the risks that still stand",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:16:47.406093+02:00",
+      "updated_at": "2026-07-14T03:16:47.406093+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":92,\"files\":[\"packages/v3/HANDOFF.md\"]}"
+    },
+    {
+      "id": 367,
+      "change_id": "ed488563-5735-4683-b27d-4d4e1186cefe",
+      "node_type": "outcome",
+      "title": "Handoff written and committed (44816cd). Fully REPLACES the start-of-session handoff, whose proposal was abandoned and whose repo survey went stale. Organised around ONE distinction: what was SHOWN vs what was merely DESIGNED - because only trace/ was built and the session generated a lot of very plausible architecture. Records the five proven results with evidence attached, the four corrections and the pattern they form (the user was the gate every time - the session's strongest argument that the verify gate must not be a model), the design after correction (the fractal x5, scratch branches that cannot rot), next steps ranked (verify gate > hive 1:1 parser > query substrate), the unfixed findings in pulse and hive, and the five risks that were never answered.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:18:24.649536+02:00",
+      "updated_at": "2026-07-14T03:18:24.649536+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"44816cd\",\"confidence\":90,\"files\":[\"packages/v3/HANDOFF.md\"]}"
     }
   ],
   "edges": [
@@ -8537,6 +8559,28 @@
       "weight": 1.0,
       "rationale": "Honest problems",
       "created_at": "2026-07-14T03:13:45.785620+02:00"
+    },
+    {
+      "id": 412,
+      "from_node_id": 306,
+      "to_node_id": 366,
+      "from_change_id": "08310217-f7e3-4cdb-818e-6ef1776718fc",
+      "to_change_id": "1451a700-644a-4f6a-9615-716f7c76d3a6",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Handoff for the next session",
+      "created_at": "2026-07-14T03:16:47.424198+02:00"
+    },
+    {
+      "id": 413,
+      "from_node_id": 366,
+      "to_node_id": 367,
+      "from_change_id": "1451a700-644a-4f6a-9615-716f7c76d3a6",
+      "to_change_id": "ed488563-5735-4683-b27d-4d4e1186cefe",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The handoff that action 366 called for",
+      "created_at": "2026-07-14T03:18:27.039400+02:00"
     }
   ]
 }
