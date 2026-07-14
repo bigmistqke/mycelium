@@ -1,0 +1,346 @@
+```json
+{
+  "propositions": [
+    {
+      "id": "P1",
+      "text": "recordEvent returns the UUID it minted for the commit body's `id:` line, never the git hash.",
+      "guard": "true (every call that reaches commitToBranch without throwing)",
+      "answer": "return value === the uuid on body line 1; the git hash is used only for setLastSyncHash",
+      "verified_by": "test",
+      "falsified_by": "`return hash` instead of `return id` at line 165. Breaks only this: add.ts/link.ts would key nodes/edges by git hash while replay keys them by body id."
+    },
+    {
+      "id": "P2",
+      "text": "For status events, the `parents` field is derived from the git log of `branch` alone — it is correct even when the SQLite db is empty or absent.",
+      "guard": "event.type === 'status' && event.nodeId && ∃ prior commit on `branch` with eventType==='status' && nodeId===event.nodeId",
+      "answer": "parents === [id of the most recent such commit]; db is never consulted for this",
+      "verified_by": "test",
+      "falsified_by": "Replace the parseGitLog scan (lines 93-102) with `getStateRef(db, event.nodeId, 'status', branch)`. Still correct when the db is warm, wrong (parents=[]) on a cold db — which is exactly the case this loop exists for."
+    },
+    {
+      "id": "P3",
+      "text": "recordEvent('status') writes the commit unconditionally but writes the db only if the node already exists in the db AND its type supports status.",
+      "guard": "event.type === 'status' && (db.nodes[event.nodeId] === undefined || !NODE_TYPES_WITH_STATUS.includes(db.nodes[event.nodeId].node_type))",
+      "answer": "zero rows in state_transitions/state_refs; the git commit is still created; the function still returns the id and still advances the watermark",
+      "verified_by": "test",
+      "falsified_by": "Delete the `if (existingNode && nodeTypeSupportsStatus(...))` wrapper at line 118 so the transition is always inserted. Only this proposition changes; P2 (parents from git) is untouched."
+    },
+    {
+      "id": "P4",
+      "text": "recordEvent('status') is not atomic with its commit: the db rows are written before commitToBranch, so a git failure leaves a transition/ref with no event in the log.",
+      "guard": "event.type === 'status' && node supports status && ctx.git.commitToBranch throws",
+      "answer": "state_transitions + state_refs contain change_id=<uuid>; git has no commit with that id; the caller sees `Failed to record event`",
+      "verified_by": "test",
+      "falsified_by": "Move lines 114-141 to after the successful `commitToBranch` call. No other proposition's outcome changes."
+    },
+    {
+      "id": "P5",
+      "text": "Every successful recordEvent / recordStateTransition advances sync_state to the new HEAD, with no check that the db was in sync beforehand.",
+      "guard": "commitToBranch resolves",
+      "answer": "sync_state[branch].last_synced_git_hash = new hash, whatever the db contained before",
+      "verified_by": "test",
+      "falsified_by": "Guard it: `if (getLastSyncHash(ctx, branch) === parentOfNewCommit) setLastSyncHash(...)`. Breaks only the watermark claim; commit content and db writes are unchanged."
+    },
+    {
+      "id": "P6",
+      "text": "recordEvent materialises nothing for 'add', 'link' and 'prompt' events — it only appends to the log and moves the watermark; the caller is silently responsible for the db write.",
+      "guard": "event.type ∈ {'add','link','prompt'}",
+      "answer": "no nodes/edges/description rows are touched by this function, yet replay will never re-apply the event because the watermark now covers it",
+      "verified_by": "test",
+      "falsified_by": "Add `insertNode(db, …)` inside the `event.type === 'add'` branch. Only this proposition flips; the status path is untouched."
+    },
+    {
+      "id": "P7",
+      "text": "recordStateTransition throws when the target node is not in the db.",
+      "guard": "property === 'status' && db.nodes[nodeId] === undefined",
+      "answer": "throws `Node ${nodeId} not found`; no commit, no rows",
+      "verified_by": "test",
+      "falsified_by": "Replace `throw` at line 193 with `return crypto.randomUUID()`. Makes it behave like recordEvent (P3) — falsifies only this."
+    },
+    {
+      "id": "P8",
+      "text": "recordStateTransition silently no-ops for node types without status and returns a fresh UUID that identifies no transition, no commit, no row.",
+      "guard": "property === 'status' && db.nodes[nodeId] !== undefined && !NODE_TYPES_WITH_STATUS.includes(node_type)",
+      "answer": "returns crypto.randomUUID(); the caller cannot distinguish this from success",
+      "verified_by": "test",
+      "falsified_by": "`throw new Error('type does not support status')` at line 197-199. Only this proposition's answer changes."
+    },
+    {
+      "id": "P9",
+      "text": "recordStateTransition performs NO node-existence and NO type validation for any property other than 'status'.",
+      "guard": "property !== 'status'",
+      "answer": "a transition + ref + commit are created for an arbitrary node_id, including one that does not exist (FK enforcement is off — no `foreign_keys` pragma anywhere in src)",
+      "verified_by": "test",
+      "falsified_by": "Hoist the `existingNode` lookup out of the `if (property === 'status')` block so it runs for every property. Only this proposition changes."
+    },
+    {
+      "id": "P10",
+      "text": "recordStateTransition's commit SUBJECT always claims 'status' regardless of the property being transitioned; only the body carries the real property.",
+      "guard": "property !== 'status'",
+      "answer": "subject === `status: ${nodeId.slice(0,7)} → ${newValue}`, body has `property: ${property}`",
+      "verified_by": "test",
+      "falsified_by": "`const subject = \\`${property}: ...\\`` at line 244. Falsifies this alone — and simultaneously makes the commit invisible to every replay parser, which is the point."
+    },
+    {
+      "id": "P11",
+      "text": "replayEvents is a pure no-op when the watermark equals HEAD — it never inspects db contents to decide.",
+      "guard": "lastSyncHash !== null && dbExists && !force && lastSyncHash === currentHeadHash",
+      "answer": "returns immediately; an empty db stays empty",
+      "verified_by": "test",
+      "falsified_by": "Add `&& db.prepare('SELECT COUNT(*) c FROM nodes WHERE branch=?').get(branch).c > 0` to the early-return condition at line 315."
+    },
+    {
+      "id": "P12",
+      "text": "The 'full rebuild' path deletes only rows whose `branch` column matches the branch string EXACTLY — conflict refs and state_transition_parents survive a force rebuild.",
+      "guard": "force || !lastSyncHash || !dbExists",
+      "answer": "rows with branch === `${branch}:conflict:${sha7}` are not deleted, and state_transition_parents is never cleared at all",
+      "verified_by": "test",
+      "falsified_by": "Add `DELETE FROM state_refs WHERE branch LIKE ?` with `${branch}:conflict:%` and a state_transition_parents cleanup at lines 294-297."
+    },
+    {
+      "id": "P13",
+      "text": "replayEvent DROPS (does not defer) a status event whose node has not yet been inserted; there is no second pass.",
+      "guard": "isStatusEvent && db.nodes[nodeId] === undefined at the moment this commit is replayed",
+      "answer": "silent `return`; the transition is lost until someone forces a rebuild in a luckier order",
+      "verified_by": "test",
+      "falsified_by": "Collect unresolved status events into a queue and re-run them after the commit loop in replayEvents."
+    },
+    {
+      "id": "P14",
+      "text": "replayEvent resolves the target node globally, with no branch predicate, but writes the ref under the REPLAYING branch.",
+      "guard": "isStatusEvent && db.nodes[nodeId].branch !== branch",
+      "answer": "state_refs row (nodeId, 'status', <replaying branch>) is created even though the node row carries a different branch; getAllNodes joins on `sr.branch = n.branch`, so this status is invisible to every listing",
+      "verified_by": "test",
+      "falsified_by": "Add `AND branch = ?` to the `SELECT node_type FROM nodes WHERE change_id = ?` query at line 387."
+    },
+    {
+      "id": "P15",
+      "text": "A status transition that is not a descendant of the current ref is recorded as a synthetic conflict ref rather than rejected or merged; replay never fails on divergence.",
+      "guard": "isStatusEvent && currentRef !== undefined && !isDescendant(db, currentRef.ref_change_id, commit.id)",
+      "answer": "upsertStateRef with branch = `${branch}:conflict:${commit.id.slice(0,7)}`; the main ref is left pointing at the old transition",
+      "verified_by": "test",
+      "falsified_by": "Replace the conflict-ref branch (lines 453-462) with a thrown error. Only the divergent case changes; fast-forward is untouched."
+    },
+    {
+      "id": "P16",
+      "text": "A prompt event overwrites nodes.description for the id anywhere in the db (no branch scoping) and is a silent no-op when the id is unknown or the prompt is empty.",
+      "guard": "isPromptEvent && (commit.prompt === '' || commit.prompt === undefined || db.nodes[nodeId] === undefined)",
+      "answer": "zero rows updated, no warning, no record that the event was dropped",
+      "verified_by": "test",
+      "falsified_by": "Check `.run(...).changes === 0` and throw. Only the prompt path changes."
+    },
+    {
+      "id": "P17",
+      "text": "replay writes nodes.status as a constant ('pending' or null by type) and NEVER updates it afterwards; current status lives exclusively in state_refs → state_transitions.",
+      "guard": "!isLink && !isStatus && !isPrompt",
+      "answer": "nodes.status = nodeTypeSupportsStatus(type) ? 'pending' : null, forever; getCurrentStatus's `nodes.status` fallback can therefore only ever return 'pending'",
+      "verified_by": "test",
+      "falsified_by": "Add an `UPDATE nodes SET status = ?` alongside upsertStateRef in the status branch of replayEvent."
+    },
+    {
+      "id": "P18",
+      "text": "replay derives created_at/updated_at from the git commit timestamp, not from wall clock.",
+      "guard": "any replayed add/link event",
+      "answer": "node.created_at === commit.timestamp.toISOString()",
+      "verified_by": "test",
+      "falsified_by": "Use `new Date().toISOString()` in replayEvent's node construction. Breaks only the timestamp claim — and would make rebuild non-deterministic, which is the tell."
+    },
+    {
+      "id": "P19",
+      "text": "A replay failure on an individual event is swallowed (console.warn) and the watermark still advances past it — the failed event is never retried.",
+      "guard": "replayEvent(commit) throws (e.g. PRIMARY KEY conflict, undefined bound parameter)",
+      "answer": "warn, continue the loop, then setLastSyncHash(currentHeadHash)",
+      "verified_by": "test",
+      "falsified_by": "Skip setLastSyncHash (or rethrow) when any event in the batch failed."
+    },
+    {
+      "id": "P20",
+      "text": "When getCommitsSince fails or returns nothing, replayEvents returns WITHOUT advancing the watermark and without falling back to a full replay.",
+      "guard": "lastSyncHash !== null && dbExists && !force && lastSyncHash !== currentHeadHash && getCommitsSince(...) returns []",
+      "answer": "early `return` at line 323; sync_state keeps the stale hash; the same [] happens on every subsequent call → the db never converges",
+      "verified_by": "test",
+      "falsified_by": "In the `catch` of getCommitsSince, signal failure (e.g. return null) and have replayEvents fall back to the full-rebuild path."
+    },
+    {
+      "id": "P21",
+      "text": "isDatabaseStale is a hash comparison only — it reports 'fresh' whenever sync_state matches HEAD, whatever the db actually contains.",
+      "guard": "lastSyncHash === currentHeadHash",
+      "answer": "false, even for a db with zero rows for that branch",
+      "verified_by": "test",
+      "falsified_by": "Make it also compare a per-branch row count. Contradicts its own docstring ('commits ... that haven't been replayed'), and nothing else changes."
+    },
+    {
+      "id": "P22",
+      "text": "isDatabaseStale reports NOT stale for a branch git cannot resolve, because getCurrentHeadHash swallows the error into ''.",
+      "guard": "!lastSyncHash && currentHeadHash === '' (branch missing, or a transient git failure)",
+      "answer": "false",
+      "verified_by": "test",
+      "falsified_by": "Let getCurrentHeadHash propagate the error instead of `return ''`. Only the missing-branch/transient-failure case changes."
+    },
+    {
+      "id": "P23",
+      "text": "getCommitsSince is a SECOND, non-equivalent parser: it drops `parents`, `new_value` and `property`, does not support multi-line values, and `continue`s on a missing `id:` where parseCommit throws.",
+      "guard": "the incremental path runs (lastSyncHash && dbExists && !force && lastSyncHash !== head)",
+      "answer": "the ParsedDecision objects it yields are strictly poorer than parseGitLog's for the identical commits",
+      "verified_by": "test",
+      "falsified_by": "Delete the inline parser (lines 610-724) and have getCommitsSince feed its filtered log through commit-ops' parseCommit. Falsifies only this — and, as a side effect, C1/C2/C9 below evaporate."
+    },
+    {
+      "id": "P24",
+      "text": "The commit body is unescaped line-oriented key:value, so any user text containing a newline is truncated at replay and its subsequent lines are parsed as metadata.",
+      "guard": "/\\n/.test(event.content ?? '') || /\\n/.test(event.description ?? '') || /\\n/.test(event.rationale ?? '') || /\\n/.test(event.prompt ?? '')",
+      "answer": "only the first line survives a rebuild; a continuation line matching /^(\\w+):/ becomes a metadata key — and any key recordEvent does NOT itself re-emit (description when options.description is absent, rationale, parents, node, from, to, edge_type) is fully attacker/user-controlled",
+      "verified_by": "test",
+      "falsified_by": "JSON-encode values on write (or emit two-space continuation lines, which parseBody already understands). Only the multi-line/injection case changes."
+    },
+    {
+      "id": "P25",
+      "text": "The fallback subject `${type}: ${JSON.stringify(event)}` produces a commit that replay can never materialise.",
+      "guard": "(event.type==='add' && (!event.nodeType || !event.content)) || (event.type==='link' && !(event.fromId && event.toId && event.edgeType)) || (event.type==='status' && !(event.nodeId && event.status))",
+      "answer": "subject type is 'add' → not in validTypes → parseCommit returns null → dropped; or 'link' with undefined from/to → insertEdge throws → warned and dropped. Either way the commit is permanent, the watermark advanced, and the event is unrecoverable.",
+      "verified_by": "test",
+      "falsified_by": "Throw on a malformed event instead of falling through to line 55."
+    },
+    {
+      "id": "P26",
+      "text": "DecisionEvent makes every field but `type` optional and recordEvent does no runtime validation, so the string 'undefined' is committed into the immutable log.",
+      "guard": "event.type === 'status' && event.nodeId === undefined",
+      "answer": "body contains the literal lines `node: undefined` / `status: undefined`; replay looks up change_id 'undefined', finds nothing, drops the event forever",
+      "verified_by": "test",
+      "falsified_by": "Make DecisionEvent a discriminated union (`{type:'status', nodeId: string, status: Status} | …`) — this proposition then becomes verified_by 'type' and the branch is unreachable."
+    },
+    {
+      "id": "P27",
+      "text": "replayEvent classifies EVERY status-subject commit as property 'status', ignoring the body's `property:` field.",
+      "guard": "isStatusEvent && commitAny.property !== undefined && commitAny.property !== 'status'",
+      "answer": "the transition is inserted with property='status' and the node's status ref is pointed at it",
+      "verified_by": "test",
+      "falsified_by": "`property: commitAny.property || 'status'` at line 416 and thread it into getStateRef/upsertStateRef. Only non-status properties change behaviour."
+    },
+    {
+      "id": "P28",
+      "text": "A transition's parent edge is only recorded if the parent transition is ALREADY in state_transitions (custom-db's insertStateTransition checks), so a transition whose parent is missing is silently stored as a graph root.",
+      "guard": "isStatusEvent && parentIds.length > 0 && ∄ state_transitions[parentIds[0]] at insert time (parent lives on another branch, or its branch's rows were deleted by a force rebuild)",
+      "answer": "no state_transition_parents row → isDescendant() returns false for the NEXT transition on this node → P15 fires and a phantom conflict ref is created",
+      "verified_by": "test",
+      "falsified_by": "Insert the parent row unconditionally in custom-db.insertStateTransition. Only the missing-parent case changes."
+    },
+    {
+      "id": "P29",
+      "text": "replayAllBranches cannot fail: per-branch errors are warned and skipped, and branches are replayed in getAllHiveBranchesFromGit's order, which is not a dependency order.",
+      "guard": "replayEvents(branchName) throws for some branch",
+      "answer": "console.warn, continue to the next branch; the caller gets a resolved promise and no signal that a branch is missing from the db",
+      "verified_by": "test",
+      "falsified_by": "Aggregate errors and rethrow (or return a per-branch result). Only this proposition changes."
+    }
+  ],
+  "gaps": [
+    {
+      "witness": "Fresh clone of a repo whose hive-local branch already has 500 event commits, `.hive/db.sqlite` absent. Run `hive add decision \"x\"`. recordEvent commits and calls setLastSyncHash(HEAD_501); add.ts then insertNode's the ONE new node. Now run `hive nodes` → replayAllBranches → replayEvents: lastSyncHash is set, the db file exists, force is false, lastSyncHash === HEAD → early return. The 500 pre-existing decisions are never replayed, and never will be: no caller in the repo ever passes force=true (nodes.ts/stats.ts/search.ts/edges.ts all call it without force).",
+      "why_it_matters": "The single most important invariant of an event-sourced system — 'the watermark means everything before it is in the view' — is asserted by recordEvent (P5) but established by nobody. One write on a cold db permanently truncates the materialized view. isDatabaseStale (P21) then actively lies that the db is fresh."
+    },
+    {
+      "witness": "`hive add decision \"x\"` where insertNode in add.ts throws (disk full, PK collision, process killed between recordEvent returning and insertNode running).",
+      "why_it_matters": "recordEvent (P6) writes the log and moves the watermark but materialises nothing for add/link/prompt. The write-through and the watermark advance are in two different modules with no transaction between them. Nothing in the contract says the watermark is only valid if the caller finishes its half of the write."
+    },
+    {
+      "witness": "`git branch hive-team hive-local` (or any git merge between two hive branches), then `hive nodes` → replayAllBranches. Every commit is now reachable from BOTH branches. Branch A replays and inserts node X with branch='hive-A'; branch B replays and insertNode throws PRIMARY KEY on change_id; the error is swallowed (P19). Edges additionally collide on UNIQUE(from_change_id, to_change_id, edge_type).",
+      "why_it_matters": "Node→branch attribution is first-replay-wins and depends on getAllHiveBranchesFromGit's ordering. Every subsequent branch-scoped query (getAllNodes, and the sr.branch = n.branch join) silently misattributes or hides the shared history. Nothing in the module speaks to a commit being reachable from more than one hive branch — which is what forking a team branch normally does."
+    },
+    {
+      "witness": "`git commit --allow-empty -m \"chore: bump deps\"` onto hive-local (or any hand-written commit whose subject matches /^\\w+:\\s*.+$/ but has no `id:` body line). Delete .hive/db.sqlite and run `hive nodes`. parseCommit THROWS on the missing id; parseGitLog's outer try/catch returns [] for the WHOLE branch; the full-rebuild path has already run DELETE FROM nodes/edges/state_transitions/state_refs WHERE branch='hive-local' and now replays zero commits, then writes the watermark.",
+      "why_it_matters": "One malformed commit anywhere in the branch's history silently erases the entire branch from the materialized view, and the watermark is advanced so it looks synced. The log is intact but the view is gone, with only a console.error to show for it."
+    },
+    {
+      "witness": "Teammate's machine clock is 1h slow. You `git pull origin hive-team` and their `status: G → completed` commit sorts before your `goal: G` commit in git log order. `commits.reverse()` (which orders by git-log order, not causally) hands the status event to replayEvent first → node not found → dropped (P13). No later pass recovers it.",
+      "why_it_matters": "Replay order is 'reverse of git log', which is neither causal nor stable across merges. The module has no notion of causal readiness and drops rather than defers, so events silently vanish from the view while remaining in the log."
+    },
+    {
+      "witness": "Node X was added on hive-local. `hive branch:use hive-team`; `hive status X completed`. recordStateTransition finds X (global lookup, no branch predicate) and writes state_refs (X, 'status', 'hive-team'), while nodes.branch for X is 'hive-local'.",
+      "why_it_matters": "getAllNodes joins state_refs on `sr.branch = n.branch`, so this status is written, committed, replayed — and never displayed anywhere. Whether status is a per-branch or a global property of a node is simply not decided; the writers say global, the readers say per-branch."
+    },
+    {
+      "witness": "Any retraction: `hive add decision \"Use MySQL\"` typo'd, or a link created between the wrong two nodes.",
+      "why_it_matters": "There is no delete/revert/amend event type in DecisionEvent, and no code path removes a node, an edge, or a ref from the log. The only way to change the view is to hand-edit git history — which the project's own CLAUDE.md forbids ('Don't rebase hive branches - it breaks deterministic IDs'). Correction is entirely unspecified."
+    },
+    {
+      "witness": "recordEvent(ctx, {type:'prompt', nodeId: X, prompt: ''}, 'hive-local') — a user clearing a node's description.",
+      "why_it_matters": "`if (event.prompt)` skips the body line, so the commit records only `node: X` with no prompt; replay's `if (nodeId && prompt)` then skips the update. The empty string is silently unrepresentable — the intent 'clear this' round-trips as 'do nothing', with a commit left behind claiming otherwise."
+    },
+    {
+      "witness": "recordEvent(ctx, {type:'add', nodeType:'goal', content:'x', confidence: NaN}, b) — reachable from add.ts via `parseInt(options.confidence, 10)` on `hive add goal x -c high`. Body line becomes `confidence: NaN`; parseInt('NaN') → NaN → metadata_json is `{\"confidence\":null}`.",
+      "why_it_matters": "No range or numeric validation on confidence at any layer of the event store; the log durably records a value the schema cannot express, and the two parsers (parseInt in both) turn it into null rather than rejecting the event."
+    },
+    {
+      "witness": "recordEvent(ctx, event, 'main') — the `branch` parameter is a plain string with no hive-* check.",
+      "why_it_matters": "The module's whole architectural premise is that decision events live in orphan hive-* branches and never touch the user's code branches. Nothing in this file enforces it; a caller bug commits decision events onto main."
+    },
+    {
+      "witness": "Transient git failure (index.lock contention during a concurrent `git status`) inside getCurrentHeadHash while `hive nodes` runs a full replay of a healthy branch. currentHeadHash becomes ''; the branch's rows have already been DELETEd; parseGitLog may also fail → []; setLastSyncHash(ctx, branch, '') persists an empty watermark.",
+      "why_it_matters": "Both git helpers convert failures into sentinel values ('' and []) that are indistinguishable from 'empty branch'. A read-only command destroys the branch's view on a transient error. It self-heals only by accident, because getLastSyncHash's `|| null` treats '' as falsy."
+    },
+    {
+      "witness": "Any consumer reading state_transitions.old_value.",
+      "why_it_matters": "Neither writer ever populates old_value (both omit it; custom-db coalesces to null), so the column is permanently null even though the schema, the StateTransition interface, and the name of the table promise a before/after pair. A transition log that cannot say what it transitioned FROM cannot be audited or inverted."
+    },
+    {
+      "witness": "A `link` event on hive-team whose fromId/toId are nodes that only exist on hive-local, replayed before hive-local. insertEdge succeeds — there is no `foreign_keys` pragma anywhere in packages/core/src, so SQLite FK enforcement is OFF.",
+      "why_it_matters": "Status events check that the node exists (P3/P13); link events do not check anything. Referential integrity for edges is asserted by the schema and enforced by nothing, so the view accumulates edges into the void."
+    },
+    {
+      "witness": "Two `hive add` processes started simultaneously on the same branch.",
+      "why_it_matters": "commitToBranch + setLastSyncHash is a read-modify-write on shared state (branch ref and sync_state) with no lock. The watermark can end up pointing at process B's commit while process A's node was written by A's own insertNode — or, if A loses the ref race, at a commit that isn't the branch tip. Concurrency is never mentioned."
+    }
+  ],
+  "contradictions": [
+    {
+      "witness": "Teammate runs `hive status G active` then `hive status G completed` and pushes. You `git pull origin hive-local` with your db already synced to the commit before those two. replayEvents takes the INCREMENTAL path. getCommitsSince's status branch (lines 677-686) never copies `parents` into the ParsedDecision, so both transitions replay with parentIds=[]. The second one: currentRef exists, state_transition_parents has no row for it, isDescendant → false → a conflict ref `hive-local:conflict:<sha7>` is created. Now delete .hive/db.sqlite and replay the SAME git history: parseGitLog's `...metadata` spread carries `parents` through, isDescendant → true, clean fast-forward, no conflict.",
+      "proposition_a": "P23 (getCommitsSince drops `parents`)",
+      "proposition_b": "P15 (non-descendant ⇒ conflict ref) / P2 (parents are authoritative in the log)",
+      "why_it_matters": "The same event log yields two different databases depending on whether you got there incrementally or by rebuild. Worse, the incremental path INVENTS conflicts that do not exist in the log — and by P12 those conflict refs survive every subsequent force rebuild, so the phantom is permanent."
+    },
+    {
+      "witness": "`hive status G completed` goes through status.ts → recordStateTransition, which writes a body with `type: state_transition` and `new_value: completed` and NO `status:` key. Pull that commit onto a machine whose db is warm → incremental path → getCommitsSince sets `status: metadata.status` (undefined) and never reads new_value → replayEvent's `if (nodeId && status)` is false → the status change is silently discarded. On a cold db, parseGitLog's `...metadata` spread carries new_value through and replayEvent's `commitAny.status || commitAny.new_value` picks it up correctly.",
+      "proposition_a": "P23 (getCommitsSince is a poorer parser)",
+      "proposition_b": "P27 / the full-replay path (status commits from recordStateTransition ARE materialisable)",
+      "why_it_matters": "This is the ONLY way the CLI writes a status change (status.ts calls recordStateTransition, not recordEvent). So every status change pulled from a teammate is dropped by incremental replay. The two writers and the two readers are pairwise incompatible: recordEvent's format is understood by both parsers, recordStateTransition's by only one."
+    },
+    {
+      "witness": "Call recordEvent({type:'status', nodeId:'typo', status:'completed'}) vs recordStateTransition(ctx, 'typo', 'status', 'completed', b). Same intent, same state (node 'typo' does not exist). recordEvent: creates a permanent git commit, writes nothing to the db, advances the watermark, returns an id. recordStateTransition: throws, creates nothing. Now retry with a real node of type 'observation': recordEvent commits and ignores; recordStateTransition creates no commit and returns a random UUID that names nothing.",
+      "proposition_a": "P3 (recordEvent: commit always, db conditionally)",
+      "proposition_b": "P7 + P8 (recordStateTransition: throw, or fake-uuid no-op)",
+      "why_it_matters": "Two public functions that mean 'record a status change' disagree on failure semantics, on whether a commit is even written, on where parents come from (git log vs db ref — P2 vs lines 203-214), and on the body's `type:` value. A caller cannot reason about the log's contents without knowing which one produced each commit — and the parsers, as C2 shows, can't either."
+    },
+    {
+      "witness": "recordStateTransition(ctx, G, 'confidence', '95', 'hive-local'). DB now holds a transition with property='confidence'; G's status ref is untouched. Delete .hive/db.sqlite and run `hive nodes`. The commit's subject is `status: <sha7> → 95` (P10), so replayEvent classifies it as a status event and hardcodes property:'status' (P27) — the transition is re-materialised as a STATUS transition and upsertStateRef points (G,'status',hive-local) at it. `hive nodes` now reports G's status as \"95\".",
+      "proposition_a": "P9 + P10 (recordStateTransition accepts and commits any property, subject always says 'status')",
+      "proposition_b": "P27 (replay materialises every status-subject commit as property 'status')",
+      "why_it_matters": "The write path and the rebuild path disagree about what a commit MEANS. A rebuild — the operation whose entire purpose is to reproduce the db from the log — corrupts the node's lifecycle status with an unrelated property's value. property is a first-class parameter of the public API and is not representable in the log."
+    },
+    {
+      "witness": "`hive add decision \"$(printf 'Use MySQL\\ndescription: actually Postgres')\"`. Write-through (add.ts) stores title='Use MySQL\\ndescription: actually Postgres', description=undefined, created_at=now(). Force a rebuild: the subject line carries only 'Use MySQL'; the second line lands in the commit BODY, before the `id:` line, and — because recordEvent only emits `description:` when options.description is set — nothing overwrites it. Replay produces title='Use MySQL', description='actually Postgres', created_at=commit time.",
+      "proposition_a": "P24 (unescaped line-oriented body ⇒ truncation + key injection)",
+      "proposition_b": "P18 (replay derives timestamps from the commit) / P6 (the caller write-through is the only thing that materialises an add)",
+      "why_it_matters": "The two ways of getting a node into the db produce different rows for the identical event, so a rebuild is not idempotent with respect to a live db — it silently rewrites content, invents fields, and reorders `ORDER BY created_at` listings. The event log is supposed to be the source of truth; here it round-trips to something the user never wrote."
+    },
+    {
+      "witness": "replayAllBranches(force=true) with branches [hive-local, hive-team], where hive-team contains status events for nodes added on hive-local. Pass 1 deletes and rebuilds hive-local (nodes present). Pass 2 rebuilds hive-team; its status events resolve the node globally (P14) and succeed. Reverse the branch order (rename to hive-alice/hive-bob so hive-bob sorts first) and pass 1 replays the status events BEFORE the nodes exist → every one is dropped (P13).",
+      "proposition_a": "P12 (deletion and rebuild are branch-scoped)",
+      "proposition_b": "P13 + P14 (node resolution is branch-global and drop-on-miss)",
+      "why_it_matters": "Rebuild is branch-scoped but node lookup is branch-global, so the final db depends on the alphabetical order of branch names. Two users with the same git history and different branch names get different databases, and neither gets a warning."
+    },
+    {
+      "witness": "Produce a conflict ref via the C1 witness (`hive-local:conflict:a1b2c3d`), then run a full rebuild of hive-local. `DELETE FROM state_refs WHERE branch = 'hive-local'` does not match `'hive-local:conflict:a1b2c3d'`. The rebuild then fast-forwards cleanly and writes a correct main ref — so the db now simultaneously asserts a clean linear status history AND a divergent conflict on the same (node, property). custom-db exports deleteConflictRefs for exactly this, and event-store never calls it (it also imports clearDatabase and never calls that either).",
+      "proposition_a": "P12 (branch-scoped delete matches the branch string exactly)",
+      "proposition_b": "P15 (conflicts are recorded as refs under a synthetic branch name)",
+      "why_it_matters": "'Rebuild this branch from the log' and 'clear this branch's rows' are supposed to be the same operation; they aren't. Conflict refs are immortal, invisible to the delete that is meant to reset them, and unreachable by any resolution path in this module."
+    },
+    {
+      "witness": "A commit on hive-local with subject `chore: bump` and no `id:` line. Full replay (parseGitLog → parseCommit) THROWS, is caught by parseGitLog's outer try/catch, and returns [] for the entire branch. Incremental replay (getCommitsSince) hits `if (!metadata.id) { console.warn; continue }` and skips just that one commit, replaying the rest normally.",
+      "proposition_a": "P23 (getCommitsSince skips a malformed commit)",
+      "proposition_b": "The full-replay path (one malformed commit annihilates the branch — see gap 4)",
+      "why_it_matters": "The two readers of the same log disagree about the blast radius of a single malformed commit: one loses everything, the other loses one event. Which one you get depends on whether your db happens to be warm."
+    }
+  ]
+}
+```

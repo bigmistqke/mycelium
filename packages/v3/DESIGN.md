@@ -295,58 +295,21 @@ If that bet is wrong — if humans won't even review — the design fails, and i
 
 ---
 
-## The rendering layer
+## The rendering layer — designed, then deleted
 
-**How do you convey relational data to a model that cannot read graphs?**
+An earlier draft of this document had a whole component here: fisheye views over the graph, a code-shaped serialization distinct from the JSON, cached per-node descriptions with hash-based invalidation. All of it existed to answer #302 (the graph is too verbose for a context window) and #303 (models are bad at graphs, good at code).
 
-This is a genuinely separate component from the harness, and #302/#303 are not fully dissolved by "just don't show it the graph." `materialize` really is tiny — one proposition in, one test out. But **`propose` is irreducibly relational**: to propose a decision the model must know what decisions exist and what they commit to.
+**It was cut, because the blind test showed the problem does not exist.**
 
-### What licenses a lossy view
+The cold pass was handed **one file** — `event-store.ts` — and nothing else. It went and read `add.ts`, `status.ts`, `custom-db.ts`, and `nodes.ts` **on its own**, and several of its best findings are cross-file ones that were only visible after doing so.
 
-**The LLM sees a crop. The checker sees everything.**
+> **You do not convey the graph to the model. You give it an entry point and let it fetch.**
 
-The gap/contradiction solver runs over the entire proposition set — no LLM, no context window, no cropping. If a cropped view causes the model to miss a contradiction, the gate catches it anyway, deterministically.
+The agent does its own retrieval, and it retrieves better than any fisheye heuristic we would have hand-tuned, because it knows what it is looking for and we don't. #302 and #303 are not solved by clever rendering. They are solved by not rendering.
 
-This inverts the usual risk. **You can afford a lossy view for the reasoner precisely because the verifier is exhaustive.** Compaction stops being a compromise and becomes a legitimate design choice.
+**Keep exactly one thing** from the deleted design: the *entry point* must be well chosen. That is a one-line decision, not a subsystem.
 
-### Render as code, never as JSON
-
-LLMs are bad at adjacency lists and excellent at code. #303 cuts *for* us if we let it.
-
-```
-decision clamp-empty-range {
-  because   obs-42, obs-51
-  commits   P1: value < min          → min
-            P2: value > max          → max
-            P3: min ≤ value ≤ max    → value
-  assumes   callers pass min ≤ max        (verified_by: none)
-}
-```
-
-A third of the tokens of the equivalent JSON, and the model reads it without reconstructing anything.
-
-**There are three views, not two.** #300 established that JSON is storage and the whiteboard is the human interface. The same is true of the AI interface: **storage (JSON) ≠ human view (whiteboard) ≠ model view (code-shaped text).** The serialization format should never be what reaches a prompt.
-
-### Fisheye, not dump
-
-Detail falls off with distance from the working node:
-
-| distance | rendering |
-|---|---|
-| the node itself | full detail — every proposition, every guard |
-| 1 hop | signatures and commitments only |
-| 2 hops | one-line description |
-| beyond | a count, or nothing |
-
-Exactly how a developer reads code: the function you're editing in full, its callees by signature, the rest not at all. This is decision **#10, `Define zoom levels for multi-resolution understanding`** — specced in January, never used.
-
-### Compaction is already built
-
-The one-line descriptions the fisheye needs are LLM-generated summaries of a node. **v0 already does this** — decision **#24, `Description generation strategy`**, and the `mycelium-v0-describe` skill in the repo today. Generated once, cached in SQLite, reused across every context assembly. Cost is paid per node, not per prompt.
-
-And descriptions going stale — the obvious objection — is also already solved: decisions **#9** and **#12** separate signature hash from implementation hash precisely so you can tell when a cached derived artifact is invalid. **That is the compaction cache-invalidation, built six months ago for another reason.**
-
-**So v0 is not the abandoned first exploration.** It is the substrate: code graph, cached descriptions, change detection.
+This is the single largest simplification the evidence bought, and it is worth stating why it was wrong in the first place: **the design assumed the model was a function to be fed. It is an agent that can go and look.**
 
 ---
 
@@ -361,6 +324,56 @@ And descriptions going stale — the obvious objection — is also already solve
 | **v3** | the waist, the three checks, the harness, the rendering layer. The missing middle. |
 
 **Note:** "tests become the materialized spec" is hive's own architecture one level up. Hive: git commits are the event log, SQLite is the materialized view. v3: decisions are the log, tests are the view.
+
+---
+
+## The blind test — the design's central risk, retired
+
+Everything above rests on one assumption: **that a model can produce propositions with teeth** — guards that admit real gaps — rather than plausible restatements of the happy path. If it can't, the harness has no engine and no schema saves it.
+
+That was tested, blind, on `hive/packages/core/src/lib/event-store.ts` (729 lines, event-sourced: git commits are the log, SQLite the materialized view).
+
+**Protocol.** A cold `claude -p` — separate process, no session context, one prompt, one file path — was asked for propositions with guards, then for gaps and contradictions with concrete witnesses. Independently, and without looking at its output, a second pass was done by hand and written to a locked file first, including a prediction about what the cold pass would miss.
+
+**Result.**
+
+| | |
+|---|---|
+| cold pass output | **29 propositions, 14 gaps, 8 contradictions** |
+| overlap with the hand pass | **7 of 8** — and usually sharper |
+| found that the hand pass missed | several, including the most serious one |
+| the locked prediction ("it will miss the cross-file findings") | **wrong** |
+
+One finding is **confirmed by a failing test**: recording a transition on the `confidence` property and then rebuilding from the log re-materializes it as a **status** transition, because the commit subject is hard-coded to `status: …`. The node's status becomes the string `"95"`.
+
+**The engine works. The harness is plumbing.**
+
+### The verify gate earned its place in the same run
+
+22 gaps and contradictions went in. **1 confirmed by test. 1 traced to its exact lines. 20 unproven.**
+
+And more instructive: **two of the three probes written by hand to check the claims were themselves invalid** — they passed while testing nothing (see below). Without a gate that isn't a model, this session would have produced 22 confident "findings" of which most were unverified and some were wrong.
+
+*"LLMs reason; tools verify"* stops being a slogan here. It is a measured result: **the model's output was excellent and still needed rejecting.**
+
+### A blind spot the design did not have: test-double divergence
+
+The two invalid probes failed for one reason. hive's `replayEvents` branches on:
+
+```ts
+const dbExists = ctx.fs.existsSync(getDbPath(ctx.gitRoot));
+if (!lastSyncHash || !dbExists || force) { /* full rebuild */ }
+```
+
+In hive's test context the database is **in-memory**, so no file ever exists at that path. `dbExists` is permanently `false`. **Every one of hive's 162 tests takes the full-rebuild branch. The incremental replay path is never executed — not once.**
+
+The suite is green. The path is dead. And that is precisely where the cold pass's most serious claims live — which is *why* they survived.
+
+This is neither vacuity (a test that cannot fail) nor a coverage gap in the ordinary sense. **The test harness is part of the specified system, and a test double that diverges from production silently deletes a code path from the reachable set.**
+
+> **A frame condition on the fixtures, not the code.**
+
+Nothing in this design accounts for that yet. It should. A proposition can be covered, non-redundant, and green — and still guard code that no test can reach.
 
 ---
 
@@ -463,7 +476,11 @@ Because templates are depths rather than plugins, there is no plugin system to b
 
 2. **Will the human actually review?** The entire design rests on it. The standing counter-evidence is that no decision status was flipped in five months. Mitigation is that the LLM writes the guards and review is a five-second judgement — but this is a hypothesis, and it is the one most likely to sink the project.
 
+   **Updated by the blind test:** the review load is worse than assumed. The cold pass produced **22** gaps and contradictions from a **single 729-line module**. Nobody eyeballs 22 claims per module across a codebase. This makes the verify gate load-bearing in a way the original design did not appreciate: **the human must review what survived verification, not what was proposed.** The gate is not an optimisation, it is what makes the human's job finite.
+
 3. **Unproposed propositions are undetectable.** A gap in the *guards* is computable. A decision you never thought to make is not. The solver catches contradictions between what you wrote; nothing catches what you never wrote. This is a real hole with no mechanism behind it — only the human at the waist, who is also working from a cropped view.
+
+6. **Test-double divergence has no mechanism.** A proposition can have a test, be non-redundant, and pass — while the test double makes its code path unreachable in production terms (hive: 162 green tests, incremental replay never executed). The design has no check for "does this test actually reach the code it claims to guard". Probably: assert reachability as part of the verify gate.
 
 4. **Are v2's `tests` arrays actually tests?** They verify *the compiler works*, not that *a decision holds* — i.e. they are experiments. If so, v2 has no test surface yet and v3 would be giving it one for the first time. Do not design as though v2 already got this right.
 
@@ -472,6 +489,26 @@ Because templates are depths rather than plugins, there is no plugin system to b
 ---
 
 ## What to build first
+
+**Superseded by the blind test.** `clamp` was going to be the smallest thing that proved the loop ran. The loop has now been run on 729 lines of real event-sourcing code and it worked, so `clamp` would prove less than what is already known. The original plan is kept below for the record.
+
+The engine is proven; what is missing is the **gate around it**. The smallest useful thing now:
+
+```
+propose   claude -p, one module, one prompt   →  propositions + guards + gaps    [PROVEN]
+verify    one probe test per claim            →  which claims survive?           [BUILD THIS]
+report    only what survived                  →  a findings list you can trust
+```
+
+The verify step is the whole product. Tonight's run produced 22 claims and **one** of them is confirmed — a model that generates 22 plausible claims and no way to sort them is a liability, not a tool. The gate is what turns it into something you would actually run on your own repositories.
+
+Concretely: given a claim with a concrete witness, generate a probe test that *fails if the claim is true*, run it, and keep only the claims whose probes fail. That is mechanical, it is not a model judging itself, and it is what separated the one real bug from the twenty-one maybes tonight.
+
+**And build the fixture check alongside it**, because tonight showed the probe itself can be a lie: assert that the probe actually executes the code path it claims to test. Two of three probes here did not, and passed.
+
+---
+
+### Original plan, superseded
 
 The smallest thing that tests the whole claim:
 
