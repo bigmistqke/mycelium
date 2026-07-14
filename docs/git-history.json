@@ -1,11 +1,11 @@
 [
   {
-    "hash": "838980f39da2041c268363babaf475fe686a8777",
-    "short_hash": "838980f",
+    "hash": "20921ff519311a2c62fb64f4453d43038ca873d9",
+    "short_hash": "20921ff",
     "author": "bigmistqke",
-    "date": "2026-07-14T02:52:16+02:00",
-    "message": "docs(v3): make the harness the agent and the model a subroutine\n\nRewrites the premise. The design assumed a person's assistant would be the one\ndoing the work, with this project supplying tools for it to remember to use.\nThat is the wrong way round. The project is the thing that runs, and it calls a\nmodel at the points where judgement is needed.\n\nThe evidence for the change all came from watching it fail the other way. The\ninstructions in this repository tell the assistant, in bold, to link every\ncommit to the decision graph. It did so for about half of them. An instruction\nsitting in context competes with everything else and loses. Meanwhile the two\ngit hooks in this repository were obeyed without exception, because a machine\nwas holding them rather than a model.\n\nThe clearest sign came from the test of the idea itself. A separate session with\nno memory of the conversation, given one prompt and one file, found more in that\nfile than a careful pass made with six hours of accumulated context on the same\nsubject. A small, single-purpose, forgetful call outperformed a long-running one\ntrying to hold everything at once. If that is generally true, the model belongs\ninside the machinery rather than in charge of it.\n\nSo every place this design said the assistant must remember to do something is\nnow a fault to be removed. It should not have to remember to record a decision,\nor to say what a commit was for, or to keep the graph current: the machinery\ndoes those as it goes, and the checks stop being homework marking and become the\ncontrol flow itself.\n\nThis also means the thing can run on its own, unattended, against a repository\nnobody is watching. Being callable from an assistant is a convenience rather\nthan the point.\n\nIt does not remove the person. It moves them to the end, to look at what\nsurvived checking, rather than asking them to be present at every step, which\nthe fifty-two per cent says nobody sustains.\n\nDecision: 08888b2f-73ff-44c9-b5e5-3d2fb8869fb8",
-    "files_changed": 1
+    "date": "2026-07-14T02:55:15+02:00",
+    "message": "docs: sync the decision graph\n\nRecords why the four explorations in this repository are one thing.\n\nIf the work is done by many small, forgetful callers, each of them has to\nunderstand enough of the codebase to be useful without loading it. Reading does\nnot scale that way: fifty callers each rebuild the same understanding and throw\nit away. Answering questions from a prepared graph does, because the\nunderstanding is built once and asked of many times.\n\nThat is what the first exploration was for, and it was written off too early. It\nis the substrate the rest stands on.\n\nDecision: a763bd5f-35bb-46a2-8f36-2bcea7f8f8d2\nImplements: 979506cd-ec23-4fab-a7b0-2175dc66f84c",
+    "files_changed": 2
   },
   {
     "hash": "c4048d9631831a27fd5cce149153a98af42b6cd0",

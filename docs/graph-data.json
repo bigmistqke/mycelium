@@ -3882,6 +3882,50 @@
       "created_at": "2026-07-14T02:57:32.813166+02:00",
       "updated_at": "2026-07-14T02:57:32.813166+02:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 354,
+      "change_id": "0c40d157-497c-41c8-870e-bc21e0484b71",
+      "node_type": "observation",
+      "title": "THE FRACTAL — the same shape arrived at FOUR times tonight, independently, each time as the answer to a hard problem: (1) hive: git commits are the log, SQLite is the view. (2) 'tests become the materialized spec': decisions are the log, tests are the view. (3) trace: commit messages are the log, the graph is the view. (4) compaction: raw intermediate thoughts are the log, the summary is the view. APPEND-ONLY TRUTH + DERIVED VIEW, ALL THE WAY DOWN. This is mycelium's actual deep structure and we have been re-deriving it each time instead of naming it once.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:00:44.260389+02:00",
+      "updated_at": "2026-07-14T03:00:44.260389+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":92}"
+    },
+    {
+      "id": 355,
+      "change_id": "c0ef76eb-defe-4cb7-af5d-a700a40b979b",
+      "node_type": "decision",
+      "title": "COMPACTION, NOT SQUASH. A git squash on a hive branch would SILENTLY DESTROY DATA: parseCommit maps one commit to one event and takes the first 'id:' line, so squashing N commits concatenates N bodies and N-1 events vanish without a word. What you want is Kafka-style LOG COMPACTION: APPEND an event that summarizes and supersedes N prior ones. The log keeps everything; the view shows the summary; drilling down replays the superseded events. Exactly 'git log --oneline' vs 'git log -p' - you do not delete the diffs to get a readable history, you DERIVE the readable history and keep the diffs.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:00:44.299868+02:00",
+      "updated_at": "2026-07-14T03:00:44.299868+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 356,
+      "change_id": "a0cf833f-60a3-4c01-bc94-35dc439ad031",
+      "node_type": "observation",
+      "title": "The compactor already exists: a bounded claude -p call (one subgraph in, one summary out), cached, invalidated when the subgraph changes. That is v0's describe (#24 Description generation strategy) plus #9/#12 (signature hash vs implementation hash, built to know when a cached derived artifact went stale). Same machinery, pointed at the DECISION graph instead of the CODE graph. v0 keeps turning out to have already built the thing - not because it was designed for this, but because 'precompute comprehension, cache it, invalidate on change' is the same problem wherever it appears.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:00:44.337118+02:00",
+      "updated_at": "2026-07-14T03:00:44.337118+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":88}"
+    },
+    {
+      "id": 357,
+      "change_id": "ae758787-5591-46ab-9c4c-12a80fb9a983",
+      "node_type": "observation",
+      "title": "THE HARNESS MAKES INTERMEDIATE THOUGHTS FREE. Today the graph is 353 nodes of what I judged worth logging - lossy and biased. Under a harness, every step leaves a record without discipline: the proposition pass, the probes, the rejections, the failed hypotheses. And the value is IN THE TAIL, which is unpredictable: the 22 permanently-pending decisions were not logged because anyone thought they mattered, they became the evidence for retirement; the five hand-written max tests were never logged at all, and became a measured 60%-noise demonstration. You cannot tell in advance which intermediate thought will matter. That is the argument for keeping all of them.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:00:44.378901+02:00",
+      "updated_at": "2026-07-14T03:00:44.378901+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
     }
   ],
   "edges": [
@@ -8185,6 +8229,61 @@
       "weight": 1.0,
       "rationale": "Corrects the retrofitted narrative",
       "created_at": "2026-07-14T02:57:32.842450+02:00"
+    },
+    {
+      "id": 392,
+      "from_node_id": 348,
+      "to_node_id": 354,
+      "from_change_id": "08888b2f-73ff-44c9-b5e5-3d2fb8869fb8",
+      "to_change_id": "0c40d157-497c-41c8-870e-bc21e0484b71",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The harness makes the fractal visible",
+      "created_at": "2026-07-14T03:00:44.394766+02:00"
+    },
+    {
+      "id": 393,
+      "from_node_id": 354,
+      "to_node_id": 355,
+      "from_change_id": "0c40d157-497c-41c8-870e-bc21e0484b71",
+      "to_change_id": "c0ef76eb-defe-4cb7-af5d-a700a40b979b",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Compaction is the log/view split applied to thoughts",
+      "created_at": "2026-07-14T03:00:44.413480+02:00"
+    },
+    {
+      "id": 394,
+      "from_node_id": 355,
+      "to_node_id": 356,
+      "from_change_id": "c0ef76eb-defe-4cb7-af5d-a700a40b979b",
+      "to_change_id": "a0cf833f-60a3-4c01-bc94-35dc439ad031",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The compactor is v0's describe",
+      "created_at": "2026-07-14T03:00:44.430585+02:00"
+    },
+    {
+      "id": 395,
+      "from_node_id": 348,
+      "to_node_id": 357,
+      "from_change_id": "08888b2f-73ff-44c9-b5e5-3d2fb8869fb8",
+      "to_change_id": "ae758787-5591-46ab-9c4c-12a80fb9a983",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Harness kills the discipline cost of logging",
+      "created_at": "2026-07-14T03:00:44.447308+02:00"
+    },
+    {
+      "id": 396,
+      "from_node_id": 351,
+      "to_node_id": 356,
+      "from_change_id": "a763bd5f-35bb-46a2-8f36-2bcea7f8f8d2",
+      "to_change_id": "a0cf833f-60a3-4c01-bc94-35dc439ad031",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "v0 again",
+      "created_at": "2026-07-14T03:00:44.463416+02:00"
     }
   ]
 }
