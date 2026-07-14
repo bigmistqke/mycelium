@@ -1,8 +1,59 @@
-# v3: A harness for intent-driven TDD
+# v3: An agentic harness
 
-**Status:** design. Nothing built yet.
-**Date:** 2026-07-13
+**Status:** design, plus one shipped piece (`trace/`).
+**Date:** 2026-07-13, reframed 2026-07-14
 **Supersedes:** the citation-edge proposal in `HANDOFF.md` (kept for its repo survey; the model there is obsolete).
+
+---
+
+## The inversion (read this first — it recategorizes everything below)
+
+An earlier version of this document assumed **Claude is the agent and mycelium is a tool it uses.**
+That is backwards.
+
+> **mycelium is the agent. `claude -p` is a function it calls.**
+
+Fewer tools that require discipline from a model. More **protocols followed deterministically, with
+models sprinkled in via `claude -p`** at the points where judgement is actually needed.
+
+It runs **standalone** — in CI, on a cron, on a repository nobody is looking at. That Claude Code
+can *also* call it is a bonus, not the premise.
+
+### Why the evidence forces this
+
+1. **Discipline fails.** `CLAUDE.md` mandates linking every commit to the decision graph, in bold.
+   An agent read that instruction and complied **52%** of the time. Not a human forgetting — an
+   *agent* forgetting, because instructions in context decay while everything else competes.
+
+2. **Protocols work.** The `post-commit` hook fired and was obeyed instantly. The `commit-msg` hook
+   rejected two commits and both were fixed on the spot. **The machine holding the protocol works;
+   the model holding the protocol does not.**
+
+3. **The decisive one: a cold, bounded `claude -p` outperformed a long-running agent.** On
+   `event-store.ts` it out-found a hand pass done with six hours of accumulated context on the same
+   domain. **A small, stateless, single-purpose call beat an agent trying to hold everything.**
+   That is the argument for making the model a subroutine rather than the driver.
+
+### What it changes
+
+Every place this design says *"the agent must remember to X"* is now a **defect**:
+
+| was | becomes |
+|---|---|
+| Claude must log decisions | **the harness logs**, extracting from `claude -p` output |
+| Claude must cite the commit | **the harness writes the commit**; the hook is a backstop, not the mechanism |
+| Claude must maintain the graph | **the graph is a side effect of the protocol running** |
+| the gates check Claude's homework | **the gates *are* the control flow** |
+
+Note this reclassifies `trace/`'s `commit-msg` hook: it catches an agent that *forgot*. Under the
+harness, **there is nothing to forget** — the harness writes the commit. The hook remains, as a
+backstop for humans and for agents working outside the harness.
+
+**What it does not fix:** the human is relocated, not removed. Instead of being in the loop at every
+step — which 52% compliance says nobody sustains — they review a batch of *verified* findings at the
+end. Smaller ask. Still an ask.
+
+---
 
 ---
 
