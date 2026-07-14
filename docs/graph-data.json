@@ -3981,6 +3981,39 @@
       "created_at": "2026-07-14T03:10:46.238833+02:00",
       "updated_at": "2026-07-14T03:10:46.238833+02:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":92}"
+    },
+    {
+      "id": 363,
+      "change_id": "eba2eddf-4446-40b0-b56b-6a9d32084913",
+      "node_type": "decision",
+      "title": "AGENTS WRITE TO SCRATCH BRANCHES; THE MAIN GRAPH IS A DERIVED VIEW OVER THEM. hive-task-<id> = the agent's full trail (every probe, rejection, dead end). hive-main = what is worth keeping. Hive ALREADY has this mechanism: its hive-* branch model was built for TEAMMATES (hive-alice, hive-bob, hive-shared) and nobody has ever used it because the user is solo. It fits AGENTS exactly. Built for the wrong user, fits a different one - the same story as v0. And it SIDESTEPS SQUASH ENTIRELY: nothing is ever compressed, so the 1:1 parser limitation stops mattering. Scratch branch = uncompressed log; main branch = readable view. The log/view split for the FIFTH time, wearing branches.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:13:45.633041+02:00",
+      "updated_at": "2026-07-14T03:13:45.633041+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 364,
+      "change_id": "b24bc4c0-a80d-4238-8f70-56403ccfd1a3",
+      "node_type": "decision",
+      "title": "DERIVE the main graph, do NOT curate it. The user proposed 'transfer the essential pieces' - that is SELECTION, and a hand-maintained artifact ROTS. Every hand-maintained thing in this project has decayed: 22 permanently-pending decisions, 52% commit compliance. So: hive-main is a MATERIALIZED VIEW over the scratch branches. A bounded claude -p reads a completed task's branch and emits summary nodes; the harness writes them. Because it is derived it can be RECOMPUTED, which means IT CANNOT ROT. Change your notion of 'essential' and regenerate. Fix the compactor and re-run. This is the first design in the session that makes the knowledge graph unable to decay.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:13:45.670470+02:00",
+      "updated_at": "2026-07-14T03:13:45.670470+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 365,
+      "change_id": "7e9f7447-bd05-4de0-a5b3-c21665c53209",
+      "node_type": "observation",
+      "title": "HONEST PROBLEMS with scratch branches: (1) PROLIFERATION - one branch per task means thousands. Namespace them; pragmatic default is keep the trail LOCAL and push only the derived view - but teammates then get conclusions without the path. (2) STORAGE vs THE TAIL - everything tonight argues KEEP the trail, because you cannot predict which intermediate thought matters (the 22 pendings, the five max tests). Git objects are tiny. Do NOT delete scratch branches; the instinct to tidy them is the instinct that loses the evidence. (3) HIVE HAS NO PROMOTE CONCEPT - its model is FEDERATED (query across branches), not merged. Either add promotion, or realise you may not need it: default the query to hive-main and keep the full trail one flag away. The scoping IS the view.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:13:45.710259+02:00",
+      "updated_at": "2026-07-14T03:13:45.710259+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":88}"
     }
   ],
   "edges": [
@@ -8449,6 +8482,61 @@
       "weight": 1.0,
       "rationale": "The verify gate, demonstrated on its own designer",
       "created_at": "2026-07-14T03:10:46.292585+02:00"
+    },
+    {
+      "id": 407,
+      "from_node_id": 348,
+      "to_node_id": 363,
+      "from_change_id": "08888b2f-73ff-44c9-b5e5-3d2fb8869fb8",
+      "to_change_id": "eba2eddf-4446-40b0-b56b-6a9d32084913",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The harness needs somewhere to put its trail",
+      "created_at": "2026-07-14T03:13:45.725362+02:00"
+    },
+    {
+      "id": 408,
+      "from_node_id": 354,
+      "to_node_id": 363,
+      "from_change_id": "0c40d157-497c-41c8-870e-bc21e0484b71",
+      "to_change_id": "eba2eddf-4446-40b0-b56b-6a9d32084913",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The log/view split, as branches",
+      "created_at": "2026-07-14T03:13:45.740692+02:00"
+    },
+    {
+      "id": 409,
+      "from_node_id": 363,
+      "to_node_id": 364,
+      "from_change_id": "eba2eddf-4446-40b0-b56b-6a9d32084913",
+      "to_change_id": "b24bc4c0-a80d-4238-8f70-56403ccfd1a3",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Derive, do not curate",
+      "created_at": "2026-07-14T03:13:45.755001+02:00"
+    },
+    {
+      "id": 410,
+      "from_node_id": 357,
+      "to_node_id": 364,
+      "from_change_id": "ae758787-5591-46ab-9c4c-12a80fb9a983",
+      "to_change_id": "b24bc4c0-a80d-4238-8f70-56403ccfd1a3",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Makes intermediate thoughts free AND non-rotting",
+      "created_at": "2026-07-14T03:13:45.769936+02:00"
+    },
+    {
+      "id": 411,
+      "from_node_id": 363,
+      "to_node_id": 365,
+      "from_change_id": "eba2eddf-4446-40b0-b56b-6a9d32084913",
+      "to_change_id": "7e9f7447-bd05-4de0-a5b3-c21665c53209",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Honest problems",
+      "created_at": "2026-07-14T03:13:45.785620+02:00"
     }
   ]
 }
