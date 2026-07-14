@@ -3739,6 +3739,72 @@
       "created_at": "2026-07-14T02:26:50.361570+02:00",
       "updated_at": "2026-07-14T02:26:50.361570+02:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"c4048d9\",\"confidence\":93}"
+    },
+    {
+      "id": 341,
+      "change_id": "5296d662-8ae4-42bc-b280-a678bf53f78e",
+      "node_type": "decision",
+      "title": "ENCODE THE GRAPH INTO COMMIT MESSAGES (git trailers). The missing code→intent edge already exists in every repo: git blame. line → blame → commit → trailer 'Decision: 247' → node → reasoning. This makes intent retrieval SELF-GUIDING by the same mechanism as code retrieval: an import says what to read next; a blame says what to read next. No MCP server, no index, no rendering layer. This is node #270 ('introspection like git blame but for intent') - the metaphor IS the implementation.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:29:06.564967+02:00",
+      "updated_at": "2026-07-14T02:29:06.564967+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":92}"
+    },
+    {
+      "id": 342,
+      "change_id": "4138897e-6d56-4001-b247-b6e016a2b833",
+      "node_type": "observation",
+      "title": "The commit-trailer edge beats deciduous's --commit HEAD on four counts: (1) DIRECTION - stores commit→node, which is the way retrieval needs to go, not node→commit; (2) LOCATION - lives in git history, so it survives the tool dying; (3) DISTRIBUTION - travels with git push, no patch files; (4) REVERSE LOOKUP - 'git log --grep' gives every commit implementing a decision, which is node #271 (reverse introspection) for free. Also: commit messages are IMMUTABLE and decisions get superseded - that is correct, not a bug. The commit records what was decided THEN; the graph records what is true NOW. Commit messages are the log, the graph is the view - hive's architecture one level down.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:29:06.618294+02:00",
+      "updated_at": "2026-07-14T02:29:06.618294+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 343,
+      "change_id": "b71d4782-17d4-45f7-b909-e5a4d3835e92",
+      "node_type": "observation",
+      "title": "RISKS of commit-trailer encoding: (1) reformatting destroys blame - standard problem, standard fix (.git-blame-ignore-revs); (2) squash concatenates messages so trailers survive, rebase preserves them - robust enough; (3) granularity - one commit may carry 3 decision refs, but that narrows 340 nodes to 3; (4) THE REAL ONE - people forget. Same metadata rot as everything else. BUT it is the cheapest version of that risk: you are writing the commit anyway, and it is the ONLY mechanism in the design enforceable by a commit-msg hook.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:29:06.671452+02:00",
+      "updated_at": "2026-07-14T02:29:06.671452+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":88}"
+    },
+    {
+      "id": 344,
+      "change_id": "673b5a07-a907-4e00-9082-c0966bc4df4d",
+      "node_type": "action",
+      "title": "Build the trace loop: commit-msg hook enforcing a Decision: <uuid> trailer with file-overlap verification, plus a blame command walking file:line → commit → trailer → node",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:37:44.674411+02:00",
+      "updated_at": "2026-07-14T02:37:44.674411+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90,\"files\":[\"packages/v3/trace/\"]}"
+    },
+    {
+      "id": 345,
+      "change_id": "777b4fe3-61ba-44d9-af9a-e21304eaeeec",
+      "node_type": "outcome",
+      "title": "Trace loop SHIPPED and closes in both directions. commit-msg hook: rejects no-trailer, rejects nonexistent node, rejects real-node-with-wrong-files (the confabulation guard), accepts honest citation. 'trace why file:line' walks blame→commit→trailer→node; 'trace code <id>' walks the reverse (node #271, specced in January, now built). Baseline measured: 102 commits, 0 citing a decision, 0% traceable. The hook found a bug in ITSELF during testing - a trailing slash in a declared path caused a FALSE REJECTION of an honest citation, which is the dangerous failure mode for a gate (teaches people to use --no-verify). Fixed.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:41:48.230818+02:00",
+      "updated_at": "2026-07-14T02:41:48.230818+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95,\"files\":[\"packages/v3/trace/\"]}"
+    },
+    {
+      "id": 346,
+      "change_id": "979506cd-ec23-4fab-a7b0-2175dc66f84c",
+      "node_type": "action",
+      "title": "Export the decision graph to docs/ for the web viewer",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:42:16.500853+02:00",
+      "updated_at": "2026-07-14T02:42:16.500853+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90,\"files\":[\"docs/\"]}"
     }
   ],
   "edges": [
@@ -7811,6 +7877,105 @@
       "weight": 1.0,
       "rationale": "Retroactive: test reorganisation during v0 build",
       "created_at": "2026-07-14T02:27:28.920685+02:00"
+    },
+    {
+      "id": 371,
+      "from_node_id": 339,
+      "to_node_id": 341,
+      "from_change_id": "b088cc17-eb77-468d-96e9-41aed6dbafde",
+      "to_change_id": "5296d662-8ae4-42bc-b280-a678bf53f78e",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The handle turns out to be git blame",
+      "created_at": "2026-07-14T02:29:19.226241+02:00"
+    },
+    {
+      "id": 372,
+      "from_node_id": 270,
+      "to_node_id": 341,
+      "from_change_id": "53925961-4e84-4aaa-8b09-04c64c7777bb",
+      "to_change_id": "5296d662-8ae4-42bc-b280-a678bf53f78e",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The January metaphor IS the implementation",
+      "created_at": "2026-07-14T02:29:19.241334+02:00"
+    },
+    {
+      "id": 373,
+      "from_node_id": 341,
+      "to_node_id": 342,
+      "from_change_id": "5296d662-8ae4-42bc-b280-a678bf53f78e",
+      "to_change_id": "4138897e-6d56-4001-b247-b6e016a2b833",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Why it beats --commit HEAD",
+      "created_at": "2026-07-14T02:29:19.253761+02:00"
+    },
+    {
+      "id": 374,
+      "from_node_id": 341,
+      "to_node_id": 343,
+      "from_change_id": "5296d662-8ae4-42bc-b280-a678bf53f78e",
+      "to_change_id": "b71d4782-17d4-45f7-b909-e5a4d3835e92",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Risks",
+      "created_at": "2026-07-14T02:29:19.265465+02:00"
+    },
+    {
+      "id": 375,
+      "from_node_id": 271,
+      "to_node_id": 342,
+      "from_change_id": "7492df21-dfdc-4bc9-8bfd-dfb8f81d397d",
+      "to_change_id": "4138897e-6d56-4001-b247-b6e016a2b833",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Reverse introspection for free",
+      "created_at": "2026-07-14T02:29:19.277731+02:00"
+    },
+    {
+      "id": 376,
+      "from_node_id": 341,
+      "to_node_id": 344,
+      "from_change_id": "5296d662-8ae4-42bc-b280-a678bf53f78e",
+      "to_change_id": "673b5a07-a907-4e00-9082-c0966bc4df4d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Implementation of the commit-trailer decision",
+      "created_at": "2026-07-14T02:37:44.698210+02:00"
+    },
+    {
+      "id": 377,
+      "from_node_id": 344,
+      "to_node_id": 345,
+      "from_change_id": "673b5a07-a907-4e00-9082-c0966bc4df4d",
+      "to_change_id": "777b4fe3-61ba-44d9-af9a-e21304eaeeec",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Built and verified",
+      "created_at": "2026-07-14T02:41:48.248593+02:00"
+    },
+    {
+      "id": 378,
+      "from_node_id": 342,
+      "to_node_id": 345,
+      "from_change_id": "4138897e-6d56-4001-b247-b6e016a2b833",
+      "to_change_id": "777b4fe3-61ba-44d9-af9a-e21304eaeeec",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The four advantages, realised",
+      "created_at": "2026-07-14T02:41:48.266045+02:00"
+    },
+    {
+      "id": 379,
+      "from_node_id": 341,
+      "to_node_id": 346,
+      "from_change_id": "5296d662-8ae4-42bc-b280-a678bf53f78e",
+      "to_change_id": "979506cd-ec23-4fab-a7b0-2175dc66f84c",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Graph export carries the nodes the trailers cite",
+      "created_at": "2026-07-14T02:42:16.522866+02:00"
     }
   ]
 }
