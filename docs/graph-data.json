@@ -3805,6 +3805,72 @@
       "created_at": "2026-07-14T02:42:16.500853+02:00",
       "updated_at": "2026-07-14T02:42:16.500853+02:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":90,\"files\":[\"docs/\"]}"
+    },
+    {
+      "id": 347,
+      "change_id": "be0b95a1-8e5e-4943-b10b-bc7b571ce07e",
+      "node_type": "outcome",
+      "title": "BACKFILL: 2% → 54% traceable, zero hashes rewritten. The claim 'that reasoning is gone for good' was WRONG TWICE: (1) git notes annotate a commit without changing its hash - no rewrite, no force-push; (2) the reasoning was never gone - deciduous already stored node→commit for 54 of 105 commits via --commit HEAD. It was pointing the wrong way and living in a database the code cannot see. Backfill is TRANSCRIPTION, not archaeology. Remaining 46% has no link at all and needs proposing + verifying - which is exactly what the file-overlap gate is for.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:46:35.347583+02:00",
+      "updated_at": "2026-07-14T02:46:35.347583+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95,\"files\":[\"packages/v3/trace/\"]}"
+    },
+    {
+      "id": 348,
+      "change_id": "08888b2f-73ff-44c9-b5e5-3d2fb8869fb8",
+      "node_type": "decision",
+      "title": "REFRAME: mycelium is an AGENTIC HARNESS, not a tool Claude uses. INVERSION: old = Claude is the agent, mycelium is a tool it must REMEMBER to use. New = mycelium is the agent, claude -p is a FUNCTION IT CALLS. Fewer tools requiring LLM discipline; more protocols followed deterministically with LLMs sprinkled in via claude -p. Runs standalone (CI, cron, unattended) AND is callable from Claude Code - the latter is a bonus, not the premise.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:51:34.072442+02:00",
+      "updated_at": "2026-07-14T02:51:34.072442+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":92,\"files\":[\"packages/v3/\"]}"
+    },
+    {
+      "id": 349,
+      "change_id": "eb4881a2-a46b-4dd2-a12b-34b4b1c6a965",
+      "node_type": "observation",
+      "title": "EVIDENCE FOR THE HARNESS REFRAME, all from this session: (1) DISCIPLINE FAILS - CLAUDE.md mandates --commit HEAD in bold; an agent complied 52%. Instructions in context decay. (2) PROTOCOLS WORK - the post-commit hook fired and I complied instantly; the commit-msg hook rejected two of my commits and I fixed both. The machine holding the protocol works; the model holding it does not. (3) THE DECISIVE ONE - a cold bounded claude -p BEAT ME on event-store.ts after I had 6 hours of context on the domain. A small stateless single-purpose call outperformed a long-running agent trying to hold everything. That is the argument for making the LLM a subroutine.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:51:34.113273+02:00",
+      "updated_at": "2026-07-14T02:51:34.113273+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":93}"
+    },
+    {
+      "id": 350,
+      "change_id": "5b41b004-da38-496b-a31d-a96734ce546e",
+      "node_type": "observation",
+      "title": "CONSEQUENCE: every place the design says 'the agent must remember to X' is now a DEFECT. Claude must log decisions → the harness logs, extracting from claude -p output. Claude must cite the commit → the harness WRITES the commit (the hook becomes a backstop, not the mechanism). Claude must maintain the graph → the graph is a SIDE EFFECT of the protocol running. The gates stop being checks on Claude's homework and become THE CONTROL FLOW. Note the commit-msg hook built tonight is at the WRONG LAYER under this framing - it catches an agent that forgot; the harness should leave nothing to forget.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:51:34.155944+02:00",
+      "updated_at": "2026-07-14T02:51:34.155944+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 351,
+      "change_id": "a763bd5f-35bb-46a2-8f36-2bcea7f8f8d2",
+      "node_type": "decision",
+      "title": "THE SYNTHESIS: small agents are only viable if they can ASK instead of READ. Reading is O(agents x files) - fifty small agents each re-deriving the same comprehension and throwing it away. A graph is a CACHE OF COMPREHENSION: pay O(files) once, query N times. This is the real answer to #302: you do not render a database into a prompt, you give the agent a QUERY INTERFACE. That is v0's decision #20 ('Query interface design'), written in January for the package everyone then wrote off as the abandoned first exploration. v0 was never the wrong direction - it is the FOUNDATION, built first and mistaken for a false start.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:55:09.725422+02:00",
+      "updated_at": "2026-07-14T02:55:09.725422+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":92}"
+    },
+    {
+      "id": 352,
+      "change_id": "d0ac357a-d39c-4572-af48-b0ffd4e99c03",
+      "node_type": "observation",
+      "title": "WHERE THE GRAPH EARNS ITS KEEP - the boundary is empirical, from tonight's cold pass, not theoretical. It handled LOCAL questions by reading and did it well (what does this do, who calls it, what key does the parser read) - 729 lines, no graph needed. It FAILED on exactly the NON-LOCAL one: 22 gaps, could not rank a single one, could not tell a violated commitment from a deliberate deferral. That question is not answerable by reading ANY number of files, because the answer is not in them. So: read for local; query for global (blast radius, untested functions) and for intent (which decisions constrain this module). The graph is not a substitute for reading - it answers what reading cannot.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:55:09.779898+02:00",
+      "updated_at": "2026-07-14T02:55:09.779898+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":92}"
     }
   ],
   "edges": [
@@ -7976,6 +8042,127 @@
       "weight": 1.0,
       "rationale": "Graph export carries the nodes the trailers cite",
       "created_at": "2026-07-14T02:42:16.522866+02:00"
+    },
+    {
+      "id": 380,
+      "from_node_id": 345,
+      "to_node_id": 347,
+      "from_change_id": "777b4fe3-61ba-44d9-af9a-e21304eaeeec",
+      "to_change_id": "be0b95a1-8e5e-4943-b10b-bc7b571ce07e",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Backfill closes the historical gap",
+      "created_at": "2026-07-14T02:46:35.365877+02:00"
+    },
+    {
+      "id": 381,
+      "from_node_id": 317,
+      "to_node_id": 348,
+      "from_change_id": "2b5aa3d9-0e36-4bfc-a56a-7c0aa909d7e5",
+      "to_change_id": "08888b2f-73ff-44c9-b5e5-3d2fb8869fb8",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The harness idea, now inverted",
+      "created_at": "2026-07-14T02:51:34.175108+02:00"
+    },
+    {
+      "id": 382,
+      "from_node_id": 348,
+      "to_node_id": 349,
+      "from_change_id": "08888b2f-73ff-44c9-b5e5-3d2fb8869fb8",
+      "to_change_id": "eb4881a2-a46b-4dd2-a12b-34b4b1c6a965",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Evidence",
+      "created_at": "2026-07-14T02:51:34.194833+02:00"
+    },
+    {
+      "id": 383,
+      "from_node_id": 348,
+      "to_node_id": 350,
+      "from_change_id": "08888b2f-73ff-44c9-b5e5-3d2fb8869fb8",
+      "to_change_id": "5b41b004-da38-496b-a31d-a96734ce546e",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Consequences for everything built",
+      "created_at": "2026-07-14T02:51:34.212518+02:00"
+    },
+    {
+      "id": 384,
+      "from_node_id": 345,
+      "to_node_id": 350,
+      "from_change_id": "777b4fe3-61ba-44d9-af9a-e21304eaeeec",
+      "to_change_id": "5b41b004-da38-496b-a31d-a96734ce546e",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Reclassifies the commit-msg hook",
+      "created_at": "2026-07-14T02:51:34.229813+02:00"
+    },
+    {
+      "id": 385,
+      "from_node_id": 332,
+      "to_node_id": 349,
+      "from_change_id": "700f8636-ea1a-4e31-a7fe-0a82c2d68cc3",
+      "to_change_id": "eb4881a2-a46b-4dd2-a12b-34b4b1c6a965",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The blind test is the decisive evidence",
+      "created_at": "2026-07-14T02:51:34.247550+02:00"
+    },
+    {
+      "id": 386,
+      "from_node_id": 348,
+      "to_node_id": 351,
+      "from_change_id": "08888b2f-73ff-44c9-b5e5-3d2fb8869fb8",
+      "to_change_id": "a763bd5f-35bb-46a2-8f36-2bcea7f8f8d2",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Small agents need a query substrate",
+      "created_at": "2026-07-14T02:55:09.799971+02:00"
+    },
+    {
+      "id": 387,
+      "from_node_id": 20,
+      "to_node_id": 351,
+      "from_change_id": "ba89e839-f8ed-472c-ab6b-e14a0dffb174",
+      "to_change_id": "a763bd5f-35bb-46a2-8f36-2bcea7f8f8d2",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "v0's query-interface decision was the foundation",
+      "created_at": "2026-07-14T02:55:09.821650+02:00"
+    },
+    {
+      "id": 388,
+      "from_node_id": 302,
+      "to_node_id": 351,
+      "from_change_id": "a32cb142-e00b-45ac-813c-3d6c9c052a0b",
+      "to_change_id": "a763bd5f-35bb-46a2-8f36-2bcea7f8f8d2",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The real answer to context bloat",
+      "created_at": "2026-07-14T02:55:09.839169+02:00"
+    },
+    {
+      "id": 389,
+      "from_node_id": 351,
+      "to_node_id": 352,
+      "from_change_id": "a763bd5f-35bb-46a2-8f36-2bcea7f8f8d2",
+      "to_change_id": "d0ac357a-d39c-4572-af48-b0ffd4e99c03",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Where the boundary falls, empirically",
+      "created_at": "2026-07-14T02:55:09.856750+02:00"
+    },
+    {
+      "id": 390,
+      "from_node_id": 332,
+      "to_node_id": 352,
+      "from_change_id": "700f8636-ea1a-4e31-a7fe-0a82c2d68cc3",
+      "to_change_id": "d0ac357a-d39c-4572-af48-b0ffd4e99c03",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The cold pass is the evidence, in both directions",
+      "created_at": "2026-07-14T02:55:09.876735+02:00"
     }
   ]
 }
