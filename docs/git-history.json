@@ -1,19 +1,27 @@
 [
   {
+    "hash": "9afcfcee817c1f2078e74b711213b5f21f9509b2",
+    "short_hash": "9afcfce",
+    "author": "bigmistqke",
+    "date": "2026-07-14T02:23:00+02:00",
+    "message": "docs(v3): record the blind test, and cut the rendering layer it disproved\n\nThe design assumed a model could be asked to break a module into checkable\nclaims and would produce claims with teeth, rather than restatements of the\nhappy path. Nothing had tested that, and nothing else in the design mattered\nif it were false. This records the test.\n\nA separate headless session, with no memory of the design conversation, was\ngiven one prompt and one file: the event store of the decision-tracking tool\nthis project uses. It returned twenty-nine claims, fourteen unspecified\ncases, and eight contradictions. An independent pass done by hand, written\ndown and sealed beforehand, found eight things; the cold session found seven\nof them, several more besides, and usually put them better.\n\nOne of its findings is confirmed by a failing test. Recording a change to a\nnode's confidence and then rebuilding the database from the log turns that\nchange into a change of the node's status, because the commit subject line\nis hardcoded to say status. The node's status becomes the string \"95\".\n\nThe sealed prediction was that a session given a single file would miss\neverything that spans files. That was wrong, and the reason it was wrong\nremoves a whole component from the design. The session read four other files\non its own initiative, and its best findings came from doing so. You do not\nhave to render the graph into the model's context. You give it a starting\npoint and let it go and look. The fisheye views, the code-shaped\nserialisation and the cached summaries are all deleted.\n\nThe more useful lesson is about the gate rather than the engine. Twenty-two\nclaims went in and one came out confirmed, one traced to its exact lines,\nand twenty unproven. Two of the three probe tests written to check the claims\npassed while testing nothing at all: the tool's own test database lives in\nmemory, so a file existence check it branches on is always false, so every\none of its one hundred and sixty-two tests takes one path and the other path\nhas never once been executed. The suite is green and the code is unreached.\nA model that produces twenty-two plausible claims and no way to sort them is\na liability. The thing worth building is what sorts them.\n\nAdds the prompt, the raw output, the sealed hand pass and the probe tests, so\nthe run can be re-read and re-run.",
+    "files_changed": 6
+  },
+  {
+    "hash": "80c6bbfb6c8f0022a7e0d22ed11adc4f3177034f",
+    "short_hash": "80c6bbf",
+    "author": "bigmistqke",
+    "date": "2026-07-14T01:41:17+02:00",
+    "message": "chore: allow three more commands in the local permission list\n\nAdds permission entries for fetching from the C4 model website, removing\nfiles from git, and initialising a package. These accumulated from earlier\nsessions and were left uncommitted.",
+    "files_changed": 1
+  },
+  {
     "hash": "a9cd41f9de0cf96a19ce98d810c599bc57a33d72",
     "short_hash": "a9cd41f",
     "author": "bigmistqke",
     "date": "2026-07-14T01:40:55+02:00",
     "message": "docs(v3): add the design for deriving tests from decomposed decisions\n\nAdds a new package directory holding a design document and the two\nexperiments that back it.\n\nThe design proposes that an architectural decision should not be a block\nof prose. It should be broken into individual claims, each carrying a\npredicate over its inputs, the answer it promises, and a record of how it\nis checked: by the type system, by a test, by human review, or not at all.\nClaims can nest, and a test is derived for each leaf. Three checks then\nbecome mechanical rather than a matter of taste: inputs no claim speaks to,\ninputs two claims answer differently, and tests that catch nothing another\ntest already catches.\n\nThe reason for all this is that asking a language model to \"write tests for\nX\" is an unbounded request, so it fills the space with plausible but\nredundant tests. The two scripts in the experiments directory measure that\nclaim rather than assert it.\n\nThe first script breaks the max example's dataflow graph in seven ways,\ncompiles each one through the existing compiler into WebAssembly, and runs\nthe five hand-written tests against every version. Only two of the five\ncatch anything the other tests miss. One of them cannot fail at all: when\nboth inputs are equal, any implementation that returns either input passes.\n\nThe second script takes the three claims an author would naturally write\nfor a clamp function and looks for inputs that no claim covers and inputs\nthat two claims answer differently. It finds ten contradictions, every one\nof them a case where the minimum exceeds the maximum. Nobody had to know\nthat edge case in advance for the check to surface it.\n\nThe handoff note is kept for the survey of the existing packages it\ncontains, but its own proposal is marked superseded by the design.",
     "files_changed": 4
-  },
-  {
-    "hash": "e139159cd79533f6a374af55800dca6764d2b9cd",
-    "short_hash": "e139159",
-    "author": "bigmistqke",
-    "date": "2026-01-24T18:22:42+01:00",
-    "message": "feat(v2): add dataflow graph visualization with vis-network\n\n- Add vis-network for interactive graph rendering in test runner\n- Color-code nodes by kind: input (green), output (red), op (blue), select (orange), const (gray)\n- Separate CLI into cli.ts, keep dataflow-to-wat.ts as pure library\n- Export FunctionInfo interface for consumers",
-    "files_changed": 6
   },
   {
     "hash": "e139159cd79533f6a374af55800dca6764d2b9cd",

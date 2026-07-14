@@ -3640,6 +3640,61 @@
       "created_at": "2026-07-14T01:41:00.958850+02:00",
       "updated_at": "2026-07-14T01:41:00.958850+02:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"a9cd41f\",\"confidence\":95}"
+    },
+    {
+      "id": 332,
+      "change_id": "700f8636-ea1a-4e31-a7fe-0a82c2d68cc3",
+      "node_type": "outcome",
+      "title": "BLIND TEST PASSED. Cold claude -p, one prompt, one file (hive event-store.ts), no session context → 29 propositions, 14 gaps, 8 contradictions. Beat my own careful pass: found 7 of my 8 findings plus several I missed, often sharper. One CONFIRMED by test (a confidence transition is re-materialized as a STATUS on rebuild - node status literally becomes '95'). The design's top open risk - can an LLM produce propositions with teeth - is RETIRED. Answer: yes.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:20:36.394683+02:00",
+      "updated_at": "2026-07-14T02:20:36.394683+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 333,
+      "change_id": "0ac6db5f-7109-4f80-8574-270bab0da500",
+      "node_type": "observation",
+      "title": "The VERIFY GATE earned its place empirically. 22 claims in → 1 test-confirmed, 1 code-traced, 20 unverified. And 2 of my own 3 probes were INVALID (passed while testing nothing). Without a non-LLM gate we would have shipped 22 'findings', most unproven. 'LLMs reason; tools verify' is no longer a principle - it is a measured result.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:20:36.448713+02:00",
+      "updated_at": "2026-07-14T02:20:36.448713+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":92}"
+    },
+    {
+      "id": 334,
+      "change_id": "244eadae-7634-4e48-8a62-778de412dda5",
+      "node_type": "decision",
+      "title": "DELETE the rendering layer from the design. Fisheye views, code-shaped serialization, cached descriptions - all designed to solve context bloat (#302). Unnecessary: the cold agent was handed ONE file and went and read add.ts, status.ts, custom-db.ts, nodes.ts on its own. You do not convey the graph to the model; you give it an ENTRY POINT and let it fetch. #302/#303 are not solved by clever rendering - they are solved by not doing it.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:20:36.498315+02:00",
+      "updated_at": "2026-07-14T02:20:36.498315+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":88}"
+    },
+    {
+      "id": 335,
+      "change_id": "4687f2fb-aab5-49d4-8d9e-36cb8e182e5d",
+      "node_type": "observation",
+      "title": "NEW blind-spot category the design lacks: TEST-DOUBLE DIVERGENCE. hive's 162-test suite is green and structurally CANNOT reach the incremental replay path - the test context's db is in-memory so dbExists is permanently false. Not vacuity (a test that cannot fail), not a coverage gap - the test HARNESS silently disables a production code path. The fixtures are part of the specified system. A frame condition on the test double, not the code.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:20:36.547284+02:00",
+      "updated_at": "2026-07-14T02:20:36.547284+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 336,
+      "change_id": "85241a01-9efe-4102-8962-a3e4b98eacdf",
+      "node_type": "outcome",
+      "title": "Blind test recorded and committed (9afcfce): prompt, raw cold-pass output, sealed hand pass, probe tests, README. Rendering layer deleted from DESIGN.md. Open question 6 added (test-double divergence). 'What to build first' superseded: clamp is moot - build the VERIFY GATE.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:23:14.634158+02:00",
+      "updated_at": "2026-07-14T02:23:14.634158+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"9afcfce\",\"confidence\":95}"
     }
   ],
   "edges": [
@@ -7503,6 +7558,116 @@
       "weight": 1.0,
       "rationale": "Committed",
       "created_at": "2026-07-14T01:41:00.994517+02:00"
+    },
+    {
+      "id": 352,
+      "from_node_id": 306,
+      "to_node_id": 332,
+      "from_change_id": "08310217-f7e3-4cdb-818e-6ef1776718fc",
+      "to_change_id": "700f8636-ea1a-4e31-a7fe-0a82c2d68cc3",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The blind test that the whole design hinged on",
+      "created_at": "2026-07-14T02:20:44.250316+02:00"
+    },
+    {
+      "id": 353,
+      "from_node_id": 317,
+      "to_node_id": 332,
+      "from_change_id": "2b5aa3d9-0e36-4bfc-a56a-7c0aa909d7e5",
+      "to_change_id": "700f8636-ea1a-4e31-a7fe-0a82c2d68cc3",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Validates the harness engine",
+      "created_at": "2026-07-14T02:20:44.263631+02:00"
+    },
+    {
+      "id": 354,
+      "from_node_id": 332,
+      "to_node_id": 333,
+      "from_change_id": "700f8636-ea1a-4e31-a7fe-0a82c2d68cc3",
+      "to_change_id": "0ac6db5f-7109-4f80-8574-270bab0da500",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The verify gate proved itself in the same run",
+      "created_at": "2026-07-14T02:20:44.275794+02:00"
+    },
+    {
+      "id": 355,
+      "from_node_id": 332,
+      "to_node_id": 334,
+      "from_change_id": "700f8636-ea1a-4e31-a7fe-0a82c2d68cc3",
+      "to_change_id": "244eadae-7634-4e48-8a62-778de412dda5",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Agent self-retrieval makes the rendering layer moot",
+      "created_at": "2026-07-14T02:20:44.287906+02:00"
+    },
+    {
+      "id": 356,
+      "from_node_id": 302,
+      "to_node_id": 334,
+      "from_change_id": "a32cb142-e00b-45ac-813c-3d6c9c052a0b",
+      "to_change_id": "244eadae-7634-4e48-8a62-778de412dda5",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Answers context bloat by deleting the problem",
+      "created_at": "2026-07-14T02:20:44.299910+02:00"
+    },
+    {
+      "id": 357,
+      "from_node_id": 303,
+      "to_node_id": 334,
+      "from_change_id": "faeb07bb-ac4a-4aac-8343-685f4f3481d6",
+      "to_change_id": "244eadae-7634-4e48-8a62-778de412dda5",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Answers training mismatch by deleting the problem",
+      "created_at": "2026-07-14T02:20:44.311610+02:00"
+    },
+    {
+      "id": 358,
+      "from_node_id": 332,
+      "to_node_id": 335,
+      "from_change_id": "700f8636-ea1a-4e31-a7fe-0a82c2d68cc3",
+      "to_change_id": "4687f2fb-aab5-49d4-8d9e-36cb8e182e5d",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Found while verifying the claims",
+      "created_at": "2026-07-14T02:20:44.323295+02:00"
+    },
+    {
+      "id": 359,
+      "from_node_id": 332,
+      "to_node_id": 336,
+      "from_change_id": "700f8636-ea1a-4e31-a7fe-0a82c2d68cc3",
+      "to_change_id": "85241a01-9efe-4102-8962-a3e4b98eacdf",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Committed",
+      "created_at": "2026-07-14T02:23:14.649931+02:00"
+    },
+    {
+      "id": 360,
+      "from_node_id": 334,
+      "to_node_id": 336,
+      "from_change_id": "244eadae-7634-4e48-8a62-778de412dda5",
+      "to_change_id": "85241a01-9efe-4102-8962-a3e4b98eacdf",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Rendering layer deleted",
+      "created_at": "2026-07-14T02:23:14.664470+02:00"
+    },
+    {
+      "id": 361,
+      "from_node_id": 335,
+      "to_node_id": 336,
+      "from_change_id": "4687f2fb-aab5-49d4-8d9e-36cb8e182e5d",
+      "to_change_id": "85241a01-9efe-4102-8962-a3e4b98eacdf",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "New open question recorded",
+      "created_at": "2026-07-14T02:23:14.677224+02:00"
     }
   ]
 }
