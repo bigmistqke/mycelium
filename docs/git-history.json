@@ -1,10 +1,10 @@
 [
   {
-    "hash": "20921ff519311a2c62fb64f4453d43038ca873d9",
-    "short_hash": "20921ff",
+    "hash": "08de38914755f9eab7357a0e311266aeee233f20",
+    "short_hash": "08de389",
     "author": "bigmistqke",
-    "date": "2026-07-14T02:55:15+02:00",
-    "message": "docs: sync the decision graph\n\nRecords why the four explorations in this repository are one thing.\n\nIf the work is done by many small, forgetful callers, each of them has to\nunderstand enough of the codebase to be useful without loading it. Reading does\nnot scale that way: fifty callers each rebuild the same understanding and throw\nit away. Answering questions from a prepared graph does, because the\nunderstanding is built once and asked of many times.\n\nThat is what the first exploration was for, and it was written off too early. It\nis the substrate the rest stands on.\n\nDecision: a763bd5f-35bb-46a2-8f36-2bcea7f8f8d2\nImplements: 979506cd-ec23-4fab-a7b0-2175dc66f84c",
+    "date": "2026-07-14T02:57:37+02:00",
+    "message": "docs: sync the decision graph\n\nAdds a caveat to the previous entry. Saying the four packages in this repository\nwere layers all along is a tidy story told after the fact. They were\nexplorations. Some of what they built is reusable, which is a different and\nsmaller claim.\n\nIt matters because calling the first one a foundation quietly commits to its\ncode, which was written to answer a different question. What it really offers is\nan idea that turned out to be right and some parts worth keeping. The current\nexploration is an exploration too.\n\nDecision: 6a813dce-6e59-47ce-8776-4f51a5614a54\nImplements: 979506cd-ec23-4fab-a7b0-2175dc66f84c",
     "files_changed": 2
   },
   {
