@@ -1,19 +1,27 @@
 [
   {
+    "hash": "c4048d9631831a27fd5cce149153a98af42b6cd0",
+    "short_hash": "c4048d9",
+    "author": "bigmistqke",
+    "date": "2026-07-14T02:26:39+02:00",
+    "message": "docs(v3): correct the claim that the model can fetch what it needs\n\nYesterday's commit concluded that a model given a starting point will go and\nfind everything it needs, and used that to delete the component whose job was\nto put the decision graph in front of it. The first half of that is right and\nthe second half is wrong, and the wrong half contradicts the reason this\nproject exists.\n\nThe cold session followed imports and call sites into four other files. That\nworks because code retrieval is self-guiding: an import says what to read\nnext, a call site points at a definition, and the structure carries you along.\nSo code does not need to be rendered into the model's context. It can go and\nget it.\n\nIntent cannot be gone and got. The file it was given had no record of what\nanyone had decided, so the session reconstructed the mechanism by reading the\nsource, which is precisely the backwards derivation this project is meant to\nabolish. Concluding \"let it go and look\" does not simplify the idea, it\nabandons it.\n\nThe run is its own evidence. It produced twenty-two unspecified cases and\ncould not rank one of them. It had no way to tell a broken promise from a\ndeliberate postponement, because it had nothing to compare the code against.\nThat is why a person had to sort the list by hand and why only one item\nsurvived. Knowing what was decided is not decoration on top of the findings.\nIt is what sorts them.\n\nSo the deletion stands for code and is reversed for intent, in a smaller\nshape. The graph does not need to be summarised, zoomed, or squeezed into a\nprompt. It needs one link, from a region of code to the decisions that\nconstrain it, so that a model reading a file can ask what was decided about it\nand walk there the same way it walks from an import to a definition. You\ncannot search for a decision you do not know exists; the link is what makes it\nfindable.",
+    "files_changed": 2
+  },
+  {
+    "hash": "e655a2df39ae9df9c51b412ec3577224ef6e5a04",
+    "short_hash": "e655a2d",
+    "author": "bigmistqke",
+    "date": "2026-07-14T02:23:17+02:00",
+    "message": "docs: sync the decision graph\n\nExports the graph after the blind test. Records that the design's central\nassumption held, that the component built to feed the model its context was\nunnecessary, and that the check which sorts a model's claims from its\nguesses is the part worth building.",
+    "files_changed": 2
+  },
+  {
     "hash": "9afcfcee817c1f2078e74b711213b5f21f9509b2",
     "short_hash": "9afcfce",
     "author": "bigmistqke",
     "date": "2026-07-14T02:23:00+02:00",
     "message": "docs(v3): record the blind test, and cut the rendering layer it disproved\n\nThe design assumed a model could be asked to break a module into checkable\nclaims and would produce claims with teeth, rather than restatements of the\nhappy path. Nothing had tested that, and nothing else in the design mattered\nif it were false. This records the test.\n\nA separate headless session, with no memory of the design conversation, was\ngiven one prompt and one file: the event store of the decision-tracking tool\nthis project uses. It returned twenty-nine claims, fourteen unspecified\ncases, and eight contradictions. An independent pass done by hand, written\ndown and sealed beforehand, found eight things; the cold session found seven\nof them, several more besides, and usually put them better.\n\nOne of its findings is confirmed by a failing test. Recording a change to a\nnode's confidence and then rebuilding the database from the log turns that\nchange into a change of the node's status, because the commit subject line\nis hardcoded to say status. The node's status becomes the string \"95\".\n\nThe sealed prediction was that a session given a single file would miss\neverything that spans files. That was wrong, and the reason it was wrong\nremoves a whole component from the design. The session read four other files\non its own initiative, and its best findings came from doing so. You do not\nhave to render the graph into the model's context. You give it a starting\npoint and let it go and look. The fisheye views, the code-shaped\nserialisation and the cached summaries are all deleted.\n\nThe more useful lesson is about the gate rather than the engine. Twenty-two\nclaims went in and one came out confirmed, one traced to its exact lines,\nand twenty unproven. Two of the three probe tests written to check the claims\npassed while testing nothing at all: the tool's own test database lives in\nmemory, so a file existence check it branches on is always false, so every\none of its one hundred and sixty-two tests takes one path and the other path\nhas never once been executed. The suite is green and the code is unreached.\nA model that produces twenty-two plausible claims and no way to sort them is\na liability. The thing worth building is what sorts them.\n\nAdds the prompt, the raw output, the sealed hand pass and the probe tests, so\nthe run can be re-read and re-run.",
     "files_changed": 6
-  },
-  {
-    "hash": "80c6bbfb6c8f0022a7e0d22ed11adc4f3177034f",
-    "short_hash": "80c6bbf",
-    "author": "bigmistqke",
-    "date": "2026-07-14T01:41:17+02:00",
-    "message": "chore: allow three more commands in the local permission list\n\nAdds permission entries for fetching from the C4 model website, removing\nfiles from git, and initialising a package. These accumulated from earlier\nsessions and were left uncommitted.",
-    "files_changed": 1
   },
   {
     "hash": "a9cd41f9de0cf96a19ce98d810c599bc57a33d72",

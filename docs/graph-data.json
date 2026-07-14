@@ -3695,6 +3695,50 @@
       "created_at": "2026-07-14T02:23:14.634158+02:00",
       "updated_at": "2026-07-14T02:23:14.634158+02:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"9afcfce\",\"confidence\":95}"
+    },
+    {
+      "id": 337,
+      "change_id": "abfe0725-387d-4b42-98cd-81fca62fe906",
+      "node_type": "decision",
+      "title": "CORRECTION to #334. 'Let the agent fetch' was too broad. The blind test proved the model can fetch CODE (structural handles: imports, call sites, self-guiding). It did NOT prove it can fetch INTENT - event-store.ts had no intent to fetch, so the cold pass RECONSTRUCTED mechanism from source, which is precisely the inverse problem VISION.md exists to abolish. THE ASYMMETRY: code is PRESENT in the repo so the agent can fetch it; intent is ABSENT so it must be supplied. You cannot grep for the decision you do not know exists.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:25:51.163965+02:00",
+      "updated_at": "2026-07-14T02:25:51.163965+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 338,
+      "change_id": "1a278d07-a328-4266-bd0d-94641069e08a",
+      "node_type": "observation",
+      "title": "EVIDENCE for the correction, from the experiment itself: the cold pass produced 22 gaps and could NOT RANK ONE. It could not tell a violated commitment from a deliberate deferral (pulse's commit() dropping cleanups; hive's unread conflict refs; write-only status fields) because it had NO DECISIONS to compare against. That is why 22 claims needed a human to sort and only 1 survived. Intent is not decoration - it is what makes findings RANKABLE. A model with the decisions could have sorted most of that list itself.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:25:51.215746+02:00",
+      "updated_at": "2026-07-14T02:25:51.215746+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 339,
+      "change_id": "b088cc17-eb77-468d-96e9-41aed6dbafde",
+      "node_type": "decision",
+      "title": "The graph's job is NOT to be rendered into context. It is to be INDEXED BY CODE LOCATION, so the agent can ask 'what was decided about this file?'. That is the 'decisions tag regions of the code graph' edge (the v0 tie-in) - and it is the HANDLE that makes intent fetchable at all. Code retrieval is self-guiding (an import tells you what to read next); decision retrieval has no handles until we build this one. Build the edge, and intent retrieval becomes self-guiding the way code retrieval already is.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:25:51.259474+02:00",
+      "updated_at": "2026-07-14T02:25:51.259474+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":88}"
+    },
+    {
+      "id": 340,
+      "change_id": "e481c2bb-2556-4a42-9785-576d044cd5b2",
+      "node_type": "outcome",
+      "title": "DESIGN.md and blind-test README corrected; committed c4048d9. The deletion stands for CODE (agent fetches, self-guiding) and is REVERSED for INTENT in a smaller shape: not a rendering layer, ONE EDGE from a region of code to the decisions that constrain it.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:26:50.361570+02:00",
+      "updated_at": "2026-07-14T02:26:50.361570+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"commit\":\"c4048d9\",\"confidence\":93}"
     }
   ],
   "edges": [
@@ -7668,6 +7712,50 @@
       "weight": 1.0,
       "rationale": "New open question recorded",
       "created_at": "2026-07-14T02:23:14.677224+02:00"
+    },
+    {
+      "id": 362,
+      "from_node_id": 334,
+      "to_node_id": 337,
+      "from_change_id": "244eadae-7634-4e48-8a62-778de412dda5",
+      "to_change_id": "abfe0725-387d-4b42-98cd-81fca62fe906",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Corrects the over-broad deletion",
+      "created_at": "2026-07-14T02:26:50.212242+02:00"
+    },
+    {
+      "id": 363,
+      "from_node_id": 337,
+      "to_node_id": 338,
+      "from_change_id": "abfe0725-387d-4b42-98cd-81fca62fe906",
+      "to_change_id": "1a278d07-a328-4266-bd0d-94641069e08a",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The experiment is its own counter-evidence",
+      "created_at": "2026-07-14T02:26:50.226651+02:00"
+    },
+    {
+      "id": 364,
+      "from_node_id": 337,
+      "to_node_id": 339,
+      "from_change_id": "abfe0725-387d-4b42-98cd-81fca62fe906",
+      "to_change_id": "b088cc17-eb77-468d-96e9-41aed6dbafde",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "What replaces the rendering layer",
+      "created_at": "2026-07-14T02:26:50.239584+02:00"
+    },
+    {
+      "id": 365,
+      "from_node_id": 314,
+      "to_node_id": 339,
+      "from_change_id": "704f1d94-8483-4895-9a0f-1368334e63d5",
+      "to_change_id": "b088cc17-eb77-468d-96e9-41aed6dbafde",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Decisions tag the code graph - this is the handle",
+      "created_at": "2026-07-14T02:26:50.251861+02:00"
     }
   ]
 }
