@@ -1,0 +1,18 @@
+{
+  "claimId": "G1",
+  "probe": "import { describe, it, expect } from 'vitest';\nimport git from 'isomorphic-git';\nimport {\n  recordEvent, replayEvents,\n  getDatabase, getAllNodes, insertNode, createTestContext,\n  HiveContext, Node,\n} from '@hive/core';\n\nconst branch = 'hive-test';\n\nasync function bootstrap(): Promise<{ ctx: HiveContext; dir: string }> {\n  const dir = '/test-repo';\n  const ctx = await createTestContext(dir);\n  ctx.fs.mkdirSync(dir, { recursive: true });\n  ctx.fs.mkdirSync(`${dir}/.hive`, { recursive: true });\n  await git.init({ fs: ctx.fs as any, dir, defaultBranch: 'main' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.name', value: 'Test User' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.email', value: 'test@example.com' });\n  ctx.fs.writeFileSync(`${dir}/README.md`, '# Test');\n  await git.add({ fs: ctx.fs as any, dir, filepath: 'README.md' });\n  await git.commit({ fs: ctx.fs as any, dir, message: 'Initial commit',\n    author: { name: 'Test User', email: 'test@example.com' } });\n  await git.branch({ fs: ctx.fs as any, dir, ref: branch });\n  return { ctx, dir };\n}\n\nasync function addNode(ctx: HiveContext, title: string): Promise<string> {\n  const id = await recordEvent(ctx, { type: 'add', nodeType: 'decision', content: title, confidence: 90 }, branch);\n  const db = getDatabase(ctx);\n  const now = new Date().toISOString();\n  const node: Node = { change_id: id, branch, node_type: 'decision', title, status: 'pending', created_at: now, updated_at: now };\n  insertNode(db, node);\n  return id;\n}\n\ndescribe('gap: the watermark must mean everything before it is in the view', () => {\n  it('replays pre-existing event commits that predate the first local write on a cold db', async () => {\n    const { ctx } = await bootstrap();\n\n    // Pre-existing event commit, exactly as on a fresh clone: the git log carries\n    // this decision, but recordEvent('add') never materialises it into the local\n    // db (P6). It still advances the watermark to this commit (P5, line 163).\n    const preId = await recordEvent(\n      ctx,\n      { type: 'add', nodeType: 'decision', content: 'pre-existing decision', confidence: 90 },\n      branch,\n    );\n\n    // First local write on the cold db: adds ONE new node and pushes the\n    // watermark to the new HEAD.\n    await addNode(ctx, 'brand new decision');\n\n    // Materialise the view, exactly as `hive nodes` does. lastSyncHash is set,\n    // the db exists, force is false, and lastSyncHash === HEAD, so replayEvents\n    // takes its early-return path (lines 289 false -> 315/316 return).\n    await replayEvents(ctx, branch);\n\n    // The pre-existing decision must appear in the materialised view.\n    const found = getAllNodes(getDatabase(ctx)).find(n => n.change_id === preId);\n    expect(found?.change_id).toBe(preId);\n  });\n});\n",
+  "reaches": [
+    {
+      "file": "packages/core/src/lib/event-store.ts",
+      "lines": [
+        163,
+        284,
+        285,
+        286,
+        289,
+        315,
+        316
+      ]
+    }
+  ]
+}

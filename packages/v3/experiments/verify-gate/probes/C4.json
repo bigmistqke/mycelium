@@ -1,0 +1,25 @@
+{
+  "claimId": "C4",
+  "probe": "import { describe, it, expect } from 'vitest';\nimport git from 'isomorphic-git';\nimport {\n  recordEvent, recordStateTransition, replayEvents,\n  getDatabase, getAllNodes, insertNode, createTestContext,\n  HiveContext, Node,\n} from '@hive/core';\n\nconst branch = 'hive-test';\n\nasync function bootstrap(): Promise<{ ctx: HiveContext; dir: string }> {\n  const dir = '/test-repo';\n  const ctx = await createTestContext(dir);\n  ctx.fs.mkdirSync(dir, { recursive: true });\n  ctx.fs.mkdirSync(`${dir}/.hive`, { recursive: true });\n  await git.init({ fs: ctx.fs as any, dir, defaultBranch: 'main' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.name', value: 'Test User' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.email', value: 'test@example.com' });\n  ctx.fs.writeFileSync(`${dir}/README.md`, '# Test');\n  await git.add({ fs: ctx.fs as any, dir, filepath: 'README.md' });\n  await git.commit({ fs: ctx.fs as any, dir, message: 'Initial commit',\n    author: { name: 'Test User', email: 'test@example.com' } });\n  await git.branch({ fs: ctx.fs as any, dir, ref: branch });\n  return { ctx, dir };\n}\n\nasync function addNode(ctx: HiveContext, title: string): Promise<string> {\n  const id = await recordEvent(ctx, { type: 'add', nodeType: 'decision', content: title, confidence: 90 }, branch);\n  const db = getDatabase(ctx);\n  const now = new Date().toISOString();\n  const node: Node = { change_id: id, branch, node_type: 'decision', title, status: 'pending', created_at: now, updated_at: now };\n  insertNode(db, node);\n  return id;\n}\n\ndescribe('P27', () => {\n  it('does not materialise a non-status property value as the node status on rebuild', async () => {\n    const { ctx } = await bootstrap();\n    const nodeId = await addNode(ctx, 'Use PostgreSQL');\n    // Seed the branch's db from git so the add commit is materialised.\n    await replayEvents(ctx, branch, true);\n    // Transition a NON-status property. The write path stores property='confidence',\n    // but the commit subject is `status: <sha7> -> 95` (P10), the only thing the log carries.\n    await recordStateTransition(ctx, nodeId, 'confidence', '95', branch);\n    // Rebuild the db purely from the git log (the operation whose job is to reproduce it).\n    await replayEvents(ctx, branch, true);\n    // A rebuild must not stamp an unrelated property's value onto the node's lifecycle status.\n    const status = getAllNodes(getDatabase(ctx)).find(n => n.change_id === nodeId)?.status;\n    expect(status).not.toBe('95');\n  });\n});\n",
+  "reaches": [
+    {
+      "file": "packages/core/src/lib/event-store.ts",
+      "lines": [
+        244,
+        250,
+        379,
+        381,
+        382,
+        385,
+        387,
+        412,
+        416,
+        417,
+        423,
+        426,
+        428,
+        437
+      ]
+    }
+  ]
+}

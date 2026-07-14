@@ -5,33 +5,60 @@ import type { CoverageMap, ReachTarget } from './verdict.ts';
 
 const EVENT_STORE = 'packages/core/src/lib/event-store.ts';
 const target = (lines: number[]): ReachTarget => ({ file: EVENT_STORE, lines });
-const covering = (lines: number[]): CoverageMap => new Map([[EVENT_STORE, new Set(lines)]]);
+/** cov(executed, statements): statements defaults to executed (all declared lines coverable). */
+const cov = (executed: number[], statements: number[] = executed): CoverageMap =>
+  new Map([[EVENT_STORE, { executed: new Set(executed), statements: new Set(statements) }]]);
 
-describe('checkReach', () => {
-  test('satisfied when at least one declared line executed', () => {
-    const [c] = checkReach([target([100, 101, 102])], covering([101]));
+describe('checkReach — the probe must run every statement-line it declared', () => {
+  test('satisfied when every declared statement-line executed', () => {
+    const [c] = checkReach([target([100, 101])], cov([100, 101]));
     assert.equal(c.satisfied, true);
-    assert.deepEqual(c.hit, [101]);
-    assert.deepEqual(c.missed, [100, 102]);
+    assert.deepEqual(c.hit, [100, 101]);
+    assert.deepEqual(c.missed, []);
   });
-  test('not satisfied when none of the declared lines executed', () => {
-    const [c] = checkReach([target([677, 678])], covering([100]));
+
+  test('NOT satisfied when a declared statement-line did not execute — THE C1 LESSON', () => {
+    // The probe named the claim's dead path (677) alongside a live line (100). Only the
+    // live line ran. "At least one" would call this REFUTED; the honest verdict is that
+    // the claim's own code never executed.
+    const [c] = checkReach([target([100, 677])], cov([100], [100, 677]));
     assert.equal(c.satisfied, false);
-    assert.deepEqual(c.hit, []);
+    assert.deepEqual(c.hit, [100]);
+    assert.deepEqual(c.missed, [677]);
   });
+
+  test('ignores declared non-statement lines (braces, blanks, bad numbers)', () => {
+    // 999 is not a statement; it must neither help nor hurt.
+    const [c] = checkReach([target([100, 999])], cov([100], [100]));
+    assert.equal(c.satisfied, true);
+    assert.deepEqual(c.hit, [100]);
+    assert.deepEqual(c.missed, []);
+  });
+
+  test('not satisfied when none of the declared statement-lines executed', () => {
+    const [c] = checkReach([target([677, 678])], cov([], [677, 678]));
+    assert.equal(c.satisfied, false);
+  });
+
   test('not satisfied when the file never loaded', () => {
     const [c] = checkReach([target([100])], new Map());
     assert.equal(c.satisfied, false);
   });
+
+  test('not satisfied when the probe declared no coverable statement line at all', () => {
+    const [c] = checkReach([target([999])], cov([100], [100]));
+    assert.equal(c.satisfied, false);
+  });
+
   test('requires EVERY target satisfied, not just one', () => {
-    const cs = checkReach([target([100]), target([677])], covering([100]));
+    const cs = checkReach([target([100]), target([677])], cov([100], [100, 677]));
     assert.deepEqual(cs.map(c => c.satisfied), [true, false]);
   });
 });
 
 describe('decide — the four verdicts', () => {
-  const reached = checkReach([target([100])], covering([100]));
-  const notReached = checkReach([target([677])], covering([100]));
+  const reached = checkReach([target([100])], cov([100]));
+  const notReached = checkReach([target([677])], cov([], [677]));
 
   test('CONFIRMED: failed on assertion AND reached', () => {
     assert.equal(

@@ -28,8 +28,17 @@ export type RunOutcome =
   | { kind: 'assertion-failed'; message: string }
   | { kind: 'errored'; message: string };
 
-/** file -> the set of line numbers that executed. */
-export type CoverageMap = Map<string, Set<number>>;
+/**
+ * Per file, two sets: the lines that are statements at all (coverable), and the subset
+ * that executed. The statement set is what lets reach ignore braces and blank lines a
+ * model may have named — v8 never reports those as executed, so counting them would
+ * falsely reject honest probes.
+ */
+export interface FileCoverage {
+  executed: Set<number>;
+  statements: Set<number>;
+}
+export type CoverageMap = Map<string, FileCoverage>;
 
 export type Verdict = 'CONFIRMED' | 'REFUTED' | 'UNREACHABLE' | 'INVALID';
 
@@ -65,32 +74,44 @@ export function parseCoverage(coverageFinalPath: string, hiveRoot: string): Cove
   const map: CoverageMap = new Map();
   for (const entry of Object.values(raw)) {
     const file = relative(hiveRoot, entry.path);
-    const lines = map.get(file) ?? new Set<number>();
-    for (const [id, hits] of Object.entries(entry.s)) {
-      if (hits <= 0) continue;
-      const stmt = entry.statementMap[id];
-      if (!stmt) continue;
-      for (let l = stmt.start.line; l <= stmt.end.line; l++) lines.add(l);
+    const fc = map.get(file) ?? { executed: new Set<number>(), statements: new Set<number>() };
+    for (const [id, stmt] of Object.entries(entry.statementMap)) {
+      const hit = entry.s[id] > 0;
+      for (let l = stmt.start.line; l <= stmt.end.line; l++) {
+        fc.statements.add(l); // every line a statement covers is coverable...
+        if (hit) fc.executed.add(l); // ...and executed iff that statement ran
+      }
     }
-    map.set(file, lines);
+    map.set(file, fc);
   }
   return map;
 }
 
 /**
- * SATISFIED if at least one declared line executed. Not all: a model naming a range
- * includes braces and blank lines v8 never reports as run, and demanding every line
- * would reject honest probes — the commit-msg hook already taught that a gate's
- * dangerous failure is the FALSE rejection, because it teaches people to route around
- * it. At-least-one still catches the lie that matters: a probe that never runs the
- * named code scores ZERO, not low. The hit ratio is reported regardless.
+ * SATISFIED if the probe executed EVERY statement-line it declared. Not "at least one":
+ * that rule was too weak, and a real run proved it. The C1 probe declared the buggy
+ * incremental-replay path (lines 677-686) AND a dozen generic lines that run on every
+ * replay. Under an in-memory test db the incremental path is dead, so 677-686 never ran
+ * — but the generic lines did, and "at least one" then reported the untested claim as
+ * REFUTED. The claim's own code never executed and the gate blessed it anyway.
+ *
+ * So the declaration is a COMMITMENT: run everything you named. A probe that names the
+ * claim's code and doesn't run it has not reached the claim — that IS test-double
+ * divergence, and the honest verdict is UNREACHABLE, not REFUTED.
+ *
+ * Non-statement declared lines (braces, blanks, bad numbers) are ignored, never counted
+ * against the probe — v8 cannot report them executed, so requiring them would be the
+ * false rejection the commit-msg hook warned about. Only real, coverable statement lines
+ * are held to the commitment. If a probe declares no statement line at all, there is
+ * nothing to verify and reach is not satisfied.
  */
 export function checkReach(targets: ReachTarget[], covered: CoverageMap): ReachCheck[] {
   return targets.map(target => {
-    const executed = covered.get(target.file) ?? new Set<number>();
-    const hit = target.lines.filter(l => executed.has(l));
-    const missed = target.lines.filter(l => !executed.has(l));
-    return { target, hit, missed, satisfied: hit.length > 0 };
+    const fc = covered.get(target.file) ?? { executed: new Set<number>(), statements: new Set<number>() };
+    const checkable = target.lines.filter(l => fc.statements.has(l));
+    const hit = checkable.filter(l => fc.executed.has(l));
+    const missed = checkable.filter(l => !fc.executed.has(l));
+    return { target, hit, missed, satisfied: checkable.length > 0 && missed.length === 0 };
   });
 }
 
