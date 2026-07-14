@@ -1,135 +1,186 @@
-# v3 Handoff: ADR ↔ Knowledge Graph ↔ Test Surface
+# Handoff — 2026-07-14
 
-> **SUPERSEDED by [DESIGN.md](./DESIGN.md).** Read that first.
->
-> This document's *repo survey* (what v0/v1/v2/hive/deciduous are, and the inherited v2 tension)
-> is still accurate and useful. Its *proposed model* is obsolete: it argued for a citation edge
-> (`test → proves → node`) linking tests to decisions as separate artifacts. That idea was
-> replaced by **composition** — decisions decompose into propositions, and the test surface *is*
-> the leaf set, not a thing linked to it. See DESIGN.md.
+Written at the end of a long session. Read this, then `DESIGN.md`.
 
-**Status:** design not started. This document exists so a fresh session can pick the thread up cold.
-**Written:** 2026-07-13. Nothing in `packages/v3/` has been built yet.
+**Start here:** `trace/` is the only thing that exists. Everything else is design.
 
 ---
 
-## The idea, in the user's words
+## What shipped
 
-> there are ADRs -> architectural decisions that are made -> there is a knowledge graph with these ADRs as a sort of tag, coming together of knowledge -> tests become the materialized spec -> how to make this clear relation between ADR, knowledge graph and test surface -> i have been playing around with TDD, but i often found to rely purely on an llm in an unstructured way leads to a lot of redundant and unfocused tests
+**`packages/v3/trace/`** — the code↔intent edge. A `commit-msg` hook and a bash CLI.
 
-Two things are bundled here. Keep them separate.
+```sh
+trace why  <file>:<line>    a line of code → the decisions behind it
+trace code <uuid|id>        a decision → every commit that exists because of it
+trace gaps                  what fraction of commits are traceable
+trace backfill              recover citations deciduous already knows (git notes, no rewrite)
+```
 
-1. **A structural claim.** ADRs, a knowledge graph, and a test suite are three views of one thing, and the relation between them should be explicit rather than implied.
-2. **A concrete pain.** Unstructured LLM-driven TDD produces redundant, unfocused tests. This is the problem that would justify the structure.
+The hook **verifies rather than trusts**: rejects a missing trailer, rejects a UUID that resolves to
+nothing, and rejects a real node whose declared files don't overlap the commit's changed files. That
+last one is the point — an agent asked to cite something *will* cite something, and the file check is
+what makes a false citation expensive to construct.
 
-The pain is the thing to solve. The structure is the hypothesis about how.
+**This repo went from 0% to 54% traceable.** The remaining 46% has no record anywhere and would have
+to be proposed and verified.
 
----
-
-## The insight worth keeping
-
-Hive (see below) is event-sourced: **git commits are the event log, SQLite is the materialized view.** The phrase "tests become the materialized spec" is that same architecture one level up — **decisions are the log, tests are the view.**
-
-That reframing makes the redundant-test problem tractable. LLM TDD produces noise because **a test has no reason to exist**. Nothing records what it materializes. If every test must cite the node it proves, three properties become computable instead of a matter of taste:
-
-- **coverage** — decisions with zero tests
-- **redundancy** — two tests citing the same node without proving distinct properties
-- **deletability** — a test citing nothing is noise by definition
-
-That citation edge — `test → proves → node` — is the whole proposal in one line. Everything else is packaging.
-
-**Caveat, stated up front:** this has not been tested. It's plausible, not validated. It's entirely possible that forcing a citation just moves the noise (the LLM writes three tests citing the same node and invents three "distinct properties" to justify them). The first real job is to find out.
+Cite the **UUID** (`change_id`), never the integer id. Commit messages are immutable; the integer is
+a display alias that wouldn't survive a move to hive.
 
 ---
 
-## What already exists
+## What was PROVEN (evidence, not argument)
 
-Three repos, and the pieces of this idea are scattered across all of them.
+| claim | evidence |
+|---|---|
+| a cold `claude -p` produces propositions with **teeth** | 29 propositions / 14 gaps / 8 contradictions on hive's `event-store.ts`. Beat a hand pass done with 6h of context on the same domain. |
+| **the gate matters more than the engine** | 22 claims in → **1** confirmed by test, 1 traced, 20 unproven |
+| mutation testing finds real noise | v2's 5 hand-written `max` tests → **2 load-bearing**. One (`{4,4}→4`) cannot fail at all. |
+| gap-checking derives edge cases nobody recalled | 3 naive `clamp` propositions → **10 contradictions, all `min > max`**, found without anyone knowing that edge existed |
+| **a probe can lie** | 2 of 3 probes passed *while testing nothing*. hive's `dbExists` is permanently false under its in-memory test db, so **all 162 of its tests take one path and the other has never executed.** |
 
-### mycelium (this repo) — the intent graph
-
-- `packages/v0` — TypeScript static analysis (ts-morph) into a SQLite semantic graph. Code → graph. Most built-out: real CLI, Vite client viewer, community detection, tests.
-- `packages/v1` — graph → WAT scaffolding. Proven skeleton, deliberately abandoned. Emits `;; TODO: implementation` stubs.
-- `packages/v2` — **the live edge.** Full gradient: Vision → Architecture → Component → Function → Dataflow → AST, one graph, typed cross-layer edges (`motivates`, `contains`, `exposes`, `implemented_by`, `compiles_to`). The dataflow→WAT compiler genuinely works — `npx tsx packages/v2/src/cli.ts packages/v2/examples/02_calculator.json` emits real multi-value WAT, and there's a Vite runner that takes dataflow → WAT → WASM and executes the tests.
-
-**v2 already did half of this.** Decision-graph node #291:
-
-> Verification via mocking: tests live at function layer (last described layer). Lower layers (dataflow, AST) inherit tests through `implemented_by` edges. Higher layers are organizational, no executable tests. **Tests ARE the intent, expressed as examples.**
-
-And `packages/v2/examples/00_max.json` really does carry a `tests` array on the function node. So "tests attached to graph nodes" is not speculative — it's running code. What's missing is the *decision* layer above it, and any notion of redundancy.
-
-Note: `packages/v2/README.md` is stale — it says "Hand-written JSON exploration. No tooling yet," which stopped being true several commits ago.
-
-### hive (`../hive`, github.com/bigmistqke/hive) — the ADR store
-
-Git-native decision tracking, inspired by deciduous. Mature: event-sourced, 162 passing tests, orphan `hive-*` branches as the event log, `.hive/db.sqlite` as the materialized view.
-
-It already has most of the ADR vocabulary this idea needs:
-
-- `-t/--topic` — **this is the "sort of tag" from the user's framing**
-- node types: `goal`, `decision`, `option`, `action`, `outcome`, `observation`
-- status lifecycle on task-like nodes: `pending`, `active`, `completed`, `rejected`
-- edge types: `depends_on`, `blocks`, `supports`, `contradicts`, `alternative_to`, `leads_to`
-
-What it does **not** have: any link to code, and any link to tests. "Staleness detection" in recent commits is only SQLite-vs-git-HEAD cache invalidation — **not** ADR drift. Don't be misled by the name (I was, briefly).
-
-### deciduous — the reasoning log actually in use
-
-mycelium's own decision graph, 308 nodes, driven by the mandatory workflow in `CLAUDE.md`. This is the accumulated reasoning of the whole project and the reason v3 lives in this repo rather than a fresh one.
-
-It contains 29 `decision` nodes that are de-facto ADRs — `Mycelium is NOT a new language`, `v1 scope reduction`, `Roundtrip strategy: code edits trigger intent derivation`, etc. **Every one is still status `pending`.** None were ever accepted or superseded. So there is an ADR *log* but no ADR *lifecycle*, which is itself a finding: the tooling permitted a status field and the practice never used it. Worth asking why before designing a system that assumes people will maintain more metadata, not less.
+Artifacts: `experiments/mutate.ts`, `experiments/exhaustive.ts`, `experiments/blind-test/`.
 
 ---
 
-## The open question (this is where to start)
+## What was CORRECTED (I was wrong, four times)
 
-**Which project owns this — and therefore what is it?**
+1. **"Let the agent fetch"** — too broad. Code retrieval is self-guiding (imports, call sites) so the
+   agent fetches it fine. **Intent is not in the repo, so it must be supplied.** You cannot grep for a
+   decision you don't know exists. That's what `trace` is for.
+2. **"The four packages were layers all along"** — retrofitted narrative. They are *explorations*.
+   Some parts are reusable. That is a smaller claim, and v3 is an exploration too.
+3. **"Squashing hive destroys data"** — it's a `.map()`, not a design constraint. `parseGitLog` reads
+   one event per commit. Every UUID survives a squash; the reader just never looks for a second one.
+4. **"hive's outcome node made a false claim"** — it said *rebase-safe*, and it **is** rebase-safe. I
+   expanded it to "history-rewrite-safe" and went hunting for evidence it was wrong.
 
-- **A capability in mycelium.** Model `decision → constrains → node → proven_by → test` in the intent graph, so "materialized spec" is a property of the graph and test focus falls out of the compiler. Direct extension of v2's node #291. But it only ever works inside mycelium's own dataflow-graph format.
-- **A general practice, built on hive.** Tests in any repo, any language, cite hive decision nodes; a CLI computes coverage, redundancy, and orphan tests. Works on real code today. Mycelium becomes the first consumer, not the deliverable.
-
-The user's framing ("how to make this clear relation…", "I have been playing around with TDD") leans toward the **second** — it's a working practice, and it wants to operate on code that isn't a mycelium dataflow graph. But this was never settled. **Settle it first.** The two produce completely different first steps.
-
-Whichever is chosen, the design still owes answers to:
-
-1. **Where does the citation live?** In the test file (`test('...', { adr: 42 })`, a comment pragma, a naming convention)? Or outside it, in the graph? In-code is greppable and survives refactors; out-of-code keeps tests clean but drifts.
-2. **What exactly does a test cite?** The decision node itself, or a *property* the decision asserts? This is the crux of redundancy. If tests cite decisions, "one decision, five tests" looks redundant but may be legitimate. If decisions enumerate properties and tests cite properties, redundancy becomes exactly "two tests, one property" — crisp, but it demands the decision node carry a property list, which is more authoring burden. **This is the single most important design question.**
-3. **Is redundancy computable, or only reviewable?** Optimistic case: property citation makes it a set-comparison. Pessimistic case: it needs a judgment call, and the tool can only surface candidates.
-4. **What stops the LLM from gaming the citation?** If "cite a node" is a checkbox, the LLM will check it. The constraint has to bite.
-
----
-
-## Unresolved tension inherited from v2 — read this before building
-
-Nodes #302–#305 in the deciduous graph are open, and they are a challenge to the whole graph-authoring premise. Having gotten dataflow→WASM working, the user immediately turned on it:
-
-- **#302 Context bloat.** The calculator dataflow JSON is ~180 lines where equivalent code is ~15. The AI re-reads the whole graph every turn.
-- **#303 Training mismatch.** LLMs have read billions of lines of `if`/`else` and almost no dataflow graphs. Asking an AI to work in graphs may fight its training rather than leverage it. **The AI might simply perform worse.**
-- **#304 Verb interface.** Possible escape: the AI issues commands (`add_node()`, `wire()`, `delete()`) instead of reading/writing full JSON. Small commands, natural language, no context dump.
-- **#305 Structure-native AI.** Other escape: accept that graphs want GNNs, program synthesis, or SMT ("given the tests, *find* the wiring") rather than an LLM.
-- **#300** — the dataflow JSON is serialization, not an authoring format; the real interface is a **visual whiteboard** (Unreal Blueprints, Max/MSP, circuit schematics as precedent).
-
-**Why this matters for v3.** The ADR↔test idea is a *lighter* bet than v2's: citations are small, textual, and greppable, so it mostly sidesteps #302 and #303 rather than confronting them. That's an argument in its favour. But it's also worth being honest that v3 does not *resolve* the v2 tension — it routes around it. If v3 works, the question of whether AI can author graphs at all is still open and still unanswered.
+**The pattern is the finding.** Four tidy stories, four corrections, and **the user caught every one** —
+not a test, not a solver, not the design. That is the exact failure mode (plausible, confident,
+unverified) that this whole design exists to catch, running live in the agent designing it. It is the
+strongest argument in the session that **the gate must not be a model.**
 
 ---
 
-## State of the repo, as of this handoff
+## The design as it now stands
 
-- Branch `main`, **8 unpushed commits**.
-- Working tree carries only deciduous sync output (`docs/graph-data.json`, `docs/git-history.json`) and `.claude/settings.local.json`. Nothing substantive uncommitted.
-- `packages/v3/` contains only this document.
+**The inversion (read `DESIGN.md`'s opening):**
 
-## Suggested first moves
+> **mycelium is the agent. `claude -p` is a function it calls.**
 
-1. **Answer the ownership question** (mycelium capability vs hive practice). Everything else is downstream.
-2. **Then answer design question #2** — cite decisions, or cite properties? Do this on paper, with a real example, before writing any code.
-3. **Find a real test case.** The v0 test suite is the honest candidate: it's real, it's LLM-written, and it's the kind of code where "is this test redundant?" has an actual answer. Try citing its tests by hand and see whether the structure holds up or collapses.
-4. Resist building a CLI until (3) has been done manually at least once. The failure mode of this whole project is beautiful structure that nobody maintains — and the 29 permanently-`pending` decision nodes are the standing evidence that it's a real risk.
+Fewer tools that require discipline from a model; more protocols followed deterministically with
+models called at the judgement points. Evidence: `CLAUDE.md` mandates commit-linking *in bold* and an
+agent complied **52%** of the time. Hooks were obeyed **100%**. And a cold, bounded call **beat** a
+long-running agent holding six hours of context.
+
+**The model:** decisions decompose into propositions (`text` / `guard` / `answer` / `verified_by:
+type | test | review | none`), recursive, one test per *leaf*. To split a proposition you must name
+the failure scenario only the child catches.
+
+**Three checks, none of them a model:** gaps + contradictions (solver over guards), redundancy +
+vacuity (mutation), status (derived — never declared).
+
+**Templates are *scale*, not taxonomy.** Everything bottoms out in functions. But descending a scale
+requires **frame conditions** — the structural claims that hold a composition together and live in
+none of its parts. *Unit tests without frame conditions are unsound decomposition.*
+
+**The fractal — five times in one session, each time as the answer to a hard problem:**
+
+```
+hive         git commits are the log     →  SQLite is the view
+tests-as-spec  decisions are the log     →  tests are the view
+trace        commit messages are the log →  the graph is the view
+compaction   raw thoughts are the log    →  the summary is the view
+branches     scratch branches are the log→  the main graph is the view
+```
+
+**Append-only truth, derived view, all the way down.** Name it once instead of re-deriving it.
+
+**Agents write to scratch branches; the main graph is DERIVED from them, not curated.** hive's
+`hive-*` branch model was built for teammates and never used (solo author) — it fits *agents*
+exactly. Because the main graph is derived, **it can be recomputed, and a thing that can be
+regenerated cannot rot.** That is the first design here that doesn't depend on someone staying
+disciplined.
 
 ---
 
-## Process notes
+## What to do next (ranked)
 
-- `CLAUDE.md` in this repo makes decision-graph logging **mandatory and real-time**. Log before acting, link every node to a parent, capture verbatim user prompts on goal nodes. Root `goal` nodes are the only valid orphans.
-- Run `/recover` (or `deciduous nodes` / `deciduous edges`) at session start.
-- Relevant graph nodes for this thread: **#306** (goal), **#307** (this document), **#308** (the hive event-log/materialized-view observation). Prior context: **#291** (tests at function layer), **#300–#305** (the authoring tension).
+### 1. Build the verify gate. It IS the product.
+
+The engine is proven. A model that hands you 22 plausible claims and no way to sort them is a
+liability, not a tool.
+
+```
+propose   claude -p, bounded, one module   →  gaps + concrete witnesses     [PROVEN]
+probe     generate a test that FAILS if the claim is true, run it           [BUILD]
+reach     assert the probe actually executed the code it claims to test     [BUILD]
+report    only what survived                                                 [BUILD]
+```
+
+**`reach` is not optional.** Two of three probes tonight passed while executing nothing.
+
+### 2. Fix hive: let a commit carry N events.
+
+`parseGitLog` does `commits.map(parseCommit)` — a 1:1 shape that was *mandatory* when the id **was**
+the commit hash, and became *arbitrary* the moment `e912e55` moved identity into the body. **The
+parser never caught up with its own migration.** Lifting it unlocks squash, **batching** (a harness
+emitting 50 intermediate thoughts writes *one* commit), and cheap high-volume logging — the premise
+of the whole scratch-branch design.
+
+### 3. The query substrate (v0).
+
+Small agents are only viable if they can **ask instead of read**. Reading is `O(agents × files)` —
+fifty agents each rebuilding the same comprehension and throwing it away. A graph is a **cache of
+comprehension**: pay `O(files)` once, query N times. That is v0's decision **#20, "Query interface
+design"**, written in January for the package everyone wrote off.
+
+**But:** "v0 is the foundation" commits you to v0's *implementation*, built to answer a different
+question (#192: topology analyzer). What it really offers is a **proven idea** plus **reusable parts**
+(side-effect tracking, descriptions, change detection). Reuse is a decision on the merits.
+
+**Where the graph earns its keep — empirically, from the blind test:** the cold agent handled every
+*local* question by reading, and failed on exactly the *non-local* one (it produced 22 gaps and could
+not rank one of them, because it had no decisions to compare against). **Read for local. Query for
+global and for intent.**
+
+---
+
+## Open findings in other repos (verified, unfixed)
+
+**pulse** — four findings written to `docs/follow-ups.md`, committed as `691ab4d`. All confirmed by
+probe against HEAD `401de25`. The serious one: **speculative writes propagate exactly one hop** —
+`A → B → C`, write `A`, read `C` → stale. A glitch in the speculation engine.
+
+**hive** — one **confirmed** data-corruption bug: a `confidence` transition re-materializes as a
+**status** on rebuild; the node's status becomes the string `"95"`. And its incremental replay path
+has **never executed** — which is where roughly 20 further unverified claims live. Raw output:
+`experiments/blind-test/cold-pass-output.json`. **Nothing has been reported to hive.**
+
+---
+
+## Risks that still stand
+
+1. **The human must review.** Relocated (to the end, over *verified* findings), not removed. The
+   standing counter-evidence is that no decision status was flipped in five months.
+2. **Unproposed propositions are undetectable.** A gap in the *guards* is computable. A decision you
+   never thought to make is not.
+3. **Procedural knowledge has no home.** Runbooks, debugging lore. The model is declarative.
+4. **The harness cannot tell you a decision was *bad*.** All three checks are consistency checks.
+   Green means *coherent*, never *wise*. A fully-verified disaster reports green.
+5. **Test-double divergence.** A proposition can be covered, non-redundant, and passing while its
+   code is unreachable in production terms.
+
+---
+
+## State
+
+- mycelium: **clean, ~35 commits ahead of origin, not pushed.** 365 decision nodes, no orphans.
+- `trace gaps`: **54%**.
+- Scratch artifacts (mutation harnesses, worktrees, the answer key) are in the session scratchpad and
+  will be lost. Everything that mattered is committed under `experiments/`.
+
+## The one sentence
+
+> **Everything needed to know this was already in the graph. There was just no way to ask.**
