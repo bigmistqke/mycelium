@@ -295,21 +295,56 @@ If that bet is wrong — if humans won't even review — the design fails, and i
 
 ---
 
-## The rendering layer — designed, then deleted
+## Retrieval: code is fetched, intent is supplied
 
-An earlier draft of this document had a whole component here: fisheye views over the graph, a code-shaped serialization distinct from the JSON, cached per-node descriptions with hash-based invalidation. All of it existed to answer #302 (the graph is too verbose for a context window) and #303 (models are bad at graphs, good at code).
+An earlier draft had a whole component here: fisheye views over the graph, a code-shaped serialization, cached per-node descriptions with hash invalidation — all to answer #302 (the graph is too verbose for a context window) and #303 (models are bad at graphs).
 
-**It was cut, because the blind test showed the problem does not exist.**
+The blind test cut it, but **it is important to be precise about what was cut and why**, because the first version of this section over-claimed and got the project's founding premise backwards.
 
-The cold pass was handed **one file** — `event-store.ts` — and nothing else. It went and read `add.ts`, `status.ts`, `custom-db.ts`, and `nodes.ts` **on its own**, and several of its best findings are cross-file ones that were only visible after doing so.
+### What the blind test proved: the model fetches CODE
 
-> **You do not convey the graph to the model. You give it an entry point and let it fetch.**
+The cold pass was handed **one file** and went and read `add.ts`, `status.ts`, `custom-db.ts`, `nodes.ts` on its own. Several of its best findings were only visible after doing so.
 
-The agent does its own retrieval, and it retrieves better than any fisheye heuristic we would have hand-tuned, because it knows what it is looking for and we don't. #302 and #303 are not solved by clever rendering. They are solved by not rendering.
+**Code retrieval is self-guiding.** An import says what to read next. A call site points at a definition. The structure *carries* the retrieval, and the model follows it better than any fisheye heuristic we would have hand-tuned, because it knows what it is looking for and we don't.
 
-**Keep exactly one thing** from the deleted design: the *entry point* must be well chosen. That is a one-line decision, not a subsystem.
+**So: never render code into context. The agent fetches it.** That part of the deletion stands.
 
-This is the single largest simplification the evidence bought, and it is worth stating why it was wrong in the first place: **the design assumed the model was a function to be fed. It is an agent that can go and look.**
+### What it did NOT prove: that the model can fetch INTENT
+
+`event-store.ts` has no intent to fetch. The cold pass reconstructed **mechanism from source** — which is exactly the inverse problem `VISION.md` opens by condemning:
+
+> *"Reading code becomes an inverse problem: code → inferred design → reconstructed intent. LLMs and humans are doing this transform constantly."*
+
+"Let the agent go and look" quietly re-endorses that transform and pays for it again every session. **It is not a simplification of mycelium; it is a refusal of it.**
+
+### The experiment is its own counter-evidence
+
+The cold pass produced 22 gaps and **could not rank a single one.** It had no way to distinguish:
+
+| finding | violated commitment? | or deliberate deferral? |
+|---|---|---|
+| `commit()` drops cleanups (pulse) | ? | ? |
+| conflict refs never read (hive) | ? | ? |
+| `status` is a write-only field | ? | ? |
+
+It flagged them identically, because **it had no decisions to compare against.** That is *why* 22 claims needed a human to sort them, and why only one survived.
+
+**Intent is not decoration that makes the output prettier. It is what makes findings rankable.** A model holding the decisions could have sorted most of that list itself.
+
+### The asymmetry, stated plainly
+
+> **Code is PRESENT in the repository, so the agent can fetch it.**
+> **Intent is ABSENT from the repository, so it must be supplied.**
+
+And intent cannot simply be "fetched too", even given a `hive search` tool: **you cannot grep for the decision you do not know exists.** Code retrieval has structural handles; decision retrieval has none.
+
+### So the graph's job is to be indexed, not rendered
+
+> **The graph is not rendered into context. It is indexed by code location, so the agent can ask: "what was decided about this file?"**
+
+That is the `decisions tag regions of the code graph` edge (the v0 tie-in), and it is load-bearing in a way the first draft missed: **it is the handle that makes intent fetchable at all.** Build it, and intent retrieval becomes self-guiding the way code retrieval already is — the agent walks from the file it is reading to the decisions that constrain it, exactly as it walks from an import to a definition.
+
+No fisheye. No compaction heuristics. **One edge.**
 
 ---
 

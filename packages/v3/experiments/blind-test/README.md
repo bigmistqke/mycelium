@@ -36,9 +36,14 @@ The prediction failed for the reason that matters most: the cold pass was given 
 went and read `add.ts`, `status.ts`, `custom-db.ts` and `nodes.ts` **by itself**. Several of its
 best findings were only visible after doing so.
 
-> **You do not convey the graph to the model. You give it an entry point and let it fetch.**
+> **The model fetches CODE by itself. Code retrieval is self-guiding — an import says what to
+> read next.**
 
-That single observation deleted the entire rendering layer from the design.
+That deleted the fisheye rendering layer. But note the limit, because the first reading of this
+result over-claimed: `event-store.ts` had **no intent to fetch**, so the cold pass reconstructed
+*mechanism from source* — the very inverse problem this project exists to abolish. Code is
+present in the repo and can be fetched; intent is absent and must be supplied. You cannot grep
+for the decision you do not know exists.
 
 ## But the gate mattered more than the engine
 
@@ -54,11 +59,14 @@ database — so **all 162 of hive's tests take the full-rebuild path, and the in
 path is never executed.** The suite is green; the path is dead; and that is exactly where the
 cold pass's most serious claims live.
 
-Two conclusions, and the second is the important one:
+Three conclusions, and the last is the one that changed the design:
 
 - **The engine works.** A model can produce propositions with teeth.
 - **A model that generates 22 plausible claims and no way to sort them is a liability, not a
   tool.** The verify gate is the product.
+- **It could not rank a single one of the 22.** It had no way to tell a violated commitment from
+  a deliberate deferral, because it had no decisions to compare against. Intent is not decoration
+  — it is what makes findings rankable, and it is the one thing the model cannot go and fetch.
 
 ## Reproducing
 
