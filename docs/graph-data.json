@@ -7756,6 +7756,61 @@
       "weight": 1.0,
       "rationale": "Decisions tag the code graph - this is the handle",
       "created_at": "2026-07-14T02:26:50.251861+02:00"
+    },
+    {
+      "id": 366,
+      "from_node_id": 339,
+      "to_node_id": 340,
+      "from_change_id": "b088cc17-eb77-468d-96e9-41aed6dbafde",
+      "to_change_id": "e481c2bb-2556-4a42-9785-576d044cd5b2",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Correction committed",
+      "created_at": "2026-07-14T02:27:03.296220+02:00"
+    },
+    {
+      "id": 367,
+      "from_node_id": 297,
+      "to_node_id": 298,
+      "from_change_id": "e50ddad6-5764-41b1-b28f-0d973668d7cb",
+      "to_change_id": "b164421d-a214-4148-b276-65461a6c8922",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Retroactive: the refactor this goal required",
+      "created_at": "2026-07-14T02:27:28.860557+02:00"
+    },
+    {
+      "id": 368,
+      "from_node_id": 274,
+      "to_node_id": 182,
+      "from_change_id": "fca8a060-f02f-4655-bc0e-faf27813b0a2",
+      "to_change_id": "83d7c9aa-219e-4846-b83b-ce4f09e2e3d5",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Retroactive: v0 observation feeding the gradient direction",
+      "created_at": "2026-07-14T02:27:28.884058+02:00"
+    },
+    {
+      "id": 369,
+      "from_node_id": 28,
+      "to_node_id": 172,
+      "from_change_id": "9dde9156-486d-4349-98ba-51d851fc786d",
+      "to_change_id": "c4d98f3e-4df0-4119-9344-ee34baa6f36a",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Retroactive: entity-type scope produced this",
+      "created_at": "2026-07-14T02:27:28.903166+02:00"
+    },
+    {
+      "id": 370,
+      "from_node_id": 28,
+      "to_node_id": 183,
+      "from_change_id": "9dde9156-486d-4349-98ba-51d851fc786d",
+      "to_change_id": "db66c007-61a2-4e08-8e86-afb70c5090a7",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Retroactive: test reorganisation during v0 build",
+      "created_at": "2026-07-14T02:27:28.920685+02:00"
     }
   ]
 }
