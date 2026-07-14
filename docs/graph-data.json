@@ -3959,6 +3959,28 @@
       "created_at": "2026-07-14T03:08:30.958956+02:00",
       "updated_at": "2026-07-14T03:08:30.958956+02:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":95}"
+    },
+    {
+      "id": 361,
+      "change_id": "76a217c4-c4b5-408d-8140-e608ea2adf0a",
+      "node_type": "observation",
+      "title": "CORRECTION to #360. The outcome node 91f6a72 ('rebase-safe architecture achieved') is CORRECT and PRECISE. Rebase replays commits one at a time - each stays ONE commit, the body is preserved, the UUID is in the body, so identity survives and 1:1 holds. It IS rebase-safe. It never claimed squash-safety. I expanded 'rebase-safe' into 'history-rewrite-safe' and then went looking for evidence it was wrong. That is motivated reading, not a finding. WHAT SURVIVES: the 1:1 parser fossil is real (probe proves it) and squash DOES lose events. But the reason nobody caught it is a GAP, not a CONTRADICTION - nothing in the graph disagrees with the code; the question 'what happens on squash?' was simply never asked. That makes it exactly clamp(5,10,3): an input in the domain no proposition speaks to. The gap-checker's question - 'is there a history-rewriting operation no proposition covers?' - hands you squash. Not because anyone was wrong, but because the question was never asked. A cleaner demonstration than the one I was telling, and the one the design actually predicts.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:10:46.186365+02:00",
+      "updated_at": "2026-07-14T03:10:46.186365+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":93}"
+    },
+    {
+      "id": 362,
+      "change_id": "77ff2de9-39da-4233-ae53-5d8e8b620529",
+      "node_type": "observation",
+      "title": "META, and worth keeping: three times tonight I told a tidy story and was corrected. (1) 'the four packages were layers all along' - retrofitted narrative. (2) 'squash destroys data, do not do it' - a .map() mistaken for a design constraint. (3) 'the outcome node made a false claim' - it was precise; I over-read it. Each time the story was more satisfying than the evidence supported, and each time the USER was the gate, not me. That is the exact failure mode the verify gate exists to catch - plausible, confident, unverified - running live in the agent designing the gate. It is the strongest argument in this whole session that the gate must not be a model.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:10:46.238833+02:00",
+      "updated_at": "2026-07-14T03:10:46.238833+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":92}"
     }
   ],
   "edges": [
@@ -8394,6 +8416,39 @@
       "weight": 1.0,
       "rationale": "Derived status: a superseded decision should flag its code",
       "created_at": "2026-07-14T03:08:31.066293+02:00"
+    },
+    {
+      "id": 404,
+      "from_node_id": 360,
+      "to_node_id": 361,
+      "from_change_id": "9193b4e8-ac85-443b-845e-21583260f21a",
+      "to_change_id": "76a217c4-c4b5-408d-8140-e608ea2adf0a",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Corrects the diagnosis",
+      "created_at": "2026-07-14T03:10:46.257637+02:00"
+    },
+    {
+      "id": 405,
+      "from_node_id": 361,
+      "to_node_id": 362,
+      "from_change_id": "76a217c4-c4b5-408d-8140-e608ea2adf0a",
+      "to_change_id": "77ff2de9-39da-4233-ae53-5d8e8b620529",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Three for three",
+      "created_at": "2026-07-14T03:10:46.275466+02:00"
+    },
+    {
+      "id": 406,
+      "from_node_id": 333,
+      "to_node_id": 362,
+      "from_change_id": "0ac6db5f-7109-4f80-8574-270bab0da500",
+      "to_change_id": "77ff2de9-39da-4233-ae53-5d8e8b620529",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The verify gate, demonstrated on its own designer",
+      "created_at": "2026-07-14T03:10:46.292585+02:00"
     }
   ]
 }
