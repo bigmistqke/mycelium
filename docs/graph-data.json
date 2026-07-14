@@ -3871,6 +3871,17 @@
       "created_at": "2026-07-14T02:55:09.779898+02:00",
       "updated_at": "2026-07-14T02:55:09.779898+02:00",
       "metadata_json": "{\"branch\":\"main\",\"confidence\":92}"
+    },
+    {
+      "id": 353,
+      "change_id": "6a813dce-6e59-47ce-8776-4f51a5614a54",
+      "node_type": "observation",
+      "title": "CAVEAT on #351: 'the four packages were always layers' is RETROFITTED. They are explorations, not a planned architecture, and calling them layers ten minutes after the fact is a tidy story imposed on messy history. Why it matters concretely: 'v0 is the foundation' commits you to v0's IMPLEMENTATION, which was built to answer a different question (#192: topology analyzer, not semantic analyzer). What v0 actually gives is a PROVEN IDEA (precomputed comprehension, queried not read) plus REUSABLE PARTS (side-effect tracking, descriptions, change detection). That is worth a lot and is NOT the same as 'the foundation is already built'. And v3 is an exploration too - it shipped one small thing tonight and a lot of design. It has not earned being called the answer.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T02:57:32.813166+02:00",
+      "updated_at": "2026-07-14T02:57:32.813166+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
     }
   ],
   "edges": [
@@ -8163,6 +8174,17 @@
       "weight": 1.0,
       "rationale": "The cold pass is the evidence, in both directions",
       "created_at": "2026-07-14T02:55:09.876735+02:00"
+    },
+    {
+      "id": 391,
+      "from_node_id": 351,
+      "to_node_id": 353,
+      "from_change_id": "a763bd5f-35bb-46a2-8f36-2bcea7f8f8d2",
+      "to_change_id": "6a813dce-6e59-47ce-8776-4f51a5614a54",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Corrects the retrofitted narrative",
+      "created_at": "2026-07-14T02:57:32.842450+02:00"
     }
   ]
 }
