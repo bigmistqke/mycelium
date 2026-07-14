@@ -4036,6 +4036,50 @@
       "created_at": "2026-07-14T03:18:24.649536+02:00",
       "updated_at": "2026-07-14T03:18:24.649536+02:00",
       "metadata_json": "{\"branch\":\"main\",\"commit\":\"44816cd\",\"confidence\":90,\"files\":[\"packages/v3/HANDOFF.md\"]}"
+    },
+    {
+      "id": 368,
+      "change_id": "aedc01ab-b2ab-4a5c-8e97-da15e1f46742",
+      "node_type": "goal",
+      "title": "Build the verify gate",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T03:20:18.461713+02:00",
+      "updated_at": "2026-07-14T03:20:18.461713+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85,\"prompt\":\"build the verify gate\"}"
+    },
+    {
+      "id": 369,
+      "change_id": "1ea16b4a-69ec-4a75-aee5-7c07bfcd35c1",
+      "node_type": "decision",
+      "title": "VERIFY GATE, four choices made in brainstorming. (1) CORPUS: replay the 22 existing hive claims, not a fresh module and not a toy - the corpus already carries a partial ANSWER KEY (1 claim confirmed by a real failing test, 2 probes known to have lied), so the gate gets a regression target on 3 and discovers on 19. DESIGN.md demanded 'the success criterion is a number'; this is where the number comes from. (2) REACH = COVERAGE first, mutation second. Coverage is a NECESSARY condition and it demonstrably catches both real lies from the session (hive's dead incremental path = zero coverage; a probe that blew up in bootstrap = zero coverage). Mutation is the SUFFICIENCY check (does the probe actually depend on the code, not just touch it) and is the next increment, seeded from mutate.ts. (3) VERDICTS ARE FOUR, NOT BINARY. (4) ISOLATION: a disposable git worktree of hive pinned to a SHA.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T11:50:41.964494+02:00",
+      "updated_at": "2026-07-14T11:50:41.964494+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85,\"files\":[\"docs/superpowers/specs/2026-07-14-verify-gate-design.md\",\"packages/v3/gate\"]}"
+    },
+    {
+      "id": 370,
+      "change_id": "f5a79236-53c5-4fc7-96c1-fc6bea7aa0b8",
+      "node_type": "observation",
+      "title": "THE FOUR VERDICTS ARE THE DESIGN'S REAL CONTENT, and the third one is a finding, not plumbing. CONFIRMED = probe failed ON ITS ASSERTION and reached the code. REFUTED = probe passed and reached the code. UNREACHABLE = the probe ran but the code it claims to test NEVER EXECUTED. INVALID = the probe itself errored (did not compile, bootstrap threw) - the GATE failed, not the claim. Binary 'survived/died' would have scored the two lying probes as REFUTED, silently, which is the exact failure this gate exists to stop. And UNREACHABLE is open question #6 (test-double divergence) promoted from a caveat to an OUTPUT CATEGORY: hive's in-memory fs makes dbExists permanently false, so a claim about the incremental replay path CANNOT execute its own code. The gate does not fail there - it REPORTS it. THE POLARITY IS WHY: a probe can lie in BOTH directions. Fails -> claim confirmed, unless it failed in setup. Passes -> claim refuted, unless it tested nothing. Reach guards both, differently.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T11:50:55.475633+02:00",
+      "updated_at": "2026-07-14T11:50:55.475633+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":90}"
+    },
+    {
+      "id": 371,
+      "change_id": "320aafdd-51d7-4118-951a-2a9e575f0786",
+      "node_type": "observation",
+      "title": "REACH TARGETS REUSE THE COMMIT-MSG HOOK'S CONFABULATION GUARD. The claims in cold-pass-output.json carry a witness but NO file:line, and coverage-reach needs lines. Resolution: the probe-generating claude -p emits {probe: <test code>, reaches: [{file, lines}]} - a FALSIFIABLE DECLARATION - and coverage checks it deterministically. This is exactly what trace/'s commit-msg hook already does: an agent asked to cite WILL cite, so you make a false citation expensive to construct by checking the declared files against the ones actually touched. Same trick, second application. Evidence that the trick generalises: it is now the mechanism in two independent gates.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-14T11:50:55.527415+02:00",
+      "updated_at": "2026-07-14T11:50:55.527415+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":85}"
     }
   ],
   "edges": [
@@ -8581,6 +8625,72 @@
       "weight": 1.0,
       "rationale": "The handoff that action 366 called for",
       "created_at": "2026-07-14T03:18:27.039400+02:00"
+    },
+    {
+      "id": 414,
+      "from_node_id": 367,
+      "to_node_id": 368,
+      "from_change_id": "ed488563-5735-4683-b27d-4d4e1186cefe",
+      "to_change_id": "aedc01ab-b2ab-4a5c-8e97-da15e1f46742",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The handoff ranked the verify gate as the next thing to build",
+      "created_at": "2026-07-14T03:20:24.347377+02:00"
+    },
+    {
+      "id": 415,
+      "from_node_id": 368,
+      "to_node_id": 369,
+      "from_change_id": "aedc01ab-b2ab-4a5c-8e97-da15e1f46742",
+      "to_change_id": "1ea16b4a-69ec-4a75-aee5-7c07bfcd35c1",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The design choices the goal needed",
+      "created_at": "2026-07-14T11:50:55.546349+02:00"
+    },
+    {
+      "id": 416,
+      "from_node_id": 369,
+      "to_node_id": 370,
+      "from_change_id": "1ea16b4a-69ec-4a75-aee5-7c07bfcd35c1",
+      "to_change_id": "f5a79236-53c5-4fc7-96c1-fc6bea7aa0b8",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The verdict model that falls out of the choices",
+      "created_at": "2026-07-14T11:51:00.728837+02:00"
+    },
+    {
+      "id": 417,
+      "from_node_id": 369,
+      "to_node_id": 371,
+      "from_change_id": "1ea16b4a-69ec-4a75-aee5-7c07bfcd35c1",
+      "to_change_id": "320aafdd-51d7-4118-951a-2a9e575f0786",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "How reach gets its target",
+      "created_at": "2026-07-14T11:51:00.745075+02:00"
+    },
+    {
+      "id": 418,
+      "from_node_id": 345,
+      "to_node_id": 371,
+      "from_change_id": "777b4fe3-61ba-44d9-af9a-e21304eaeeec",
+      "to_change_id": "320aafdd-51d7-4118-951a-2a9e575f0786",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The confabulation guard, reused from the commit-msg hook",
+      "created_at": "2026-07-14T11:51:00.761244+02:00"
+    },
+    {
+      "id": 419,
+      "from_node_id": 333,
+      "to_node_id": 370,
+      "from_change_id": "0ac6db5f-7109-4f80-8574-270bab0da500",
+      "to_change_id": "f5a79236-53c5-4fc7-96c1-fc6bea7aa0b8",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "Two of three probes passed while testing nothing - the polarity problem",
+      "created_at": "2026-07-14T11:51:00.777091+02:00"
     }
   ]
 }

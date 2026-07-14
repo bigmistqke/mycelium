@@ -1,19 +1,19 @@
 [
   {
+    "hash": "3bf90405620701b70cc5c7c9c9e9360dc3a8376d",
+    "short_hash": "3bf9040",
+    "author": "bigmistqke",
+    "date": "2026-07-14T03:18:56+02:00",
+    "message": "docs: sync the decision graph\n\nExports the graph after closing the last open loop from the previous session.\nThe action that called for the handoff had been left unresolved, so the handoff\nexisted as a committed file with nothing in the graph recording that it was\nfinished or what it concluded. An outcome now records that, and links back to\nthe action that asked for it.\n\nThe export covers 367 nodes and 413 edges.\n\nDecision: 979506cd-ec23-4fab-a7b0-2175dc66f84c",
+    "files_changed": 2
+  },
+  {
     "hash": "44816cd8c3ad587e38a03580ec83b78714d403ad",
     "short_hash": "44816cd",
     "author": "bigmistqke",
     "date": "2026-07-14T03:16:47+02:00",
     "message": "docs(v3): rewrite the handoff around what was actually shown\n\nReplaces the handoff written at the start of the session, whose proposal has\nsince been abandoned and whose survey of the repository is out of date.\n\nSeparates what was demonstrated from what was merely designed, because only one\nthing was built. A separate session with no memory of the conversation, given\none prompt and one file, found more than a careful pass made with hours of\ncontext on the same subject. Of the twenty-two problems it reported, one is\nconfirmed by a failing test and twenty remain unproven, which says the part\nworth building is the part that sorts them. Five hand-written tests were\nmeasured and two of them do any work. Three ordinary claims about a clamping\nfunction turn out to contradict each other on an input nobody had thought of.\nAnd two of three checks written to test all this passed while executing nothing\nat all, because the code they aimed at is unreachable under the test setup.\n\nIt also records four occasions in this session where a tidy story was told ahead\nof the evidence and had to be withdrawn, and notes that a person caught every\none of them. That is the same failure the whole design is meant to catch, and it\nargues that whatever does the catching had better not be another model.\n\nRanks what to do next, lists the confirmed problems found in the two neighbouring\nprojects and left unfixed, and keeps the objections that were never answered:\nnobody has shown the review will actually happen, a decision never made cannot be\ndetected, know-how has nowhere to live, and passing every check means coherent,\nnever wise.\n\nDecision: 08888b2f-73ff-44c9-b5e5-3d2fb8869fb8\nImplements: 1451a700-644a-4f6a-9615-716f7c76d3a6",
     "files_changed": 1
-  },
-  {
-    "hash": "e384f49b5638c966392b62bd2547486bd63f8d7e",
-    "short_hash": "e384f49",
-    "author": "bigmistqke",
-    "date": "2026-07-14T03:14:05+02:00",
-    "message": "docs: sync the decision graph\n\nRecords where an agent's thinking should go, and why the readable graph should\nbe computed rather than kept by hand.\n\nAn agent working on a task writes everything it thinks onto a branch of its own:\nthe probes, the rejections, the dead ends. Nothing there is compressed, so the\nreader's inability to take more than one entry from a commit stops mattering.\nThe decision tool already supports this. Its branches were built so that several\npeople could each keep their own record and query across all of them, and since\nthe author works alone they have never been used. They fit a fleet of short-lived\nworkers exactly.\n\nWhat is read by default should not then be assembled by hand. Every hand-kept\nthing in this project has decayed: two dozen decisions still marked pending\nmonths after they were carried out and abandoned, and half the commits missing\nthe link they were instructed in bold to add. So the readable graph is computed\nfrom the branches rather than picked from them. Because it is computed it can be\ncomputed again, and a thing that can be regenerated cannot rot. Change what\ncounts as worth keeping, and regenerate.\n\nThe trails themselves are kept. It is not possible to tell in advance which\npassing thought will matter later, and the two most useful pieces of evidence\nfound today were both things nobody had thought worth recording at the time.\n\nDecision: eba2eddf-4446-40b0-b56b-6a9d32084913\nImplements: 979506cd-ec23-4fab-a7b0-2175dc66f84c",
-    "files_changed": 2
   },
   {
     "hash": "c4048d9631831a27fd5cce149153a98af42b6cd0",
