@@ -20,6 +20,24 @@ node_line() { # uuid -> "#id  type  title"
                  FROM decision_nodes WHERE change_id LIKE '${1}%' LIMIT 1;" 2>/dev/null
 }
 
+# Citations for a commit, from the message trailer OR from a git note.
+#
+# Going forward the trailer is in the message: durable, visible by default, part of the
+# commit. But history cannot be given a trailer without rewriting every hash below it,
+# so backfilled citations live in `git notes` instead — a separate ref, no rewrite, no
+# force-push. Both are read here, message first.
+citations_for() {
+  local sha="$1" cited
+  cited=$(git log -1 --format='%(trailers:key=Decision,valueonly)%(trailers:key=Implements,valueonly)' "$sha" \
+          | tr -d ' ' | sed '/^$/d')
+  if [ -z "$cited" ]; then
+    cited=$(git notes show "$sha" 2>/dev/null \
+            | grep -iE '^(Decision|Implements):' \
+            | sed -E 's/^[^:]+:[[:space:]]*//' | tr -d ' ' | sed '/^$/d')
+  fi
+  echo "$cited"
+}
+
 cmd_why() {
   local target="${1:-}"
   [ -z "$target" ] && { echo "usage: trace why <file>:<line>" >&2; exit 1; }
@@ -35,19 +53,23 @@ cmd_why() {
   echo "    ↓ git blame"
   echo "  ${sha:0:9}  $(git log -1 --format=%s "$sha")"
 
-  local cited
-  cited=$(git log -1 --format='%(trailers:key=Decision,valueonly)%(trailers:key=Implements,valueonly)' "$sha" \
-          | tr -d ' ' | sed '/^$/d')
+  local cited src
+  cited=$(citations_for "$sha")
 
   if [ -z "$cited" ]; then
     echo "    ↓"
     echo "  ✗ DEAD END — this commit cites no decision."
-    echo "    The reasoning behind this line was never recorded, and cannot be recovered."
+    echo "    Try:  trace backfill   (recovers what deciduous already knows)"
     echo ""
     return 1
   fi
 
-  echo "    ↓ Decision: trailer"
+  if git log -1 --format='%(trailers:key=Decision)' "$sha" | grep -q .; then
+    src="Decision: trailer"
+  else
+    src="git note (backfilled)"
+  fi
+  echo "    ↓ $src"
   while IFS= read -r uuid; do
     [ -z "$uuid" ] && continue
     local n; n=$(node_line "$uuid")
@@ -80,8 +102,32 @@ cmd_code() {
     found=1
     echo "  ${sha:0:9}  $(git log -1 --format=%s "$sha")"
     git show --stat --format='' "$sha" | sed 's/^/       /' | head -6
-  done < <(git log --format='%H' --grep="$uuid")
+  done < <({ git log --format='%H' --grep="$uuid"
+             git log --format='%H' --notes --grep="$uuid"; } | sort -u)
   [ "$found" -eq 0 ] && echo "  (no code exists because of this decision — yet)"
+  echo ""
+}
+
+cmd_backfill() {
+  # deciduous already records node -> commit (via `--commit HEAD`). That link points the
+  # wrong way for retrieval and lives in a database the code cannot see. Transcribe it into
+  # git as a note: same information, right direction, right place, and NO history rewrite.
+  local n=0 skipped=0
+  while IFS='|' read -r sha uuid; do
+    [ -z "$sha" ] && continue
+    git rev-parse --verify --quiet "$sha^{commit}" >/dev/null || { skipped=$((skipped+1)); continue; }
+    if git notes show "$sha" >/dev/null 2>&1; then
+      git notes append -m "Decision: $uuid" "$sha" 2>/dev/null
+    else
+      git notes add -m "Decision: $uuid" "$sha" 2>/dev/null
+    fi
+    n=$((n+1))
+  done < <(sqlite3 "$DB" "SELECT json_extract(metadata_json,'\$.commit'), change_id
+                          FROM decision_nodes
+                          WHERE json_extract(metadata_json,'\$.commit') IS NOT NULL;" 2>/dev/null)
+  echo ""
+  echo "  backfilled $n commits from the decision graph  (skipped $skipped unknown hashes)"
+  echo "  no hashes rewritten. push with:  git push origin refs/notes/commits"
   echo ""
 }
 
@@ -89,7 +135,7 @@ cmd_gaps() {
   local total=0 cited=0
   while IFS= read -r sha; do
     total=$((total+1))
-    if git log -1 --format='%(trailers:key=Decision)' "$sha" | grep -q .; then
+    if [ -n "$(citations_for "$sha")" ]; then
       cited=$((cited+1))
     fi
   done < <(git log --format='%H')
@@ -105,7 +151,8 @@ cmd_gaps() {
 case "${1:-}" in
   why)  shift; cmd_why  "${1:-}" ;;
   code) shift; cmd_code "${1:-}" ;;
-  gaps) shift; cmd_gaps ;;
+  gaps)     shift; cmd_gaps ;;
+  backfill) shift; cmd_backfill ;;
   *)
     cat <<'EOF'
 
@@ -114,6 +161,7 @@ case "${1:-}" in
     trace why  <file>:<line>    a line of code → the decisions that produced it
     trace code <uuid|id>        a decision → every line of code that exists because of it
     trace gaps                  what fraction of commits are traceable at all
+    trace backfill              recover citations deciduous already knows (git notes, no rewrite)
 
 EOF
     ;;
