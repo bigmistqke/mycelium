@@ -1,0 +1,19 @@
+{
+  "claimId": "G4",
+  "probe": "import { describe, it, expect } from 'vitest';\nimport git from 'isomorphic-git';\nimport {\n  createTestContext,\n  recordEvent,\n  replayEvents,\n  getDatabase,\n  insertNode,\n  type HiveContext,\n  type Node,\n} from '@hive/core';\n\nconst branch = 'hive-test';\n\nasync function bootstrap(): Promise<{ ctx: HiveContext; dir: string }> {\n  const dir = '/test-repo';\n  const ctx = await createTestContext(dir);\n  ctx.fs.mkdirSync(dir, { recursive: true });\n  ctx.fs.mkdirSync(`${dir}/.hive`, { recursive: true });\n  await git.init({ fs: ctx.fs as any, dir, defaultBranch: 'main' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.name', value: 'Test User' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.email', value: 'test@example.com' });\n  ctx.fs.writeFileSync(`${dir}/README.md`, '# Test');\n  await git.add({ fs: ctx.fs as any, dir, filepath: 'README.md' });\n  await git.commit({ fs: ctx.fs as any, dir, message: 'Initial commit',\n    author: { name: 'Test User', email: 'test@example.com' } });\n  await git.branch({ fs: ctx.fs as any, dir, ref: branch });\n  return { ctx, dir };\n}\n\nasync function addNode(ctx: HiveContext, title: string): Promise<string> {\n  const id = await recordEvent(ctx, { type: 'add', nodeType: 'decision', content: title, confidence: 90 }, branch);\n  const db = getDatabase(ctx);\n  const now = new Date().toISOString();\n  const node: Node = { change_id: id, branch, node_type: 'decision', title, status: 'pending', created_at: now, updated_at: now };\n  insertNode(db, node);\n  return id;\n}\n\ndescribe('parseGitLog resilience during a full rebuild', () => {\n  it('keeps every valid node materialized when one id-less commit sits in the branch history', async () => {\n    const { ctx } = await bootstrap();\n\n    // Two well-formed add events -> two valid decision nodes with parseable commits.\n    await addNode(ctx, 'Alpha');\n    await addNode(ctx, 'Beta');\n\n    // A hand-written commit whose subject matches /^\\w+:\\s*.+$/ but whose body carries no `id:` line.\n    await ctx.git.commitToBranch('chore: bump deps', branch, { allowEmpty: true });\n\n    // Force a full rebuild: DELETE FROM nodes/edges/... (lines 294-297) then replay every commit\n    // returned by parseGitLog (line 300) into the freshly-cleared branch view.\n    await replayEvents(ctx, branch, true);\n\n    const db = getDatabase(ctx);\n    const row = db.prepare('SELECT COUNT(*) AS c FROM nodes WHERE branch = ?').get(branch) as { c: number };\n\n    // One malformed commit anywhere in the history must not erase the whole branch's view.\n    expect(row.c).toBe(2);\n  });\n});\n",
+  "reaches": [
+    {
+      "file": "packages/core/src/lib/event-store.ts",
+      "lines": [
+        289,
+        294,
+        295,
+        296,
+        297,
+        300,
+        302,
+        310
+      ]
+    }
+  ]
+}

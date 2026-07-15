@@ -1,0 +1,23 @@
+{
+  "claimId": "G5",
+  "probe": "import { describe, it, expect } from 'vitest';\nimport git from 'isomorphic-git';\nimport {\n  createTestContext,\n  recordEvent,\n  replayEvents,\n  getDatabase,\n  insertNode,\n  type HiveContext,\n  type Node,\n} from '@hive/core';\n\nconst branch = 'hive-test';\n\nasync function bootstrap(): Promise<{ ctx: HiveContext; dir: string }> {\n  const dir = '/test-repo';\n  const ctx = await createTestContext(dir);\n  ctx.fs.mkdirSync(dir, { recursive: true });\n  ctx.fs.mkdirSync(`${dir}/.hive`, { recursive: true });\n  await git.init({ fs: ctx.fs as any, dir, defaultBranch: 'main' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.name', value: 'Test User' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.email', value: 'test@example.com' });\n  ctx.fs.writeFileSync(`${dir}/README.md`, '# Test');\n  await git.add({ fs: ctx.fs as any, dir, filepath: 'README.md' });\n  await git.commit({ fs: ctx.fs as any, dir, message: 'Initial commit',\n    author: { name: 'Test User', email: 'test@example.com' } });\n  await git.branch({ fs: ctx.fs as any, dir, ref: branch });\n  return { ctx, dir };\n}\n\nasync function addNode(ctx: HiveContext, title: string): Promise<string> {\n  const id = await recordEvent(ctx, { type: 'add', nodeType: 'decision', content: title, confidence: 90 }, branch);\n  const db = getDatabase(ctx);\n  const now = new Date().toISOString();\n  const node: Node = { change_id: id, branch, node_type: 'decision', title, status: 'pending', created_at: now, updated_at: now };\n  insertNode(db, node);\n  return id;\n}\n\ndescribe('replay must not drop a status event that precedes its node in log order', () => {\n  it('applies G -> completed even when the status commit is replayed before the add commit', async () => {\n    const { ctx } = await bootstrap();\n\n    const nodeId = 'node-g-0000000';\n\n    // Teammate's slow clock: the `status: G -> completed` commit is written into the\n    // branch history BEFORE the `add G` commit. On a full rebuild parseGitLog's result is\n    // reversed to \"oldest first\", so replayEvent sees the status event while G is still\n    // absent from the db -- the exact ordering the witness describes.\n    const statusMsg = [\n      `status: ${nodeId.substring(0, 7)} -> completed`,\n      '',\n      'id: status-evt-00000001',\n      'type: status',\n      `node: ${nodeId}`,\n      'status: completed',\n      'parents: []',\n    ].join('\\n');\n    await ctx.git.commitToBranch(statusMsg, branch, { allowEmpty: true });\n\n    const addMsg = [\n      'decision: Goal G',\n      '',\n      `id: ${nodeId}`,\n      'type: decision',\n      'confidence: 90',\n    ].join('\\n');\n    await ctx.git.commitToBranch(addMsg, branch, { allowEmpty: true });\n\n    // Full rebuild: clear the branch, then replay every commit oldest-first, i.e. the\n    // status event first (node missing -> dropped at lines 390-392) and the add event\n    // second. There is no second pass to recover the dropped status.\n    await replayEvents(ctx, branch, true);\n\n    // Current status lives in state_refs -> state_transitions (nodes.status is a constant).\n    // A causally-aware replay ends with G's status ref pointing at a 'completed'\n    // transition; a replay that drops the early status event leaves no such ref at all.\n    const db = getDatabase(ctx);\n    const row = db.prepare(\n      `SELECT st.new_value AS v\\n         FROM state_refs sr\\n         JOIN state_transitions st ON st.change_id = sr.ref_change_id\\n        WHERE sr.node_id = ? AND sr.property = 'status' AND sr.branch = ?`,\n    ).get(nodeId, branch) as { v: string } | undefined;\n\n    expect(row?.v).toBe('completed');\n  });\n});\n",
+  "reaches": [
+    {
+      "file": "packages/core/src/lib/event-store.ts",
+      "lines": [
+        289,
+        300,
+        302,
+        304,
+        379,
+        381,
+        382,
+        383,
+        385,
+        387,
+        390,
+        392
+      ]
+    }
+  ]
+}

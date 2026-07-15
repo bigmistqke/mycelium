@@ -1,0 +1,21 @@
+{
+  "claimId": "G11",
+  "probe": "import { describe, it, expect } from 'vitest';\nimport * as git from 'isomorphic-git';\nimport {\n  recordEvent,\n  replayEvents,\n  isDatabaseStale,\n  getDatabase,\n  insertNode,\n  createTestContext,\n  Node,\n  HiveContext,\n} from '@hive/core';\n\nconst branch = 'hive-test';\nasync function bootstrap(): Promise<{ ctx: HiveContext; dir: string }> {\n  const dir = '/test-repo';\n  const ctx = await createTestContext(dir);\n  ctx.fs.mkdirSync(dir, { recursive: true });\n  ctx.fs.mkdirSync(`${dir}/.hive`, { recursive: true });\n  await git.init({ fs: ctx.fs as any, dir, defaultBranch: 'main' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.name', value: 'Test User' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.email', value: 'test@example.com' });\n  ctx.fs.writeFileSync(`${dir}/README.md`, '# Test');\n  await git.add({ fs: ctx.fs as any, dir, filepath: 'README.md' });\n  await git.commit({ fs: ctx.fs as any, dir, message: 'Initial commit',\n    author: { name: 'Test User', email: 'test@example.com' } });\n  await git.branch({ fs: ctx.fs as any, dir, ref: branch });\n  return { ctx, dir };\n}\nasync function addNode(ctx: HiveContext, title: string): Promise<string> {\n  const id = await recordEvent(ctx, { type: 'add', nodeType: 'decision', content: title, confidence: 90 }, branch);\n  const db = getDatabase(ctx);\n  const now = new Date().toISOString();\n  const node: Node = { change_id: id, branch, node_type: 'decision', title, status: 'pending', created_at: now, updated_at: now };\n  insertNode(db, node);\n  return id;\n}\n\ndescribe('replayEvents watermark under a transient git failure', () => {\n  it('records the real HEAD as the watermark after a full replay of a healthy branch, so the db reports fresh once git recovers', async () => {\n    const { ctx } = await bootstrap();\n    await addNode(ctx, 'healthy node');\n\n    // Inject exactly ONE transient git failure (index.lock contention) that\n    // lands on getCurrentHeadHash (event-store.ts:285 -> 568) during the full\n    // replay, then let git recover for every subsequent call.\n    const original = ctx.git.getCommitHash.bind(ctx.git);\n    let failed = false;\n    ctx.git.getCommitHash = (async (...args: any[]) => {\n      if (!failed) {\n        failed = true;\n        throw new Error('fatal: Unable to create index.lock: File exists');\n      }\n      return (original as any)(...args);\n    }) as any;\n\n    // Full replay of a healthy branch. getCurrentHeadHash swallows the\n    // transient error into '' (line 571); the branch rows are DELETEd\n    // (294-297) and the watermark is written from currentHeadHash (line 310).\n    await replayEvents(ctx, branch, true);\n\n    // Git has recovered. A healthy branch that was just fully replayed must\n    // report FRESH. It only reports stale if the transient '' was persisted\n    // as the watermark (getLastSyncHash then reads it back as null).\n    const stale = await isDatabaseStale(ctx, branch);\n    expect(stale).toBe(false);\n  });\n});\n",
+  "reaches": [
+    {
+      "file": "packages/core/src/lib/event-store.ts",
+      "lines": [
+        285,
+        289,
+        294,
+        295,
+        296,
+        297,
+        300,
+        310,
+        568,
+        571
+      ]
+    }
+  ]
+}

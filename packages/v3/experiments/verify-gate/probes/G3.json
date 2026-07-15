@@ -1,0 +1,19 @@
+{
+  "claimId": "G3",
+  "probe": "import { describe, it, expect } from 'vitest';\nimport * as git from 'isomorphic-git';\nimport { recordEvent, replayEvents, getDatabase, createTestContext } from '@hive/core';\nimport type { HiveContext } from '@hive/core';\n\nconst branch = 'hive-test';\nasync function bootstrap(): Promise<{ ctx: HiveContext; dir: string }> {\n  const dir = '/test-repo';\n  const ctx = await createTestContext(dir);\n  ctx.fs.mkdirSync(dir, { recursive: true });\n  ctx.fs.mkdirSync(`${dir}/.hive`, { recursive: true });\n  await git.init({ fs: ctx.fs as any, dir, defaultBranch: 'main' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.name', value: 'Test User' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.email', value: 'test@example.com' });\n  ctx.fs.writeFileSync(`${dir}/README.md`, '# Test');\n  await git.add({ fs: ctx.fs as any, dir, filepath: 'README.md' });\n  await git.commit({ fs: ctx.fs as any, dir, message: 'Initial commit',\n    author: { name: 'Test User', email: 'test@example.com' } });\n  await git.branch({ fs: ctx.fs as any, dir, ref: branch });\n  return { ctx, dir };\n}\n\ndescribe('shared commit reachable from two hive branches (fork/merge gap)', () => {\n  it('keeps a node visible under every branch whose history contains its commit', async () => {\n    const { ctx, dir } = await bootstrap();\n    const fs = ctx.fs as any;\n\n    // Two hive branches. Record an 'add' on hive-A, then FORK hive-B at hive-A's HEAD so\n    // the very same add commit (identical change_id) is reachable from BOTH branches --\n    // exactly what `git branch hive-team hive-local` or a merge between hive branches\n    // produces. Nothing in the module speaks to a commit belonging to more than one branch.\n    await git.branch({ fs, dir, ref: 'hive-A' });\n    const nodeId = await recordEvent(\n      ctx,\n      { type: 'add', nodeType: 'decision', content: 'shared history', confidence: 90 },\n      'hive-A',\n    );\n    const oid = await git.resolveRef({ fs, dir, ref: 'hive-A' });\n    await git.writeRef({ fs, dir, ref: 'refs/heads/hive-B', value: oid, force: true });\n\n    // Rebuild each branch from the log, as replayAllBranches does for every hive branch.\n    // hive-A materialises the node (branch = 'hive-A'). hive-B replays the SAME commit:\n    // insertNode duplicates change_id, the PRIMARY KEY error is swallowed (P19), and the\n    // watermark still advances -- so the shared node is never attributed to hive-B.\n    await replayEvents(ctx, 'hive-A', true);\n    await replayEvents(ctx, 'hive-B', true);\n\n    // hive-B genuinely contains that commit, so a hive-B-scoped listing MUST find the node.\n    const db = getDatabase(ctx);\n    const row = db.prepare('SELECT change_id FROM nodes WHERE branch = ? AND change_id = ?')\n      .get('hive-B', nodeId) as { change_id: string } | undefined;\n\n    expect(row?.change_id).toBe(nodeId);\n  });\n});\n",
+  "reaches": [
+    {
+      "file": "packages/core/src/lib/event-store.ts",
+      "lines": [
+        289,
+        300,
+        302,
+        304,
+        305,
+        306,
+        482,
+        493
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "claimId": "G13",
+  "probe": "import { describe, it, expect } from 'vitest';\nimport * as git from 'isomorphic-git';\nimport {\n  recordEvent,\n  replayEvents,\n  getDatabase,\n  insertNode,\n  createTestContext,\n  type HiveContext,\n  type Node,\n} from '@hive/core';\n\nconst branch = 'hive-test';\nasync function bootstrap(): Promise<{ ctx: HiveContext; dir: string }> {\n  const dir = '/test-repo';\n  const ctx = await createTestContext(dir);\n  ctx.fs.mkdirSync(dir, { recursive: true });\n  ctx.fs.mkdirSync(`${dir}/.hive`, { recursive: true });\n  await git.init({ fs: ctx.fs as any, dir, defaultBranch: 'main' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.name', value: 'Test User' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.email', value: 'test@example.com' });\n  ctx.fs.writeFileSync(`${dir}/README.md`, '# Test');\n  await git.add({ fs: ctx.fs as any, dir, filepath: 'README.md' });\n  await git.commit({ fs: ctx.fs as any, dir, message: 'Initial commit',\n    author: { name: 'Test User', email: 'test@example.com' } });\n  await git.branch({ fs: ctx.fs as any, dir, ref: branch });\n  return { ctx, dir };\n}\nasync function addNode(ctx: HiveContext, title: string): Promise<string> {\n  const id = await recordEvent(ctx, { type: 'add', nodeType: 'decision', content: title, confidence: 90 }, branch);\n  const db = getDatabase(ctx);\n  const now = new Date().toISOString();\n  const node: Node = { change_id: id, branch, node_type: 'decision', title, status: 'pending', created_at: now, updated_at: now };\n  insertNode(db, node);\n  return id;\n}\n\ndescribe('link event referential integrity', () => {\n  it('does not materialise an edge whose endpoints reference no existing node', async () => {\n    const { ctx } = await bootstrap();\n\n    // A link event whose fromId/toId are node ids that were never inserted as nodes.\n    const fromId = crypto.randomUUID();\n    const toId = crypto.randomUUID();\n    await recordEvent(ctx, { type: 'link', fromId, toId, edgeType: 'leads_to' }, branch);\n\n    // Force a full rebuild so the link commit is replayed through replayEvent.\n    await replayEvents(ctx, branch, true);\n\n    const db = getDatabase(ctx);\n    const edges = db.prepare('SELECT from_change_id, to_change_id FROM edges').all() as {\n      from_change_id: string;\n      to_change_id: string;\n    }[];\n\n    // Referential integrity should hold: no edge may point at a non-existent node.\n    const orphanEdges = edges.filter((e) => {\n      const from = db.prepare('SELECT 1 FROM nodes WHERE change_id = ?').get(e.from_change_id);\n      const to = db.prepare('SELECT 1 FROM nodes WHERE change_id = ?').get(e.to_change_id);\n      return !from || !to;\n    });\n\n    expect(orphanEdges).toHaveLength(0);\n  });\n});\n",
+  "reaches": [
+    {
+      "file": "packages/core/src/lib/event-store.ts",
+      "lines": [
+        365,
+        366,
+        367,
+        368,
+        369,
+        370,
+        371,
+        372,
+        373,
+        374,
+        375,
+        376,
+        378
+      ]
+    }
+  ]
+}

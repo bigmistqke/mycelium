@@ -1,0 +1,20 @@
+{
+  "claimId": "G6",
+  "probe": "import { describe, it, expect } from 'vitest';\nimport git from 'isomorphic-git';\nimport {\n  recordEvent, recordStateTransition,\n  getDatabase, getAllNodes, insertNode, createTestContext,\n  HiveContext, Node,\n} from '@hive/core';\n\nconst branch = 'hive-test';\n\nasync function bootstrap(): Promise<{ ctx: HiveContext; dir: string }> {\n  const dir = '/test-repo';\n  const ctx = await createTestContext(dir);\n  ctx.fs.mkdirSync(dir, { recursive: true });\n  ctx.fs.mkdirSync(`${dir}/.hive`, { recursive: true });\n  await git.init({ fs: ctx.fs as any, dir, defaultBranch: 'main' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.name', value: 'Test User' });\n  await git.setConfig({ fs: ctx.fs as any, dir, path: 'user.email', value: 'test@example.com' });\n  ctx.fs.writeFileSync(`${dir}/README.md`, '# Test');\n  await git.add({ fs: ctx.fs as any, dir, filepath: 'README.md' });\n  await git.commit({ fs: ctx.fs as any, dir, message: 'Initial commit',\n    author: { name: 'Test User', email: 'test@example.com' } });\n  await git.branch({ fs: ctx.fs as any, dir, ref: branch });\n  return { ctx, dir };\n}\n\nasync function addNode(ctx: HiveContext, title: string): Promise<string> {\n  const id = await recordEvent(ctx, { type: 'add', nodeType: 'decision', content: title, confidence: 90 }, branch);\n  const db = getDatabase(ctx);\n  const now = new Date().toISOString();\n  const node: Node = { change_id: id, branch, node_type: 'decision', title, status: 'pending', created_at: now, updated_at: now };\n  insertNode(db, node);\n  return id;\n}\n\ndescribe('a status set from another branch must still belong to its node', () => {\n  it('shows the completed status for a node whose status was transitioned on a different branch', async () => {\n    const { ctx, dir } = await bootstrap();\n\n    // Node X lives on 'hive-test' (its nodes.branch column is 'hive-test').\n    const nodeId = await addNode(ctx, 'Use PostgreSQL');\n\n    // Operator switches to a second hive branch and marks X completed there.\n    // recordStateTransition looks the node up globally (line 189, no branch predicate),\n    // finds X, and files the state_ref under the branch it was CALLED with (lines 234-241),\n    // not under X's own branch.\n    const otherBranch = 'hive-team';\n    await git.branch({ fs: ctx.fs as any, dir, ref: otherBranch });\n    await recordStateTransition(ctx, nodeId, 'status', 'completed', otherBranch);\n\n    // A node's status is a property OF the node: once set, listing that node must reflect it.\n    // getAllNodes joins state_refs on sr.branch = n.branch, so if the ref was filed under\n    // 'hive-team' while X sits on 'hive-test', the status is written, committed -- and never shown.\n    const status = getAllNodes(getDatabase(ctx)).find(n => n.change_id === nodeId)?.status;\n    expect(status).toBe('completed');\n  });\n});\n",
+  "reaches": [
+    {
+      "file": "packages/core/src/lib/event-store.ts",
+      "lines": [
+        188,
+        189,
+        196,
+        204,
+        217,
+        231,
+        241,
+        262,
+        267
+      ]
+    }
+  ]
+}
