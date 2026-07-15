@@ -4146,6 +4146,17 @@
       "created_at": "2026-07-15T02:28:57.789737+02:00",
       "updated_at": "2026-07-15T02:28:57.789737+02:00",
       "metadata_json": "{\"branch\":\"feat/verify-gate\",\"confidence\":95}"
+    },
+    {
+      "id": 378,
+      "change_id": "3397a12c-c922-47a8-9aca-5834904dc4f8",
+      "node_type": "decision",
+      "title": "EXPERIMENT PROTOCOL: apply the fractal to experiment runs. An experiment emits an APPEND-ONLY event log (events.jsonl, one line per item-x-stage transition); status, results and tally are a DERIVED VIEW folded from that log. Same shape as hive (commits=log, sqlite=view), the fractal's SIXTH appearance, and what peek.ts was accidentally reaching for. SHAPE: an experiment is ITEMS passing through STAGES. A thin runner wraps the item-x-stage loop: reads the log on start and SKIPS any item-stage already done-with-live-cache (resumability, so a stop at 19/22 re-runs only the missing 3); runs items bounded-parallel and pipelined (serial 20min becomes ~2min, no LLM in the orchestrator); each stage runs under a deadline so a hung claude -p becomes a failed/timeout EVENT, not a 10-minute block. cache/item/stage.json holds stage outputs (the probes/ dir generalized) for replay and resume. A status command folds the log into a per-item progress view plus tally, works MID-RUN because it reads the stream, and --watch re-folds live; tail -f events.jsonl is the zero-tooling version. The GATE STAYS DETERMINISTIC: stages are just functions, an LLM stage (probe) and a pure stage (reach) share one shape, which is the harness reframe at the experiment level. NOT to be built speculatively (it is itself heavy static infra): it earns its place at instance TWO, per the two-instances-before-abstraction rule. verify-gate is instance one; mutate.ts or a multi-module proposition pass is a plausible instance two. Motivated by the verify-gate run: 20+ minutes serial, went blind (peek.ts bolted on reactively), never concluded when the last 3 hung.",
+      "description": null,
+      "status": "pending",
+      "created_at": "2026-07-15T02:44:33.228704+02:00",
+      "updated_at": "2026-07-15T02:44:33.228704+02:00",
+      "metadata_json": "{\"branch\":\"main\",\"confidence\":80,\"files\":[\"docs/superpowers/specs/2026-07-15-experiment-protocol-design.md\"]}"
     }
   ],
   "edges": [
@@ -8922,6 +8933,50 @@
       "weight": 1.0,
       "rationale": "The goal delivered: a number, with the gate proven on known answers",
       "created_at": "2026-07-15T02:28:57.840831+02:00"
+    },
+    {
+      "id": 435,
+      "from_node_id": 354,
+      "to_node_id": 378,
+      "from_change_id": "0c40d157-497c-41c8-870e-bc21e0484b71",
+      "to_change_id": "3397a12c-c922-47a8-9aca-5834904dc4f8",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The fractal (log/view) applied a sixth time, to experiment runs",
+      "created_at": "2026-07-15T02:44:41.982648+02:00"
+    },
+    {
+      "id": 436,
+      "from_node_id": 376,
+      "to_node_id": 378,
+      "from_change_id": "1c87304a-331d-48c7-b1c5-39c1857a5816",
+      "to_change_id": "3397a12c-c922-47a8-9aca-5834904dc4f8",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "A protocol, substrate-agnostic: JSONL log + derived view, LLM only sprinkled into stages",
+      "created_at": "2026-07-15T02:44:41.997740+02:00"
+    },
+    {
+      "id": 437,
+      "from_node_id": 377,
+      "to_node_id": 378,
+      "from_change_id": "45407eb3-b242-489d-b4e5-121a33b114a7",
+      "to_change_id": "3397a12c-c922-47a8-9aca-5834904dc4f8",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The pain that motivated it: serial, blind, never concluded",
+      "created_at": "2026-07-15T02:44:42.012772+02:00"
+    },
+    {
+      "id": 438,
+      "from_node_id": 348,
+      "to_node_id": 378,
+      "from_change_id": "08888b2f-73ff-44c9-b5e5-3d2fb8869fb8",
+      "to_change_id": "3397a12c-c922-47a8-9aca-5834904dc4f8",
+      "edge_type": "leads_to",
+      "weight": 1.0,
+      "rationale": "The harness reframe at the experiment level: stages are functions, LLM is a subroutine",
+      "created_at": "2026-07-15T02:44:42.030252+02:00"
     }
   ]
 }

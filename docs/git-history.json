@@ -1,11 +1,11 @@
 [
   {
-    "hash": "373d088d32fd078a31190e6242a2f5ed26df8cf4",
-    "short_hash": "373d088",
+    "hash": "7666859c06cd02b744dd741b1277efc3df870680",
+    "short_hash": "7666859",
     "author": "bigmistqke",
-    "date": "2026-07-15T02:20:34+02:00",
-    "message": "experiment(gate): add a way to watch a run already in progress\n\nA full run generates a probe per claim and runs each one, which takes a while,\nand there was no way to see how far it had got or what it had found without\nwaiting for it to finish. But every step leaves its evidence on disk — the\ncached probe, the test result, the coverage — so the verdict for any claim that\nhas finished can be recomputed from those without running anything again.\n\nThis reads that evidence and prints the running tally. It is the same verdict\nlogic the run itself uses, pointed at the artifacts instead of at a live probe,\nso watching a run and re-deriving verdicts after a change to that logic are the\nsame command. Run it against a run in flight and it shows what is decided so far\nand what is still pending.\n\nDecision: 1ea16b4a-69ec-4a75-aee5-7c07bfcd35c1",
-    "files_changed": 1
+    "date": "2026-07-15T02:32:49+02:00",
+    "message": "docs: sync the decision graph\n\nPicks up the whole verify-gate session: the reshape from package to experiment,\nthe spike that retired the coverage-attribution risk, the four-verdict logic,\nthe two gate bugs the answer key caught, the protocol-first reframe, and the\nfinal number.\n\nDecision: 979506cd-ec23-4fab-a7b0-2175dc66f84c",
+    "files_changed": 2
   },
   {
     "hash": "54eef4c2fa7f2add03593ac5e832bcf877a20b16",
