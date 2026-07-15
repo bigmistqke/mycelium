@@ -1,10 +1,34 @@
 [
   {
-    "hash": "3bf90405620701b70cc5c7c9c9e9360dc3a8376d",
-    "short_hash": "3bf9040",
+    "hash": "373d088d32fd078a31190e6242a2f5ed26df8cf4",
+    "short_hash": "373d088",
     "author": "bigmistqke",
-    "date": "2026-07-14T03:18:56+02:00",
-    "message": "docs: sync the decision graph\n\nExports the graph after closing the last open loop from the previous session.\nThe action that called for the handoff had been left unresolved, so the handoff\nexisted as a committed file with nothing in the graph recording that it was\nfinished or what it concluded. An outcome now records that, and links back to\nthe action that asked for it.\n\nThe export covers 367 nodes and 413 edges.\n\nDecision: 979506cd-ec23-4fab-a7b0-2175dc66f84c",
+    "date": "2026-07-15T02:20:34+02:00",
+    "message": "experiment(gate): add a way to watch a run already in progress\n\nA full run generates a probe per claim and runs each one, which takes a while,\nand there was no way to see how far it had got or what it had found without\nwaiting for it to finish. But every step leaves its evidence on disk — the\ncached probe, the test result, the coverage — so the verdict for any claim that\nhas finished can be recomputed from those without running anything again.\n\nThis reads that evidence and prints the running tally. It is the same verdict\nlogic the run itself uses, pointed at the artifacts instead of at a live probe,\nso watching a run and re-deriving verdicts after a change to that logic are the\nsame command. Run it against a run in flight and it shows what is decided so far\nand what is still pending.\n\nDecision: 1ea16b4a-69ec-4a75-aee5-7c07bfcd35c1",
+    "files_changed": 1
+  },
+  {
+    "hash": "54eef4c2fa7f2add03593ac5e832bcf877a20b16",
+    "short_hash": "54eef4c",
+    "author": "bigmistqke",
+    "date": "2026-07-15T01:32:58+02:00",
+    "message": "experiment(gate): verify claims by running probes and checking they reached the code\n\nThe experiment now runs end to end. For each claim it asks a fresh model for one\nprobe that fails if the claim is true, runs that probe alone in a pinned copy of\nhive under coverage, and reads the result only after checking that the probe\nactually executed the lines it said it would.\n\nTwo things had to be got right, and the three claims with known answers caught\nboth. The first was telling a real assertion failure from a probe that threw in\nits setup: vitest reports both as a failed test, and it strips an expect()\nfailure to a bare description while a thrown error keeps its class name, so that\nis the seam the classifier reads. The second, and the important one, was what it\nmeans to reach the code. The obvious rule — the probe touched at least one line\nit named — passed a probe for a claim about a replay path that is dead under an\nin-memory database: the probe named that path and a dozen lines common to every\nreplay, ran only the common ones, and the claim it was written for was reported\nfalse without its own code ever running. So a probe must now run every statement\nline it declares. Naming the buggy path and not reaching it is no longer a\nrefutation; it is the honest report that the path could not be tested here.\n\nWith that, the three known claims land where they should: the real bug confirmed,\nand the two that live on the dead path reported unreachable rather than refuted.\nThe naive version reported both as refuted, which is what makes this a real check\nand not a ceremonial one.\n\nDecision: 1ea16b4a-69ec-4a75-aee5-7c07bfcd35c1",
+    "files_changed": 12
+  },
+  {
+    "hash": "2bbb28f0110853b6ba656156d3382e3e9f9b1b81",
+    "short_hash": "2bbb28f",
+    "author": "bigmistqke",
+    "date": "2026-07-15T01:04:53+02:00",
+    "message": "experiment(gate): prove a probe's coverage lands on source, not build output\n\nThe gate will decide whether a probe touched the lines it claims to, and it does\nthat by reading coverage. hive's tests import the compiled package rather than\nits source, so the coverage could just as well have described the build output,\nand then every line number the gate reasons about would point into a file\nnobody wrote. So before building anything on top of it, this runs one probe for\na bug already known to be real and looks at where the coverage actually landed.\n\nIt landed on the source. The probe failed exactly as it should, since the bug is\nreal, and the coverage named the source file with hundreds of covered\nstatements, so line-level reach is available and the design holds as written.\n\nOne detail earned its place while proving this: coverage has to be told to\nreport even when the test fails, because a confirmed finding is precisely a\nprobe that fails while reaching its code, and the default drops coverage on\nfailure. Without that flag every real bug would look like unreachable code.\n\nDecision: 1ea16b4a-69ec-4a75-aee5-7c07bfcd35c1",
+    "files_changed": 3
+  },
+  {
+    "hash": "4011635a12eae5862c9e994c2cded7e16377e2c9",
+    "short_hash": "4011635",
+    "author": "bigmistqke",
+    "date": "2026-07-14T12:50:22+02:00",
+    "message": "docs: sync the decision graph\n\nPicks up the verify-gate design nodes and the files now declared on the gate\ndecision, so that commits touching the spec or the gate directory can have\ntheir citation checked rather than merely accepted.\n\nDecision: 979506cd-ec23-4fab-a7b0-2175dc66f84c",
     "files_changed": 2
   },
   {
