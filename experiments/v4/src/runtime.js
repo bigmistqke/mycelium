@@ -1,13 +1,17 @@
-// Shared between the crawler (Node) and browser-facing live demos. Real ES
-// module, imported normally by both — which means anything using it needs
-// to be served over http://, not opened via file://. ES module fetches are
-// CORS-checked even for local files, and file:// URLs don't have a stable
-// origin to satisfy that check; classic (non-module) scripts and data:
-// imports are exempt, but real import/export syntax is worth the small
-// server requirement over hand-duplicating this in every script that needs
-// it. See docs/specs/2026-07-23-mycelium-crawler.spec.html.
+// Shared between the crawler (Node) and browser-facing live demos. No
+// `export` on purpose: real ES module imports are CORS-checked even for
+// local files, and file:// has no stable origin to satisfy that check, so
+// a normal `import` here would break every document that opened this way
+// — exactly the thing this project keeps proving out loud. A classic
+// (non-module) <script src> and a Node side-effect `import` both work over
+// file://, and both see the same globalThis, so this file is loaded
+// identically both ways: <script src="…/runtime.js"></script> in a
+// browser, `import "./runtime.js"` in crawl.ts. See
+// docs/specs/2026-07-23-mycelium-crawler.spec.html.
 
-export async function loadCheck(scriptSource) {
+globalThis.mycelium = globalThis.mycelium || {}
+
+globalThis.mycelium.loadCheck = async function loadCheck(scriptSource) {
   const mod = await import(`data:text/javascript,${encodeURIComponent(scriptSource)}`)
   return mod.check
 }

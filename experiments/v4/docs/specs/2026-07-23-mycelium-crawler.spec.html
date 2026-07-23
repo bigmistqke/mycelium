@@ -94,7 +94,7 @@
       to the CORS check real module fetches get.
     </p>
 
-    <h2>Shared runtime: real modules, accept the server</h2>
+    <h2>Shared runtime: globalThis, not a module</h2>
     <p>
       <code>crawl.ts</code> and the browser-facing live demos both need the exact same
       <code>loadCheck</code> helper. Extracting it to one file and having both sides <code>import</code> it
@@ -107,15 +107,20 @@
       the module-fetch restriction entirely.
     </p>
     <p>
-      Decided against the workaround anyway. It trades real <code>import</code>/<code>export</code> for
-      global-namespace assignment, permanently, to preserve <code>file://</code> compatibility for one
-      shared file &mdash; a worse trade the more code ever ends up in it. <code>src/runtime.js</code> is a
-      real ES module (<code>export async function loadCheck(&hellip;)</code>), imported normally by both
-      <code>crawl.ts</code> and the "Graph-wide audits" live demo in <code>knowledge.template.html</code>.
-      That one demo now needs a static server (<code>pnpm serve</code>) to actually run; every other live
-      demo in this project, which never needed to share code across files, stays exactly as
-      self-contained and <code>file://</code>-safe as it always was. Not a project-wide policy change, one
-      documented exception where sharing real code won out.
+      First decision was real modules anyway, accepting a static server for the one demo that needed it
+      &mdash; reasoned that <code>file://</code> compatibility wasn't worth trading away real
+      <code>import</code>/<code>export</code> syntax for one small file. Reversed on reflection: the "just
+      open it, no server, ever" property is not a minor nicety here, it's the thing this project keeps
+      proving out loud, turn after turn tonight, and it held with zero exceptions until this one file.
+      <code>src/runtime.js</code> has no <code>export</code>: it attaches
+      <code>loadCheck</code> to <code>globalThis.mycelium</code>, loaded as a classic
+      <code>&lt;script src&gt;</code> in the browser (exempt from the module-fetch check, the same way
+      <code>&lt;link rel="stylesheet"&gt;</code> always has been) and as a side-effect <code>import "./runtime.js"</code>
+      in <code>crawl.ts</code>, both seeing the same <code>globalThis</code>. A sibling
+      <code>runtime.d.ts</code> (<code>declare global { var mycelium: &hellip; }</code>) gives
+      <code>crawl.ts</code> real types for it without needing an actual <code>export</code> anywhere; Node's
+      type-stripping never reads <code>.d.ts</code> files at run time, so this costs nothing outside an
+      editor. Every document in this project, no exceptions, now works with a plain double-click.
     </p>
 
     <h2>Signature change this requires</h2>

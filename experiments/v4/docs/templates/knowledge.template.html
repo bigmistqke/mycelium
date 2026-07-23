@@ -481,29 +481,29 @@
 </script>
 
 <div class="live-demo">
-  <h4>This section actually runs &mdash; when served, not opened via <code>file://</code></h4>
+  <h4>This section actually runs</h4>
   <p>
     Runs the exact two <code>data-audits</code> scripts above, not a hand-copied re-implementation &mdash;
     their source text is pulled straight from the <code>&lt;script&gt;</code> tags and dynamically
-    <code>import()</code>ed from a <code>data:</code> URL via <code>loadCheck</code>, imported for real from
-    <code>../../src/runtime.js</code> &mdash; the same shared module
-    <a href="../specs/2026-07-23-mycelium-crawler.spec.html">the crawler</a> uses under Node. That real
-    <code>import</code> is why this specific demo needs a local server (<code>npx serve docs</code> or
-    similar): browsers CORS-check ES module fetches, and <code>file://</code> has no stable origin to
-    satisfy that check, unlike the <code>data:</code> import inside it. Every other live demo in this
-    project stays fully self-contained and works with a plain double-click; only this one, now that it
-    shares real code instead of duplicating it, trades that for not repeating itself. Their
-    <code>documents</code> argument here is just <code>[{ path: 'sample', dom: sample-instances }]</code>,
-    a one-file stand-in for a real crawl. The samples were wired so extraction still produces one real
-    violation per audit: <code>sample-observation</code> has no edges at all, and
-    <code>sample-outcome</code> has only an outgoing edge (to <code>sample-action</code>), nothing pointing
-    into it.
+    <code>import()</code>ed from a <code>data:</code> URL via <code>loadCheck</code>, loaded from the same
+    <code>../../src/runtime.js</code> <a href="../specs/2026-07-23-mycelium-crawler.spec.html">the
+    crawler</a> uses under Node &mdash; shared code, not a hand-copy, and still works with a plain
+    double-click. That file has no <code>export</code> on purpose: a real ES module import would be
+    CORS-checked, and <code>file://</code> has no stable origin to satisfy that check. Loaded here instead
+    as a classic <code>&lt;script src&gt;</code> (exempt from that check, same as this file's own
+    <code>&lt;link rel="stylesheet"&gt;</code> tags always have been), attaching to <code>globalThis</code>
+    so both this page and <code>crawl.ts</code> see the same function. Their <code>documents</code> argument
+    here is just <code>[{ path: 'sample', dom: sample-instances }]</code>, a one-file stand-in for a real
+    crawl. The samples were wired so extraction still produces one real violation per audit:
+    <code>sample-observation</code> has no edges at all, and <code>sample-outcome</code> has only an
+    outgoing edge (to <code>sample-action</code>), nothing pointing into it.
   </p>
 
   <pre id="audit-output">running&hellip;</pre>
 
+  <script src="../../src/runtime.js"></script>
   <script type="module">
-    import { loadCheck } from '../../src/runtime.js'
+    const { loadCheck } = window.mycelium
 
     const documents = [{ path: 'sample', dom: document.getElementById('sample-instances') }]
     const orphansSource = document.querySelector('script[data-audits="orphans-except-goal"]').textContent

@@ -15,8 +15,10 @@ docs/            every document — templates, specs, and the real knowledge gra
   knowledge/     the real graph: this project's own decision history
 src/             the crawler — Node-only, reads docs/, never opened as a webpage
   crawl.ts
-  runtime.js     shared script-execution helper (loadCheck), imported by both
-                 crawl.ts and one browser-facing live demo
+  runtime.js     shared script-execution helper (loadCheck), loaded by both
+                 crawl.ts and one browser-facing live demo — no `export`,
+                 on purpose, see "Opening the documents directly" below
+  runtime.d.ts   types for runtime.js's globalThis.mycelium, editor-only
 ```
 
 ## Requirements
@@ -41,15 +43,11 @@ is; it only knows the templating protocol (`<template>`,
 ## Opening the documents directly
 
 Every file under `docs/` is meant to be opened straight in a browser, no
-server required — that's the whole point. One exception: the live demo in
-`knowledge.template.html`'s "Graph-wide audits" section imports
-`src/runtime.js` as a real ES module to avoid duplicating code with the
-crawler, and browsers CORS-check module imports even for local files. That
-one demo needs a static server:
-
-```sh
-pnpm serve
-```
-
-Everything else — every other live demo, every node, every spec — still
-works with a plain double-click.
+server required — no exceptions. That's why `src/runtime.js`, the one bit
+of code shared between the crawler and a browser live demo, has no
+`export`: a real ES module import is CORS-checked even for local files, and
+`file://` has no stable origin to satisfy that check. Loaded instead as a
+classic `<script src>` (exempt from that check, same as this project's
+`<link rel="stylesheet">` tags always have been) that attaches to
+`globalThis`, so both sides see the same function without either one
+needing a server.

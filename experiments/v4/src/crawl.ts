@@ -5,7 +5,9 @@
 import { readdirSync, statSync, readFileSync } from "node:fs"
 import { join, dirname, resolve as resolvePath } from "node:path"
 import { parseHTML } from "linkedom"
-import { loadCheck } from "./runtime.js"
+import "./runtime.js"
+
+const { loadCheck } = globalThis.mycelium
 
 interface ParsedDoc {
   path: string

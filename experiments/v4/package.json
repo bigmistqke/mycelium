@@ -8,8 +8,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "crawl": "node src/crawl.ts",
-    "serve": "npx serve docs"
+    "crawl": "node src/crawl.ts"
   },
   "dependencies": {
     "linkedom": "^0.18.13"
