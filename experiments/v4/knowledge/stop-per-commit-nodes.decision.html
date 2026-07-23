@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: not every commit needs a node</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>A new knowledge-outcome node is for reporting something not already evident from its
+    action — not for confirming that a commit happened</knowledge-title>
+  <knowledge-confidence>88</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-commit>6457bf5</knowledge-commit>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="./write-crawler-spec.action.html">caught on the exact node this action
+    produced: crawler-spec-written.outcome.html, deleted</a>
+</knowledge-decision>
+
+<p>
+  Every commit tonight triggered <code>post-commit-reminder.sh</code>, and the reflex became "write a new
+  <code>knowledge-outcome</code> file" every time, even when it said nothing beyond "yes, that commit
+  happened, here's the hash" &mdash; exactly the fragmentation the
+  <a data-rel="elaborates" href="../specs/2026-07-23-deciduous-template-series.spec.html#field-vs-link">field
+  vs. link</a> principle already warned against, just one level up: nodes instead of fields. The fix isn't a
+  smarter hook (a bash script can't judge whether a commit added real information), it's the same instinct
+  applied to CLAUDE.md's own guidance: the hash usually belongs on the existing action node's
+  <code>knowledge-commit</code> field, and a new node is reserved for a genuine result &mdash; a
+  verification that ran, a failure, a surprise, something that differs from the plan.
+</p>
+
+</body>
+</html>
