@@ -97,17 +97,27 @@ The six `data-rel` edge labels, unchanged from deciduous:
 
 ### CRITICAL: Link Commits to Actions/Outcomes
 
-**After every git commit, add the hash to the relevant node!**
+**After every git commit, add the hash to the relevant node — but that
+usually means editing the node you already wrote, not writing a new one.**
 
 ```bash
 git commit -m "feat: add auth"
 ```
-Then edit the `knowledge-action` or `knowledge-outcome` node this commit
-belongs to (or write a new one) and set:
+Edit the `knowledge-action` node this commit belongs to and set:
 ```html
 <knowledge-commit>HEAD's short hash</knowledge-commit>
 <knowledge-branch>main</knowledge-branch>
 ```
+A **new** `knowledge-outcome` node is for reporting something not already
+evident from the action: a result that differs from what was planned, a
+verification that actually ran, a failure, a surprise. "The thing the
+action said would happen, happened, here's the hash" is not new
+information — it belongs in the action node's own `knowledge-commit`
+field, not a second file whose only content is confirming the first one.
+Writing one anyway for every single commit is exactly the over-fragmentation
+["field vs link"](experiments/v4/specs/2026-07-23-deciduous-template-series.spec.html#field-vs-link)
+already warns against, just at the level of nodes instead of fields.
+
 If a single commit doesn't map cleanly to one node — spans several nodes'
 worth of work, or one node spans several commits — omit `knowledge-commit`
 rather than pointing it at just one arbitrarily. `write-template-series.action.html`
