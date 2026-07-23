@@ -699,6 +699,10 @@
   export function list(fs, args) {
     const kind = args._[0]
     const documents = fs.list('knowledge')
+    // Titles/labels are free text and often wrap across multiple indented
+    // source lines; collapse embedded whitespace so each node/edge still
+    // prints as exactly one line, matching this command's own contract.
+    const oneLine = (text) => text.trim().replace(/\s+/g, ' ')
 
     if (kind === 'nodes') {
       for (const { path, doc } of documents) {
@@ -706,8 +710,8 @@
         if (!el) continue
         const type = el.tagName.toLowerCase()
         const family = type.split('-')[0]
-        const title = el.querySelector(`${family}-title`)?.textContent.trim() ?? ''
-        const status = el.querySelector(`${family}-status`)?.textContent.trim() ?? ''
+        const title = oneLine(el.querySelector(`${family}-title`)?.textContent ?? '')
+        const status = oneLine(el.querySelector(`${family}-status`)?.textContent ?? '')
         console.log(`${path}\t${type}\t${status}\t${title}`)
       }
       return
@@ -720,7 +724,7 @@
         for (const a of el.querySelectorAll('a[data-rel]')) {
           const rel = a.getAttribute('data-rel')
           const href = a.getAttribute('href')
-          console.log(`${path}  --${rel}-->  ${href}  ${a.textContent.trim()}`)
+          console.log(`${path}  --${rel}-->  ${href}  ${oneLine(a.textContent ?? '')}`)
         }
       }
       return
