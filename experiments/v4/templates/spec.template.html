@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Template: spec</title>
+<title>Template: spec-doc</title>
 <style>
   :root {
     color-scheme: light dark;
@@ -88,12 +88,12 @@
   #validator-output.pass { color: var(--pass); background: color-mix(in srgb, var(--pass) 15%, transparent); }
   #validator-output.fail { color: var(--fail); background: color-mix(in srgb, var(--fail) 15%, transparent); }
 
-  /* The <spec> field vocabulary. Reused HTML element names (title) get reset
-     to block display so they behave like the rest of the vocabulary instead
-     of their native inline/head-only defaults. The section containers
-     (problem, design, out-of-scope, open-questions) hold arbitrary rich
-     content, so they get no layout opinion beyond being block-level. */
-  spec {
+  /* The spec-* field vocabulary. Every tag is hyphenated so it can never
+     collide with a current or future standard HTML element, and so it
+     could later be registered as a real custom element if that's ever
+     useful. Selectors stay scoped under spec-doc so this file's rules can
+     never leak onto another template's same-named field tags. */
+  spec-doc {
     display: block;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -101,12 +101,12 @@
     background: var(--code-bg);
     margin: 1.25rem 0;
   }
-  spec > title { display: block; font-weight: 700; font-size: 1.5rem; margin-bottom: 0.35rem; }
-  spec > status, spec > date { display: inline-block; margin-right: 1rem; color: var(--muted); font-size: 0.9rem; }
-  spec > status::before { content: "status: "; }
-  spec > date::before { content: "date: "; }
-  spec > problem, spec > design, spec > out-of-scope, spec > open-questions { display: block; margin-top: 1.5rem; }
-  spec > problem::before, spec > design::before, spec > out-of-scope::before, spec > open-questions::before {
+  spec-doc > spec-title { display: block; font-weight: 700; font-size: 1.5rem; margin-bottom: 0.35rem; }
+  spec-doc > spec-status, spec-doc > spec-date { display: inline-block; margin-right: 1rem; color: var(--muted); font-size: 0.9rem; }
+  spec-doc > spec-status::before { content: "status: "; }
+  spec-doc > spec-date::before { content: "date: "; }
+  spec-doc > spec-problem, spec-doc > spec-design, spec-doc > spec-out-of-scope, spec-doc > spec-open-questions { display: block; margin-top: 1.5rem; }
+  spec-doc > spec-problem::before, spec-doc > spec-design::before, spec-doc > spec-out-of-scope::before, spec-doc > spec-open-questions::before {
     display: block;
     color: var(--accent);
     font-size: 0.8rem;
@@ -114,21 +114,24 @@
     letter-spacing: 0.05em;
     margin-bottom: 0.5rem;
   }
-  spec > problem::before { content: "problem"; }
-  spec > design::before { content: "design"; }
-  spec > out-of-scope::before { content: "out of scope"; }
-  spec > open-questions::before { content: "open questions"; }
+  spec-doc > spec-problem::before { content: "problem"; }
+  spec-doc > spec-design::before { content: "design"; }
+  spec-doc > spec-out-of-scope::before { content: "out of scope"; }
+  spec-doc > spec-open-questions::before { content: "open questions"; }
 </style>
 </head>
 <body>
 
-<h1>Template: spec</h1>
+<h1>Template: spec-doc</h1>
 <div class="meta">
-  <div><b>Node type:</b> <code>spec</code></div>
-  <div><b>File naming:</b> this file is <code>spec.template.html</code>; documents that conform to it are named
-    <code>&lt;date&gt;-&lt;topic&gt;.spec.html</code></div>
+  <div><b>Node type:</b> <code>spec-doc</code></div>
+  <div><b>File naming:</b> this file is <code>spec.template.html</code>, named after the <code>spec-*</code>
+    family it defines, not the single <code>spec-doc</code> type &mdash; the same file can hold more
+    <code>spec-*</code> template entries later without being renamed. Documents that conform to
+    <code>spec-doc</code> are named <code>&lt;date&gt;-&lt;topic&gt;.spec.html</code></div>
   <div><b>Purpose:</b> the shape a design/brainstorming document takes when written as a v4 node instead of Markdown</div>
-  <div><b>Sibling of:</b> <code>./decision-nodes.template.html</code>, the six deciduous node-type templates</div>
+  <div><b>Sibling of:</b> <code>graph.template.html</code>, one file holding all six deciduous node-type
+    templates (<code>graph-goal</code> through <code>graph-observation</code>)</div>
 </div>
 
 <h2>Why this template exists</h2>
@@ -138,6 +141,36 @@
   preferences for spec location override this default." v4's preference is that a spec is a node like any
   other &mdash; HTML, not Markdown, and conforming to a template like any other instance in this graph. This
   template is that override, made concrete.
+</p>
+
+<h2>Naming: hyphenated, family-prefixed, and the file names the family</h2>
+<p>
+  Every tag this project invents is hyphenated. Two reasons: the actual Custom Elements API
+  (<code>customElements.define(name, Class)</code>) throws on an unhyphenated name, so a bare
+  <code>&lt;spec&gt;</code> could never later be given real behavior without a breaking rename; and it's the
+  same guarantee HTML itself relies on to add new elements safely &mdash; no future standard tag will ever
+  contain a hyphen. This isn't hypothetical for this project specifically: an earlier, unhyphenated version
+  of this very template used <code>&lt;title&gt;</code>, a real element with its own parsing rules, and the
+  as-yet-unbuilt deciduous types include <code>option</code>, which collides even harder (real, heavily
+  special-cased, expected inside <code>&lt;select&gt;</code>).
+</p>
+<p>
+  The prefix isn't a decorative brand mark (not <code>v4-title</code>), it names the <em>family</em> a tag
+  belongs to: <code>spec-*</code> for design-document types, <code>graph-*</code> for the six deciduous
+  node types that participate in the decision graph &mdash; mirroring the project's own existing
+  <code>graph/</code> directory. A root type is <code>&lt;family&gt;-&lt;type&gt;</code>
+  (<code>spec-doc</code>); its fields share just the family prefix, not the full type name
+  (<code>spec-title</code>, not <code>spec-doc-title</code>), because fields belong to the family, not to
+  one specific type within it &mdash; every <code>spec-*</code> type would share <code>spec-title</code>,
+  the same way every <code>graph-*</code> type will share <code>graph-title</code>.
+</p>
+<p>
+  The template <em>file</em> is named after the family, not the one type it happens to define today:
+  <code>spec.template.html</code>, not <code>spec-doc.template.html</code>. That's what lets one file hold
+  several related <code>&lt;template&gt;</code> entries under a shared prefix, addressed by fragment, the
+  way <code>DESIGN.html</code>'s own worked example already does for the six deciduous types in one file
+  &mdash; the family prefix is what keeps that safe now, not physically splitting every type into its own
+  file.
 </p>
 
 <h2>Shape</h2>
@@ -156,58 +189,58 @@
   So the template grew section containers, each free to hold rich content (headings, tables, code, whatever
   a given design needs) while still being addressable by tag name across every spec in the corpus:
 </p>
-<template id="spec">
-  <spec>
-    <title></title>
-    <status></status>
-    <date></date>
-    <problem></problem>
-    <design></design>
-    <out-of-scope></out-of-scope>
-    <open-questions></open-questions>
-  </spec>
+<template id="spec-doc">
+  <spec-doc>
+    <spec-title></spec-title>
+    <spec-status></spec-status>
+    <spec-date></spec-date>
+    <spec-problem></spec-problem>
+    <spec-design></spec-design>
+    <spec-out-of-scope></spec-out-of-scope>
+    <spec-open-questions></spec-open-questions>
+  </spec-doc>
 </template>
-<pre><code>&lt;spec&gt;
-  &lt;title&gt;&hellip;&lt;/title&gt;
-  &lt;status&gt;draft | approved | implemented&lt;/status&gt;
-  &lt;date&gt;YYYY-MM-DD&lt;/date&gt;
-  &lt;problem&gt;&hellip; what motivates this design &hellip;&lt;/problem&gt;
-  &lt;design&gt;&hellip; the approved design itself, any content &hellip;&lt;/design&gt;
-  &lt;out-of-scope&gt;&hellip; optional &hellip;&lt;/out-of-scope&gt;
-  &lt;open-questions&gt;&hellip; optional &hellip;&lt;/open-questions&gt;
-&lt;/spec&gt;</code></pre>
+<pre><code>&lt;spec-doc&gt;
+  &lt;spec-title&gt;&hellip;&lt;/spec-title&gt;
+  &lt;spec-status&gt;draft | approved | implemented&lt;/spec-status&gt;
+  &lt;spec-date&gt;YYYY-MM-DD&lt;/spec-date&gt;
+  &lt;spec-problem&gt;&hellip; what motivates this design &hellip;&lt;/spec-problem&gt;
+  &lt;spec-design&gt;&hellip; the approved design itself, any content &hellip;&lt;/spec-design&gt;
+  &lt;spec-out-of-scope&gt;&hellip; optional &hellip;&lt;/spec-out-of-scope&gt;
+  &lt;spec-open-questions&gt;&hellip; optional &hellip;&lt;/spec-open-questions&gt;
+&lt;/spec-doc&gt;</code></pre>
 <p>
-  <code>title</code>, <code>status</code>, <code>date</code>, <code>problem</code>, and <code>design</code>
-  are required &mdash; every spec has an identity, a motivation, and a decided approach.
-  <code>out-of-scope</code> and <code>open-questions</code> are optional: a spec that has nothing to exclude
-  or nothing left open simply omits the tag, rather than including it empty. Related nodes, wherever they're
-  mentioned inside any of these sections, are reached the usual way:
+  <code>spec-title</code>, <code>spec-status</code>, <code>spec-date</code>, <code>spec-problem</code>, and
+  <code>spec-design</code> are required &mdash; every spec has an identity, a motivation, and a decided
+  approach. <code>spec-out-of-scope</code> and <code>spec-open-questions</code> are optional: a spec that
+  has nothing to exclude or nothing left open simply omits the tag, rather than including it empty. Related
+  nodes, wherever they're mentioned inside any of these sections, are reached the usual way:
   <code>&lt;a data-rel="&hellip;"&gt;</code>.
 </p>
 <p>
-  <code>status</code> tracks the brainstorming skill's own lifecycle: <code>draft</code> while under
+  <code>spec-status</code> tracks the brainstorming skill's own lifecycle: <code>draft</code> while under
   discussion, <code>approved</code> once the user signs off on the design, <code>implemented</code> once
   the plan it led to has shipped.
 </p>
 
 <h2>Validator</h2>
-<script type="module" data-validates="#spec">
+<script type="module" data-validates="#spec-doc">
   export function check(root) {
-    const el = root.matches?.('spec') ? root : root.querySelector('spec')
-    if (!el) return { ok: false, errors: ['missing <spec> element'] }
+    const el = root.matches?.('spec-doc') ? root : root.querySelector('spec-doc')
+    if (!el) return { ok: false, errors: ['missing <spec-doc> element'] }
 
     const errors = []
-    for (const tag of ['title', 'status', 'date', 'problem', 'design']) {
+    for (const tag of ['spec-title', 'spec-status', 'spec-date', 'spec-problem', 'spec-design']) {
       const node = el.querySelector(tag)
       if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
     }
 
-    const statusValue = el.querySelector('status')?.textContent.trim()
+    const statusValue = el.querySelector('spec-status')?.textContent.trim()
     if (statusValue && !['draft', 'approved', 'implemented'].includes(statusValue)) {
-      errors.push(`<status> must be draft|approved|implemented, got "${statusValue}"`)
+      errors.push(`<spec-status> must be draft|approved|implemented, got "${statusValue}"`)
     }
 
-    for (const tag of ['out-of-scope', 'open-questions']) {
+    for (const tag of ['spec-out-of-scope', 'spec-open-questions']) {
       const node = el.querySelector(tag)
       if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
     }
@@ -219,36 +252,36 @@
 <div class="live-demo">
   <h4>This section actually runs</h4>
   <p>
-    A sample <code>&lt;spec&gt;</code> instance, checked by the validator above. It omits both optional
+    A sample <code>&lt;spec-doc&gt;</code> instance, checked by the validator above. It omits both optional
     sections, which is valid.
   </p>
 
   <div id="sample-instance">
-    <spec data-conforms-to="../templates/spec.template.html#spec">
-      <title>Example design</title>
-      <status>draft</status>
-      <date>2026-01-01</date>
-      <problem>The thing this example is supposedly solving.</problem>
-      <design>The approach this example supposedly takes.</design>
-    </spec>
+    <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+      <spec-title>Example design</spec-title>
+      <spec-status>draft</spec-status>
+      <spec-date>2026-01-01</spec-date>
+      <spec-problem>The thing this example is supposedly solving.</spec-problem>
+      <spec-design>The approach this example supposedly takes.</spec-design>
+    </spec-doc>
   </div>
 
   <pre id="validator-output">running&hellip;</pre>
 
   <script type="module">
     function check(root) {
-      const el = root.matches?.('spec') ? root : root.querySelector('spec')
-      if (!el) return { ok: false, errors: ['missing <spec> element'] }
+      const el = root.matches?.('spec-doc') ? root : root.querySelector('spec-doc')
+      if (!el) return { ok: false, errors: ['missing <spec-doc> element'] }
       const errors = []
-      for (const tag of ['title', 'status', 'date', 'problem', 'design']) {
+      for (const tag of ['spec-title', 'spec-status', 'spec-date', 'spec-problem', 'spec-design']) {
         const node = el.querySelector(tag)
         if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
       }
-      const statusValue = el.querySelector('status')?.textContent.trim()
+      const statusValue = el.querySelector('spec-status')?.textContent.trim()
       if (statusValue && !['draft', 'approved', 'implemented'].includes(statusValue)) {
-        errors.push(`<status> must be draft|approved|implemented, got "${statusValue}"`)
+        errors.push(`<spec-status> must be draft|approved|implemented, got "${statusValue}"`)
       }
-      for (const tag of ['out-of-scope', 'open-questions']) {
+      for (const tag of ['spec-out-of-scope', 'spec-open-questions']) {
         const node = el.querySelector(tag)
         if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
       }
@@ -258,7 +291,7 @@
     const out = document.getElementById('validator-output')
     const result = check(sample)
     out.textContent = result.ok
-      ? 'PASS: #sample-instance conforms to #spec'
+      ? 'PASS: #sample-instance conforms to #spec-doc'
       : `FAIL: ${result.errors.join('; ')}`
     out.className = result.ok ? 'pass' : 'fail'
   </script>
@@ -268,16 +301,16 @@
 <p>
   Conformance is declared as a <code>data-conforms-to</code> attribute on the element making the claim, not
   as a <code>&lt;link rel="conforms-to"&gt;</code> in <code>&lt;head&gt;</code>. A head link can only assert
-  one thing about the document as a whole; it can't sit next to a <code>&lt;decision&gt;</code> nested three
-  levels into a <code>&lt;design&gt;</code> section, declaring conformance for just that one element. An
-  attribute on the element itself composes: a document can have exactly one typed root and any number of
-  typed elements nested inside it, each independently addressable via
+  one thing about the document as a whole; it can't sit next to a <code>&lt;graph-decision&gt;</code> nested
+  three levels into a <code>&lt;spec-design&gt;</code> section, declaring conformance for just that one
+  element. An attribute on the element itself composes: a document can have exactly one typed root and any
+  number of typed elements nested inside it, each independently addressable via
   <code>document.querySelectorAll('[data-conforms-to]')</code>, instead of only ever answering "what is
   this document" once from <code>&lt;head&gt;</code>.
 </p>
-<pre><code>&lt;spec data-conforms-to="../templates/spec.template.html#spec"&gt;
+<pre><code>&lt;spec-doc data-conforms-to="../templates/spec.template.html#spec-doc"&gt;
   &hellip;
-&lt;/spec&gt;</code></pre>
+&lt;/spec-doc&gt;</code></pre>
 
 </body>
 </html>
