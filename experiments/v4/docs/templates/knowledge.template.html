@@ -96,6 +96,11 @@
     }
     const prompt = el.querySelector('knowledge-prompt')
     if (prompt && !prompt.textContent.trim()) errors.push('<knowledge-prompt> present but empty — omit it instead')
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-prompt']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-goal`)
+    }
     return { ok: errors.length === 0, errors }
   }
 </script>
@@ -132,6 +137,11 @@
     if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
       errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
     }
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-decision`)
+    }
     return { ok: errors.length === 0, errors }
   }
 </script>
@@ -164,6 +174,11 @@
     const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
     if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
       errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
+    }
+    const allowed = ['knowledge-title', 'knowledge-confidence']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-option`)
     }
     return { ok: errors.length === 0, errors }
   }
@@ -210,6 +225,11 @@
       const node = el.querySelector(tag)
       if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
     }
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-action`)
+    }
     return { ok: errors.length === 0, errors }
   }
 </script>
@@ -249,6 +269,11 @@
       const node = el.querySelector(tag)
       if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
     }
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-outcome`)
+    }
     return { ok: errors.length === 0, errors }
   }
 </script>
@@ -278,6 +303,11 @@
     const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
     if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
       errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
+    }
+    const allowed = ['knowledge-title', 'knowledge-confidence']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-observation`)
     }
     return { ok: errors.length === 0, errors }
   }
