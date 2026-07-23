@@ -1,65 +1,76 @@
 # Project Instructions
 
-## Decision Graph Workflow
+## Knowledge Graph Workflow
 
 **THIS IS MANDATORY. Log decisions IN REAL-TIME, not retroactively.**
+
+As of 2026-07-23 this project's decision graph is written as HTML nodes under
+`experiments/v4/knowledge/`, conforming to the templates in
+`experiments/v4/templates/knowledge.template.html`. It replaces `deciduous`
+(the SQLite-backed CLI) for all new logging, project-wide, not just
+v4-related work — even though v4 itself is still nominally "the experiment,"
+there's nowhere better for this to live yet. `deciduous`'s existing ~400
+nodes (v0 through 2026-07-23) are **frozen, not migrated**: still real
+history, still queryable read-only via the `deciduous` CLI, just no longer
+where new work gets logged. Full reasoning:
+`experiments/v4/specs/2026-07-23-deciduous-template-series.spec.html`.
+
+There is no CLI for this yet — `mycelium run` and the crawler are
+deliberately deferred (see `experiments/v4/DESIGN.html`'s roadmap). Logging
+a decision means hand-authoring an HTML file. Copying the closest existing
+node under `experiments/v4/knowledge/` as a starting point is the fastest
+correct way to do this.
 
 ### The Core Rule
 
 ```
-BEFORE you do something -> Log what you're ABOUT to do
-AFTER it succeeds/fails -> Log the outcome
-CONNECT immediately -> Link every node to its parent
-AUDIT regularly -> Check for missing connections
+BEFORE you do something -> Write a knowledge-goal or knowledge-action node
+AFTER it succeeds/fails  -> Write a knowledge-outcome node
+CONNECT immediately      -> <a data-rel="..."> from the new node to its parent
+AUDIT regularly          -> Check for missing connections (see below)
 ```
 
 ### Behavioral Triggers - MUST LOG WHEN:
 
-| Trigger | Log Type | Example |
-|---------|----------|---------|
-| User asks for a new feature | `goal` **with -p** | "Add dark mode" |
-| Choosing between approaches | `decision` | "Choose state management" |
-| About to write/edit code | `action` | "Implementing Redux store" |
-| Something worked or failed | `outcome` | "Redux integration successful" |
-| Notice something interesting | `observation` | "Existing code uses hooks" |
+| Trigger | Node type | Example |
+|---------|-----------|---------|
+| User asks for a new feature | `knowledge-goal` **with `<knowledge-prompt>`** | "Add dark mode" |
+| Choosing between approaches | `knowledge-decision` | "Choose state management" |
+| About to write/edit code | `knowledge-action` | "Implementing Redux store" |
+| Something worked or failed | `knowledge-outcome` | "Redux integration successful" |
+| Notice something interesting | `knowledge-observation` | "Existing code uses hooks" |
 
 ### CRITICAL: Capture VERBATIM User Prompts
 
-**Prompts must be the EXACT user message, not a summary.** When a user request triggers new work, capture their full message word-for-word.
-
-**BAD - summaries are useless for context recovery:**
-```bash
-# DON'T DO THIS - this is a summary, not a prompt
-deciduous add goal "Add auth" -p "User asked: add login to the app"
-```
-
-**GOOD - verbatim prompts enable full context recovery:**
-```bash
-# Use --prompt-stdin for multi-line prompts
-deciduous add goal "Add auth" -c 90 --prompt-stdin << 'EOF'
-I need to add user authentication to the app. Users should be able to sign up
-with email/password, and we need OAuth support for Google and GitHub. The auth
-should use JWT tokens with refresh token rotation.
-EOF
-
-# Or use the prompt command to update existing nodes
-deciduous prompt 42 << 'EOF'
-The full verbatim user message goes here...
-EOF
-```
+**`<knowledge-prompt>` must be the EXACT user message, not a summary.** When
+a user request triggers new work, capture their full message word-for-word
+inside the field — same rule deciduous had for `-p`/`--prompt-stdin`, just a
+tag instead of a flag.
 
 **When to capture prompts:**
-- Root `goal` nodes: YES - the FULL original request
-- Major direction changes: YES - when user redirects the work
-- Routine downstream nodes: NO - they inherit context via edges
+- Root `knowledge-goal` nodes: YES — the FULL original request
+- Major direction changes: YES — when user redirects the work
+- Routine downstream nodes: NO — they inherit context via `data-rel` edges
 
-**Updating prompts on existing nodes:**
-```bash
-deciduous prompt <node_id> "full verbatim prompt here"
-cat prompt.txt | deciduous prompt <node_id>  # Multi-line from stdin
+### Node shape
+
+Six types, in one file: `experiments/v4/templates/knowledge.template.html`
+is the source of truth for exact required/optional fields per type — don't
+duplicate that table here, read it. In short: every type has `title` and
+`confidence`; `status` (`pending`/`active`/`completed`/`rejected`) is on
+`goal`/`decision`/`action` only; `commit`/`files`/`branch` are optional on
+`action`/`outcome` only; `prompt` is optional, `goal` only.
+
+```html
+experiments/v4/knowledge/<slug>.<type>.html   (type = goal|decision|option|action|outcome|observation)
+
+<knowledge-TYPE data-conforms-to="../templates/knowledge.template.html#knowledge-TYPE">
+  <knowledge-title>…</knowledge-title>
+  <knowledge-confidence>NN</knowledge-confidence>
+  <knowledge-status>pending</knowledge-status>
+  <a data-rel="leads_to" href="./other-node.type.html">…</a>
+</knowledge-TYPE>
 ```
-
-Prompts are viewable in the TUI detail panel (`deciduous tui`) and web viewer.
 
 ### CRITICAL: Maintain Connections
 
@@ -67,100 +78,65 @@ Prompts are viewable in the TUI detail panel (`deciduous tui`) and web viewer.
 
 | When you create... | IMMEDIATELY link to... |
 |-------------------|------------------------|
-| `outcome` | The action/goal it resolves |
-| `action` | The goal/decision that spawned it |
-| `option` | Its parent decision |
-| `observation` | Related goal/action |
+| `knowledge-outcome` | The action/goal it resolves |
+| `knowledge-action` | The goal/decision that spawned it |
+| `knowledge-option` | Its parent decision (`depends_on`) |
+| `knowledge-observation` | Related goal/action |
 
-**Root `goal` nodes are the ONLY valid orphans.**
+**Root `knowledge-goal` nodes are the ONLY valid orphans** — exactly what
+`orphans-except-goal` (one of `knowledge.template.html`'s two collocated
+audits) checks for. It isn't wired to run against real files yet (that's
+crawler work), so this is still a human judgment call for now, not an
+automated gate.
 
-### Quick Commands
-
-```bash
-deciduous add goal "Title" -c 90 -p "User's original request"
-deciduous add action "Title" -c 85
-deciduous link FROM TO -r "reason"  # DO THIS IMMEDIATELY!
-deciduous serve   # View live (auto-refreshes every 30s)
-deciduous sync    # Export for static hosting
-
-# Metadata flags
-# -c, --confidence 0-100   Confidence level
-# -p, --prompt "..."       Store the user prompt (use when semantically meaningful)
-# -f, --files "a.rs,b.rs"  Associate files
-# -b, --branch <name>      Git branch (auto-detected)
-# --commit <hash|HEAD>     Link to git commit (use HEAD for current commit)
-
-# Branch filtering
-deciduous nodes --branch main
-deciduous nodes -b feature-auth
-```
+The six `data-rel` edge labels, unchanged from deciduous:
+`depends_on`, `blocks`, `supports`, `contradicts`, `alternative_to`,
+`leads_to`. Mint new ones when a project genuinely needs them (see
+`DESIGN.html`'s "open-vocabulary links"), the same way `specifies` and
+`elaborates` got minted for the spec-doc work.
 
 ### CRITICAL: Link Commits to Actions/Outcomes
 
-**After every git commit, link it to the decision graph!**
+**After every git commit, add the hash to the relevant node!**
 
 ```bash
 git commit -m "feat: add auth"
-deciduous add action "Implemented auth" -c 90 --commit HEAD
-deciduous link <goal_id> <action_id> -r "Implementation"
 ```
-
-The `--commit HEAD` flag captures the commit hash and links it to the node. The web viewer will show commit messages, authors, and dates.
-
-### Git History & Deployment
-
-```bash
-# Export graph AND git history for web viewer
-deciduous sync
-
-# This creates:
-# - docs/graph-data.json (decision graph)
-# - docs/git-history.json (commit info for linked nodes)
+Then edit the `knowledge-action` or `knowledge-outcome` node this commit
+belongs to (or write a new one) and set:
+```html
+<knowledge-commit>HEAD's short hash</knowledge-commit>
+<knowledge-branch>main</knowledge-branch>
 ```
+If a single commit doesn't map cleanly to one node — spans several nodes'
+worth of work, or one node spans several commits — omit `knowledge-commit`
+rather than pointing it at just one arbitrarily. `write-template-series.action.html`
+does this on purpose.
 
-To deploy to GitHub Pages:
-1. `deciduous sync` to export
-2. Push to GitHub
-3. Settings > Pages > Deploy from branch > /docs folder
+### Audit Checklist (Before Every Commit)
 
-Your graph will be live at `https://<user>.github.io/<repo>/`
+Same three questions deciduous asked, still manual until the crawler exists:
 
-### Branch-Based Grouping
-
-Nodes are auto-tagged with the current git branch. Configure in `.deciduous/config.toml`:
-```toml
-[branch]
-main_branches = ["main", "master"]
-auto_detect = true
-```
-
-### Audit Checklist (Before Every Sync)
-
-1. Does every **outcome** link back to what caused it?
-2. Does every **action** link to why you did it?
-3. Any **dangling outcomes** without parents?
+1. Does every **knowledge-outcome** link back to what caused it?
+2. Does every **knowledge-action** link to why you did it?
+3. Any dangling nodes, besides root goals?
 
 ### Session Start Checklist
 
 ```bash
-deciduous nodes    # What decisions exist?
-deciduous edges    # How are they connected? Any gaps?
-git status         # Current state
+ls experiments/v4/knowledge/                     # what nodes exist?
+grep -l 'data-rel' experiments/v4/knowledge/*.html   # rough connectivity
+git status                                       # current state
 ```
+Coarser than `deciduous nodes`/`deciduous edges` were — there's no crawler
+yet to answer "which outcome has no incoming edge" as a single command.
+That's exactly what `mycelium run` + the crawler will give back, deferred
+on purpose (`DESIGN.html`'s roadmap, step 3).
 
-### Multi-User Sync
+### What deciduous still has, that this doesn't (yet)
 
-Share decisions across teammates:
-
-```bash
-# Export your branch's decisions
-deciduous diff export --branch feature-x -o .deciduous/patches/my-feature.json
-
-# Apply patches from teammates (idempotent)
-deciduous diff apply .deciduous/patches/*.json
-
-# Preview before applying
-deciduous diff apply --dry-run .deciduous/patches/teammate.json
-```
-
-PR workflow: Export patch -> commit patch file -> PR -> teammates apply.
+No equivalent exists yet for: `deciduous sync`/`docs/graph-data.json`/GitHub
+Pages publishing, `.deciduous/config.toml` branch grouping, or
+`deciduous diff export/apply` multi-user sync. These aren't silently
+dropped — they're real capability gaps versus the old system, waiting on
+the crawler. Don't invent workarounds for them; note the gap and move on.

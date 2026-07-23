@@ -1,10 +1,12 @@
 #!/bin/bash
 # post-commit-reminder.sh
-# Runs after git commit to remind Claude to link the commit to deciduous
+# Runs after git commit to remind Claude to link the commit to a knowledge node
 # Uses exit code 2 to ensure Claude sees the message and acts on it
 
-# Check if deciduous is initialized
-if [ ! -d ".deciduous" ]; then
+KNOWLEDGE_DIR="experiments/v4/knowledge"
+
+# Check if the knowledge graph exists in this project
+if [ ! -d "$KNOWLEDGE_DIR" ]; then
     exit 0
 fi
 
@@ -24,16 +26,18 @@ commit_msg=$(git log -1 --format=%s 2>/dev/null)
 # Output reminder to stderr (exit 2 ensures Claude sees and processes this)
 cat >&2 << EOF
 +===================================================================+
-|  DECIDUOUS: Link this commit to the decision graph!               |
+|  KNOWLEDGE GRAPH: Link this commit to a knowledge node!           |
 +===================================================================+
 |  Commit: $commit_hash "$commit_msg"
 |                                                                   |
-|  Run NOW:                                                         |
-|    deciduous add outcome "What was accomplished" -c 95 --commit HEAD
-|    deciduous link <action_id> <outcome_id> -r "Implementation complete"
+|  Write or update a knowledge-outcome node:                        |
+|    experiments/v4/knowledge/<slug>.outcome.html                   |
+|    <knowledge-commit>$commit_hash</knowledge-commit>
 |                                                                   |
-|  Or if this was an action (not outcome):                          |
-|    deciduous add action "What was done" -c 90 --commit HEAD       |
+|  Or if this was mid-work (not a completed outcome), a              |
+|  knowledge-action node instead, same field.                       |
+|                                                                   |
+|  Either way, link it: <a data-rel="leads_to" href="./parent…">    |
 +===================================================================+
 EOF
 
