@@ -643,6 +643,47 @@
     a.textContent = args.label ?? args._[2] ?? ''
     root.appendChild(a)
   }
+
+  /**
+   * Update fields on an existing knowledge-<type> node file.
+   *
+   *   mycelium run knowledge update <file> [--title "…"] [--confidence NN]
+   *     [--status pending|active|completed|rejected] [--prompt "…"]
+   *     [--commit HASH] [--files "…"] [--branch NAME]
+   *
+   * <file> is an existing knowledge/<slug>.<type>.html file; its type is
+   * read off its own root element, not passed again. Per flag: omitted
+   * leaves the field untouched, any other value upserts it (overwrite if
+   * the tag is already present, append if not), and an explicit empty
+   * value ("") removes the field entirely.
+   */
+  export function update(fs, args) {
+    const doc = fs.get(`knowledge/${args._[0]}`)
+    const root = doc.querySelector('[data-conforms-to]')
+
+    const field = (tag, text) => {
+      if (text === undefined) return
+      const existing = root.querySelector(tag)
+      if (text === '') {
+        existing?.remove()
+        return
+      }
+      if (existing) existing.textContent = text
+      else {
+        const el = doc.createElement(tag)
+        el.textContent = text
+        root.appendChild(el)
+      }
+    }
+
+    field('knowledge-title', args.title)
+    field('knowledge-confidence', args.confidence)
+    field('knowledge-status', args.status)
+    field('knowledge-prompt', args.prompt)
+    field('knowledge-commit', args.commit)
+    field('knowledge-files', args.files)
+    field('knowledge-branch', args.branch)
+  }
 </script>
 
 <h2>Conformance</h2>
