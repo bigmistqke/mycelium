@@ -2,18 +2,12 @@
 // data-conforms-to, data-validates, and data-audits — nothing about what
 // any project builds on top of them. See docs/specs/2026-07-23-mycelium-crawler.spec.html.
 
-import { readdirSync, statSync, readFileSync } from "node:fs"
-import { join, dirname, resolve as resolvePath } from "node:path"
-import { Window } from "happy-dom"
+import { readFileSync } from "node:fs"
+import { dirname, resolve as resolvePath } from "node:path"
+import { parseHTML, walkHtmlFiles } from "./fs-helpers.ts"
 import "./runtime.js"
 
 const { loadCheck } = globalThis.mycelium
-
-function parseHTML(html: string): { document: Document } {
-  const window = new Window()
-  window.document.write(html)
-  return { document: window.document as unknown as Document }
-}
 
 interface ParsedDoc {
   path: string
@@ -36,17 +30,6 @@ interface AuditInfo {
 interface CheckResult {
   ok: boolean
   [key: string]: unknown
-}
-
-function walkHtmlFiles(dir: string): string[] {
-  const results: string[] = []
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry)
-    const stat = statSync(full)
-    if (stat.isDirectory()) results.push(...walkHtmlFiles(full))
-    else if (entry.endsWith(".html")) results.push(full)
-  }
-  return results
 }
 
 function parseAll(dir: string): ParsedDoc[] {

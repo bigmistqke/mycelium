@@ -4,30 +4,13 @@
 // what any command actually does. See
 // docs/specs/2026-07-23-mycelium-authoring-commands.spec.html.
 
-import { readdirSync, statSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
+import { readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { join, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
-import { Window } from "happy-dom"
 import { parse } from "acorn"
+import { parseHTML, walkHtmlFiles } from "./fs-helpers.ts"
 import "./runtime.js"
 
 const { loadModule } = globalThis.mycelium
-
-function parseHTML(html: string): { document: Document } {
-  const window = new Window()
-  window.document.write(html)
-  return { document: window.document as unknown as Document }
-}
-
-function walkHtmlFiles(dir: string): string[] {
-  const results: string[] = []
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry)
-    const stat = statSync(full)
-    if (stat.isDirectory()) results.push(...walkHtmlFiles(full))
-    else if (entry.endsWith(".html")) results.push(full)
-  }
-  return results
-}
 
 function findTemplateFile(dir: string, id: string): string | null {
   const target = `${id}.template.html`
