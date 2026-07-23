@@ -17,8 +17,8 @@
     <code>spec-*</code> template entries later without being renamed. Documents that conform to
     <code>spec-doc</code> are named <code>&lt;date&gt;-&lt;topic&gt;.spec.html</code></div>
   <div><b>Purpose:</b> the shape a design/brainstorming document takes when written as a v4 node instead of Markdown</div>
-  <div><b>Sibling of:</b> <code>graph.template.html</code>, one file holding all six deciduous node-type
-    templates (<code>graph-goal</code> through <code>graph-observation</code>)</div>
+  <div><b>Sibling of:</b> <code>knowledge.template.html</code>, one file holding all six deciduous node-type
+    templates (<code>knowledge-goal</code> through <code>knowledge-observation</code>)</div>
   <div><b>Styling:</b> <code>./spec.template.css</code>, this family's own rendering rules, plus the shared
     <code>../theme.css</code> every document links</div>
 </div>
@@ -45,13 +45,16 @@
 </p>
 <p>
   The prefix isn't a decorative brand mark (not <code>v4-title</code>), it names the <em>family</em> a tag
-  belongs to: <code>spec-*</code> for design-document types, <code>graph-*</code> for the six deciduous
-  node types that participate in the decision graph &mdash; mirroring the project's own existing
-  <code>graph/</code> directory. A root type is <code>&lt;family&gt;-&lt;type&gt;</code>
-  (<code>spec-doc</code>); its fields share just the family prefix, not the full type name
-  (<code>spec-title</code>, not <code>spec-doc-title</code>), because fields belong to the family, not to
-  one specific type within it &mdash; every <code>spec-*</code> type would share <code>spec-title</code>,
-  the same way every <code>graph-*</code> type will share <code>graph-title</code>.
+  belongs to: <code>spec-*</code> for design-document types, <code>knowledge-*</code> for the six deciduous
+  node types that participate in the decision graph &mdash; <code>knowledge</code>, not <code>graph</code>,
+  because "graph" only names the shape (and most of this project is graph-shaped, given every document
+  links to others), while "knowledge" names what these six types actually are: captured reasoning, not
+  structure for its own sake. Mirrors the project's own <code>knowledge/</code> directory of instances. A
+  root type is <code>&lt;family&gt;-&lt;type&gt;</code> (<code>spec-doc</code>); its fields share just the
+  family prefix, not the full type name (<code>spec-title</code>, not <code>spec-doc-title</code>), because
+  fields belong to the family, not to one specific type within it &mdash; every <code>spec-*</code> type
+  would share <code>spec-title</code>, the same way every <code>knowledge-*</code> type will share
+  <code>knowledge-title</code>.
 </p>
 <p>
   The template <em>file</em> is named after the family, not the one type it happens to define today:
@@ -199,7 +202,7 @@
 <p>
   Conformance is declared as a <code>data-conforms-to</code> attribute on the element making the claim, not
   as a <code>&lt;link rel="conforms-to"&gt;</code> in <code>&lt;head&gt;</code>. A head link can only assert
-  one thing about the document as a whole; it can't sit next to a <code>&lt;graph-decision&gt;</code> nested
+  one thing about the document as a whole; it can't sit next to a <code>&lt;knowledge-decision&gt;</code> nested
   three levels into a <code>&lt;spec-design&gt;</code> section, declaring conformance for just that one
   element. An attribute on the element itself composes: a document can have exactly one typed root and any
   number of typed elements nested inside it, each independently addressable via

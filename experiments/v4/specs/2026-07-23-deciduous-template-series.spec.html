@@ -10,14 +10,14 @@
 <body>
 
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
-  <spec-title>Deciduous as an HTML template series, plus v4's first dogfooded graph nodes</spec-title>
+  <spec-title>Deciduous as an HTML template series, plus v4's first dogfooded knowledge nodes</spec-title>
   <spec-status>approved</spec-status>
   <spec-date>2026-07-23</spec-date>
 
   <spec-problem>
     <p>
       <a href="../DESIGN.html">DESIGN.html</a> proposed reimplementing deciduous's six node types and six
-      edge labels as a template series, then building real graph nodes from v4's own history on top of it,
+      edge labels as a template series, then building real knowledge nodes from v4's own history on top of it,
       as the proof case for the whole document-as-canonical-store thesis (see
       <a data-rel="elaborates" href="../DESIGN.html">DESIGN.html</a>'s "What's next" item 1). This spec
       fixes the shape of that template series and scopes the first real instances. The crawler,
@@ -33,14 +33,14 @@
   DESIGN.html
   theme.css              shared base look, linked by every document regardless of type
   templates/
-    graph.template.html   one file, all six deciduous node-type templates: graph-goal, graph-decision,
-                           graph-option, graph-action, graph-outcome, graph-observation
-    graph.template.css    the graph-* family's own rendering rules
+    knowledge.template.html   one file, all six deciduous node-type templates: knowledge-goal, knowledge-decision,
+                           knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation
+    knowledge.template.css    the knowledge-* family's own rendering rules
     spec.template.html    the spec-doc template this document conforms to
     spec.template.css     the spec-* family's own rendering rules
   audits/
-    graph-integrity.html   cross-template audits, proven against embedded fixture data
-  graph/
+    knowledge-integrity.html   cross-template audits, proven against embedded fixture data
+  knowledge/
     goal-build-v4.html
     decision-html-as-store.html
     action-write-design-html.html
@@ -50,11 +50,11 @@
     2026-07-23-deciduous-template-series.spec.html   this document</code></pre>
     <p>
       File naming convention: a template file is named after the tag <em>family</em> it defines
-      (<code>spec.template.html</code> for the <code>spec-*</code> family, <code>graph.template.html</code>
-      for the <code>graph-*</code> family), not after any single type within it &mdash; the same file can
+      (<code>spec.template.html</code> for the <code>spec-*</code> family, <code>knowledge.template.html</code>
+      for the <code>knowledge-*</code> family), not after any single type within it &mdash; the same file can
       hold several related <code>&lt;template&gt;</code> entries, addressed by fragment, the way
       <code>DESIGN.html</code>'s own worked example already does. Documents that conform to
-      <code>spec-doc</code> end in <code>.spec.html</code>. Graph instance nodes (<code>graph/*.html</code>)
+      <code>spec-doc</code> end in <code>.spec.html</code>. Knowledge instance nodes (<code>knowledge/*.html</code>)
       and audit documents (<code>audits/*.html</code>) aren't covered by a suffix convention yet &mdash;
       introduce one if and when it earns its keep, not speculatively.
     </p>
@@ -72,30 +72,33 @@
     </p>
     <p>
       The hyphen prefix names a <em>family</em>, not a brand (not <code>v4-title</code>): <code>spec-*</code>
-      for design-document types, <code>graph-*</code> for the six deciduous node types, mirroring the
-      project's own <code>graph/</code> directory. A root type is <code>&lt;family&gt;-&lt;type&gt;</code>;
+      for design-document types, <code>knowledge-*</code> for the six deciduous node types &mdash;
+      <code>knowledge</code>, not <code>graph</code>, because "graph" only names the shape (and most of this
+      project is graph-shaped, given every document links to others), while "knowledge" names what these six
+      types actually are: captured reasoning, not structure for its own sake. Mirrors the project's own
+      <code>knowledge/</code> directory of instances. A root type is <code>&lt;family&gt;-&lt;type&gt;</code>;
       its fields share only the family prefix, since fields belong to the family, not to one type within it
-      &mdash; every <code>graph-*</code> type shares <code>graph-title</code>, the same way every
+      &mdash; every <code>knowledge-*</code> type shares <code>knowledge-title</code>, the same way every
       <code>spec-*</code> type shares <code>spec-title</code>:
     </p>
-    <pre><code>&lt;template id="graph-goal"&gt;
-  &lt;graph-goal&gt;
-    &lt;graph-title&gt;&lt;/graph-title&gt;
-    &lt;graph-confidence&gt;&lt;/graph-confidence&gt;
-    &lt;graph-status&gt;&lt;/graph-status&gt;
-    &lt;graph-prompt&gt;&lt;/graph-prompt&gt;
-  &lt;/graph-goal&gt;
+    <pre><code>&lt;template id="knowledge-goal"&gt;
+  &lt;knowledge-goal&gt;
+    &lt;knowledge-title&gt;&lt;/knowledge-title&gt;
+    &lt;knowledge-confidence&gt;&lt;/knowledge-confidence&gt;
+    &lt;knowledge-status&gt;&lt;/knowledge-status&gt;
+    &lt;knowledge-prompt&gt;&lt;/knowledge-prompt&gt;
+  &lt;/knowledge-goal&gt;
 &lt;/template&gt;</code></pre>
     <p>Instance:</p>
-    <pre><code>&lt;graph-goal data-conforms-to="../templates/graph.template.html#graph-goal"&gt;
-  &lt;graph-title&gt;Build v4: knowledge graph as hypermedia&lt;/graph-title&gt;
-  &lt;graph-confidence&gt;85&lt;/graph-confidence&gt;
-  &lt;graph-status&gt;pending&lt;/graph-status&gt;
-  &lt;graph-prompt&gt;we are playing around with mycelium&hellip;&lt;/graph-prompt&gt;
-&lt;/graph-goal&gt;</code></pre>
+    <pre><code>&lt;knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal"&gt;
+  &lt;knowledge-title&gt;Build v4: knowledge graph as hypermedia&lt;/knowledge-title&gt;
+  &lt;knowledge-confidence&gt;85&lt;/knowledge-confidence&gt;
+  &lt;knowledge-status&gt;pending&lt;/knowledge-status&gt;
+  &lt;knowledge-prompt&gt;we are playing around with mycelium&hellip;&lt;/knowledge-prompt&gt;
+&lt;/knowledge-goal&gt;</code></pre>
     <p>
-      Validators query by tag instead of attribute: <code>root.querySelector('graph-title')</code>,
-      <code>root.querySelector('graph-confidence')</code>, and so on, the same pure-<code>check(root)</code>
+      Validators query by tag instead of attribute: <code>root.querySelector('knowledge-title')</code>,
+      <code>root.querySelector('knowledge-confidence')</code>, and so on, the same pure-<code>check(root)</code>
       shape <code>DESIGN.html</code>'s live demo already established.
     </p>
 
@@ -107,9 +110,9 @@
       normally, not generated by any tool: <code>theme.css</code>, the base look shared by every document in
       <code>experiments/v4/</code> regardless of type, and <code>templates/spec.template.css</code>, sibling
       to <code>spec.template.html</code>, holding only the <code>spec-*</code> family's own rendering rules.
-      A future <code>graph.template.css</code> would sit next to <code>graph.template.html</code> the same
+      A future <code>knowledge.template.css</code> would sit next to <code>knowledge.template.html</code> the same
       way. A document links both: this one pulls in <code>../theme.css</code> and
-      <code>../templates/spec.template.css</code>; if it later embeds an inline <code>graph-decision</code>,
+      <code>../templates/spec.template.css</code>; if it later embeds an inline <code>knowledge-decision</code>,
       it links that family's stylesheet too, the same way <code>data-conforms-to</code> already composes.
     </p>
     <p>
@@ -125,17 +128,17 @@
       absence for <code>option</code>/<code>outcome</code>/<code>observation</code> with a
       <code>nodeTypeSupportsStatus()</code> helper &mdash; the exact problem <code>DESIGN.html</code> names
       as the reason templates exist. Here, a type simply doesn't declare a field it doesn't need. (Table
-      shows field names without the <code>graph-</code> prefix for brevity; every field below is
-      <code>graph-&lt;name&gt;</code> in practice.)
+      shows field names without the <code>knowledge-</code> prefix for brevity; every field below is
+      <code>knowledge-&lt;name&gt;</code> in practice.)
     </p>
     <table>
       <tr><th>type</th><th>fields</th></tr>
-      <tr><td><code>graph-goal</code></td><td>title, confidence, status, prompt</td></tr>
-      <tr><td><code>graph-decision</code></td><td>title, confidence, status</td></tr>
-      <tr><td><code>graph-option</code></td><td>title, confidence</td></tr>
-      <tr><td><code>graph-action</code></td><td>title, confidence, status, commit, files, branch</td></tr>
-      <tr><td><code>graph-outcome</code></td><td>title, confidence, commit, files, branch</td></tr>
-      <tr><td><code>graph-observation</code></td><td>title, confidence</td></tr>
+      <tr><td><code>knowledge-goal</code></td><td>title, confidence, status, prompt</td></tr>
+      <tr><td><code>knowledge-decision</code></td><td>title, confidence, status</td></tr>
+      <tr><td><code>knowledge-option</code></td><td>title, confidence</td></tr>
+      <tr><td><code>knowledge-action</code></td><td>title, confidence, status, commit, files, branch</td></tr>
+      <tr><td><code>knowledge-outcome</code></td><td>title, confidence, commit, files, branch</td></tr>
+      <tr><td><code>knowledge-observation</code></td><td>title, confidence</td></tr>
     </table>
 
     <h2 id="field-vs-link">Field vs. link: not every need becomes a field</h2>
@@ -164,7 +167,7 @@
       own, is not a gap to close; it's the same honest default <code>DESIGN.html</code> already names for
       links themselves: a document that asserts nothing about some tangent contributes nothing queryable
       about that tangent specifically, and that's fine, not a degraded case. Apply the same instinct when
-      <code>graph.template.html</code> gets built: resist adding a field for something a link would serve
+      <code>knowledge.template.html</code> gets built: resist adding a field for something a link would serve
       just as well.
     </p>
 
@@ -172,10 +175,10 @@
     <p>
       <code>DESIGN.html</code>'s own example declares conformance with a <code>&lt;link rel="conforms-to"&gt;</code>
       in <code>&lt;head&gt;</code> &mdash; a claim about the document as a whole, one slot, exactly one type. That
-      doesn't compose: it can't sit next to a <code>&lt;graph-decision&gt;</code> nested inside this very
+      doesn't compose: it can't sit next to a <code>&lt;knowledge-decision&gt;</code> nested inside this very
       document's <code>&lt;spec-design&gt;</code> section, declaring conformance for just that one embedded
-      element (see the open question below about inline <code>&lt;graph-decision&gt;</code>/
-      <code>&lt;graph-observation&gt;</code> instances). So this document (and <code>spec.template.html</code>)
+      element (see the open question below about inline <code>&lt;knowledge-decision&gt;</code>/
+      <code>&lt;knowledge-observation&gt;</code> instances). So this document (and <code>spec.template.html</code>)
       instead declare conformance as a <code>data-conforms-to</code> attribute directly on the element
       making the claim &mdash; this document's own <code>&lt;spec-doc&gt;</code> tag carries it. A document
       can then have exactly one typed root and any number of typed elements nested inside it, each
@@ -188,7 +191,7 @@
       <code>blocks</code>, <code>supports</code>, <code>contradicts</code>, <code>alternative_to</code>,
       <code>leads_to</code>, used exactly as <code>DESIGN.html</code>'s
       <code>&lt;a data-rel="verifies" href="&hellip;"&gt;</code> example already shows.
-      <code>graph-option &rarr; parent graph-decision</code> uses <code>depends_on</code>, the closest
+      <code>knowledge-option &rarr; parent knowledge-decision</code> uses <code>depends_on</code>, the closest
       existing label; the dogfood chain below uses <code>leads_to</code> for its forward narrative. New
       labels get minted the same way <code>DESIGN.html</code> describes: as a project needs them, not from
       a fixed enum &mdash; this document mints <code>specifies</code> for the spec &rarr; action link
@@ -197,45 +200,45 @@
 
     <h2>Audits: proven against a fixture, not the real files</h2>
     <p>
-      <code>audits/graph-integrity.html</code> implements the two audits <code>DESIGN.html</code> names:
+      <code>audits/knowledge-integrity.html</code> implements the two audits <code>DESIGN.html</code> names:
     </p>
     <ul>
-      <li><b>orphans-except-goal</b> &mdash; every non-<code>graph-goal</code> node must have at least one
+      <li><b>orphans-except-goal</b> &mdash; every non-<code>knowledge-goal</code> node must have at least one
         edge (CLAUDE.md: "Root goal nodes are the ONLY valid orphans").</li>
-      <li><b>dangling-outcome</b> &mdash; every <code>graph-outcome</code> must have an edge back to what it
+      <li><b>dangling-outcome</b> &mdash; every <code>knowledge-outcome</code> must have an edge back to what it
         resolves (CLAUDE.md: "does every outcome link back to what caused it?").</li>
     </ul>
     <p>
       Both are pure functions over <code>{nodes: [{id, type, status}], edges: [{from, to, rel}]}</code>
-      &mdash; deliberately the shape a future crawler would emit by parsing <code>graph/*.html</code>. This
+      &mdash; deliberately the shape a future crawler would emit by parsing <code>knowledge/*.html</code>. This
       round proves them the way <code>DESIGN.html</code>'s own live demo proves the claim template: against
       a literal embedded sample array, PASS/FAIL rendered inline in the browser. They are <b>not</b> run
-      against the real <code>graph/</code> files &mdash; that needs fetching across documents, which is the
+      against the real <code>knowledge/</code> files &mdash; that needs fetching across documents, which is the
       crawler/<code>mycelium run</code> work this spec explicitly defers. The five real instance docs get
       <code>conforms-to</code> links and hand-verified-correct structure, not yet mechanically checked.
     </p>
 
     <h2>The five dogfood nodes</h2>
-    <p>v4's own decision trail so far, as graph nodes instead of <code>deciduous</code> rows:</p>
+    <p>v4's own decision trail so far, as knowledge nodes instead of <code>deciduous</code> rows:</p>
     <ol>
-      <li><code>goal-build-v4.html</code> &mdash; a <code>graph-goal</code>, "Build v4: knowledge graph as
-        hypermedia," with <code>graph-prompt</code> set to the verbatim message that opened this session.</li>
-      <li><code>decision-html-as-store.html</code> &mdash; a <code>graph-decision</code>, "HTML documents
+      <li><code>goal-build-v4.html</code> &mdash; a <code>knowledge-goal</code>, "Build v4: knowledge graph as
+        hypermedia," with <code>knowledge-prompt</code> set to the verbatim message that opened this session.</li>
+      <li><code>decision-html-as-store.html</code> &mdash; a <code>knowledge-decision</code>, "HTML documents
         as canonical store, not DB + Markdown," summarizing <code>DESIGN.html</code>'s core thesis.</li>
-      <li><code>action-write-design-html.html</code> &mdash; a <code>graph-action</code>, writing
+      <li><code>action-write-design-html.html</code> &mdash; a <code>knowledge-action</code>, writing
         <code>DESIGN.html</code>.</li>
-      <li><code>outcome-design-html-committed.html</code> &mdash; a <code>graph-outcome</code>, committed
-        as <code>9794442</code>, with <code>graph-commit</code> set accordingly.</li>
-      <li><code>action-write-template-series.html</code> &mdash; a <code>graph-action</code>, this task:
-        the template series plus this spec. Its <code>graph-outcome</code> node is added after the
+      <li><code>outcome-design-html-committed.html</code> &mdash; a <code>knowledge-outcome</code>, committed
+        as <code>9794442</code>, with <code>knowledge-commit</code> set accordingly.</li>
+      <li><code>action-write-template-series.html</code> &mdash; a <code>knowledge-action</code>, this task:
+        the template series plus this spec. Its <code>knowledge-outcome</code> node is added after the
         implementation actually lands, per CLAUDE.md's before/after logging rule, not written speculatively
         now.</li>
     </ol>
     <p>
-      Chained <code>graph-goal &rarr;leads_to&rarr; graph-decision &rarr;leads_to&rarr; graph-action
-      &rarr;leads_to&rarr; graph-outcome &rarr;leads_to&rarr; graph-action</code>. This document's
+      Chained <code>knowledge-goal &rarr;leads_to&rarr; knowledge-decision &rarr;leads_to&rarr; knowledge-action
+      &rarr;leads_to&rarr; knowledge-outcome &rarr;leads_to&rarr; knowledge-action</code>. This document's
       <code>specifies</code> edge below points at node 5 once it exists:
-      <a data-rel="specifies" href="../graph/action-write-template-series.html"><code>action-write-template-series.html</code></a>.
+      <a data-rel="specifies" href="../knowledge/action-write-template-series.html"><code>action-write-template-series.html</code></a>.
     </p>
 
     <h2>Spec docs are graph nodes too</h2>
@@ -265,14 +268,14 @@
 
   <spec-open-questions>
     <ul>
-      <li>What are the actual valid <code>graph-status</code> values for <code>graph-goal</code>/
-        <code>graph-decision</code>/<code>graph-action</code> instances? Every node inspected in the
+      <li>What are the actual valid <code>knowledge-status</code> values for <code>knowledge-goal</code>/
+        <code>knowledge-decision</code>/<code>knowledge-action</code> instances? Every node inspected in the
         existing <code>deciduous</code> graph so far shows <code>pending</code>; resolve by checking
-        deciduous's own source before writing <code>graph.template.html</code>'s validators, rather than
+        deciduous's own source before writing <code>knowledge.template.html</code>'s validators, rather than
         guessing an enum.</li>
-      <li>Once <code>graph.template.html</code> exists, should specific claims inside a spec's
+      <li>Once <code>knowledge.template.html</code> exists, should specific claims inside a spec's
         <code>&lt;spec-design&gt;</code> (like the two callouts above) be marked up as inline
-        <code>&lt;graph-decision&gt;</code>/<code>&lt;graph-observation&gt;</code> instances, rather than
+        <code>&lt;knowledge-decision&gt;</code>/<code>&lt;knowledge-observation&gt;</code> instances, rather than
         plain paragraphs? Left open rather than done here, since it can't properly conform to a template
         that doesn't exist yet.</li>
     </ul>
@@ -281,8 +284,8 @@
 
 <footer>
   Next: <code>superpowers:writing-plans</code>, to turn this into an implementation plan for
-  <code>templates/graph.template.html</code>, <code>audits/graph-integrity.html</code>, and the five
-  <code>graph/</code> instances.
+  <code>templates/knowledge.template.html</code>, <code>audits/knowledge-integrity.html</code>, and the five
+  <code>knowledge/</code> instances.
 </footer>
 
 </body>
