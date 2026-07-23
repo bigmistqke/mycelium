@@ -6,10 +6,16 @@
 
 import { readdirSync, statSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { join, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
-import { parseHTML } from "linkedom"
+import { Window } from "happy-dom"
 import "./runtime.js"
 
 const { loadModule } = globalThis.mycelium
+
+function parseHTML(html: string): { document: Document } {
+  const window = new Window()
+  window.document.write(html)
+  return { document: window.document as unknown as Document }
+}
 
 function walkHtmlFiles(dir: string): string[] {
   const results: string[] = []
@@ -102,10 +108,39 @@ class Filesystem {
   }
 }
 
+// Commands are discovered by their JSDoc, not a separate manifest: the
+// engine never needs to know what a command means, only where its doc
+// comment sits relative to its `export function` line.
+function extractCommandDocs(source: string): Map<string, string> {
+  const docs = new Map<string, string>()
+  const re = /\/\*\*([\s\S]*?)\*\/\s*export function (\w+)/g
+  for (const m of source.matchAll(re)) {
+    const body = m[1]
+      .split("\n")
+      .map((line) => line.replace(/^\s*\*\s?/, "").trimEnd())
+      .filter((line, i, arr) => !(line === "" && (i === 0 || i === arr.length - 1)))
+      .join("\n")
+    docs.set(m[2], body)
+  }
+  return docs
+}
+
+function printHelp(id: string, templateLabel: string, mod: Record<string, unknown>, source: string) {
+  const docs = extractCommandDocs(source)
+  const names = Object.keys(mod).filter((k) => typeof mod[k] === "function")
+  console.error(`commands for "${id}" (${templateLabel}):\n`)
+  for (const name of names) {
+    console.error(`  ${name}`)
+    const doc = docs.get(name)
+    console.error(doc ? doc.split("\n").map((l) => `    ${l}`.trimEnd()).join("\n") : "    (no JSDoc comment)")
+    console.error("")
+  }
+}
+
 async function main() {
   const [id, command, ...rest] = process.argv.slice(2)
-  if (!id || !command) {
-    console.error("usage: mycelium run <id> <command> [args…]")
+  if (!id) {
+    console.error("usage: mycelium run <id> <command> [args…]\n       mycelium run <id> --help")
     process.exit(1)
   }
 
@@ -115,18 +150,27 @@ async function main() {
     console.error(`no template file found for "${id}" (looked for ${id}.template.html)`)
     process.exit(1)
   }
+  const templateLabel = relativePath(docsDir, templateFile)
 
   const { document } = parseHTML(readFileSync(templateFile, "utf8"))
   const script = document.querySelector('script[type="mycelium/command"]')
   if (!script) {
-    console.error(`${relativePath(docsDir, templateFile)} has no <script type="mycelium/command">`)
+    console.error(`${templateLabel} has no <script type="mycelium/command">`)
     process.exit(1)
   }
 
-  const mod = await loadModule(script.textContent ?? "")
+  const source = script.textContent ?? ""
+  const mod = await loadModule(source)
+
+  if (!command || command === "--help" || command === "-h") {
+    printHelp(id, templateLabel, mod, source)
+    process.exit(command ? 0 : 1)
+  }
+
   const run = mod[command] as ((fs: Filesystem, args: ParsedArgs) => void | Promise<void>) | undefined
   if (typeof run !== "function") {
-    console.error(`${relativePath(docsDir, templateFile)} has no "${command}" command`)
+    console.error(`${templateLabel} has no "${command}" command\n`)
+    printHelp(id, templateLabel, mod, source)
     process.exit(1)
   }
 

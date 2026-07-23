@@ -12,6 +12,6 @@
     "mycelium": "node src/run.ts"
   },
   "dependencies": {
-    "linkedom": "^0.18.13"
+    "happy-dom": "^20.11.0"
   }
 }

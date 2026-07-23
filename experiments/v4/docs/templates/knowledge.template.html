@@ -532,21 +532,27 @@
   <a href="../specs/2026-07-23-mycelium-authoring-commands.spec.html">the design spec</a> for why this is
   one script per template file rather than one per command or per type, and why
   <code>type="mycelium/command"</code> instead of <code>type="module"</code>. Never run in a browser: no
-  live demo below, unlike every <code>data-validates</code>/<code>data-audits</code> script above.
+  live demo below, unlike every <code>data-validates</code>/<code>data-audits</code> script above. Each
+  command's own <code>/** &hellip; */</code> comment is its only documentation &mdash;
+  <code>mycelium run knowledge --help</code> (or an unrecognized command) prints every exported command's
+  name and doc comment straight from this file, so the usage shown here and the usage the CLI reports can
+  never drift apart.
 </p>
 <script type="mycelium/command">
   const REQUIRES_STATUS = ['goal', 'decision', 'action']
 
-  // linkedom's outerHTML doesn't escape a <title> element's text content
-  // when serializing (verified: .textContent stores the raw string
-  // correctly, but outerHTML dumps it back unescaped) - real elements
-  // like knowledge-title don't have this gap, only title itself does,
-  // being an RCDATA element. Pre-escape before assignment rather than
-  // relying on serialization to do it.
-  function escapeHtml(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  }
-
+  /**
+   * Create a new knowledge-<type> node file.
+   *
+   *   mycelium run knowledge add <type> --title "…" --confidence NN --file <slug>
+   *     [--status pending|active|completed|rejected] [--prompt "…"]
+   *     [--commit HASH] [--files "…"] [--branch NAME]
+   *
+   * <type> is one of goal|decision|option|action|outcome|observation.
+   * --status only applies to goal/decision/action (default "pending").
+   * --prompt only applies to goal. --file is required and becomes
+   * knowledge/<slug>.<type>.html.
+   */
   export function add(fs, args) {
     const type = args._[0]
     const doc = fs.create(`knowledge/${args.file}.${type}.html`, `<!DOCTYPE html>
@@ -568,7 +574,7 @@
 `)
 
     const pageTitle = `${type[0].toUpperCase()}${type.slice(1)}: ${args.title}`
-    doc.querySelector('title').textContent = escapeHtml(pageTitle)
+    doc.querySelector('title').textContent = pageTitle
 
     const root = doc.querySelector(`knowledge-${type}`)
     const field = (tag, text) => {
@@ -587,6 +593,17 @@
     field('knowledge-branch', args.branch)
   }
 
+  /**
+   * Add a data-rel edge from one existing node to another.
+   *
+   *   mycelium run knowledge link <from-file> <to-file> --rel <rel> [--label "…"]
+   *
+   * <rel> is one of depends_on|blocks|supports|contradicts|alternative_to|
+   * leads_to, or a new label if the project genuinely needs one — the
+   * vocabulary is open. Appends
+   * <a data-rel="<rel>" href="<relative path to to-file>">label</a>
+   * to <from-file>, right before its closing tag.
+   */
   export function link(fs, args) {
     const doc = fs.get(`knowledge/${args._[0]}`)
     const root = doc.querySelector('[data-conforms-to]')

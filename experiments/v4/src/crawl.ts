@@ -4,10 +4,16 @@
 
 import { readdirSync, statSync, readFileSync } from "node:fs"
 import { join, dirname, resolve as resolvePath } from "node:path"
-import { parseHTML } from "linkedom"
+import { Window } from "happy-dom"
 import "./runtime.js"
 
 const { loadCheck } = globalThis.mycelium
+
+function parseHTML(html: string): { document: Document } {
+  const window = new Window()
+  window.document.write(html)
+  return { document: window.document as unknown as Document }
+}
 
 interface ParsedDoc {
   path: string
