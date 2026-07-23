@@ -4,121 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Template: spec-doc</title>
-<style>
-  :root {
-    color-scheme: light dark;
-    --bg: #ffffff;
-    --fg: #1a1a1a;
-    --muted: #5a5a5a;
-    --border: #ddd;
-    --code-bg: #f5f5f5;
-    --accent: #7b3fe4;
-    --pass: #1a7f37;
-    --fail: #cf222e;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #16161a;
-      --fg: #e8e6e3;
-      --muted: #9a9a9a;
-      --border: #333;
-      --code-bg: #1f1f24;
-      --accent: #b18cff;
-      --pass: #4ade80;
-      --fail: #ff6b6b;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    background: var(--bg);
-    color: var(--fg);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    line-height: 1.6;
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 2.5rem 1.5rem 6rem;
-  }
-  h1 { font-size: 1.7rem; margin-bottom: 0.25rem; }
-  h2 {
-    font-size: 1.15rem;
-    margin-top: 3rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
-  }
-  .meta {
-    color: var(--muted);
-    font-size: 0.9rem;
-    margin-bottom: 2rem;
-  }
-  .meta div { margin: 0.15rem 0; }
-  .meta b { color: var(--fg); }
-  code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    background: var(--code-bg);
-    padding: 0.1em 0.35em;
-    border-radius: 4px;
-    font-size: 0.9em;
-  }
-  pre {
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem;
-    overflow-x: auto;
-  }
-  pre code { background: none; padding: 0; font-size: 0.85em; }
-  .live-demo {
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    padding: 1.25rem;
-    margin: 1.25rem 0;
-  }
-  .live-demo h4 {
-    margin-top: 0;
-    color: var(--accent);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  #validator-output {
-    font-weight: 600;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-  }
-  #validator-output.pass { color: var(--pass); background: color-mix(in srgb, var(--pass) 15%, transparent); }
-  #validator-output.fail { color: var(--fail); background: color-mix(in srgb, var(--fail) 15%, transparent); }
-
-  /* The spec-* field vocabulary. Every tag is hyphenated so it can never
-     collide with a current or future standard HTML element, and so it
-     could later be registered as a real custom element if that's ever
-     useful. Selectors stay scoped under spec-doc so this file's rules can
-     never leak onto another template's same-named field tags. */
-  spec-doc {
-    display: block;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1.25rem 1.5rem;
-    background: var(--code-bg);
-    margin: 1.25rem 0;
-  }
-  spec-doc > spec-title { display: block; font-weight: 700; font-size: 1.5rem; margin-bottom: 0.35rem; }
-  spec-doc > spec-status, spec-doc > spec-date { display: inline-block; margin-right: 1rem; color: var(--muted); font-size: 0.9rem; }
-  spec-doc > spec-status::before { content: "status: "; }
-  spec-doc > spec-date::before { content: "date: "; }
-  spec-doc > spec-problem, spec-doc > spec-design, spec-doc > spec-out-of-scope, spec-doc > spec-open-questions { display: block; margin-top: 1.5rem; }
-  spec-doc > spec-problem::before, spec-doc > spec-design::before, spec-doc > spec-out-of-scope::before, spec-doc > spec-open-questions::before {
-    display: block;
-    color: var(--accent);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
-  }
-  spec-doc > spec-problem::before { content: "problem"; }
-  spec-doc > spec-design::before { content: "design"; }
-  spec-doc > spec-out-of-scope::before { content: "out of scope"; }
-  spec-doc > spec-open-questions::before { content: "open questions"; }
-</style>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="./spec.template.css">
 </head>
 <body>
 
@@ -132,6 +19,8 @@
   <div><b>Purpose:</b> the shape a design/brainstorming document takes when written as a v4 node instead of Markdown</div>
   <div><b>Sibling of:</b> <code>graph.template.html</code>, one file holding all six deciduous node-type
     templates (<code>graph-goal</code> through <code>graph-observation</code>)</div>
+  <div><b>Styling:</b> <code>./spec.template.css</code>, this family's own rendering rules, plus the shared
+    <code>../theme.css</code> every document links</div>
 </div>
 
 <h2>Why this template exists</h2>
@@ -221,6 +110,15 @@
   <code>spec-status</code> tracks the brainstorming skill's own lifecycle: <code>draft</code> while under
   discussion, <code>approved</code> once the user signs off on the design, <code>implemented</code> once
   the plan it led to has shipped.
+</p>
+<p>
+  This isn't license to keep growing the field list, though. A field earns its place when the same question
+  should be askable across every <code>spec-doc</code> without opening each one by hand; a one-off
+  reference &mdash; a runnable experiment, a scratch calculation, anything tangential worth reaching from
+  here but not worth every spec having a slot for &mdash; stays a plain <code>data-rel</code> link, inside
+  <code>spec-design</code> or even outside <code>&lt;spec-doc&gt;</code> entirely. See "Field vs. link" in
+  <a data-rel="elaborates" href="../specs/2026-07-23-deciduous-template-series.spec.html#field-vs-link">the
+  design spec for this template series</a> for the fuller version of that distinction.
 </p>
 
 <h2>Validator</h2>
