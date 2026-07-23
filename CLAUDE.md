@@ -15,18 +15,35 @@ history, still queryable read-only via the `deciduous` CLI, just no longer
 where new work gets logged. Full reasoning:
 `experiments/v4/docs/specs/2026-07-23-deciduous-template-series.spec.html`.
 
-There is no CLI for this yet — `mycelium run` and the crawler are
-deliberately deferred (see `experiments/v4/docs/DESIGN.html`'s roadmap). Logging
-a decision means hand-authoring an HTML file. Copying the closest existing
-node under `experiments/v4/docs/knowledge/` as a starting point is the fastest
-correct way to do this.
+**Use the CLI to log, don't hand-author.** As of this same day, both halves of
+`mycelium run` exist and are tested working:
+
+```bash
+pnpm --filter @mycelium/v4 mycelium knowledge add <type> --title "…" --confidence NN [--status S] [--prompt "…"] [--commit HASH] --file <slug>
+pnpm --filter @mycelium/v4 mycelium knowledge link <from-file> <to-file> --rel <rel> --label "…"
+```
+(`--filter @mycelium/v4` works from anywhere in the repo; drop it and just run
+`pnpm mycelium ...` if already inside `experiments/v4/`.)
+
+This replaces the Write/Read+Edit dance for every node/edge `knowledge-*`
+covers — no file content passes through the model doing the logging, same
+as `deciduous add`/`deciduous link` never did. Two real gaps, not silently
+papered over: it only covers the `knowledge-*` family (`spec.template.html`
+has no `type="mycelium/command"` script yet, spec docs still need hand-authoring),
+and `add` only sets fields at creation time — updating a field on an
+already-existing node (e.g. adding `<knowledge-commit>` to an action node
+written before its commit existed) still means a direct edit. Fall back to
+hand-authoring only for those two cases; copying the closest existing node
+under `experiments/v4/docs/knowledge/` as a starting point is still the
+fastest correct way to do that. Full design:
+`experiments/v4/docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`.
 
 ### The Core Rule
 
 ```
-BEFORE you do something -> Write a knowledge-goal or knowledge-action node
-AFTER it succeeds/fails  -> Write a knowledge-outcome node
-CONNECT immediately      -> <a data-rel="..."> from the new node to its parent
+BEFORE you do something -> `pnpm mycelium knowledge add goal|action ...`
+AFTER it succeeds/fails  -> `pnpm mycelium knowledge add outcome ...`
+CONNECT immediately      -> `pnpm mycelium knowledge link <from> <to> --rel ...`
 AUDIT regularly          -> Check for missing connections (see below)
 ```
 
@@ -85,9 +102,9 @@ experiments/v4/docs/knowledge/<slug>.<type>.html   (type = goal|decision|option|
 
 **Root `knowledge-goal` nodes are the ONLY valid orphans** — exactly what
 `orphans-except-goal` (one of `knowledge.template.html`'s two collocated
-audits) checks for. It isn't wired to run against real files yet (that's
-crawler work), so this is still a human judgment call for now, not an
-automated gate.
+audits) checks for, now for real: `pnpm crawl` runs it against the actual
+files, not just sample markup. Still worth checking by eye before a crawl,
+but it's an automated gate now, not just a judgment call.
 
 The six `data-rel` edge labels, unchanged from deciduous:
 `depends_on`, `blocks`, `supports`, `contradicts`, `alternative_to`,
@@ -125,23 +142,27 @@ does this on purpose.
 
 ### Audit Checklist (Before Every Commit)
 
-Same three questions deciduous asked, still manual until the crawler exists:
+Same three questions deciduous asked. The first two are automated now —
+`pnpm crawl` runs `dangling-outcome` and `orphans-except-goal` against the
+real files:
 
-1. Does every **knowledge-outcome** link back to what caused it?
-2. Does every **knowledge-action** link to why you did it?
-3. Any dangling nodes, besides root goals?
+1. Does every **knowledge-outcome** link back to what caused it? (`dangling-outcome`)
+2. Any dangling nodes, besides root goals? (`orphans-except-goal`)
+3. Does every **knowledge-action** link to why you did it? Still a judgment
+   call — no audit checks "why," only "is it connected at all."
 
 ### Session Start Checklist
 
 ```bash
-ls experiments/v4/docs/knowledge/                     # what nodes exist?
-grep -l 'data-rel' experiments/v4/docs/knowledge/*.html   # rough connectivity
+pnpm --filter @mycelium/v4 crawl                 # every node, validated for real, both audits run
 git status                                       # current state
 ```
-Coarser than `deciduous nodes`/`deciduous edges` were — there's no crawler
-yet to answer "which outcome has no incoming edge" as a single command.
-That's exactly what `mycelium run` + the crawler will give back, deferred
-on purpose (`DESIGN.html`'s roadmap, step 3).
+`pnpm crawl` now answers most of what `deciduous nodes`/`deciduous edges`
+did — it validates every instance against its own template and runs both
+graph-wide audits against the real files, not sample fixtures. What it
+still doesn't do: print a clean list of nodes/edges the way `deciduous
+nodes`/`deciduous edges` did (it reports pass/fail, not an enumeration) —
+a real, narrower gap than "no crawler," not the same gap.
 
 ### What deciduous still has, that this doesn't (yet)
 

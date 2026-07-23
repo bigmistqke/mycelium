@@ -8,7 +8,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "crawl": "node src/crawl.ts"
+    "crawl": "node src/crawl.ts",
+    "mycelium": "node src/run.ts"
   },
   "dependencies": {
     "linkedom": "^0.18.13"

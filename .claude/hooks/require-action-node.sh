@@ -45,18 +45,20 @@ cat >&2 << 'EOF'
 +===================================================================+
 |  KNOWLEDGE GRAPH: No recent goal/action node found                |
 +===================================================================+
-|  Before editing files, log what you're about to do:               |
+|  Before editing files, log what you're about to do. Use the CLI,  |
+|  don't hand-author:                                                |
 |                                                                   |
-|  For new work, write:                                             |
-|    experiments/v4/docs/knowledge/<slug>.goal.html                      |
-|    conforming to knowledge-goal (see knowledge.template.html)     |
+|  For new work:                                                    |
+|    pnpm --filter @mycelium/v4 mycelium knowledge add goal \       |
+|      --title "..." --confidence NN --prompt "..." --file <slug>   |
 |                                                                   |
-|  For implementation, write:                                       |
-|    experiments/v4/docs/knowledge/<slug>.action.html                    |
-|    conforming to knowledge-action                                 |
+|  For implementation:                                              |
+|    pnpm --filter @mycelium/v4 mycelium knowledge add action \     |
+|      --title "..." --confidence NN --file <slug>                  |
 |                                                                   |
 |  Then link it to its parent immediately:                          |
-|    <a data-rel="leads_to" href="./parent.type.html">…</a>         |
+|    pnpm --filter @mycelium/v4 mycelium knowledge link <new> \     |
+|      <parent> --rel depends_on --label "..."                      |
 +===================================================================+
 EOF
 

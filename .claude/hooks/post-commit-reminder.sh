@@ -30,14 +30,17 @@ cat >&2 << EOF
 +===================================================================+
 |  Commit: $commit_hash "$commit_msg"
 |                                                                   |
-|  Write or update a knowledge-outcome node:                        |
-|    experiments/v4/docs/knowledge/<slug>.outcome.html                   |
-|    <knowledge-commit>$commit_hash</knowledge-commit>
+|  Closing out an action you already logged? Add the hash to its    |
+|  <knowledge-commit> field by hand - the CLI only creates new       |
+|  nodes, it doesn't update existing ones yet.                      |
 |                                                                   |
-|  Or if this was mid-work (not a completed outcome), a              |
-|  knowledge-action node instead, same field.                       |
+|  New outcome node instead, use the CLI, don't hand-author:        |
+|    pnpm --filter @mycelium/v4 mycelium knowledge add outcome \\    |
+|      --title "..." --confidence NN --commit $commit_hash --file <slug>
 |                                                                   |
-|  Either way, link it: <a data-rel="leads_to" href="./parent…">    |
+|  Either way, link it:                                             |
+|    pnpm --filter @mycelium/v4 mycelium knowledge link <from> <to> \\
+|      --rel leads_to --label "..."
 +===================================================================+
 EOF
 

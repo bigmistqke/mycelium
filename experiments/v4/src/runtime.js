@@ -11,7 +11,11 @@
 
 globalThis.mycelium = globalThis.mycelium || {}
 
+globalThis.mycelium.loadModule = async function loadModule(scriptSource) {
+  return await import(`data:text/javascript,${encodeURIComponent(scriptSource)}`)
+}
+
 globalThis.mycelium.loadCheck = async function loadCheck(scriptSource) {
-  const mod = await import(`data:text/javascript,${encodeURIComponent(scriptSource)}`)
+  const mod = await globalThis.mycelium.loadModule(scriptSource)
   return mod.check
 }

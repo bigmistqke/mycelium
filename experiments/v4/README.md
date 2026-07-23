@@ -13,11 +13,12 @@ docs/            every document — templates, specs, and the real knowledge gra
   templates/     knowledge.template.html, spec.template.html — the two node vocabularies
   specs/         design specs, themselves conforming to spec.template.html
   knowledge/     the real graph: this project's own decision history
-src/             the crawler — Node-only, reads docs/, never opened as a webpage
-  crawl.ts
-  runtime.js     shared script-execution helper (loadCheck), loaded by both
-                 crawl.ts and one browser-facing live demo — no `export`,
-                 on purpose, see "Opening the documents directly" below
+src/             Node-only, reads/writes docs/, never opened as a webpage
+  crawl.ts       reads: validate + audit every document
+  run.ts         writes: `run <id> <command> [args]`, template-declared authoring
+  runtime.js     shared script-execution helper, loaded by crawl.ts, run.ts,
+                 and one browser-facing live demo — no `export`, on purpose,
+                 see "Opening the documents directly" below
   runtime.d.ts   types for runtime.js's globalThis.mycelium, editor-only
 ```
 
@@ -39,6 +40,20 @@ fixtures. The crawler has no built-in notion of what a "goal" or an "edge"
 is; it only knows the templating protocol (`<template>`,
 `data-conforms-to`, `data-validates`, `data-audits`). Full design:
 [`docs/specs/2026-07-23-mycelium-crawler.spec.html`](docs/specs/2026-07-23-mycelium-crawler.spec.html).
+
+## Writing a new node or edge
+
+```sh
+node src/run.ts <id> <command> [args…]   # `pnpm run` would collide with pnpm's own command
+node src/run.ts knowledge add goal --title "…" --confidence 85 --file build-v4
+node src/run.ts knowledge link build-v4.goal.html html-as-store.decision.html --rel leads_to --label "…"
+```
+
+`<id>` always resolves to `docs/templates/<id>.template.html`; `<command>` is a named export of that
+file's one `<script type="mycelium/command">`. The engine only knows how to find and run that script —
+what `add`/`link` actually do (field shape, where edges go) is declared inside
+`knowledge.template.html` itself, not the engine. Full design:
+[`docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`](docs/specs/2026-07-23-mycelium-authoring-commands.spec.html).
 
 ## Opening the documents directly
 
