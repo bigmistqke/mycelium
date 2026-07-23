@@ -21,22 +21,27 @@ where new work gets logged. Full reasoning:
 ```bash
 pnpm --filter @mycelium/v4 mycelium knowledge add <type> --title "…" --confidence NN [--status S] [--prompt "…"] [--commit HASH] --file <slug>
 pnpm --filter @mycelium/v4 mycelium knowledge link <from-file> <to-file> --rel <rel> --label "…"
+pnpm --filter @mycelium/v4 mycelium knowledge update <file> [--title "…"] [--confidence NN] [--status S] [--prompt "…"] [--commit HASH] [--files "…"] [--branch NAME]
 ```
 (`--filter @mycelium/v4` works from anywhere in the repo; drop it and just run
 `pnpm mycelium ...` if already inside `experiments/v4/`.)
 
 This replaces the Write/Read+Edit dance for every node/edge `knowledge-*`
 covers — no file content passes through the model doing the logging, same
-as `deciduous add`/`deciduous link` never did. Two real gaps, not silently
-papered over: it only covers the `knowledge-*` family (`spec.template.html`
-has no `type="mycelium/command"` script yet, spec docs still need hand-authoring),
-and `add` only sets fields at creation time — updating a field on an
-already-existing node (e.g. adding `<knowledge-commit>` to an action node
-written before its commit existed) still means a direct edit. Fall back to
-hand-authoring only for those two cases; copying the closest existing node
-under `experiments/v4/docs/knowledge/` as a starting point is still the
-fastest correct way to do that. Full design:
-`experiments/v4/docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`.
+as `deciduous add`/`deciduous link` never did. `add` creates a node,
+`link` connects two, `update` fills in or clears a field on one that
+already exists (e.g. adding `<knowledge-commit>` to an action node once
+its commit exists) — the field-update gap this section used to name here
+is closed. One real gap remains, not silently papered over: it only
+covers the `knowledge-*` family — `spec.template.html` has no
+`type="mycelium/command"` script yet, so spec docs still need
+hand-authoring. Copying the closest existing spec under
+`experiments/v4/docs/specs/` as a starting point is still the fastest
+correct way to do that. Full design:
+`experiments/v4/docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`
+(commands) and
+`experiments/v4/docs/specs/2026-07-23-mycelium-update-command.spec.html`
+(`update`, and the closed-schema validator check that backs it).
 
 ### The Core Rule
 
@@ -120,10 +125,11 @@ usually means editing the node you already wrote, not writing a new one.**
 ```bash
 git commit -m "feat: add auth"
 ```
-Edit the `knowledge-action` node this commit belongs to and set:
-```html
-<knowledge-commit>HEAD's short hash</knowledge-commit>
-<knowledge-branch>main</knowledge-branch>
+
+Then update the `knowledge-action` node this commit belongs to — via the CLI, not a hand edit:
+
+```bash
+pnpm --filter @mycelium/v4 mycelium knowledge update <action-file> --commit <HEAD's short hash> --branch main
 ```
 A **new** `knowledge-outcome` node is for reporting something not already
 evident from the action: a result that differs from what was planned, a
