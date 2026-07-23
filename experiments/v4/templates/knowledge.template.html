@@ -296,34 +296,42 @@
 
 <div class="live-demo">
   <h4>This section actually runs</h4>
-  <p>One sample instance per type, checked by that type's validator above.</p>
+  <p>
+    One sample instance per type, checked by that type's validator above. Wired together with real
+    <code>data-rel</code> edges, not just sitting side by side &mdash; the graph-wide audits below parse
+    <em>this exact markup</em> for their input, nothing hand-typed.
+  </p>
 
   <div id="sample-instances" style="display:none">
-    <knowledge-goal data-conforms-to="./knowledge.template.html#knowledge-goal">
+    <knowledge-goal id="sample-goal" data-conforms-to="./knowledge.template.html#knowledge-goal">
       <knowledge-title>Sample goal</knowledge-title>
       <knowledge-confidence>85</knowledge-confidence>
       <knowledge-status>active</knowledge-status>
+      <a data-rel="leads_to" href="#sample-decision">leads to the sample decision</a>
     </knowledge-goal>
-    <knowledge-decision data-conforms-to="./knowledge.template.html#knowledge-decision">
+    <knowledge-decision id="sample-decision" data-conforms-to="./knowledge.template.html#knowledge-decision">
       <knowledge-title>Sample decision</knowledge-title>
       <knowledge-confidence>80</knowledge-confidence>
       <knowledge-status>pending</knowledge-status>
+      <a data-rel="leads_to" href="#sample-action">leads to the sample action</a>
     </knowledge-decision>
-    <knowledge-option data-conforms-to="./knowledge.template.html#knowledge-option">
+    <knowledge-option id="sample-option" data-conforms-to="./knowledge.template.html#knowledge-option">
       <knowledge-title>Sample option</knowledge-title>
       <knowledge-confidence>40</knowledge-confidence>
+      <a data-rel="depends_on" href="#sample-decision">considered for the sample decision</a>
     </knowledge-option>
-    <knowledge-action data-conforms-to="./knowledge.template.html#knowledge-action">
+    <knowledge-action id="sample-action" data-conforms-to="./knowledge.template.html#knowledge-action">
       <knowledge-title>Sample action</knowledge-title>
       <knowledge-confidence>90</knowledge-confidence>
       <knowledge-status>completed</knowledge-status>
       <knowledge-commit>abc1234</knowledge-commit>
     </knowledge-action>
-    <knowledge-outcome data-conforms-to="./knowledge.template.html#knowledge-outcome">
+    <knowledge-outcome id="sample-outcome" data-conforms-to="./knowledge.template.html#knowledge-outcome">
       <knowledge-title>Sample outcome</knowledge-title>
       <knowledge-confidence>92</knowledge-confidence>
+      <a data-rel="leads_to" href="#sample-action">deliberately outgoing-only, see the audits below</a>
     </knowledge-outcome>
-    <knowledge-observation data-conforms-to="./knowledge.template.html#knowledge-observation">
+    <knowledge-observation id="sample-observation" data-conforms-to="./knowledge.template.html#knowledge-observation">
       <knowledge-title>Sample observation</knowledge-title>
       <knowledge-confidence>70</knowledge-confidence>
     </knowledge-observation>
@@ -371,6 +379,121 @@
     const out = document.getElementById('validator-output')
     out.textContent = lines.join('\n')
     out.className = lines.every(l => l.startsWith('PASS')) ? 'pass' : 'fail'
+  </script>
+</div>
+
+<h2>Graph-wide audits</h2>
+<p>
+  <a href="../DESIGN.html">DESIGN.html</a> makes the case that a graph-wide audit isn't a separate
+  constraint language, it's a script &mdash; the same kind of script that validates one instance against
+  one template, just pointed at the whole node/edge set instead of one element. These two live here, next
+  to the six types, rather than in a file of their own: both only ever concern relationships between
+  <code>knowledge-*</code> types, a family already bundled in this one file, so there's nothing to link
+  across and nothing gained by separating them. A future audit that spans <em>two</em> families &mdash; say,
+  checking a <code>spec-doc</code>'s <code>specifies</code> edge actually resolves to a real
+  <code>knowledge-action</code> &mdash; would earn its own file, since neither family's template file could
+  host it without redeclaring the other's types. Neither audit below is that.
+</p>
+<p>
+  The convention: <code>data-validates="#id"</code> marks a script checking one instance against one
+  template (<code>check(root)</code>); <code>data-audits="name"</code> marks a script checking the whole
+  graph (<code>check(nodes, edges)</code>), with <code>data-touches</code> listing which types it concerns
+  &mdash; queryable the same way <code>data-rel</code> makes an edge queryable, instead of leaving it as
+  prose only a person reading this paragraph would know.
+</p>
+
+<h3>orphans-except-goal</h3>
+<p>
+  CLAUDE.md: "Root goal nodes are the ONLY valid orphans." Every node whose type isn't
+  <code>knowledge-goal</code> must appear in at least one edge, incoming or outgoing.
+</p>
+<script type="module" data-audits="orphans-except-goal" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
+  export function check(nodes, edges) {
+    const connected = new Set()
+    for (const e of edges) { connected.add(e.from); connected.add(e.to) }
+    const violations = nodes
+      .filter(n => n.type !== 'knowledge-goal' && !connected.has(n.id))
+      .map(n => n.id)
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<h3>dangling-outcome</h3>
+<p>
+  CLAUDE.md: "Does every outcome link back to what caused it?" Deliberately stricter than orphan-checking:
+  an outcome with only an <em>outgoing</em> edge (it leads somewhere, but nothing resolved <em>into</em> it)
+  would already pass <code>orphans-except-goal</code>, yet still be exactly the dangling case CLAUDE.md's
+  checklist means. So this checks specifically for an <em>incoming</em> edge, the way this project's own
+  <code>action &rarr;leads_to&rarr; outcome</code> links have worked all night.
+</p>
+<script type="module" data-audits="dangling-outcome" data-touches="knowledge-outcome">
+  export function check(nodes, edges) {
+    const resolved = new Set(edges.map(e => e.to))
+    const violations = nodes
+      .filter(n => n.type === 'knowledge-outcome' && !resolved.has(n.id))
+      .map(n => n.id)
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<div class="live-demo">
+  <h4>This section actually runs</h4>
+  <p>
+    No hand-typed fixture, and no hand-typed type list either: even the six type names below come from
+    <code>document.querySelectorAll('template[id^="knowledge-"]')</code>, not a retyped array &mdash; add a
+    seventh <code>&lt;template&gt;</code> to this file and this demo picks it up without being edited.
+    <code>nodes</code> and <code>edges</code> are extracted from the exact sample markup in the "Edges"
+    section above, the same way a future crawler would extract them from real <code>knowledge/*.html</code>
+    files: tag names for node types, <code>&lt;a data-rel&gt;</code> elements for edges. The samples were
+    wired so extraction still produces one real violation per audit: <code>sample-observation</code> has no
+    edges at all, and <code>sample-outcome</code> has only an outgoing edge (to
+    <code>sample-action</code>), nothing pointing into it.
+  </p>
+
+  <pre id="audit-output">running&hellip;</pre>
+
+  <script type="module">
+    const TYPES = [...document.querySelectorAll('template[id^="knowledge-"]')].map(t => t.id)
+
+    function extractGraph(container) {
+      const nodes = TYPES.flatMap(tag =>
+        [...container.querySelectorAll(tag)].map(el => ({ id: el.id, type: tag }))
+      )
+      const edges = [...container.querySelectorAll('a[data-rel]')].map(a => ({
+        from: a.closest(TYPES.join(','))?.id,
+        to: a.getAttribute('href').replace(/^#/, ''),
+        rel: a.dataset.rel,
+      }))
+      return { nodes, edges }
+    }
+
+    function checkOrphans(nodes, edges) {
+      const connected = new Set()
+      for (const e of edges) { connected.add(e.from); connected.add(e.to) }
+      const violations = nodes.filter(n => n.type !== 'knowledge-goal' && !connected.has(n.id)).map(n => n.id)
+      return { ok: violations.length === 0, violations }
+    }
+    function checkDangling(nodes, edges) {
+      const resolved = new Set(edges.map(e => e.to))
+      const violations = nodes.filter(n => n.type === 'knowledge-outcome' && !resolved.has(n.id)).map(n => n.id)
+      return { ok: violations.length === 0, violations }
+    }
+
+    const { nodes, edges } = extractGraph(document.getElementById('sample-instances'))
+    const orphans = checkOrphans(nodes, edges)
+    const dangling = checkDangling(nodes, edges)
+    const orphansExpected = ['sample-observation']
+    const danglingExpected = ['sample-outcome']
+    const orphansCorrect = JSON.stringify(orphans.violations.sort()) === JSON.stringify(orphansExpected)
+    const danglingCorrect = JSON.stringify(dangling.violations.sort()) === JSON.stringify(danglingExpected)
+
+    const lines = [
+      `orphans-except-goal: violations = [${orphans.violations.join(', ')}]  ${orphansCorrect ? 'PASS (matches expected)' : 'FAIL (expected [' + orphansExpected.join(', ') + '])'}`,
+      `dangling-outcome:    violations = [${dangling.violations.join(', ')}]  ${danglingCorrect ? 'PASS (matches expected)' : 'FAIL (expected [' + danglingExpected.join(', ') + '])'}`,
+    ]
+    const out = document.getElementById('audit-output')
+    out.textContent = lines.join('\n')
+    out.className = (orphansCorrect && danglingCorrect) ? 'pass' : 'fail'
   </script>
 </div>
 

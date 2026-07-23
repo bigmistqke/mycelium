@@ -33,13 +33,12 @@
   DESIGN.html
   theme.css              shared base look, linked by every document regardless of type
   templates/
-    knowledge.template.html   one file, all six deciduous node-type templates: knowledge-goal, knowledge-decision,
-                           knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation
+    knowledge.template.html   six deciduous node-type templates AND their two graph-wide audits, one file:
+                           knowledge-goal, knowledge-decision, knowledge-option, knowledge-action,
+                           knowledge-outcome, knowledge-observation, orphans-except-goal, dangling-outcome
     knowledge.template.css    the knowledge-* family's own rendering rules
     spec.template.html    the spec-doc template this document conforms to
     spec.template.css     the spec-* family's own rendering rules
-  audits/
-    knowledge-integrity.html   cross-template audits, proven against embedded fixture data
   knowledge/
     goal-build-v4.html
     decision-html-as-store.html
@@ -54,9 +53,10 @@
       for the <code>knowledge-*</code> family), not after any single type within it &mdash; the same file can
       hold several related <code>&lt;template&gt;</code> entries, addressed by fragment, the way
       <code>DESIGN.html</code>'s own worked example already does. Documents that conform to
-      <code>spec-doc</code> end in <code>.spec.html</code>. Knowledge instance nodes (<code>knowledge/*.html</code>)
-      and audit documents (<code>audits/*.html</code>) aren't covered by a suffix convention yet &mdash;
-      introduce one if and when it earns its keep, not speculatively.
+      <code>spec-doc</code> end in <code>.spec.html</code>. Knowledge instance nodes
+      (<code>knowledge/*.html</code>) aren't covered by a suffix convention yet &mdash; introduce one if and
+      when it earns its keep, not speculatively. There is no <code>audits/</code> directory: see "Audits
+      live with their family" below for why.
     </p>
 
     <h2>Tag vocabulary: hyphenated, family-prefixed</h2>
@@ -198,23 +198,43 @@
       below, and <code>elaborates</code> for the link to <code>DESIGN.html</code> above.
     </p>
 
-    <h2>Audits: proven against a fixture, not the real files</h2>
+    <h2>Audits live with their family</h2>
     <p>
-      <code>audits/knowledge-integrity.html</code> implements the two audits <code>DESIGN.html</code> names:
+      First built as a separate <code>audits/knowledge-integrity.html</code>, then folded into
+      <code>knowledge.template.html</code> itself once the reasoning for separating it didn't hold up:
+      "different scope" (checking one instance vs. checking the whole graph) argues for a different
+      <em>kind</em> of script, not a different file, and both audits below only ever concern relationships
+      between <code>knowledge-*</code> types &mdash; a family already bundled in one file on purpose. An
+      audit that spans <em>two</em> families (say, confirming a <code>spec-doc</code>'s
+      <code>specifies</code> edge resolves to a real <code>knowledge-action</code>) would still earn its own
+      file, since neither family's template file could host it without redeclaring the other's types.
+      Neither audit here is that, so there is no <code>audits/</code> directory.
+    </p>
+    <p>
+      The convention: <code>data-validates="#id"</code> marks a script checking one instance against one
+      template (<code>check(root)</code>, existing convention); <code>data-audits="name"</code> marks a
+      script checking the whole graph (<code>check(nodes, edges)</code>, new), with
+      <code>data-touches</code> listing which types it concerns &mdash; queryable the same way
+      <code>data-rel</code> makes an edge queryable, rather than left as prose only a reader would know.
     </p>
     <ul>
       <li><b>orphans-except-goal</b> &mdash; every non-<code>knowledge-goal</code> node must have at least one
         edge (CLAUDE.md: "Root goal nodes are the ONLY valid orphans").</li>
       <li><b>dangling-outcome</b> &mdash; every <code>knowledge-outcome</code> must have an edge back to what it
-        resolves (CLAUDE.md: "does every outcome link back to what caused it?").</li>
+        resolves (CLAUDE.md: "does every outcome link back to what caused it?"), deliberately stricter than
+        orphan-checking: an outcome with only an <em>outgoing</em> edge already passes
+        <code>orphans-except-goal</code> but is still exactly the dangling case CLAUDE.md means.</li>
     </ul>
     <p>
-      Both are pure functions over <code>{nodes: [{id, type, status}], edges: [{from, to, rel}]}</code>
-      &mdash; deliberately the shape a future crawler would emit by parsing <code>knowledge/*.html</code>. This
-      round proves them the way <code>DESIGN.html</code>'s own live demo proves the claim template: against
-      a literal embedded sample array, PASS/FAIL rendered inline in the browser. They are <b>not</b> run
-      against the real <code>knowledge/</code> files &mdash; that needs fetching across documents, which is the
-      crawler/<code>mycelium run</code> work this spec explicitly defers. The five real instance docs get
+      Both are pure functions over <code>{nodes: [{id, type}], edges: [{from, to, rel}]}</code> &mdash;
+      deliberately the shape a future crawler would emit by parsing <code>knowledge/*.html</code>. Proven
+      live, but not against a hand-typed fixture and not against the real <code>knowledge/</code> files
+      either: <code>knowledge.template.html</code>'s own sample instances (one per type, already there to
+      prove each per-instance validator) are wired together with real <code>data-rel</code> edges, and the
+      audit demo extracts <code>nodes</code>/<code>edges</code> straight out of that markup &mdash; even the
+      six type names come from <code>document.querySelectorAll('template[id^="knowledge-"]')</code>, not a
+      retyped list. That's a closer preview of the eventual crawler than a JS array fixture would be, short
+      of actually fetching across files, which stays deferred. The five real instance docs get
       <code>conforms-to</code> links and hand-verified-correct structure, not yet mechanically checked.
     </p>
 
@@ -260,9 +280,11 @@
     <ul>
       <li><b>No <code>mycelium run</code>.</b> Deferred by <code>DESIGN.html</code>'s own roadmap.</li>
       <li><b>No crawler/index.</b> Same deferral; nothing here fetches across documents.</li>
-      <li><b>No live validation of the real instance docs.</b> The five dogfood nodes and the audits are
-        correct by hand-inspection and by the embedded-fixture proof respectively, not mechanically checked
-        against each other. That mechanical check is exactly what the crawler gives later.</li>
+      <li><b>No live validation of the real instance docs.</b> The audits are proven against
+        <code>knowledge.template.html</code>'s own sample markup, not the real <code>knowledge/</code>
+        files, which don't exist yet. The five dogfood nodes below, once written, are correct by
+        hand-inspection, not mechanically checked against the audits. That mechanical check &mdash; the
+        audits running for real, against real files &mdash; is exactly what the crawler gives later.</li>
     </ul>
   </spec-out-of-scope>
 
@@ -278,8 +300,8 @@
 </spec-doc>
 
 <footer>
-  <code>templates/knowledge.template.html</code> is built. Next: <code>audits/knowledge-integrity.html</code>
-  and the five <code>knowledge/</code> instances.
+  <code>templates/knowledge.template.html</code> is built, six types and their two graph-wide audits
+  together. Next: the five real <code>knowledge/</code> instances.
 </footer>
 
 </body>
