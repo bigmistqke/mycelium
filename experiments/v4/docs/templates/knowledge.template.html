@@ -684,6 +684,50 @@
     field('knowledge-files', args.files)
     field('knowledge-branch', args.branch)
   }
+
+  /**
+   * List every node or edge in the real knowledge graph (docs/knowledge/).
+   *
+   *   mycelium run knowledge list nodes
+   *   mycelium run knowledge list edges
+   *
+   * nodes: one line per file — path, type (read off the root element's
+   * own tag name), status (blank if the type has none), title.
+   * edges: one line per <a data-rel> found — source file, rel, href,
+   * label text.
+   */
+  export function list(fs, args) {
+    const kind = args._[0]
+    const documents = fs.list('knowledge')
+
+    if (kind === 'nodes') {
+      for (const { path, doc } of documents) {
+        const el = doc.querySelector('[data-conforms-to]')
+        if (!el) continue
+        const type = el.tagName.toLowerCase()
+        const family = type.split('-')[0]
+        const title = el.querySelector(`${family}-title`)?.textContent.trim() ?? ''
+        const status = el.querySelector(`${family}-status`)?.textContent.trim() ?? ''
+        console.log(`${path}\t${type}\t${status}\t${title}`)
+      }
+      return
+    }
+
+    if (kind === 'edges') {
+      for (const { path, doc } of documents) {
+        const el = doc.querySelector('[data-conforms-to]')
+        if (!el) continue
+        for (const a of el.querySelectorAll('a[data-rel]')) {
+          const rel = a.getAttribute('data-rel')
+          const href = a.getAttribute('href')
+          console.log(`${path}  --${rel}-->  ${href}  ${a.textContent.trim()}`)
+        }
+      }
+      return
+    }
+
+    console.error(`unknown list kind "${kind}" — expected "nodes" or "edges"`)
+  }
 </script>
 
 <h2>Conformance</h2>
