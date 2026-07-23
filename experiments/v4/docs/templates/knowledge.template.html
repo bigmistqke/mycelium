@@ -537,6 +537,16 @@
 <script type="mycelium/command">
   const REQUIRES_STATUS = ['goal', 'decision', 'action']
 
+  // linkedom's outerHTML doesn't escape a <title> element's text content
+  // when serializing (verified: .textContent stores the raw string
+  // correctly, but outerHTML dumps it back unescaped) - real elements
+  // like knowledge-title don't have this gap, only title itself does,
+  // being an RCDATA element. Pre-escape before assignment rather than
+  // relying on serialization to do it.
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  }
+
   export function add(fs, args) {
     const type = args._[0]
     const doc = fs.create(`knowledge/${args.file}.${type}.html`, `<!DOCTYPE html>
@@ -556,6 +566,9 @@
 </body>
 </html>
 `)
+
+    const pageTitle = `${type[0].toUpperCase()}${type.slice(1)}: ${args.title}`
+    doc.querySelector('title').textContent = escapeHtml(pageTitle)
 
     const root = doc.querySelector(`knowledge-${type}`)
     const field = (tag, text) => {
