@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: deciduous as an HTML template series</title>
+<link rel="conforms-to" href="../templates/spec.template.html#spec">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5a5a5a;
+    --border: #ddd;
+    --code-bg: #f5f5f5;
+    --accent: #7b3fe4;
+    --pass: #1a7f37;
+    --fail: #cf222e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16161a;
+      --fg: #e8e6e3;
+      --muted: #9a9a9a;
+      --border: #333;
+      --code-bg: #1f1f24;
+      --accent: #b18cff;
+      --pass: #4ade80;
+      --fail: #ff6b6b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 6rem;
+  }
+  h2 {
+    font-size: 1.15rem;
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  h3 { font-size: 1rem; margin-top: 1.75rem; }
+  p, li { color: var(--fg); }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; font-size: 0.85em; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.92rem;
+  }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; }
+  .callout {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    background: var(--code-bg);
+    margin: 1.25rem 0;
+  }
+  .callout.not { border-color: var(--fail); }
+  footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  /* This document is itself a <spec> instance. */
+  spec {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    background: var(--code-bg);
+    margin: 1.25rem 0;
+  }
+  spec > title { display: block; font-weight: 700; font-size: 1.7rem; margin-bottom: 0.35rem; }
+  spec > status, spec > date { display: inline-block; margin-right: 1rem; color: var(--muted); font-size: 0.9rem; }
+  spec > status::before { content: "status: "; }
+  spec > date::before { content: "date: "; }
+  spec > problem, spec > design, spec > out-of-scope, spec > open-questions { display: block; margin-top: 1.5rem; }
+  spec > problem::before, spec > design::before, spec > out-of-scope::before, spec > open-questions::before {
+    display: block;
+    color: var(--accent);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+  spec > problem::before { content: "problem"; }
+  spec > design::before { content: "design"; }
+  spec > out-of-scope::before { content: "out of scope"; }
+  spec > open-questions::before { content: "open questions"; }
+</style>
+</head>
+<body>
+
+<spec>
+  <title>Deciduous as an HTML template series, plus v4's first dogfooded graph nodes</title>
+  <status>approved</status>
+  <date>2026-07-23</date>
+
+  <problem>
+    <p>
+      <a href="../DESIGN.html">DESIGN.html</a> proposed reimplementing deciduous's six node types and six
+      edge labels as a template series, then building real graph nodes from v4's own history on top of it,
+      as the proof case for the whole document-as-canonical-store thesis (see
+      <a data-rel="elaborates" href="../DESIGN.html">DESIGN.html</a>'s "What's next" item 1). This spec
+      fixes the shape of that template series and scopes the first real instances. The crawler,
+      <code>mycelium run</code>, and any cross-file validation stay explicitly out of scope, per
+      <code>DESIGN.html</code>'s own roadmap ordering &mdash; everything here is provable by opening a
+      single document in a browser, nothing requires fetching across files.
+    </p>
+  </problem>
+
+  <design>
+    <h2>Layout</h2>
+    <pre><code>experiments/v4/
+  DESIGN.html
+  templates/
+    decision-nodes.template.html   six node-type templates: goal, decision, option, action, outcome, observation
+    spec.template.html              the spec template this document conforms to
+  audits/
+    graph-integrity.html           cross-template audits, proven against embedded fixture data
+  graph/
+    goal-build-v4.html
+    decision-html-as-store.html
+    action-write-design-html.html
+    outcome-design-html-committed.html
+    action-write-template-series.html
+  specs/
+    2026-07-23-deciduous-template-series.spec.html   this document</code></pre>
+    <p>
+      File naming convention going forward: template documents end in <code>.template.html</code>, spec
+      documents end in <code>.spec.html</code>. Graph instance nodes (<code>graph/*.html</code>) and audit
+      documents (<code>audits/*.html</code>) aren't covered by a suffix convention yet &mdash; introduce one
+      if and when it earns its keep, not speculatively.
+    </p>
+
+    <h2>Template shape: real tags, not <code>data-*</code> soup</h2>
+    <p>
+      Each node type is a real element, not a <code>&lt;div data-node="goal"&gt;</code>. Fields are child
+      elements, not <code>data-field</code> attributes. Templates are exactly where this project's
+      vocabulary gets invented, so the vocabulary should read as itself:
+    </p>
+    <pre><code>&lt;template id="goal"&gt;
+  &lt;goal&gt;
+    &lt;title&gt;&lt;/title&gt;
+    &lt;confidence&gt;&lt;/confidence&gt;
+    &lt;status&gt;&lt;/status&gt;
+    &lt;prompt&gt;&lt;/prompt&gt;
+  &lt;/goal&gt;
+&lt;/template&gt;</code></pre>
+    <p>Instance:</p>
+    <pre><code>&lt;goal&gt;
+  &lt;title&gt;Build v4: knowledge graph as hypermedia&lt;/title&gt;
+  &lt;confidence&gt;85&lt;/confidence&gt;
+  &lt;status&gt;pending&lt;/status&gt;
+  &lt;prompt&gt;we are playing around with mycelium&hellip;&lt;/prompt&gt;
+&lt;/goal&gt;</code></pre>
+    <p>
+      <b>Known wrinkle, accepted:</b> <code>&lt;title&gt;</code> is a real HTML element with its own parsing
+      rules (only unambiguously valid in <code>&lt;head&gt;</code>, or in <code>&lt;body&gt;</code> with
+      scripting disabled). Kept anyway, because it's the right word and a CSS reset
+      (<code>spec &gt; title { display: block; &hellip; }</code>, applied to this very document's own
+      header above) handles the presentational side. If it ever causes real parser trouble in a target
+      browser, that's a fix to the reset or the tag choice, not a reason to fall back to
+      <code>data-field</code>.
+    </p>
+    <p>
+      Validators query by tag instead of attribute: <code>root.querySelector('title')</code>,
+      <code>root.querySelector('confidence')</code>, and so on, the same pure-<code>check(root)</code>
+      shape <code>DESIGN.html</code>'s live demo already established.
+    </p>
+
+    <h3>Per-type fields</h3>
+    <p>
+      Deciduous's flat schema bolted <code>status</code> onto every node type and then had to fake its
+      absence for <code>option</code>/<code>outcome</code>/<code>observation</code> with a
+      <code>nodeTypeSupportsStatus()</code> helper &mdash; the exact problem <code>DESIGN.html</code> names
+      as the reason templates exist. Here, a type simply doesn't declare a field it doesn't need.
+    </p>
+    <table>
+      <tr><th>type</th><th>fields</th></tr>
+      <tr><td><code>goal</code></td><td>title, confidence, status, prompt</td></tr>
+      <tr><td><code>decision</code></td><td>title, confidence, status</td></tr>
+      <tr><td><code>option</code></td><td>title, confidence</td></tr>
+      <tr><td><code>action</code></td><td>title, confidence, status, commit, files, branch</td></tr>
+      <tr><td><code>outcome</code></td><td>title, confidence, commit, files, branch</td></tr>
+      <tr><td><code>observation</code></td><td>title, confidence</td></tr>
+    </table>
+
+    <h2>Edges</h2>
+    <p>
+      The six <code>data-rel</code> labels carry over unchanged: <code>depends_on</code>,
+      <code>blocks</code>, <code>supports</code>, <code>contradicts</code>, <code>alternative_to</code>,
+      <code>leads_to</code>, used exactly as <code>DESIGN.html</code>'s
+      <code>&lt;a data-rel="verifies" href="&hellip;"&gt;</code> example already shows.
+      <code>option &rarr; parent decision</code> uses <code>depends_on</code>, the closest existing label;
+      the dogfood chain below uses <code>leads_to</code> for its forward narrative. New labels get minted
+      the same way <code>DESIGN.html</code> describes: as a project needs them, not from a fixed enum
+      &mdash; this document mints <code>specifies</code> for the spec &rarr; action link below, and
+      <code>elaborates</code> for the link to <code>DESIGN.html</code> above.
+    </p>
+
+    <h2>Audits: proven against a fixture, not the real files</h2>
+    <p>
+      <code>audits/graph-integrity.html</code> implements the two audits <code>DESIGN.html</code> names:
+    </p>
+    <ul>
+      <li><b>orphans-except-goal</b> &mdash; every non-<code>goal</code> node must have at least one edge
+        (CLAUDE.md: "Root goal nodes are the ONLY valid orphans").</li>
+      <li><b>dangling-outcome</b> &mdash; every <code>outcome</code> must have an edge back to what it
+        resolves (CLAUDE.md: "does every outcome link back to what caused it?").</li>
+    </ul>
+    <p>
+      Both are pure functions over <code>{nodes: [{id, type, status}], edges: [{from, to, rel}]}</code>
+      &mdash; deliberately the shape a future crawler would emit by parsing <code>graph/*.html</code>. This
+      round proves them the way <code>DESIGN.html</code>'s own live demo proves the claim template: against
+      a literal embedded sample array, PASS/FAIL rendered inline in the browser. They are <b>not</b> run
+      against the real <code>graph/</code> files &mdash; that needs fetching across documents, which is the
+      crawler/<code>mycelium run</code> work this spec explicitly defers. The five real instance docs get
+      <code>conforms-to</code> links and hand-verified-correct structure, not yet mechanically checked.
+    </p>
+
+    <h2>The five dogfood nodes</h2>
+    <p>v4's own decision trail so far, as graph nodes instead of <code>deciduous</code> rows:</p>
+    <ol>
+      <li><code>goal-build-v4.html</code> &mdash; "Build v4: knowledge graph as hypermedia," with
+        <code>prompt</code> set to the verbatim message that opened this session.</li>
+      <li><code>decision-html-as-store.html</code> &mdash; "HTML documents as canonical store, not DB +
+        Markdown," summarizing <code>DESIGN.html</code>'s core thesis.</li>
+      <li><code>action-write-design-html.html</code> &mdash; writing <code>DESIGN.html</code>.</li>
+      <li><code>outcome-design-html-committed.html</code> &mdash; committed as <code>9794442</code>, with
+        <code>commit</code> set accordingly.</li>
+      <li><code>action-write-template-series.html</code> &mdash; this task: the template series plus this
+        spec. Its <code>outcome</code> node is added after the implementation actually lands, per
+        CLAUDE.md's before/after logging rule, not written speculatively now.</li>
+    </ol>
+    <p>
+      Chained <code>goal &rarr;leads_to&rarr; decision &rarr;leads_to&rarr; action &rarr;leads_to&rarr;
+      outcome &rarr;leads_to&rarr; action</code>. This document's <code>specifies</code> edge below points
+      at node 5 once it exists:
+      <a data-rel="specifies" href="../graph/action-write-template-series.html"><code>action-write-template-series.html</code></a>.
+    </p>
+
+    <h2>Spec docs are graph nodes too</h2>
+    <p>
+      This document is the concrete answer to a meta-question the brainstorming skill leaves open for every
+      project: where does an approved design go? v4's answer is
+      <a href="../templates/spec.template.html"><code>templates/spec.template.html</code></a>, a template
+      with a required identity (<code>title</code>, <code>status</code>, <code>date</code>) plus required
+      <code>problem</code> and <code>design</code> sections, and optional <code>out-of-scope</code> /
+      <code>open-questions</code> sections &mdash; each free to hold whatever content the design needs, but
+      addressable by tag name across every spec in the corpus. <code>status</code> tracks the skill's own
+      lifecycle: <code>draft</code> while under discussion, <code>approved</code> at the point this document
+      reached (sign-off, before writing code), <code>implemented</code> once this design has shipped.
+    </p>
+  </design>
+
+  <out-of-scope>
+    <ul>
+      <li><b>No <code>mycelium run</code>.</b> Deferred by <code>DESIGN.html</code>'s own roadmap.</li>
+      <li><b>No crawler/index.</b> Same deferral; nothing here fetches across documents.</li>
+      <li><b>No live validation of the real instance docs.</b> The five dogfood nodes and the audits are
+        correct by hand-inspection and by the embedded-fixture proof respectively, not mechanically checked
+        against each other. That mechanical check is exactly what the crawler gives later.</li>
+    </ul>
+  </out-of-scope>
+
+  <open-questions>
+    <ul>
+      <li>What are the actual valid <code>status</code> values for <code>goal</code>/<code>decision</code>/
+        <code>action</code> instances? Every node inspected in the existing <code>deciduous</code> graph so
+        far shows <code>pending</code>; resolve by checking deciduous's own source before writing
+        <code>decision-nodes.template.html</code>'s validators, rather than guessing an enum.</li>
+      <li>Once <code>decision-nodes.template.html</code> exists, should specific claims inside a spec's
+        <code>&lt;design&gt;</code> (like the two callouts above) be marked up as inline
+        <code>&lt;decision&gt;</code>/<code>&lt;observation&gt;</code> instances, rather than plain
+        paragraphs? Left open rather than done here, since it can't properly conform to a template that
+        doesn't exist yet.</li>
+    </ul>
+  </open-questions>
+</spec>
+
+<footer>
+  Next: <code>superpowers:writing-plans</code>, to turn this into an implementation plan for
+  <code>templates/decision-nodes.template.html</code>, <code>audits/graph-integrity.html</code>, and the
+  five <code>graph/</code> instances.
+</footer>
+
+</body>
+</html>

@@ -90,19 +90,34 @@
 
   /* The <spec> field vocabulary. Reused HTML element names (title) get reset
      to block display so they behave like the rest of the vocabulary instead
-     of their native inline/head-only defaults. */
+     of their native inline/head-only defaults. The section containers
+     (problem, design, out-of-scope, open-questions) hold arbitrary rich
+     content, so they get no layout opinion beyond being block-level. */
   spec {
     display: block;
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 1rem 1.25rem;
+    padding: 1.25rem 1.5rem;
     background: var(--code-bg);
     margin: 1.25rem 0;
   }
-  spec > title { display: block; font-weight: 600; font-size: 1.05rem; margin-bottom: 0.35rem; }
+  spec > title { display: block; font-weight: 700; font-size: 1.5rem; margin-bottom: 0.35rem; }
   spec > status, spec > date { display: inline-block; margin-right: 1rem; color: var(--muted); font-size: 0.9rem; }
   spec > status::before { content: "status: "; }
   spec > date::before { content: "date: "; }
+  spec > problem, spec > design, spec > out-of-scope, spec > open-questions { display: block; margin-top: 1.5rem; }
+  spec > problem::before, spec > design::before, spec > out-of-scope::before, spec > open-questions::before {
+    display: block;
+    color: var(--accent);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+  spec > problem::before { content: "problem"; }
+  spec > design::before { content: "design"; }
+  spec > out-of-scope::before { content: "out of scope"; }
+  spec > open-questions::before { content: "open questions"; }
 </style>
 </head>
 <body>
@@ -110,8 +125,10 @@
 <h1>Template: spec</h1>
 <div class="meta">
   <div><b>Node type:</b> <code>spec</code></div>
+  <div><b>File naming:</b> this file is <code>spec.template.html</code>; documents that conform to it are named
+    <code>&lt;date&gt;-&lt;topic&gt;.spec.html</code></div>
   <div><b>Purpose:</b> the shape a design/brainstorming document takes when written as a v4 node instead of Markdown</div>
-  <div><b>Sibling of:</b> <code>./decision-nodes.html</code>, the six deciduous node-type templates</div>
+  <div><b>Sibling of:</b> <code>./decision-nodes.template.html</code>, the six deciduous node-type templates</div>
 </div>
 
 <h2>Why this template exists</h2>
@@ -122,30 +139,55 @@
   other &mdash; HTML, not Markdown, and conforming to a template like any other instance in this graph. This
   template is that override, made concrete.
 </p>
-<p>
-  Per <a href="../DESIGN.html">DESIGN.html</a>'s "no imposed shape" principle, a spec document's body stays
-  free-form prose &mdash; sections, tables, diagrams, code, whatever a given design needs. Only a minimal
-  header is checked: enough to identify the document and its state, not to constrain its content.
-</p>
 
 <h2>Shape</h2>
+<p>
+  A first version of this template had a three-field header (<code>title</code>, <code>status</code>,
+  <code>date</code>) and left everything else as untagged prose, on the theory that "no imposed shape" meant
+  the body should stay free-form. That confused two different things: a template isn't a metadata header
+  bolted onto a separate free-form document, it's a set of named containers, and a container can hold
+  freeform content and still be queryable <em>as a section</em>, by tag name, even though what's inside it
+  isn't atomized into fields. What actually determines whether something can be found later isn't
+  "structured vs. prose," it's "inside a named tag vs. bare in the document." A three-field template left
+  everything past its header outside any tag at all &mdash; invisible to any query, no matter how load-bearing
+  the content was.
+</p>
+<p>
+  So the template grew section containers, each free to hold rich content (headings, tables, code, whatever
+  a given design needs) while still being addressable by tag name across every spec in the corpus:
+</p>
 <template id="spec">
   <spec>
     <title></title>
     <status></status>
     <date></date>
+    <problem></problem>
+    <design></design>
+    <out-of-scope></out-of-scope>
+    <open-questions></open-questions>
   </spec>
 </template>
 <pre><code>&lt;spec&gt;
   &lt;title&gt;&hellip;&lt;/title&gt;
   &lt;status&gt;draft | approved | implemented&lt;/status&gt;
   &lt;date&gt;YYYY-MM-DD&lt;/date&gt;
+  &lt;problem&gt;&hellip; what motivates this design &hellip;&lt;/problem&gt;
+  &lt;design&gt;&hellip; the approved design itself, any content &hellip;&lt;/design&gt;
+  &lt;out-of-scope&gt;&hellip; optional &hellip;&lt;/out-of-scope&gt;
+  &lt;open-questions&gt;&hellip; optional &hellip;&lt;/open-questions&gt;
 &lt;/spec&gt;</code></pre>
+<p>
+  <code>title</code>, <code>status</code>, <code>date</code>, <code>problem</code>, and <code>design</code>
+  are required &mdash; every spec has an identity, a motivation, and a decided approach.
+  <code>out-of-scope</code> and <code>open-questions</code> are optional: a spec that has nothing to exclude
+  or nothing left open simply omits the tag, rather than including it empty. Related nodes, wherever they're
+  mentioned inside any of these sections, are reached the usual way:
+  <code>&lt;a data-rel="&hellip;"&gt;</code>.
+</p>
 <p>
   <code>status</code> tracks the brainstorming skill's own lifecycle: <code>draft</code> while under
   discussion, <code>approved</code> once the user signs off on the design, <code>implemented</code> once
-  the plan it led to has shipped. Everything after the <code>&lt;spec&gt;</code> block is ordinary document
-  content, related nodes reached the usual way: <code>&lt;a data-rel="&hellip;"&gt;</code>.
+  the plan it led to has shipped.
 </p>
 
 <h2>Validator</h2>
@@ -154,17 +196,21 @@
     const el = root.matches?.('spec') ? root : root.querySelector('spec')
     if (!el) return { ok: false, errors: ['missing <spec> element'] }
 
-    const title = el.querySelector('title')
-    const status = el.querySelector('status')
-    const date = el.querySelector('date')
     const errors = []
-
-    if (!title || !title.textContent.trim()) errors.push('missing or empty <title>')
-    const statusValue = status?.textContent.trim()
-    if (!['draft', 'approved', 'implemented'].includes(statusValue)) {
-      errors.push(`<status> must be draft|approved|implemented, got "${statusValue ?? ''}"`)
+    for (const tag of ['title', 'status', 'date', 'problem', 'design']) {
+      const node = el.querySelector(tag)
+      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
     }
-    if (!date || !date.textContent.trim()) errors.push('missing or empty <date>')
+
+    const statusValue = el.querySelector('status')?.textContent.trim()
+    if (statusValue && !['draft', 'approved', 'implemented'].includes(statusValue)) {
+      errors.push(`<status> must be draft|approved|implemented, got "${statusValue}"`)
+    }
+
+    for (const tag of ['out-of-scope', 'open-questions']) {
+      const node = el.querySelector(tag)
+      if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
+    }
 
     return { ok: errors.length === 0, errors }
   }
@@ -172,13 +218,18 @@
 
 <div class="live-demo">
   <h4>This section actually runs</h4>
-  <p>A sample <code>&lt;spec&gt;</code> instance, checked by the validator above.</p>
+  <p>
+    A sample <code>&lt;spec&gt;</code> instance, checked by the validator above. It omits both optional
+    sections, which is valid.
+  </p>
 
   <div id="sample-instance">
     <spec>
       <title>Example design</title>
       <status>draft</status>
       <date>2026-01-01</date>
+      <problem>The thing this example is supposedly solving.</problem>
+      <design>The approach this example supposedly takes.</design>
     </spec>
   </div>
 
@@ -188,16 +239,19 @@
     function check(root) {
       const el = root.matches?.('spec') ? root : root.querySelector('spec')
       if (!el) return { ok: false, errors: ['missing <spec> element'] }
-      const title = el.querySelector('title')
-      const status = el.querySelector('status')
-      const date = el.querySelector('date')
       const errors = []
-      if (!title || !title.textContent.trim()) errors.push('missing or empty <title>')
-      const statusValue = status?.textContent.trim()
-      if (!['draft', 'approved', 'implemented'].includes(statusValue)) {
-        errors.push(`<status> must be draft|approved|implemented, got "${statusValue ?? ''}"`)
+      for (const tag of ['title', 'status', 'date', 'problem', 'design']) {
+        const node = el.querySelector(tag)
+        if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
       }
-      if (!date || !date.textContent.trim()) errors.push('missing or empty <date>')
+      const statusValue = el.querySelector('status')?.textContent.trim()
+      if (statusValue && !['draft', 'approved', 'implemented'].includes(statusValue)) {
+        errors.push(`<status> must be draft|approved|implemented, got "${statusValue}"`)
+      }
+      for (const tag of ['out-of-scope', 'open-questions']) {
+        const node = el.querySelector(tag)
+        if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
+      }
       return { ok: errors.length === 0, errors }
     }
     const sample = document.getElementById('sample-instance')
@@ -211,7 +265,7 @@
 </div>
 
 <h2>Conformance</h2>
-<pre><code>&lt;link rel="conforms-to" href="../templates/spec-doc.html#spec"&gt;</code></pre>
+<pre><code>&lt;link rel="conforms-to" href="../templates/spec.template.html#spec"&gt;</code></pre>
 
 </body>
 </html>
