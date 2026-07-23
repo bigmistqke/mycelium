@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: mycelium knowledge list, a shared fs-helpers module, and a Filesystem safety fix</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>mycelium knowledge list, a shared fs-helpers module, and a Filesystem safety fix</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-07-24</spec-date>
+
+  <spec-problem>
+    <p>
+      CLAUDE.md names a real capability gap versus <code>deciduous</code>: "<code>pnpm crawl</code> now
+      answers most of what <code>deciduous nodes</code>/<code>deciduous edges</code> did &mdash; it validates
+      every instance against its own template and runs both graph-wide audits against the real files &hellip;
+      What it still doesn't do: print a clean list of nodes/edges the way <code>deciduous nodes</code>/
+      <code>deciduous edges</code> did (it reports pass/fail, not an enumeration)." There is no way today to
+      ask "what's in the graph?" without reading crawl's PASS/FAIL output and mentally filtering it, or
+      opening files by hand.
+    </p>
+    <p>
+      Two other real gaps surfaced while designing the fix, not from the graph itself but from the codebase
+      backing it:
+    </p>
+    <ul>
+      <li><b><code>parseHTML</code> and <code>walkHtmlFiles</code> are duplicated verbatim</b> between
+        <code>src/crawl.ts</code> and <code>src/run.ts</code> &mdash; each file independently defines its own
+        copy. Any command that needs to read many files at once (which <code>list</code> does) would be a
+        third copy if left as-is.</li>
+      <li><b><code>Filesystem.commit()</code> unconditionally rewrites every file it touched</b>, whether or
+        not a command actually mutated it. <code>get(path)</code> exists to let a command read a file it's
+        about to edit &mdash; nothing currently distinguishes "read and left alone" from "read and changed."
+        A command that reads many files just to report on them (again, <code>list</code>) would, under the
+        current implementation, cause every file it read to be reserialized and rewritten to disk on every
+        invocation &mdash; a real risk of spurious whole-graph diffs from a command that's supposed to be
+        read-only.</li>
+    </ul>
+  </spec-problem>
+
+  <spec-design>
+    <h2>Where <code>list</code> doesn't live, and why</h2>
+    <p>
+      Two alternatives were considered and rejected before landing on the design below:
+    </p>
+    <ul>
+      <li><b>Generic in <code>crawl.ts</code>, deriving titles from the family-prefix convention</b>
+        (<code>tagName.split('-')[0] + '-title'</code>, per <a
+        href="../templates/spec.template.html">spec.template.html</a>'s own naming rule that every root type
+        is <code>&lt;family&gt;-&lt;type&gt;</code>). Rejected: this bakes a new piece of ontology knowledge
+        into the engine that <code>crawl.ts</code>'s own header comment says it deliberately avoids
+        ("nothing about what any project builds on top of" the four protocol primitives). It would also
+        require deciding whether to include the six sample instances live inside
+        <code>knowledge.template.html</code> itself and any <code>spec-doc</code> instances &mdash; both of
+        which are real <code>[data-conforms-to]</code> instances <code>crawl.ts</code> already discovers
+        generically today, but neither of which is what "list the knowledge graph" means.</li>
+      <li><b>A <code>data-lists</code> script, audit-style</b>, discovered by <code>crawl.ts</code> the same
+        generic way it discovers <code>data-audits</code>, reusing the <code>extractGraph()</code> logic the
+        two existing audits already duplicate. This was the initial recommendation and is architecturally
+        the closest analog to the read side's existing pattern. Set aside in favor of the option below once
+        it became clear the real blocker to putting <code>list</code> in <code>run.ts</code>'s
+        <code>mycelium/command</code> world (see next section) was fixable rather than fundamental.</li>
+    </ul>
+
+    <h2>A shared <code>src/fs-helpers.ts</code> module</h2>
+    <p>
+      <code>parseHTML(html)</code> and <code>walkHtmlFiles(dir)</code> move out of both <code>crawl.ts</code>
+      and <code>run.ts</code> into a new <code>src/fs-helpers.ts</code>, imported by both. No behavior change
+      &mdash; this only removes the existing duplication, and is what makes it reasonable for
+      <code>run.ts</code>'s <code>Filesystem</code> to grow a directory-walking method without copying
+      <code>crawl.ts</code>'s logic a third time.
+    </p>
+
+    <h2><code>Filesystem</code>: mutation-aware <code>commit()</code>, plus <code>list(dir)</code></h2>
+    <p>
+      <code>get(path)</code> and <code>create(path, seedHtml)</code> both snapshot
+      <code>doc.documentElement.outerHTML</code> immediately after parsing, alongside the <code>Document</code>
+      they already store. <code>commit()</code> re-serializes at write time and compares against that
+      snapshot; if they're identical, it skips the write for that file entirely. Both snapshots go through
+      the same happy-dom serialization path, so parse/reserialize normalization noise cancels out on both
+      sides of the comparison &mdash; the only way the two can differ is a real mutation between
+      <code>get()</code> and <code>commit()</code>. <code>create()</code> stores <code>""</code> as its
+      snapshot (a freshly created document's real content never serializes to the empty string), so a
+      created file is always written, matching today's behavior.
+    </p>
+    <p>
+      <code>list(dir)</code> is new: it walks every <code>.html</code> file under <code>dir</code>
+      (via the shared <code>walkHtmlFiles</code>) and calls <code>this.get()</code> on each, returning
+      <code>{ path, doc }[]</code>. It needs no new tracking of its own &mdash; every file it reads goes
+      through the same <code>get()</code> path as any other read, and the <code>commit()</code> fix above is
+      what makes calling it safe: reading dozens of files to report on them no longer risks rewriting all of
+      them.
+    </p>
+    <pre><code>class Filesystem {
+  #touched = new Map() // path -> { doc, original } | { deleted: true }
+
+  get(path) {
+    ...
+    if (!entry) {
+      const { document } = parseHTML(html)
+      entry = { doc: document, original: document.documentElement.outerHTML }
+      this.#touched.set(full, entry)
+    }
+    return entry.doc
+  }
+
+  create(path, seedHtml) {
+    const { document } = parseHTML(seedHtml)
+    this.#touched.set(full, { doc: document, original: '' })
+    return document
+  }
+
+  list(dir) {
+    return walkHtmlFiles(resolvePath(this.#root, dir)).map(file => ({
+      path: relativePath(this.#root, file),
+      doc: this.get(relativePath(this.#root, file)),
+    }))
+  }
+
+  commit() {
+    for (const [full, entry] of this.#touched) {
+      if ('deleted' in entry) { unlinkSync(full); continue }
+      const html = entry.doc.documentElement.outerHTML
+      if (html === entry.original) continue // unchanged — skip the write
+      writeFileSync(full, ...)
+    }
+  }
+}</code></pre>
+
+    <h2><code>list</code>: a fourth <code>mycelium/command</code>, sibling to <code>add</code>/<code>link</code>/<code>update</code></h2>
+    <pre><code>mycelium knowledge list nodes   # one line per node: file, type, status, title
+mycelium knowledge list edges   # one line per edge: from --rel--> to</code></pre>
+    <p>
+      Scoped to <code>knowledge/*.html</code> only, via <code>fs.list('knowledge')</code> &mdash; not
+      templates' sample instances, not <code>spec-doc</code> files. This is the one piece of
+      knowledge-specific business logic in an otherwise-generic method: <code>list</code> (the command) knows
+      the real graph lives under <code>knowledge/</code>; <code>Filesystem.list(dir)</code> (the primitive)
+      doesn't know or care what's in the directory it's given.
+    </p>
+    <p>
+      For <code>list nodes</code>: for each document, find the root <code>[data-conforms-to]</code> element,
+      read its type directly off its own tag name (<code>el.tagName.toLowerCase()</code>, e.g.
+      <code>knowledge-action</code>) rather than checking against a hardcoded list of the six known types
+      &mdash; a seventh type added to <code>knowledge.template.html</code> later would show up in
+      <code>list</code> automatically, unlike the two audits' <code>TYPES</code> array. Status is read via the
+      family prefix (<code>knowledge-status</code>) if present, blank for types that don't have one
+      (<code>option</code>/<code>outcome</code>/<code>observation</code>).
+    </p>
+    <p>
+      For <code>list edges</code>: for each document, every <code>a[data-rel]</code> found anywhere inside
+      the root element, printing the source file, the <code>data-rel</code> value, and the link's
+      <code>href</code> (resolved relative to <code>knowledge/</code>, matching how the files themselves
+      reference each other) and label text. This is deliberately simpler than the two audits'
+      <code>extractGraph()</code>, which builds a combined node+edge graph for cross-checking orphans and
+      dangling outcomes; <code>list edges</code> only ever needs edges, so it doesn't build node objects it
+      won't use.
+    </p>
+
+    <h2>Where this lives</h2>
+    <pre><code>experiments/v4/src/
+  fs-helpers.ts   new: parseHTML, walkHtmlFiles (shared by crawl.ts and run.ts)
+  crawl.ts        modified: imports from fs-helpers.ts instead of defining its own copies
+  run.ts          modified: imports from fs-helpers.ts; Filesystem gains snapshot-diffing + list()
+docs/templates/knowledge.template.html
+  modified: fourth mycelium/command export, `list`, sibling to add/link/update</code></pre>
+  </spec-design>
+
+  <spec-out-of-scope>
+    <ul>
+      <li><b>No filename convention change.</b> A <code>*.knowledge.html</code> suffix (encoding family in
+        the filename, not just the directory) was discussed as a way to make "what's a real node" derivable
+        without knowing about the <code>knowledge/</code> directory specifically. Not done here: it would
+        mean renaming every existing node file and every cross-link between them, a migration bigger than
+        this feature. The current directory-based scoping stays.</li>
+      <li><b>No <code>--branch</code> filter.</b> <code>deciduous nodes --branch B</code> had one; this
+        project's <code>knowledge-branch</code> field only exists on <code>action</code>/<code>outcome</code>
+        nodes and is almost always <code>main</code> today. Add it if it's ever actually needed.</li>
+      <li><b>No listing for <code>spec-doc</code> files.</b> <code>list</code> is knowledge-graph-specific,
+        matching what <code>deciduous nodes</code>/<code>deciduous edges</code> actually covered.</li>
+      <li><b>No <code>data-lists</code> audit-style mechanism.</b> Considered and set aside in favor of
+        putting <code>list</code> in <code>run.ts</code>'s command world, per above.</li>
+    </ul>
+  </spec-out-of-scope>
+</spec-doc>
+
+<footer>
+  Next: extract <code>src/fs-helpers.ts</code>, add the snapshot-diffing + <code>list(dir)</code> to
+  <code>Filesystem</code>, then add the <code>list</code> command to
+  <code>knowledge.template.html</code>.
+</footer>
+
+</body>
+</html>
