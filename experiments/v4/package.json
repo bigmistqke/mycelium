@@ -1,0 +1,17 @@
+{
+  "name": "@mycelium/v4",
+  "version": "0.0.0",
+  "private": true,
+  "description": "v4: knowledge graph as hypermedia — HTML templates, real instances, and the crawler that reads them",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "crawl": "node src/crawl.ts",
+    "serve": "npx serve docs"
+  },
+  "dependencies": {
+    "linkedom": "^0.18.13"
+  }
+}

@@ -5,20 +5,20 @@
 **THIS IS MANDATORY. Log decisions IN REAL-TIME, not retroactively.**
 
 As of 2026-07-23 this project's decision graph is written as HTML nodes under
-`experiments/v4/knowledge/`, conforming to the templates in
-`experiments/v4/templates/knowledge.template.html`. It replaces `deciduous`
+`experiments/v4/docs/knowledge/`, conforming to the templates in
+`experiments/v4/docs/templates/knowledge.template.html`. It replaces `deciduous`
 (the SQLite-backed CLI) for all new logging, project-wide, not just
 v4-related work — even though v4 itself is still nominally "the experiment,"
 there's nowhere better for this to live yet. `deciduous`'s existing ~400
 nodes (v0 through 2026-07-23) are **frozen, not migrated**: still real
 history, still queryable read-only via the `deciduous` CLI, just no longer
 where new work gets logged. Full reasoning:
-`experiments/v4/specs/2026-07-23-deciduous-template-series.spec.html`.
+`experiments/v4/docs/specs/2026-07-23-deciduous-template-series.spec.html`.
 
 There is no CLI for this yet — `mycelium run` and the crawler are
-deliberately deferred (see `experiments/v4/DESIGN.html`'s roadmap). Logging
+deliberately deferred (see `experiments/v4/docs/DESIGN.html`'s roadmap). Logging
 a decision means hand-authoring an HTML file. Copying the closest existing
-node under `experiments/v4/knowledge/` as a starting point is the fastest
+node under `experiments/v4/docs/knowledge/` as a starting point is the fastest
 correct way to do this.
 
 ### The Core Rule
@@ -54,7 +54,7 @@ tag instead of a flag.
 
 ### Node shape
 
-Six types, in one file: `experiments/v4/templates/knowledge.template.html`
+Six types, in one file: `experiments/v4/docs/templates/knowledge.template.html`
 is the source of truth for exact required/optional fields per type — don't
 duplicate that table here, read it. In short: every type has `title` and
 `confidence`; `status` (`pending`/`active`/`completed`/`rejected`) is on
@@ -62,7 +62,7 @@ duplicate that table here, read it. In short: every type has `title` and
 `action`/`outcome` only; `prompt` is optional, `goal` only.
 
 ```html
-experiments/v4/knowledge/<slug>.<type>.html   (type = goal|decision|option|action|outcome|observation)
+experiments/v4/docs/knowledge/<slug>.<type>.html   (type = goal|decision|option|action|outcome|observation)
 
 <knowledge-TYPE data-conforms-to="../templates/knowledge.template.html#knowledge-TYPE">
   <knowledge-title>…</knowledge-title>
@@ -115,7 +115,7 @@ action said would happen, happened, here's the hash" is not new
 information — it belongs in the action node's own `knowledge-commit`
 field, not a second file whose only content is confirming the first one.
 Writing one anyway for every single commit is exactly the over-fragmentation
-["field vs link"](experiments/v4/specs/2026-07-23-deciduous-template-series.spec.html#field-vs-link)
+["field vs link"](experiments/v4/docs/specs/2026-07-23-deciduous-template-series.spec.html#field-vs-link)
 already warns against, just at the level of nodes instead of fields.
 
 If a single commit doesn't map cleanly to one node — spans several nodes'
@@ -134,8 +134,8 @@ Same three questions deciduous asked, still manual until the crawler exists:
 ### Session Start Checklist
 
 ```bash
-ls experiments/v4/knowledge/                     # what nodes exist?
-grep -l 'data-rel' experiments/v4/knowledge/*.html   # rough connectivity
+ls experiments/v4/docs/knowledge/                     # what nodes exist?
+grep -l 'data-rel' experiments/v4/docs/knowledge/*.html   # rough connectivity
 git status                                       # current state
 ```
 Coarser than `deciduous nodes`/`deciduous edges` were — there's no crawler

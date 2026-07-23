@@ -397,7 +397,9 @@
 <p>
   The convention: <code>data-validates="#id"</code> marks a script checking one instance against one
   template (<code>check(root)</code>); <code>data-audits="name"</code> marks a script checking the whole
-  graph (<code>check(nodes, edges)</code>), with <code>data-touches</code> listing which types it concerns
+  graph (<code>check(documents)</code>, an array of <code>{path, dom}</code> &mdash; the crawler hands over
+  parsed files, not a pre-built graph, so extraction stays the audit's own job), with
+  <code>data-touches</code> listing which types it concerns
   &mdash; queryable the same way <code>data-rel</code> makes an edge queryable, instead of leaving it as
   prose only a person reading this paragraph would know.
 </p>
@@ -408,7 +410,28 @@
   <code>knowledge-goal</code> must appear in at least one edge, incoming or outgoing.
 </p>
 <script type="module" data-audits="orphans-except-goal" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
-  export function check(nodes, edges) {
+  const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
+
+  function extractGraph(documents) {
+    const nodes = []
+    const edges = []
+    for (const { path, dom } of documents) {
+      for (const tag of TYPES) {
+        for (const el of dom.querySelectorAll(tag)) nodes.push({ id: el.id || path, type: tag })
+      }
+      for (const a of dom.querySelectorAll('a[data-rel]')) {
+        const source = a.closest(TYPES.join(','))
+        if (!source) continue
+        const href = a.getAttribute('href')
+        const to = href.startsWith('#') ? href.slice(1) : new URL(href, 'file://' + path).pathname
+        edges.push({ from: source.id || path, to })
+      }
+    }
+    return { nodes, edges }
+  }
+
+  export function check(documents) {
+    const { nodes, edges } = extractGraph(documents)
     const connected = new Set()
     for (const e of edges) { connected.add(e.from); connected.add(e.to) }
     const violations = nodes
@@ -427,7 +450,28 @@
   <code>action &rarr;leads_to&rarr; outcome</code> links have worked all night.
 </p>
 <script type="module" data-audits="dangling-outcome" data-touches="knowledge-outcome">
-  export function check(nodes, edges) {
+  const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
+
+  function extractGraph(documents) {
+    const nodes = []
+    const edges = []
+    for (const { path, dom } of documents) {
+      for (const tag of TYPES) {
+        for (const el of dom.querySelectorAll(tag)) nodes.push({ id: el.id || path, type: tag })
+      }
+      for (const a of dom.querySelectorAll('a[data-rel]')) {
+        const source = a.closest(TYPES.join(','))
+        if (!source) continue
+        const href = a.getAttribute('href')
+        const to = href.startsWith('#') ? href.slice(1) : new URL(href, 'file://' + path).pathname
+        edges.push({ from: source.id || path, to })
+      }
+    }
+    return { nodes, edges }
+  }
+
+  export function check(documents) {
+    const { nodes, edges } = extractGraph(documents)
     const resolved = new Set(edges.map(e => e.to))
     const violations = nodes
       .filter(n => n.type === 'knowledge-outcome' && !resolved.has(n.id))
@@ -437,51 +481,36 @@
 </script>
 
 <div class="live-demo">
-  <h4>This section actually runs</h4>
+  <h4>This section actually runs &mdash; when served, not opened via <code>file://</code></h4>
   <p>
-    No hand-typed fixture, and no hand-typed type list either: even the six type names below come from
-    <code>document.querySelectorAll('template[id^="knowledge-"]')</code>, not a retyped array &mdash; add a
-    seventh <code>&lt;template&gt;</code> to this file and this demo picks it up without being edited.
-    <code>nodes</code> and <code>edges</code> are extracted from the exact sample markup in the "Edges"
-    section above, the same way a future crawler would extract them from real <code>knowledge/*.html</code>
-    files: tag names for node types, <code>&lt;a data-rel&gt;</code> elements for edges. The samples were
-    wired so extraction still produces one real violation per audit: <code>sample-observation</code> has no
-    edges at all, and <code>sample-outcome</code> has only an outgoing edge (to
-    <code>sample-action</code>), nothing pointing into it.
+    Runs the exact two <code>data-audits</code> scripts above, not a hand-copied re-implementation &mdash;
+    their source text is pulled straight from the <code>&lt;script&gt;</code> tags and dynamically
+    <code>import()</code>ed from a <code>data:</code> URL via <code>loadCheck</code>, imported for real from
+    <code>../../src/runtime.js</code> &mdash; the same shared module
+    <a href="../specs/2026-07-23-mycelium-crawler.spec.html">the crawler</a> uses under Node. That real
+    <code>import</code> is why this specific demo needs a local server (<code>npx serve docs</code> or
+    similar): browsers CORS-check ES module fetches, and <code>file://</code> has no stable origin to
+    satisfy that check, unlike the <code>data:</code> import inside it. Every other live demo in this
+    project stays fully self-contained and works with a plain double-click; only this one, now that it
+    shares real code instead of duplicating it, trades that for not repeating itself. Their
+    <code>documents</code> argument here is just <code>[{ path: 'sample', dom: sample-instances }]</code>,
+    a one-file stand-in for a real crawl. The samples were wired so extraction still produces one real
+    violation per audit: <code>sample-observation</code> has no edges at all, and
+    <code>sample-outcome</code> has only an outgoing edge (to <code>sample-action</code>), nothing pointing
+    into it.
   </p>
 
   <pre id="audit-output">running&hellip;</pre>
 
   <script type="module">
-    const TYPES = [...document.querySelectorAll('template[id^="knowledge-"]')].map(t => t.id)
+    import { loadCheck } from '../../src/runtime.js'
 
-    function extractGraph(container) {
-      const nodes = TYPES.flatMap(tag =>
-        [...container.querySelectorAll(tag)].map(el => ({ id: el.id, type: tag }))
-      )
-      const edges = [...container.querySelectorAll('a[data-rel]')].map(a => ({
-        from: a.closest(TYPES.join(','))?.id,
-        to: a.getAttribute('href').replace(/^#/, ''),
-        rel: a.dataset.rel,
-      }))
-      return { nodes, edges }
-    }
+    const documents = [{ path: 'sample', dom: document.getElementById('sample-instances') }]
+    const orphansSource = document.querySelector('script[data-audits="orphans-except-goal"]').textContent
+    const danglingSource = document.querySelector('script[data-audits="dangling-outcome"]').textContent
 
-    function checkOrphans(nodes, edges) {
-      const connected = new Set()
-      for (const e of edges) { connected.add(e.from); connected.add(e.to) }
-      const violations = nodes.filter(n => n.type !== 'knowledge-goal' && !connected.has(n.id)).map(n => n.id)
-      return { ok: violations.length === 0, violations }
-    }
-    function checkDangling(nodes, edges) {
-      const resolved = new Set(edges.map(e => e.to))
-      const violations = nodes.filter(n => n.type === 'knowledge-outcome' && !resolved.has(n.id)).map(n => n.id)
-      return { ok: violations.length === 0, violations }
-    }
-
-    const { nodes, edges } = extractGraph(document.getElementById('sample-instances'))
-    const orphans = checkOrphans(nodes, edges)
-    const dangling = checkDangling(nodes, edges)
+    const orphans = await (await loadCheck(orphansSource))(documents)
+    const dangling = await (await loadCheck(danglingSource))(documents)
     const orphansExpected = ['sample-observation']
     const danglingExpected = ['sample-outcome']
     const orphansCorrect = JSON.stringify(orphans.violations.sort()) === JSON.stringify(orphansExpected)

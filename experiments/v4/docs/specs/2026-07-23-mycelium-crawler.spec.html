@@ -11,7 +11,7 @@
 
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
   <spec-title>The mycelium crawler: a protocol-only engine for template-conforming HTML</spec-title>
-  <spec-status>approved</spec-status>
+  <spec-status>implemented</spec-status>
   <spec-date>2026-07-23</spec-date>
 
   <spec-problem>
@@ -29,14 +29,21 @@
 
   <spec-design>
     <h2>Package</h2>
-    <pre><code>experiments/v4/package.json    name: "@mycelium/v4", joins the pnpm workspace, engines.node >=24
-experiments/v4/crawl.ts        the crawler itself</code></pre>
+    <pre><code>experiments/v4/
+  package.json    name: "@mycelium/v4", joins the pnpm workspace, engines.node >=24
+  src/
+    crawl.ts      the crawler itself
+    runtime.js    shared script-execution helper, imported by crawl.ts and one live demo
+  docs/           everything that used to sit directly in experiments/v4/ &mdash;
+                  DESIGN.html, theme.css, templates/, specs/, knowledge/</code></pre>
     <p>
-      Run directly as <code>node crawl.ts</code> &mdash; Node &ge;24 strips TypeScript's type syntax
-      natively, no <code>tsx</code>/<code>ts-node</code>, no build step, nothing to keep in sync between a
-      source file and a compiled one. Same "no build step that could drift from the source" argument
-      <code>DESIGN.html</code> already makes about the HTML documents themselves, just applied to the tool
-      that reads them.
+      Run directly as <code>pnpm crawl</code> (<code>node src/crawl.ts</code>) &mdash; Node &ge;24 strips
+      TypeScript's type syntax natively, no <code>tsx</code>/<code>ts-node</code>, no build step, nothing to
+      keep in sync between a source file and a compiled one. Same "no build step that could drift from the
+      source" argument <code>DESIGN.html</code> already makes about the HTML documents themselves, just
+      applied to the tool that reads them. The <code>docs/</code> split moves every document out of the
+      package root without changing any of their own relative links &mdash; nothing in the tree reached more
+      than one level up, so the whole subtree moved as one unit.
     </p>
     <p>
       One runtime dependency: <code>linkedom</code>, a lightweight HTML5 (not XML) DOM implementation for
@@ -81,21 +88,45 @@ experiments/v4/crawl.ts        the crawler itself</code></pre>
     <h2>Script execution</h2>
     <p>
       Extracted script text (an ES module's source, e.g. <code>export function check(root) { &hellip; }</code>)
-      runs via a <code>data:text/javascript</code> dynamic <code>import()</code> &mdash; no temp files, if
-      that holds up under a quick spike before this is built for real. Falls back to a temp <code>.mjs</code>
-      file if it doesn't.
+      runs via a <code>data:text/javascript</code> dynamic <code>import()</code> &mdash; confirmed with a
+      real spike before writing <code>crawl.ts</code>, no temp files needed. This part works identically in
+      Node and in a browser, over <code>file://</code> included: <code>data:</code> imports aren't subject
+      to the CORS check real module fetches get.
+    </p>
+
+    <h2>Shared runtime: real modules, accept the server</h2>
+    <p>
+      <code>crawl.ts</code> and the browser-facing live demos both need the exact same
+      <code>loadCheck</code> helper. Extracting it to one file and having both sides <code>import</code> it
+      hit a real wall: browsers CORS-check ES module fetches even for local files, and <code>file://</code>
+      has no stable origin to satisfy that check &mdash; confirmed with a spike (a plain <code>import</code>
+      of a sibling <code>.mjs</code> hangs silently over <code>file://</code>, works immediately once served
+      over <code>http://</code>). A second spike confirmed a workaround: a <code>globalThis</code>-based
+      file with no <code>export</code> statement at all works as both a classic
+      <code>&lt;script src&gt;</code> in a browser and a side-effect <code>import</code> in Node, sidestepping
+      the module-fetch restriction entirely.
+    </p>
+    <p>
+      Decided against the workaround anyway. It trades real <code>import</code>/<code>export</code> for
+      global-namespace assignment, permanently, to preserve <code>file://</code> compatibility for one
+      shared file &mdash; a worse trade the more code ever ends up in it. <code>src/runtime.js</code> is a
+      real ES module (<code>export async function loadCheck(&hellip;)</code>), imported normally by both
+      <code>crawl.ts</code> and the "Graph-wide audits" live demo in <code>knowledge.template.html</code>.
+      That one demo now needs a static server (<code>pnpm serve</code>) to actually run; every other live
+      demo in this project, which never needed to share code across files, stays exactly as
+      self-contained and <code>file://</code>-safe as it always was. Not a project-wide policy change, one
+      documented exception where sharing real code won out.
     </p>
 
     <h2>Signature change this requires</h2>
     <p>
-      <code>knowledge.template.html</code>'s two audits currently export
-      <code>check(nodes, edges)</code>, with node/edge extraction (<code>extractGraph()</code>) living in the
-      live-demo script, run once against local sample markup. They move to
-      <code>check(documents)</code>, with the same <code>extractGraph</code>-shaped logic moving <em>into</em>
-      the audit script itself, now reading across every file the crawler found instead of one local
-      container. The live demo keeps working unchanged &mdash; it already has real markup and real edges
-      sitting in the DOM, it just calls <code>extractGraph(documents)</code> with a one-file
-      <code>documents</code> array standing in for a real crawl.
+      <code>knowledge.template.html</code>'s two audits changed from <code>check(nodes, edges)</code> to
+      <code>check(documents)</code>, an array of <code>{path, dom}</code>. Node/edge extraction
+      (<code>extractGraph()</code>) moved <em>into</em> each audit script itself, duplicated between the
+      two (matching how every other validator/audit script in this project stays self-contained), reading
+      across every document handed to it instead of one local container. The live demo was updated to
+      match, and separately to import the two audit scripts' real source text and the shared
+      <code>loadCheck</code>, rather than hand-copying either.
     </p>
 
     <h2>Report contract, resolved not left open</h2>
@@ -122,19 +153,14 @@ experiments/v4/crawl.ts        the crawler itself</code></pre>
     </ul>
   </spec-out-of-scope>
 
-  <spec-open-questions>
-    <ul>
-      <li>Does <code>data:text/javascript</code> dynamic <code>import()</code> actually work reliably in the
-        target Node version for this repo, including for scripts that themselves have no imports of their
-        own (these don't)? Unverified until the spike.</li>
-    </ul>
-  </spec-open-questions>
 </spec-doc>
 
 <footer>
-  Next: build it &mdash; <code>experiments/v4/package.json</code> and <code>crawl.ts</code>, starting with
-  the <code>data:</code>-import spike, then update <code>knowledge.template.html</code>'s two audits to the
-  new <code>check(documents)</code> signature.
+  Built and run for real: <code>pnpm crawl</code> against the actual <code>docs/</code> corpus reports 24
+  real instances, all passing their validators, and both audits correctly flagging
+  <code>knowledge.template.html</code>'s own deliberately-broken sample markup as real violations &mdash;
+  proof the crawler has no special-casing for what's "just a demo," exactly the no-built-in-ontology
+  design this spec argued for.
 </footer>
 
 </body>

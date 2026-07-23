@@ -3,7 +3,7 @@
 # Blocks Edit/Write tools if no recent goal/action knowledge node exists
 # Exit code 2 = block the tool and show error to Claude
 
-KNOWLEDGE_DIR="experiments/v4/knowledge"
+KNOWLEDGE_DIR="experiments/v4/docs/knowledge"
 
 # Check if the knowledge graph exists in this project
 if [ ! -d "$KNOWLEDGE_DIR" ]; then
@@ -48,11 +48,11 @@ cat >&2 << 'EOF'
 |  Before editing files, log what you're about to do:               |
 |                                                                   |
 |  For new work, write:                                             |
-|    experiments/v4/knowledge/<slug>.goal.html                      |
+|    experiments/v4/docs/knowledge/<slug>.goal.html                      |
 |    conforming to knowledge-goal (see knowledge.template.html)     |
 |                                                                   |
 |  For implementation, write:                                       |
-|    experiments/v4/knowledge/<slug>.action.html                    |
+|    experiments/v4/docs/knowledge/<slug>.action.html                    |
 |    conforming to knowledge-action                                 |
 |                                                                   |
 |  Then link it to its parent immediately:                          |

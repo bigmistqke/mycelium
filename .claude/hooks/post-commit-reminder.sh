@@ -3,7 +3,7 @@
 # Runs after git commit to remind Claude to link the commit to a knowledge node
 # Uses exit code 2 to ensure Claude sees the message and acts on it
 
-KNOWLEDGE_DIR="experiments/v4/knowledge"
+KNOWLEDGE_DIR="experiments/v4/docs/knowledge"
 
 # Check if the knowledge graph exists in this project
 if [ ! -d "$KNOWLEDGE_DIR" ]; then
@@ -31,7 +31,7 @@ cat >&2 << EOF
 |  Commit: $commit_hash "$commit_msg"
 |                                                                   |
 |  Write or update a knowledge-outcome node:                        |
-|    experiments/v4/knowledge/<slug>.outcome.html                   |
+|    experiments/v4/docs/knowledge/<slug>.outcome.html                   |
 |    <knowledge-commit>$commit_hash</knowledge-commit>
 |                                                                   |
 |  Or if this was mid-work (not a completed outcome), a              |
