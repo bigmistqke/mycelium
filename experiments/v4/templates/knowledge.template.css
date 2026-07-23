@@ -1,0 +1,66 @@
+/* The knowledge-* field vocabulary: six root types (goal, decision, option,
+   action, outcome, observation) sharing one field set. Grouped with :is()
+   instead of repeating the six-type list per rule. Every tag is hyphenated
+   and scoped under its own family, so these rules can never leak onto
+   another template's same-named field tags (see spec.template.css). */
+:is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  background: var(--code-bg);
+  margin: 1.25rem 0;
+}
+knowledge-goal::before { content: "goal"; }
+knowledge-decision::before { content: "decision"; }
+knowledge-option::before { content: "option"; }
+knowledge-action::before { content: "action"; }
+knowledge-outcome::before { content: "outcome"; }
+knowledge-observation::before { content: "observation"; }
+:is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation)::before {
+  display: block;
+  color: var(--accent);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+:is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) > knowledge-title {
+  display: block;
+  font-weight: 700;
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+:is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) > knowledge-confidence,
+:is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) > knowledge-status,
+:is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) > knowledge-commit,
+:is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) > knowledge-files,
+:is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) > knowledge-branch {
+  display: inline-block;
+  margin-right: 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+knowledge-confidence::before { content: "confidence: "; }
+knowledge-confidence::after { content: "%"; }
+knowledge-status::before { content: "status: "; }
+knowledge-commit::before { content: "commit: "; }
+knowledge-files::before { content: "files: "; }
+knowledge-branch::before { content: "branch: "; }
+:is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) > knowledge-prompt {
+  display: block;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+knowledge-prompt::before {
+  display: block;
+  color: var(--accent);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+  content: "prompt";
+}

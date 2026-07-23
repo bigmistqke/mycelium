@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Templates: knowledge-*</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="./knowledge.template.css">
+</head>
+<body>
+
+<h1>Templates: knowledge-*</h1>
+<div class="meta">
+  <div><b>Node types:</b> <code>knowledge-goal</code>, <code>knowledge-decision</code>,
+    <code>knowledge-option</code>, <code>knowledge-action</code>, <code>knowledge-outcome</code>,
+    <code>knowledge-observation</code> &mdash; six templates, one file, per the family-file convention</div>
+  <div><b>File naming:</b> this file is <code>knowledge.template.html</code>, named after the
+    <code>knowledge-*</code> family it defines, the same way <code>spec.template.html</code> names the
+    <code>spec-*</code> family</div>
+  <div><b>Purpose:</b> deciduous's node schema, reimplemented as templates instead of one flat SQL table
+    &mdash; the proof case <a data-rel="elaborates" href="../DESIGN.html">DESIGN.html</a> proposed</div>
+  <div><b>Sibling of:</b> <code>spec.template.html</code>, the <code>spec-*</code> family</div>
+  <div><b>Styling:</b> <code>./knowledge.template.css</code>, this family's own rendering rules, plus the
+    shared <code>../theme.css</code> every document links</div>
+</div>
+
+<h2>Why six templates, not one flat schema</h2>
+<p>
+  deciduous's git-native cousin <code>hive</code> discovered mid-build that <code>status</code> only makes
+  sense for <code>goal</code>/<code>decision</code>/<code>action</code>, not for
+  <code>option</code>/<code>outcome</code>/<code>observation</code>, and had to bolt on a
+  <code>nodeTypeSupportsStatus()</code> helper to fake per-type shape onto one flat SQL table. Here that
+  isn't a workaround: <code>knowledge-goal</code> declares a <code>knowledge-status</code> field,
+  <code>knowledge-observation</code> simply doesn't. Six separate <code>&lt;template&gt;</code> entries in
+  one <code>knowledge-*</code>-named file, exactly as <a href="../DESIGN.html">DESIGN.html</a>'s own worked
+  example already showed for this same schema.
+</p>
+
+<h2>Shared field vocabulary</h2>
+<p>
+  Every type shares only the family prefix on its fields, not its own type name (<code>knowledge-title</code>,
+  not <code>knowledge-goal-title</code>) &mdash; see <a data-rel="elaborates"
+  href="../specs/2026-07-23-deciduous-template-series.spec.html">the design spec</a>'s naming section. Two
+  fields need more than "present and non-empty":
+</p>
+<ul>
+  <li><code>knowledge-confidence</code> &mdash; an integer 0&ndash;100, matching deciduous's own
+    <code>-c/--confidence</code> flag.</li>
+  <li><code>knowledge-status</code> &mdash; one of <code>pending</code>, <code>active</code>,
+    <code>completed</code>, <code>rejected</code>. This resolves the open question the design spec left:
+    deciduous's own CLI (<code>deciduous status --help</code>) defines exactly these four, not the
+    <code>draft</code>/<code>approved</code>/<code>implemented</code> enum <code>spec-doc</code> uses for an
+    unrelated reason (that one tracks the brainstorming skill's lifecycle, not deciduous's).</li>
+</ul>
+<p>
+  <code>knowledge-prompt</code> is optional even on <code>knowledge-goal</code>: CLAUDE.md's own rule is
+  that a verbatim prompt belongs on root goals and major direction changes, not on every downstream node,
+  so a <code>knowledge-goal</code> without one is valid, not incomplete.
+</p>
+
+<h2>The six types</h2>
+
+<h3><code>knowledge-goal</code></h3>
+<p>What the user asked for. Fields: <code>title</code>, <code>confidence</code>, <code>status</code>,
+  optional <code>prompt</code> (the verbatim request, for root goals and major direction changes).</p>
+<template id="knowledge-goal">
+  <knowledge-goal>
+    <knowledge-title></knowledge-title>
+    <knowledge-confidence></knowledge-confidence>
+    <knowledge-status></knowledge-status>
+    <knowledge-prompt></knowledge-prompt>
+  </knowledge-goal>
+</template>
+<pre><code>&lt;knowledge-goal data-conforms-to="./knowledge.template.html#knowledge-goal"&gt;
+  &lt;knowledge-title&gt;Build v4: knowledge graph as hypermedia&lt;/knowledge-title&gt;
+  &lt;knowledge-confidence&gt;85&lt;/knowledge-confidence&gt;
+  &lt;knowledge-status&gt;active&lt;/knowledge-status&gt;
+  &lt;knowledge-prompt&gt;we are playing around with mycelium&hellip;&lt;/knowledge-prompt&gt;
+&lt;/knowledge-goal&gt;</code></pre>
+<script type="module" data-validates="#knowledge-goal">
+  export function check(root) {
+    const el = root.matches?.('knowledge-goal') ? root : root.querySelector('knowledge-goal')
+    if (!el) return { ok: false, errors: ['missing <knowledge-goal> element'] }
+    const errors = []
+    for (const tag of ['knowledge-title', 'knowledge-confidence', 'knowledge-status']) {
+      const node = el.querySelector(tag)
+      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
+    }
+    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
+    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
+      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
+    }
+    const status = el.querySelector('knowledge-status')?.textContent.trim()
+    if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
+      errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
+    }
+    const prompt = el.querySelector('knowledge-prompt')
+    if (prompt && !prompt.textContent.trim()) errors.push('<knowledge-prompt> present but empty — omit it instead')
+    return { ok: errors.length === 0, errors }
+  }
+</script>
+
+<h3><code>knowledge-decision</code></h3>
+<p>A choice made between approaches. Fields: <code>title</code>, <code>confidence</code>,
+  <code>status</code>.</p>
+<template id="knowledge-decision">
+  <knowledge-decision>
+    <knowledge-title></knowledge-title>
+    <knowledge-confidence></knowledge-confidence>
+    <knowledge-status></knowledge-status>
+  </knowledge-decision>
+</template>
+<pre><code>&lt;knowledge-decision data-conforms-to="./knowledge.template.html#knowledge-decision"&gt;
+  &lt;knowledge-title&gt;HTML documents as canonical store, not DB + Markdown&lt;/knowledge-title&gt;
+  &lt;knowledge-confidence&gt;80&lt;/knowledge-confidence&gt;
+  &lt;knowledge-status&gt;active&lt;/knowledge-status&gt;
+&lt;/knowledge-decision&gt;</code></pre>
+<script type="module" data-validates="#knowledge-decision">
+  export function check(root) {
+    const el = root.matches?.('knowledge-decision') ? root : root.querySelector('knowledge-decision')
+    if (!el) return { ok: false, errors: ['missing <knowledge-decision> element'] }
+    const errors = []
+    for (const tag of ['knowledge-title', 'knowledge-confidence', 'knowledge-status']) {
+      const node = el.querySelector(tag)
+      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
+    }
+    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
+    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
+      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
+    }
+    const status = el.querySelector('knowledge-status')?.textContent.trim()
+    if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
+      errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
+    }
+    return { ok: errors.length === 0, errors }
+  }
+</script>
+
+<h3><code>knowledge-option</code></h3>
+<p>One alternative considered within a decision. No <code>status</code> &mdash; the option was or wasn't
+  chosen, that's what an edge to its parent decision says, not a lifecycle of its own. Linked to its parent
+  with <code>&lt;a data-rel="depends_on"&gt;</code>, the closest of the six edge labels. Fields:
+  <code>title</code>, <code>confidence</code>.</p>
+<template id="knowledge-option">
+  <knowledge-option>
+    <knowledge-title></knowledge-title>
+    <knowledge-confidence></knowledge-confidence>
+  </knowledge-option>
+</template>
+<pre><code>&lt;knowledge-option data-conforms-to="./knowledge.template.html#knowledge-option"&gt;
+  &lt;knowledge-title&gt;Keep the six-file split (one template file per type)&lt;/knowledge-title&gt;
+  &lt;knowledge-confidence&gt;40&lt;/knowledge-confidence&gt;
+  &lt;a data-rel="depends_on" href="./knowledge.template.html"&gt;considered for this file, rejected in favor of one bundled file&lt;/a&gt;
+&lt;/knowledge-option&gt;</code></pre>
+<script type="module" data-validates="#knowledge-option">
+  export function check(root) {
+    const el = root.matches?.('knowledge-option') ? root : root.querySelector('knowledge-option')
+    if (!el) return { ok: false, errors: ['missing <knowledge-option> element'] }
+    const errors = []
+    for (const tag of ['knowledge-title', 'knowledge-confidence']) {
+      const node = el.querySelector(tag)
+      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
+    }
+    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
+    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
+      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
+    }
+    return { ok: errors.length === 0, errors }
+  }
+</script>
+
+<h3><code>knowledge-action</code></h3>
+<p>About to write or edit code. Fields: <code>title</code>, <code>confidence</code>, <code>status</code>,
+  optional <code>commit</code>/<code>files</code>/<code>branch</code> once it's tied to real work.</p>
+<template id="knowledge-action">
+  <knowledge-action>
+    <knowledge-title></knowledge-title>
+    <knowledge-confidence></knowledge-confidence>
+    <knowledge-status></knowledge-status>
+    <knowledge-commit></knowledge-commit>
+    <knowledge-files></knowledge-files>
+    <knowledge-branch></knowledge-branch>
+  </knowledge-action>
+</template>
+<pre><code>&lt;knowledge-action data-conforms-to="./knowledge.template.html#knowledge-action"&gt;
+  &lt;knowledge-title&gt;Write DESIGN.html&lt;/knowledge-title&gt;
+  &lt;knowledge-confidence&gt;90&lt;/knowledge-confidence&gt;
+  &lt;knowledge-status&gt;completed&lt;/knowledge-status&gt;
+  &lt;knowledge-commit&gt;9794442&lt;/knowledge-commit&gt;
+  &lt;knowledge-branch&gt;main&lt;/knowledge-branch&gt;
+&lt;/knowledge-action&gt;</code></pre>
+<script type="module" data-validates="#knowledge-action">
+  export function check(root) {
+    const el = root.matches?.('knowledge-action') ? root : root.querySelector('knowledge-action')
+    if (!el) return { ok: false, errors: ['missing <knowledge-action> element'] }
+    const errors = []
+    for (const tag of ['knowledge-title', 'knowledge-confidence', 'knowledge-status']) {
+      const node = el.querySelector(tag)
+      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
+    }
+    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
+    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
+      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
+    }
+    const status = el.querySelector('knowledge-status')?.textContent.trim()
+    if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
+      errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
+    }
+    for (const tag of ['knowledge-commit', 'knowledge-files', 'knowledge-branch']) {
+      const node = el.querySelector(tag)
+      if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
+    }
+    return { ok: errors.length === 0, errors }
+  }
+</script>
+
+<h3><code>knowledge-outcome</code></h3>
+<p>Something worked or failed. No <code>status</code> &mdash; an outcome is the record of what happened, not
+  a thing that has a lifecycle itself. Fields: <code>title</code>, <code>confidence</code>, optional
+  <code>commit</code>/<code>files</code>/<code>branch</code>.</p>
+<template id="knowledge-outcome">
+  <knowledge-outcome>
+    <knowledge-title></knowledge-title>
+    <knowledge-confidence></knowledge-confidence>
+    <knowledge-commit></knowledge-commit>
+    <knowledge-files></knowledge-files>
+    <knowledge-branch></knowledge-branch>
+  </knowledge-outcome>
+</template>
+<pre><code>&lt;knowledge-outcome data-conforms-to="./knowledge.template.html#knowledge-outcome"&gt;
+  &lt;knowledge-title&gt;DESIGN.html written and committed&lt;/knowledge-title&gt;
+  &lt;knowledge-confidence&gt;92&lt;/knowledge-confidence&gt;
+  &lt;knowledge-commit&gt;9794442&lt;/knowledge-commit&gt;
+&lt;/knowledge-outcome&gt;</code></pre>
+<script type="module" data-validates="#knowledge-outcome">
+  export function check(root) {
+    const el = root.matches?.('knowledge-outcome') ? root : root.querySelector('knowledge-outcome')
+    if (!el) return { ok: false, errors: ['missing <knowledge-outcome> element'] }
+    const errors = []
+    for (const tag of ['knowledge-title', 'knowledge-confidence']) {
+      const node = el.querySelector(tag)
+      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
+    }
+    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
+    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
+      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
+    }
+    for (const tag of ['knowledge-commit', 'knowledge-files', 'knowledge-branch']) {
+      const node = el.querySelector(tag)
+      if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
+    }
+    return { ok: errors.length === 0, errors }
+  }
+</script>
+
+<h3><code>knowledge-observation</code></h3>
+<p>Something noticed along the way, not yet a decision. Fields: <code>title</code>,
+  <code>confidence</code>.</p>
+<template id="knowledge-observation">
+  <knowledge-observation>
+    <knowledge-title></knowledge-title>
+    <knowledge-confidence></knowledge-confidence>
+  </knowledge-observation>
+</template>
+<pre><code>&lt;knowledge-observation data-conforms-to="./knowledge.template.html#knowledge-observation"&gt;
+  &lt;knowledge-title&gt;Removing the &lt;style&gt; block made every document read like structured data&lt;/knowledge-title&gt;
+  &lt;knowledge-confidence&gt;70&lt;/knowledge-confidence&gt;
+&lt;/knowledge-observation&gt;</code></pre>
+<script type="module" data-validates="#knowledge-observation">
+  export function check(root) {
+    const el = root.matches?.('knowledge-observation') ? root : root.querySelector('knowledge-observation')
+    if (!el) return { ok: false, errors: ['missing <knowledge-observation> element'] }
+    const errors = []
+    for (const tag of ['knowledge-title', 'knowledge-confidence']) {
+      const node = el.querySelector(tag)
+      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
+    }
+    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
+    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
+      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
+    }
+    return { ok: errors.length === 0, errors }
+  }
+</script>
+
+<h2>Edges</h2>
+<p>
+  The six <code>data-rel</code> labels deciduous already uses: <code>depends_on</code>, <code>blocks</code>,
+  <code>supports</code>, <code>contradicts</code>, <code>alternative_to</code>, <code>leads_to</code>, written
+  the same way <a href="../DESIGN.html">DESIGN.html</a>'s own example shows:
+  <code>&lt;a data-rel="leads_to" href="./outcome-x.html"&gt;&hellip;&lt;/a&gt;</code>. This project's own
+  chain tonight used <code>leads_to</code> for its forward narrative (goal &rarr; decision &rarr; action
+  &rarr; outcome &rarr; action) and <code>depends_on</code> for <code>knowledge-option &rarr;</code> parent
+  <code>knowledge-decision</code>, the closest existing label for that relationship.
+</p>
+
+<div class="live-demo">
+  <h4>This section actually runs</h4>
+  <p>One sample instance per type, checked by that type's validator above.</p>
+
+  <div id="sample-instances" style="display:none">
+    <knowledge-goal data-conforms-to="./knowledge.template.html#knowledge-goal">
+      <knowledge-title>Sample goal</knowledge-title>
+      <knowledge-confidence>85</knowledge-confidence>
+      <knowledge-status>active</knowledge-status>
+    </knowledge-goal>
+    <knowledge-decision data-conforms-to="./knowledge.template.html#knowledge-decision">
+      <knowledge-title>Sample decision</knowledge-title>
+      <knowledge-confidence>80</knowledge-confidence>
+      <knowledge-status>pending</knowledge-status>
+    </knowledge-decision>
+    <knowledge-option data-conforms-to="./knowledge.template.html#knowledge-option">
+      <knowledge-title>Sample option</knowledge-title>
+      <knowledge-confidence>40</knowledge-confidence>
+    </knowledge-option>
+    <knowledge-action data-conforms-to="./knowledge.template.html#knowledge-action">
+      <knowledge-title>Sample action</knowledge-title>
+      <knowledge-confidence>90</knowledge-confidence>
+      <knowledge-status>completed</knowledge-status>
+      <knowledge-commit>abc1234</knowledge-commit>
+    </knowledge-action>
+    <knowledge-outcome data-conforms-to="./knowledge.template.html#knowledge-outcome">
+      <knowledge-title>Sample outcome</knowledge-title>
+      <knowledge-confidence>92</knowledge-confidence>
+    </knowledge-outcome>
+    <knowledge-observation data-conforms-to="./knowledge.template.html#knowledge-observation">
+      <knowledge-title>Sample observation</knowledge-title>
+      <knowledge-confidence>70</knowledge-confidence>
+    </knowledge-observation>
+  </div>
+
+  <pre id="validator-output">running&hellip;</pre>
+
+  <script type="module">
+    function checkGeneric(el, tag, requiredFields, checkStatus) {
+      const errors = []
+      for (const f of requiredFields) {
+        const node = el.querySelector(f)
+        if (!node || !node.textContent.trim()) errors.push(`missing or empty <${f}>`)
+      }
+      const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
+      if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
+        errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
+      }
+      if (checkStatus) {
+        const status = el.querySelector('knowledge-status')?.textContent.trim()
+        if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
+          errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
+        }
+      }
+      return { ok: errors.length === 0, errors }
+    }
+
+    const specs = [
+      ['knowledge-goal', ['knowledge-title', 'knowledge-confidence', 'knowledge-status'], true],
+      ['knowledge-decision', ['knowledge-title', 'knowledge-confidence', 'knowledge-status'], true],
+      ['knowledge-option', ['knowledge-title', 'knowledge-confidence'], false],
+      ['knowledge-action', ['knowledge-title', 'knowledge-confidence', 'knowledge-status'], true],
+      ['knowledge-outcome', ['knowledge-title', 'knowledge-confidence'], false],
+      ['knowledge-observation', ['knowledge-title', 'knowledge-confidence'], false],
+    ]
+
+    const container = document.getElementById('sample-instances')
+    const lines = specs.map(([tag, fields, hasStatus]) => {
+      const el = container.querySelector(tag)
+      const result = checkGeneric(el, tag, fields, hasStatus)
+      return result.ok
+        ? `PASS  <${tag}>`
+        : `FAIL  <${tag}>: ${result.errors.join('; ')}`
+    })
+    const out = document.getElementById('validator-output')
+    out.textContent = lines.join('\n')
+    out.className = lines.every(l => l.startsWith('PASS')) ? 'pass' : 'fail'
+  </script>
+</div>
+
+<h2>Conformance</h2>
+<pre><code>&lt;knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal"&gt;
+  &hellip;
+&lt;/knowledge-goal&gt;</code></pre>
+
+</body>
+</html>
