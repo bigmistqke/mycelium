@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: rename crawl to validate, quiet colorized output, exclude template fixtures from audits</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>rename crawl to validate, quiet colorized output, exclude template fixtures from audits</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-07-24</spec-date>
+
+  <spec-problem>
+    <p>
+      Every <code>pnpm crawl</code> run this session has printed the same two audit failures
+      (<code>orphans-except-goal</code> on <code>sample-observation</code>, <code>dangling-outcome</code> on
+      <code>sample-outcome</code>), alongside a PASS line for every single instance checked (50+ and
+      growing). Both are noise, for different reasons:
+    </p>
+    <ul>
+      <li>The per-instance PASS lines are never interesting once the mechanism is trusted &mdash; a routine
+        sanity check only needs to know "did anything fail," not which 50 things didn't.</li>
+      <li>The two audit failures aren't real problems at all: they're <code>knowledge.template.html</code>'s
+        own live-demo self-test fixtures, deliberately wired to violate the two audits so the audit logic can
+        be shown catching something real. But <code>crawl.ts</code> feeds <em>every</em> <code>.html</code>
+        file under <code>docs/</code> &mdash; including the template's own sample instances &mdash; into the
+        same <code>check(documents)</code> call as the real graph, so the fixture's deliberate violation and
+        a genuine graph problem would look identical in the output. Every run reads as "failing" even when
+        the real graph is perfectly healthy.</li>
+    </ul>
+    <p>
+      Two designs for reconciling the fixture violations against reality were considered and rejected before
+      landing on the fix below (see <code>&lt;spec-out-of-scope&gt;</code>): a <code>data-audits-expect</code>
+      attribute carrying the expected violation IDs, and a per-audit <code>data-expects="FAIL"</code>
+      declaration. Both add a way to <em>tolerate</em> the fixture's noise; neither addresses that the noise
+      shouldn't be produced in the first place.
+    </p>
+    <p>
+      Separately, <code>pnpm crawl</code> is a memorable command for what the tool <em>does internally</em>
+      (walk the tree) but not for what a user is actually asking when they type it (validate the graph).
+    </p>
+  </spec-problem>
+
+  <spec-design>
+    <h2>Audits exclude <code>docs/templates/</code>, full stop</h2>
+    <p>
+      No new attribute, no per-violation reconciliation, no declared expectations. <code>crawl.ts</code>
+      (renamed <code>validate.ts</code>, below) computes <code>templatesDir = resolvePath(dir, "templates")</code>
+      once, and for every <code>data-audits</code> script, filters the <code>documents</code> array to exclude
+      anything whose path falls under it before calling <code>check(documents)</code>:
+    </p>
+    <pre><code>const templatesDir = resolvePath(dir, "templates") + sep
+const auditDocuments = documents.filter((d) => !d.path.startsWith(templatesDir))
+// ...
+const result = (await check(auditDocuments)) as CheckResult</code></pre>
+    <p>
+      Per-instance validation (<code>data-validates</code>) is untouched and keeps including everything,
+      samples included &mdash; that's what proves each type's validator works for real, and it's harmless
+      since it's isolated per-instance; nothing about "is <em>this one</em> sample-goal shaped correctly"
+      depends on what else is in the graph. Audits are different in kind: they're inherently about the whole
+      real corpus's connectivity, and a documentation fixture sitting in that same pool corrupts the answer
+      to "is my real graph healthy" in a way a per-instance check can't be corrupted by its neighbors.
+    </p>
+    <p>
+      The browser-side live demo is untouched &mdash; it already scopes itself to just the six sample
+      instances (<code>documents = [{ path: 'sample', dom: sample-instances }]</code>) to prove the audits are
+      live, and stays the one and only place these fixtures get exercised. Net effect: a
+      <code>pnpm validate</code> run against a healthy real graph now reports a genuine <code>0 fail</code>,
+      not two explained-away ones.
+    </p>
+    <p>
+      <code>docs/templates/</code> is not new business knowledge for this engine to carry: <code>run.ts</code>'s
+      <code>findTemplateFile</code> already assumes exactly this directory convention to resolve
+      <code>&lt;id&gt;.template.html</code>. This is the same convention, applied on the read side.
+    </p>
+
+    <h2>Quiet by default, one unified summary, colorized</h2>
+    <p>
+      Drop the per-instance PASS lines and the separate <code>validators: N pass, M fail</code> line
+      entirely &mdash; no flag to bring them back; nobody has asked "which specific 50 things passed" all
+      session, only "did anything fail." Replace both with one line combining validator and audit counts:
+    </p>
+    <pre><code>50 checked, 0 fail</code></pre>
+    <p>
+      in green when <code>fail === 0</code>, red otherwise, via <code>node:util</code>'s built-in
+      <code>styleText</code> (stable on Node &ge;24, no new dependency). Any real failure still prints in
+      full below the summary, restructured &mdash; a label line, then indented violation text &mdash; instead
+      of a raw <code>JSON.stringify(result)</code> dump:
+    </p>
+    <pre><code>FAIL  knowledge/some-node.option.html
+      unexpected &lt;knowledge-status&gt; on knowledge-option</code></pre>
+    <p>
+      Audit failures (now only ever real ones, per the fix above) print the same way, one indented line per
+      violation instead of a JSON array literal.
+    </p>
+
+    <h2>Rename: <code>crawl.ts</code> &rarr; <code>validate.ts</code>, <code>pnpm crawl</code> &rarr; <code>pnpm validate</code></h2>
+    <p>
+      Full rename, not an alias: <code>git mv experiments/v4/src/crawl.ts experiments/v4/src/validate.ts</code>,
+      <code>package.json</code>'s script becomes <code>"validate": "node src/validate.ts"</code>. The tool's
+      own self-description ("the mycelium v4 crawler," in its own header comment) is prose about what it
+      conceptually does &mdash; walk the tree &mdash; and doesn't need to match the artifact name; it stays.
+    </p>
+    <p>
+      Blast radius, split the same way this project has split every rename/change so far this session
+      &mdash; living documentation gets updated, historical record doesn't:
+    </p>
+    <ul>
+      <li><b>Update:</b> <code>README.md</code> (layout diagram, usage section), <code>CLAUDE.md</code> (three
+        <code>pnpm crawl</code> mentions), and the two other live source files that name
+        <code>crawl.ts</code> in prose describing current behavior &mdash; <code>run.ts</code>'s header
+        comment ("same discipline as crawl.ts") and <code>knowledge.template.html</code>'s live-demo section
+        ("the same <code>runtime.js</code> the crawler uses under Node").</li>
+      <li><b>Leave alone:</b> every <code>crawl.ts</code>/<code>pnpm crawl</code> reference inside the existing
+        frozen spec docs (four of them), the two prior implementation plans, and every
+        <code>knowledge/*.html</code> action/outcome/decision node. These describe what was literally true
+        when they were written, the same convention CLAUDE.md's own "add only sets fields at creation time"
+        gap-narrowing left every one of its own past specs unedited.</li>
+    </ul>
+  </spec-design>
+
+  <spec-out-of-scope>
+    <ul>
+      <li><b>No <code>data-audits-expect</code> attribute.</b> Considered: a JSON-array-valued attribute on
+        the audit script declaring which violations are expected from self-test fixtures, diffed by
+        <code>validate.ts</code> against actual violations. Rejected on two grounds: a serialized array in an
+        attribute string doesn't match this project's own convention that real data lives as element content,
+        not stringified into attributes; and more fundamentally, it treats a structural problem (mixing
+        fixture and real data in one check) as a bookkeeping problem (reconciling two lists), which just adds
+        a second place expectations could drift from what the browser demo already hardcodes.</li>
+      <li><b>No per-audit <code>data-expects="FAIL"</code> declaration.</b> Considered as a coarser
+        alternative: declare that a given audit's self-test run is expected to come back <code>FAIL</code>
+        overall. Rejected: it can only compare the boolean <code>ok</code> result, not which specific
+        violations occurred, so a real new orphan appearing alongside the already-known fixture violation
+        would still read as "still just FAIL, as expected" &mdash; silently masking the exact class of problem
+        <code>pnpm validate</code> exists to catch.</li>
+      <li><b>No <code>type="mycelium/validate"</code> script type.</b> Considered as a way to unify
+        <code>data-validates</code>/<code>data-audits</code> under the same declared-command pattern
+        <code>type="mycelium/command"</code> already uses. Rejected immediately: an unrecognized
+        <code>type</code> value is exactly what makes <code>mycelium/command</code> scripts inert in a
+        browser (deliberately, since they must never run there) &mdash; the opposite of what audits and
+        validators need, since running live in-browser as part of the demo is the entire point.</li>
+      <li><b>No <code>--verbose</code> flag or any other mode switch.</b> Quiet-by-default is the only mode;
+        nothing in this session has asked for the full per-instance listing back.</li>
+    </ul>
+  </spec-out-of-scope>
+</spec-doc>
+
+<footer>
+  Next: filter audit input by <code>templatesDir</code>, restructure output with <code>styleText</code>
+  colorizing, then the file/script rename and its living-doc updates.
+</footer>
+
+</body>
+</html>
