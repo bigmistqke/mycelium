@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: mycelium knowledge update, and closing the field-shape gap</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>mycelium knowledge update, and closing the field-shape gap</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-07-23</spec-date>
+
+  <spec-problem>
+    <p>
+      CLAUDE.md names a real gap in <a href="2026-07-23-mycelium-authoring-commands.spec.html">the authoring
+      commands</a> as shipped: <code>add</code> only sets fields at creation time. Updating a field on an
+      already-existing node &mdash; the exact case of adding <code>&lt;knowledge-commit&gt;</code> to an
+      action node once its commit exists, which happens after nearly every piece of real work &mdash; still
+      means a hand Read+Edit, the same file-content-through-the-model cost <code>add</code>/<code>link</code>
+      were built to remove for creation and linking.
+    </p>
+    <p>
+      A second, previously unnoticed gap surfaced while designing the fix: every type's
+      <code>check()</code> in <code>knowledge.template.html</code> only checks that its required fields are
+      <em>present</em>. Nothing checks that a node has <em>only</em> the fields its type allows &mdash; a
+      stray <code>&lt;knowledge-status&gt;</code> on a <code>knowledge-option</code> would pass
+      <code>pnpm crawl</code> today, silently, from a hand-edit or any future command alike. Fixing the first
+      gap by having <code>update</code> carefully replicate <code>add</code>'s per-type field-gating would
+      leave the second gap exactly where it is; closing the second gap generically means the first doesn't
+      need that replication at all.
+    </p>
+  </spec-problem>
+
+  <spec-design>
+    <h2>Closed-schema validators, not just required-field checks</h2>
+    <p>
+      Each type's <code>check(root)</code> already has the list it needs: the required-tag loop
+      (<code>['knowledge-title', 'knowledge-confidence', &hellip;]</code>) plus, for <code>action</code> and
+      <code>outcome</code>, the optional-tag loop right below it (<code>['knowledge-commit',
+      'knowledge-files', 'knowledge-branch']</code>). Union the two into one <code>ALLOWED</code> array per
+      type and add one more check: any element under the root whose tag name starts with
+      <code>knowledge-</code> and isn't in <code>ALLOWED</code> is an error
+      (<code>unexpected &lt;tag&gt; on knowledge-&lt;type&gt;</code>). This runs for every node on every
+      <code>pnpm crawl</code>, against real files &mdash; the same "no sample fixtures" discipline
+      <a href="2026-07-23-mycelium-crawler.spec.html">the crawler spec</a> already established. It catches a
+      misplaced field regardless of how it got there: hand-edit, <code>add</code>, <code>update</code>, or any
+      command a future template declares.
+    </p>
+    <p>
+      This is additive to each type's existing <code>check()</code>, not a new audit: it's still "one
+      instance against its own template," the same <code>data-validates</code> contract, just a stricter
+      version of a rule that was already partially there.
+    </p>
+
+    <h2><code>update</code>: a fourth command, sibling to <code>add</code>/<code>link</code></h2>
+    <pre><code>mycelium knowledge update &lt;file&gt; [--title "&hellip;"] [--confidence NN]
+  [--status pending|active|completed|rejected] [--prompt "&hellip;"]
+  [--commit HASH] [--files "&hellip;"] [--branch NAME]</code></pre>
+    <p>
+      <code>&lt;file&gt;</code> is an existing <code>knowledge/*.html</code> file, the same convention
+      <code>link</code>'s <code>&lt;from-file&gt;</code>/<code>&lt;to-file&gt;</code> already use. Unlike
+      <code>add</code>, there's no <code>&lt;type&gt;</code> positional: the type is read straight off the
+      file's own root element (<code>doc.querySelector('[data-conforms-to]').tagName</code>), since the file
+      already declares it and re-stating it on the command line would just be one more place a typo could
+      cause a real mismatch.
+    </p>
+    <p>
+      Per flag, three states &mdash; and <code>parseArgs</code> already distinguishes the two that matter
+      (run.ts:42-54: an omitted <code>--flag</code> never sets the key at all; <code>--flag ""</code> sets it
+      to the empty string):
+    </p>
+    <ul>
+      <li>flag omitted (<code>args.commit === undefined</code>) &mdash; field untouched.</li>
+      <li>flag given a value &mdash; upsert: overwrite the existing element's <code>textContent</code> if the
+        tag is already present, append a new element if it isn't. Order never matters, matching every
+        <code>check()</code>'s use of <code>querySelector</code> rather than positional matching.</li>
+      <li>flag given an explicit empty value (<code>args.commit === ""</code>) &mdash; remove that field
+        element entirely. The documented case this exists for:
+        <code>write-template-series.action.html</code> omits <code>knowledge-commit</code> on purpose because
+        one commit didn't map cleanly to one node; <code>update</code> needs a way to walk a field back if it
+        turns out it was set by mistake, not just a way to add one.</li>
+    </ul>
+    <p>
+      <code>update</code> does not replicate <code>add</code>'s per-type field gating
+      (<code>REQUIRES_STATUS.includes(type)</code>, <code>prompt</code> only for <code>goal</code>). It writes
+      whatever field the caller asks for, on whatever type the file turns out to be. The closed-schema check
+      above is what catches a mismatch &mdash; on the next <code>pnpm crawl</code>, not immediately in the
+      CLI. This trades immediate feedback for not duplicating the field-shape table in two places; the
+      project's own session-start and pre-commit checklist already runs <code>pnpm crawl</code> before either
+      of those points, so a mistake doesn't survive long unnoticed.
+    </p>
+
+    <h2>Where this lives</h2>
+    <p>
+      All in <code>experiments/v4/docs/templates/knowledge.template.html</code>: <code>update</code> as a
+      third export in the existing <code>type="mycelium/command"</code> script, the closed-schema check as an
+      addition to each of the six existing <code>data-validates</code> scripts. No changes to
+      <code>src/run.ts</code>'s or <code>src/crawl.ts</code>'s engine code &mdash; both stay protocol-only, as
+      <a href="2026-07-23-mycelium-authoring-commands.spec.html">the authoring-commands spec</a> already
+      established; this is entirely new business logic declared inside the template file, not new engine
+      capability.
+    </p>
+  </spec-design>
+
+  <spec-out-of-scope>
+    <ul>
+      <li><b>No edge removal.</b> <code>update</code> covers node fields only; removing or editing an
+        existing <code>&lt;a data-rel&gt;</code> edge is a different, unaddressed gap.</li>
+      <li><b>No immediate CLI-side validation.</b> <code>update</code> (like <code>add</code>) doesn't run
+        the file back through its own validator after writing; catching a mismatch still means running
+        <code>pnpm crawl</code>, same as today.</li>
+      <li><b>No authoring commands for <code>spec-doc</code>.</b> The second gap CLAUDE.md names &mdash;
+        spec docs still needing hand-authoring &mdash; is untouched by this spec; this document itself was
+        hand-authored, per that same gap.</li>
+      <li><b>No interactive prompts or auto-slugging.</b> Same as <code>add</code>/<code>link</code>; every
+        argument comes in on the command line.</li>
+    </ul>
+  </spec-out-of-scope>
+</spec-doc>
+
+<footer>
+  Next: add the <code>ALLOWED</code>-set check to each of the six <code>data-validates</code> scripts in
+  <code>knowledge.template.html</code>, then add the <code>update</code> export next to <code>add</code>/
+  <code>link</code>, then use it for real the next time a node's status or commit needs filling in after the
+  fact.
+</footer>
+
+</body>
+</html>
