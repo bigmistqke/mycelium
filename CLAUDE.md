@@ -15,8 +15,8 @@ history, still queryable read-only via the `deciduous` CLI, just no longer
 where new work gets logged. Full reasoning:
 `experiments/v4/docs/specs/2026-07-23-deciduous-template-series.spec.html`.
 
-**Use the CLI to log, don't hand-author.** As of this same day, both halves of
-`mycelium run` exist and are tested working:
+**Use the CLI to log, don't hand-author.** As of this same day, all three of
+`mycelium run`'s knowledge commands exist and are tested working:
 
 ```bash
 pnpm --filter @mycelium/v4 mycelium knowledge add <type> --title "…" --confidence NN [--status S] [--prompt "…"] [--commit HASH] --file <slug>
