@@ -224,7 +224,7 @@
   </p>
 
   <div id="sample-instance">
-    <spec>
+    <spec data-conforms-to="../templates/spec.template.html#spec">
       <title>Example design</title>
       <status>draft</status>
       <date>2026-01-01</date>
@@ -265,7 +265,19 @@
 </div>
 
 <h2>Conformance</h2>
-<pre><code>&lt;link rel="conforms-to" href="../templates/spec.template.html#spec"&gt;</code></pre>
+<p>
+  Conformance is declared as a <code>data-conforms-to</code> attribute on the element making the claim, not
+  as a <code>&lt;link rel="conforms-to"&gt;</code> in <code>&lt;head&gt;</code>. A head link can only assert
+  one thing about the document as a whole; it can't sit next to a <code>&lt;decision&gt;</code> nested three
+  levels into a <code>&lt;design&gt;</code> section, declaring conformance for just that one element. An
+  attribute on the element itself composes: a document can have exactly one typed root and any number of
+  typed elements nested inside it, each independently addressable via
+  <code>document.querySelectorAll('[data-conforms-to]')</code>, instead of only ever answering "what is
+  this document" once from <code>&lt;head&gt;</code>.
+</p>
+<pre><code>&lt;spec data-conforms-to="../templates/spec.template.html#spec"&gt;
+  &hellip;
+&lt;/spec&gt;</code></pre>
 
 </body>
 </html>

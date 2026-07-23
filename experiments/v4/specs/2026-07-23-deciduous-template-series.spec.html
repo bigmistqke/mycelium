@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Spec: deciduous as an HTML template series</title>
-<link rel="conforms-to" href="../templates/spec.template.html#spec">
 <style>
   :root {
     color-scheme: light dark;
@@ -116,7 +115,7 @@
 </head>
 <body>
 
-<spec>
+<spec data-conforms-to="../templates/spec.template.html#spec">
   <title>Deciduous as an HTML template series, plus v4's first dogfooded graph nodes</title>
   <status>approved</status>
   <date>2026-07-23</date>
@@ -210,6 +209,20 @@
       <tr><td><code>outcome</code></td><td>title, confidence, commit, files, branch</td></tr>
       <tr><td><code>observation</code></td><td>title, confidence</td></tr>
     </table>
+
+    <h2>Conformance: on the element, not the document</h2>
+    <p>
+      <code>DESIGN.html</code>'s own example declares conformance with a <code>&lt;link rel="conforms-to"&gt;</code>
+      in <code>&lt;head&gt;</code> &mdash; a claim about the document as a whole, one slot, exactly one type. That
+      doesn't compose: it can't sit next to a <code>&lt;decision&gt;</code> nested inside this very document's
+      <code>&lt;design&gt;</code> section, declaring conformance for just that one embedded element (see the open
+      question below about inline <code>&lt;decision&gt;</code>/<code>&lt;observation&gt;</code> instances).
+      So this document (and <code>spec.template.html</code>) instead declare conformance as a
+      <code>data-conforms-to</code> attribute directly on the element making the claim &mdash; this document's own
+      <code>&lt;spec&gt;</code> tag carries it. A document can then have exactly one typed root and any number of
+      typed elements nested inside it, each independently found via
+      <code>document.querySelectorAll('[data-conforms-to]')</code>.
+    </p>
 
     <h2>Edges</h2>
     <p>
