@@ -11,7 +11,7 @@
 
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
   <spec-title>Deciduous as an HTML template series, plus v4's first dogfooded knowledge nodes</spec-title>
-  <spec-status>approved</spec-status>
+  <spec-status>implemented</spec-status>
   <spec-date>2026-07-23</spec-date>
 
   <spec-problem>
@@ -40,11 +40,12 @@
     spec.template.html    the spec-doc template this document conforms to
     spec.template.css     the spec-* family's own rendering rules
   knowledge/
-    goal-build-v4.html
-    decision-html-as-store.html
-    action-write-design-html.html
-    outcome-design-html-committed.html
-    action-write-template-series.html
+    build-v4.goal.html
+    html-as-store.decision.html
+    write-design-html.action.html
+    design-html-committed.outcome.html
+    write-template-series.action.html
+    template-series-built.outcome.html
   specs/
     2026-07-23-deciduous-template-series.spec.html   this document</code></pre>
     <p>
@@ -53,10 +54,15 @@
       for the <code>knowledge-*</code> family), not after any single type within it &mdash; the same file can
       hold several related <code>&lt;template&gt;</code> entries, addressed by fragment, the way
       <code>DESIGN.html</code>'s own worked example already does. Documents that conform to
-      <code>spec-doc</code> end in <code>.spec.html</code>. Knowledge instance nodes
-      (<code>knowledge/*.html</code>) aren't covered by a suffix convention yet &mdash; introduce one if and
-      when it earns its keep, not speculatively. There is no <code>audits/</code> directory: see "Audits
-      live with their family" below for why.
+      <code>spec-doc</code> end in <code>.spec.html</code>; knowledge instances end in their specific type
+      instead &mdash; <code>.goal.html</code>, <code>.decision.html</code>, <code>.action.html</code>,
+      <code>.outcome.html</code> &mdash; since <code>knowledge-*</code> has six types where
+      <code>spec-*</code> only ever had one, and a shared <code>.knowledge.html</code> wouldn't say which.
+      Not applied with full rigor (the strict form would be <code>.knowledge-action.html</code>, matching
+      the tag exactly, and <code>.spec.html</code> would arguably become <code>.spec-doc.html</code> for the
+      same reason) &mdash; good enough for now beats a consistency pass nobody asked for. The descriptive
+      part of the filename also drops the now-redundant type word: <code>write-design-html.action.html</code>,
+      not <code>action-write-design-html.action.html</code>.
     </p>
 
     <h2>Tag vocabulary: hyphenated, family-prefixed</h2>
@@ -238,27 +244,28 @@
       <code>conforms-to</code> links and hand-verified-correct structure, not yet mechanically checked.
     </p>
 
-    <h2>The five dogfood nodes</h2>
+    <h2>The six dogfood nodes</h2>
     <p>v4's own decision trail so far, as knowledge nodes instead of <code>deciduous</code> rows:</p>
     <ol>
-      <li><code>goal-build-v4.html</code> &mdash; a <code>knowledge-goal</code>, "Build v4: knowledge graph as
+      <li><code>build-v4.goal.html</code> &mdash; a <code>knowledge-goal</code>, "Build v4: knowledge graph as
         hypermedia," with <code>knowledge-prompt</code> set to the verbatim message that opened this session.</li>
-      <li><code>decision-html-as-store.html</code> &mdash; a <code>knowledge-decision</code>, "HTML documents
+      <li><code>html-as-store.decision.html</code> &mdash; a <code>knowledge-decision</code>, "HTML documents
         as canonical store, not DB + Markdown," summarizing <code>DESIGN.html</code>'s core thesis.</li>
-      <li><code>action-write-design-html.html</code> &mdash; a <code>knowledge-action</code>, writing
+      <li><code>write-design-html.action.html</code> &mdash; a <code>knowledge-action</code>, writing
         <code>DESIGN.html</code>.</li>
-      <li><code>outcome-design-html-committed.html</code> &mdash; a <code>knowledge-outcome</code>, committed
+      <li><code>design-html-committed.outcome.html</code> &mdash; a <code>knowledge-outcome</code>, committed
         as <code>9794442</code>, with <code>knowledge-commit</code> set accordingly.</li>
-      <li><code>action-write-template-series.html</code> &mdash; a <code>knowledge-action</code>, this task:
-        the template series plus this spec. Its <code>knowledge-outcome</code> node is added after the
-        implementation actually lands, per CLAUDE.md's before/after logging rule, not written speculatively
-        now.</li>
+      <li><code>write-template-series.action.html</code> &mdash; a <code>knowledge-action</code>: the
+        template series plus this spec.</li>
+      <li><code>template-series-built.outcome.html</code> &mdash; a <code>knowledge-outcome</code>, added
+        once the action above actually landed rather than written speculatively ahead of it, per CLAUDE.md's
+        before/after logging rule.</li>
     </ol>
     <p>
       Chained <code>knowledge-goal &rarr;leads_to&rarr; knowledge-decision &rarr;leads_to&rarr; knowledge-action
-      &rarr;leads_to&rarr; knowledge-outcome &rarr;leads_to&rarr; knowledge-action</code>. This document's
-      <code>specifies</code> edge below points at node 5 once it exists:
-      <a data-rel="specifies" href="../knowledge/action-write-template-series.html"><code>action-write-template-series.html</code></a>.
+      &rarr;leads_to&rarr; knowledge-outcome &rarr;leads_to&rarr; knowledge-action &rarr;leads_to&rarr;
+      knowledge-outcome</code>. This document's <code>specifies</code> edge points at node 5:
+      <a data-rel="specifies" href="../knowledge/write-template-series.action.html"><code>write-template-series.action.html</code></a>.
     </p>
 
     <h2>Spec docs are graph nodes too</h2>
@@ -300,8 +307,10 @@
 </spec-doc>
 
 <footer>
-  <code>templates/knowledge.template.html</code> is built, six types and their two graph-wide audits
-  together. Next: the five real <code>knowledge/</code> instances.
+  Everything this spec scoped is built: <code>knowledge.template.html</code> with its six types and two
+  collocated audits, and the six real <code>knowledge/</code> instances tracing v4's own history so far.
+  Next is whatever comes after this spec, not part of it: <code>mycelium run</code>, the crawler, and
+  running these audits for real.
 </footer>
 
 </body>
