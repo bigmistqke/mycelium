@@ -7,6 +7,7 @@
 import { readdirSync, statSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { join, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
 import { Window } from "happy-dom"
+import { parse } from "acorn"
 import "./runtime.js"
 
 const { loadModule } = globalThis.mycelium
@@ -110,17 +111,43 @@ class Filesystem {
 
 // Commands are discovered by their JSDoc, not a separate manifest: the
 // engine never needs to know what a command means, only where its doc
-// comment sits relative to its `export function` line.
+// comment sits relative to the export it documents. Parsed with acorn
+// rather than a regex so `export async function`, arrow-function exports,
+// and reordered/reformatted commands all still get picked up correctly.
+function exportedFunctionNames(node: any): string[] {
+  if (node.type === "FunctionDeclaration" && node.id) return [node.id.name]
+  if (node.type !== "ExportNamedDeclaration" || !node.declaration) return []
+  const decl = node.declaration
+  if (decl.type === "FunctionDeclaration" && decl.id) return [decl.id.name]
+  if (decl.type !== "VariableDeclaration") return []
+  return decl.declarations
+    .filter((d: any) => d.id?.type === "Identifier" && /Function/.test(d.init?.type ?? ""))
+    .map((d: any) => d.id.name)
+}
+
+function formatComment(raw: string): string {
+  return raw
+    .split("\n")
+    .map((line) => line.replace(/^\s*\*\s?/, "").trimEnd())
+    .filter((line, i, arr) => !(line === "" && (i === 0 || i === arr.length - 1)))
+    .join("\n")
+}
+
 function extractCommandDocs(source: string): Map<string, string> {
   const docs = new Map<string, string>()
-  const re = /\/\*\*([\s\S]*?)\*\/\s*export function (\w+)/g
-  for (const m of source.matchAll(re)) {
-    const body = m[1]
-      .split("\n")
-      .map((line) => line.replace(/^\s*\*\s?/, "").trimEnd())
-      .filter((line, i, arr) => !(line === "" && (i === 0 || i === arr.length - 1)))
-      .join("\n")
-    docs.set(m[2], body)
+  const comments: { type: string; value: string; start: number; end: number }[] = []
+  const ast = parse(source, { ecmaVersion: "latest", sourceType: "module", onComment: comments })
+
+  for (const node of (ast as any).body) {
+    const names = exportedFunctionNames(node)
+    if (names.length === 0) continue
+    // The doc comment for this export is the nearest preceding block
+    // comment with only whitespace between its `*/` and the export.
+    const doc = comments
+      .filter((c) => c.type === "Block" && c.end <= node.start && /^\s*$/.test(source.slice(c.end, node.start)))
+      .sort((a, b) => b.end - a.end)[0]
+    if (!doc) continue
+    for (const name of names) docs.set(name, formatComment(doc.value))
   }
   return docs
 }

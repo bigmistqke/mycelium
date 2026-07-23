@@ -12,6 +12,7 @@
     "mycelium": "node src/run.ts"
   },
   "dependencies": {
+    "acorn": "^8.17.0",
     "happy-dom": "^20.11.0"
   }
 }
