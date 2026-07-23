@@ -41,9 +41,17 @@ function parseArgs(argv: string[]): ParsedArgs {
 // anything. Everything touched gets serialized and written (or removed,
 // for deletes) once the command function has finished running — the same
 // three operations regardless of what the command did internally.
+//
+// get()/create() snapshot each document's serialized HTML the moment it's
+// parsed; commit() re-serializes and compares against that snapshot before
+// writing, skipping any file that was read but never actually mutated.
+// Both snapshots go through the same happy-dom serialization path, so
+// parse/reserialize formatting noise cancels out on both sides — the only
+// way they can differ is a real change in between. This is what makes
+// list() (below) safe to call on dozens of files just to read them.
 class Filesystem {
   #root: string
-  #touched = new Map<string, { doc: Document } | { deleted: true }>()
+  #touched = new Map<string, { doc: Document; original: string } | { deleted: true }>()
 
   constructor(root: string) {
     this.#root = root
@@ -55,7 +63,8 @@ class Filesystem {
     if (!entry) {
       const html = readFileSync(full, "utf8")
       const { document } = parseHTML(html)
-      entry = { doc: document as unknown as Document }
+      const doc = document as unknown as Document
+      entry = { doc, original: doc.documentElement!.outerHTML }
       this.#touched.set(full, entry)
     }
     if (!("doc" in entry)) throw new Error(`${path} was already deleted`)
@@ -65,13 +74,26 @@ class Filesystem {
   create(path: string, seedHtml: string): Document {
     const full = resolvePath(this.#root, path)
     const { document } = parseHTML(seedHtml)
-    this.#touched.set(full, { doc: document as unknown as Document })
+    // No "original" snapshot matches a real document's serialization, so a
+    // created file is always written — same as today's behavior.
+    this.#touched.set(full, { doc: document as unknown as Document, original: "" })
     return document as unknown as Document
   }
 
   delete(path: string): void {
     const full = resolvePath(this.#root, path)
     this.#touched.set(full, { deleted: true })
+  }
+
+  // Reads every .html file under dir (relative to this Filesystem's root)
+  // via get(), so every file it returns is tracked the same way a single
+  // get() call would be — no separate read-only path, no separate tracking.
+  list(dir: string): { path: string; doc: Document }[] {
+    const full = resolvePath(this.#root, dir)
+    return walkHtmlFiles(full).map((file) => {
+      const path = relativePath(this.#root, file)
+      return { path, doc: this.get(path) }
+    })
   }
 
   commit(): string[] {
@@ -81,12 +103,13 @@ class Filesystem {
       if ("deleted" in entry) {
         unlinkSync(full)
         console.log(`deleted  ${label}`)
-      } else {
-        const html = "<!DOCTYPE html>\n" + entry.doc.documentElement!.outerHTML + "\n"
-        writeFileSync(full, html)
-        console.log(`wrote    ${label}`)
-        written.push(full)
+        continue
       }
+      const html = entry.doc.documentElement!.outerHTML
+      if (html === entry.original) continue
+      writeFileSync(full, "<!DOCTYPE html>\n" + html + "\n")
+      console.log(`wrote    ${label}`)
+      written.push(full)
     }
     return written
   }
