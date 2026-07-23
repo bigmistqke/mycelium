@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template: spec</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5a5a5a;
+    --border: #ddd;
+    --code-bg: #f5f5f5;
+    --accent: #7b3fe4;
+    --pass: #1a7f37;
+    --fail: #cf222e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16161a;
+      --fg: #e8e6e3;
+      --muted: #9a9a9a;
+      --border: #333;
+      --code-bg: #1f1f24;
+      --accent: #b18cff;
+      --pass: #4ade80;
+      --fail: #ff6b6b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 6rem;
+  }
+  h1 { font-size: 1.7rem; margin-bottom: 0.25rem; }
+  h2 {
+    font-size: 1.15rem;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .meta {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+  .meta div { margin: 0.15rem 0; }
+  .meta b { color: var(--fg); }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; font-size: 0.85em; }
+  .live-demo {
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin: 1.25rem 0;
+  }
+  .live-demo h4 {
+    margin-top: 0;
+    color: var(--accent);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  #validator-output {
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+  }
+  #validator-output.pass { color: var(--pass); background: color-mix(in srgb, var(--pass) 15%, transparent); }
+  #validator-output.fail { color: var(--fail); background: color-mix(in srgb, var(--fail) 15%, transparent); }
+
+  /* The <spec> field vocabulary. Reused HTML element names (title) get reset
+     to block display so they behave like the rest of the vocabulary instead
+     of their native inline/head-only defaults. */
+  spec {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    background: var(--code-bg);
+    margin: 1.25rem 0;
+  }
+  spec > title { display: block; font-weight: 600; font-size: 1.05rem; margin-bottom: 0.35rem; }
+  spec > status, spec > date { display: inline-block; margin-right: 1rem; color: var(--muted); font-size: 0.9rem; }
+  spec > status::before { content: "status: "; }
+  spec > date::before { content: "date: "; }
+</style>
+</head>
+<body>
+
+<h1>Template: spec</h1>
+<div class="meta">
+  <div><b>Node type:</b> <code>spec</code></div>
+  <div><b>Purpose:</b> the shape a design/brainstorming document takes when written as a v4 node instead of Markdown</div>
+  <div><b>Sibling of:</b> <code>./decision-nodes.html</code>, the six deciduous node-type templates</div>
+</div>
+
+<h2>Why this template exists</h2>
+<p>
+  The <code>superpowers:brainstorming</code> skill's default is to write an approved design to
+  <code>docs/superpowers/specs/YYYY-MM-DD-&lt;topic&gt;-design.md</code>, with an explicit carve-out: "user
+  preferences for spec location override this default." v4's preference is that a spec is a node like any
+  other &mdash; HTML, not Markdown, and conforming to a template like any other instance in this graph. This
+  template is that override, made concrete.
+</p>
+<p>
+  Per <a href="../DESIGN.html">DESIGN.html</a>'s "no imposed shape" principle, a spec document's body stays
+  free-form prose &mdash; sections, tables, diagrams, code, whatever a given design needs. Only a minimal
+  header is checked: enough to identify the document and its state, not to constrain its content.
+</p>
+
+<h2>Shape</h2>
+<template id="spec">
+  <spec>
+    <title></title>
+    <status></status>
+    <date></date>
+  </spec>
+</template>
+<pre><code>&lt;spec&gt;
+  &lt;title&gt;&hellip;&lt;/title&gt;
+  &lt;status&gt;draft | approved | implemented&lt;/status&gt;
+  &lt;date&gt;YYYY-MM-DD&lt;/date&gt;
+&lt;/spec&gt;</code></pre>
+<p>
+  <code>status</code> tracks the brainstorming skill's own lifecycle: <code>draft</code> while under
+  discussion, <code>approved</code> once the user signs off on the design, <code>implemented</code> once
+  the plan it led to has shipped. Everything after the <code>&lt;spec&gt;</code> block is ordinary document
+  content, related nodes reached the usual way: <code>&lt;a data-rel="&hellip;"&gt;</code>.
+</p>
+
+<h2>Validator</h2>
+<script type="module" data-validates="#spec">
+  export function check(root) {
+    const el = root.matches?.('spec') ? root : root.querySelector('spec')
+    if (!el) return { ok: false, errors: ['missing <spec> element'] }
+
+    const title = el.querySelector('title')
+    const status = el.querySelector('status')
+    const date = el.querySelector('date')
+    const errors = []
+
+    if (!title || !title.textContent.trim()) errors.push('missing or empty <title>')
+    const statusValue = status?.textContent.trim()
+    if (!['draft', 'approved', 'implemented'].includes(statusValue)) {
+      errors.push(`<status> must be draft|approved|implemented, got "${statusValue ?? ''}"`)
+    }
+    if (!date || !date.textContent.trim()) errors.push('missing or empty <date>')
+
+    return { ok: errors.length === 0, errors }
+  }
+</script>
+
+<div class="live-demo">
+  <h4>This section actually runs</h4>
+  <p>A sample <code>&lt;spec&gt;</code> instance, checked by the validator above.</p>
+
+  <div id="sample-instance">
+    <spec>
+      <title>Example design</title>
+      <status>draft</status>
+      <date>2026-01-01</date>
+    </spec>
+  </div>
+
+  <pre id="validator-output">running&hellip;</pre>
+
+  <script type="module">
+    function check(root) {
+      const el = root.matches?.('spec') ? root : root.querySelector('spec')
+      if (!el) return { ok: false, errors: ['missing <spec> element'] }
+      const title = el.querySelector('title')
+      const status = el.querySelector('status')
+      const date = el.querySelector('date')
+      const errors = []
+      if (!title || !title.textContent.trim()) errors.push('missing or empty <title>')
+      const statusValue = status?.textContent.trim()
+      if (!['draft', 'approved', 'implemented'].includes(statusValue)) {
+        errors.push(`<status> must be draft|approved|implemented, got "${statusValue ?? ''}"`)
+      }
+      if (!date || !date.textContent.trim()) errors.push('missing or empty <date>')
+      return { ok: errors.length === 0, errors }
+    }
+    const sample = document.getElementById('sample-instance')
+    const out = document.getElementById('validator-output')
+    const result = check(sample)
+    out.textContent = result.ok
+      ? 'PASS: #sample-instance conforms to #spec'
+      : `FAIL: ${result.errors.join('; ')}`
+    out.className = result.ok ? 'pass' : 'fail'
+  </script>
+</div>
+
+<h2>Conformance</h2>
+<pre><code>&lt;link rel="conforms-to" href="../templates/spec-doc.html#spec"&gt;</code></pre>
+
+</body>
+</html>
