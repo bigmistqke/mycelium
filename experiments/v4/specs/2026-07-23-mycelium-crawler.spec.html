@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: the mycelium crawler</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>The mycelium crawler: a protocol-only engine for template-conforming HTML</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-07-23</spec-date>
+
+  <spec-problem>
+    <p>
+      <a href="../DESIGN.html">DESIGN.html</a>'s roadmap deferred "build <code>mycelium run</code>" and "build
+      the crawler/index" until a real template series existed to test them against. That's now true &mdash;
+      <code>knowledge.template.html</code> and <code>spec.template.html</code> exist, with real instances in
+      <code>knowledge/</code>. The freshly-rewritten <code>CLAUDE.md</code> already names the resulting gap
+      directly: its Session Start Checklist admits <code>ls</code>/<code>grep</code> are "coarser than
+      <code>deciduous nodes</code>/<code>deciduous edges</code> were," and <code>knowledge.template.html</code>'s
+      two audits are still only proven against their own sample markup, never the real files. This spec
+      scopes the tool that closes both gaps.
+    </p>
+  </spec-problem>
+
+  <spec-design>
+    <h2>Package</h2>
+    <pre><code>experiments/v4/package.json    name: "@mycelium/v4", joins the pnpm workspace, engines.node >=24
+experiments/v4/crawl.ts        the crawler itself</code></pre>
+    <p>
+      Run directly as <code>node crawl.ts</code> &mdash; Node &ge;24 strips TypeScript's type syntax
+      natively, no <code>tsx</code>/<code>ts-node</code>, no build step, nothing to keep in sync between a
+      source file and a compiled one. Same "no build step that could drift from the source" argument
+      <code>DESIGN.html</code> already makes about the HTML documents themselves, just applied to the tool
+      that reads them.
+    </p>
+    <p>
+      One runtime dependency: <code>linkedom</code>, a lightweight HTML5 (not XML) DOM implementation for
+      Node. An XML parser was ruled out earlier: these files rely on real HTML parsing behavior (unclosed
+      void elements like <code>&lt;meta&gt;</code>, named entities like <code>&amp;mdash;</code>), and a
+      stricter parser would silently diverge from what a browser accepts &mdash; exactly the drift
+      <code>DESIGN.html</code> argues the format should never allow.
+    </p>
+
+    <h2>No built-in ontology</h2>
+    <p>
+      <code>DESIGN.html</code> is explicit: "mycelium ships no notion of 'goal,' 'claim,' or 'test.' It
+      discovers vocabulary by reading whatever template documents a project has actually authored." The
+      first draft of this design violated that without noticing &mdash; it planned to have the crawler itself
+      extract "nodes" as <code>{id, type}</code> and "edges" from <code>&lt;a data-rel&gt;</code>, baking in
+      exactly the ontology that's supposed to stay template-owned. Corrected: the crawler only ever knows
+      about the templating <em>protocol</em>, never a domain built on top of it.
+    </p>
+    <table>
+      <tr><th>Protocol-level (crawler knows this)</th><th>Domain-level (crawler must not know this)</th></tr>
+      <tr><td><code>&lt;template id&gt;</code> + its paired script</td><td>"nodes" and "edges" as concepts</td></tr>
+      <tr><td><code>data-conforms-to="path#id"</code></td><td><code>data-rel</code> meaning "edge"</td></tr>
+      <tr><td><code>data-validates="#id"</code>, signature <code>check(root)</code></td><td>node types like <code>knowledge-goal</code></td></tr>
+      <tr><td><code>data-audits="name"</code>, signature <code>check(documents)</code></td><td>what "orphans-except-goal" even means</td></tr>
+    </table>
+
+    <h2>What it does</h2>
+    <ol>
+      <li>Walk a directory, parse every <code>.html</code> file with <code>linkedom</code>.</li>
+      <li>Discover every <code>&lt;template id&gt;</code> across all files, paired with its sibling
+        <code>data-validates</code>/<code>data-audits</code> script.</li>
+      <li>Discover every instance: any element carrying <code>data-conforms-to="path#id"</code>.</li>
+      <li>For each instance, extract and execute its template's <code>data-validates</code> script
+        (<code>check(root)</code> against the instance's own parsed subtree), report pass/fail.</li>
+      <li>For each <code>data-audits</code> script found, extract and execute it, passed <code>documents</code>
+        &mdash; every parsed file as <code>{path, dom}</code> &mdash; not a pre-built graph. The script decides
+        how to read that itself.</li>
+      <li>Print a summary: templates found, instances validated (pass/fail counts), audits run and their
+        results.</li>
+    </ol>
+
+    <h2>Script execution</h2>
+    <p>
+      Extracted script text (an ES module's source, e.g. <code>export function check(root) { &hellip; }</code>)
+      runs via a <code>data:text/javascript</code> dynamic <code>import()</code> &mdash; no temp files, if
+      that holds up under a quick spike before this is built for real. Falls back to a temp <code>.mjs</code>
+      file if it doesn't.
+    </p>
+
+    <h2>Signature change this requires</h2>
+    <p>
+      <code>knowledge.template.html</code>'s two audits currently export
+      <code>check(nodes, edges)</code>, with node/edge extraction (<code>extractGraph()</code>) living in the
+      live-demo script, run once against local sample markup. They move to
+      <code>check(documents)</code>, with the same <code>extractGraph</code>-shaped logic moving <em>into</em>
+      the audit script itself, now reading across every file the crawler found instead of one local
+      container. The live demo keeps working unchanged &mdash; it already has real markup and real edges
+      sitting in the DOM, it just calls <code>extractGraph(documents)</code> with a one-file
+      <code>documents</code> array standing in for a real crawl.
+    </p>
+
+    <h2>Report contract, resolved not left open</h2>
+    <p>
+      The crawler needs some minimal way to know whether an audit passed, without interpreting what it
+      checked. Resolution: reuse the shape <code>data-validates</code> scripts already return &mdash;
+      <code>{ ok, &hellip; }</code>. The crawler reads only <code>ok</code> for pass/fail coloring and exit
+      code; everything else in the returned object is audit-specific and gets printed as-is, uninterpreted.
+      Small, consistent, and not a new invention &mdash; both script kinds already agree on this shape.
+    </p>
+  </spec-design>
+
+  <spec-out-of-scope>
+    <ul>
+      <li><b>No general query language.</b> Pass/fail plus each audit's raw self-reported result is the
+        whole report surface. Filtering by type/status/confidence, "find orphans" as a standalone command
+        &mdash; not this pass.</li>
+      <li><b>No deciduous migration or bridge.</b> Its ~400 frozen nodes stay exactly where they are,
+        queryable only through the deciduous CLI.</li>
+      <li><b>No sharing with <code>@mycelium/v0</code>.</b> Different domain (TypeScript code graphs vs.
+        HTML documents), different parser, no code shared.</li>
+      <li><b>No GitHub Pages export, branch grouping, or multi-user sync.</b> Same gaps CLAUDE.md already
+        names; still waiting on this crawler to exist first, not solved by it.</li>
+    </ul>
+  </spec-out-of-scope>
+
+  <spec-open-questions>
+    <ul>
+      <li>Does <code>data:text/javascript</code> dynamic <code>import()</code> actually work reliably in the
+        target Node version for this repo, including for scripts that themselves have no imports of their
+        own (these don't)? Unverified until the spike.</li>
+    </ul>
+  </spec-open-questions>
+</spec-doc>
+
+<footer>
+  Next: build it &mdash; <code>experiments/v4/package.json</code> and <code>crawl.ts</code>, starting with
+  the <code>data:</code>-import spike, then update <code>knowledge.template.html</code>'s two audits to the
+  new <code>check(documents)</code> signature.
+</footer>
+
+</body>
+</html>

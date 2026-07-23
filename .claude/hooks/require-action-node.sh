@@ -11,6 +11,20 @@ if [ ! -d "$KNOWLEDGE_DIR" ]; then
     exit 0
 fi
 
+# Writing a goal or action node is itself always allowed - it's what
+# satisfies this gate, so the gate can't also block it. Without this,
+# there's no way to ever write the first node of a fresh window: every
+# Write is blocked until a recent goal/action file exists, and writing
+# one is itself a Write.
+input=$(cat)
+file_path=$(echo "$input" | grep -o '"file_path":"[^"]*"' | head -1 | sed 's/"file_path":"//;s/"$//')
+
+case "$file_path" in
+    *"$KNOWLEDGE_DIR"/*.goal.html|*"$KNOWLEDGE_DIR"/*.action.html)
+        exit 0
+        ;;
+esac
+
 # No nodes at all - fresh project, allow edits
 any_node=$(find "$KNOWLEDGE_DIR" -name "*.html" 2>/dev/null | head -1)
 if [ -z "$any_node" ]; then
