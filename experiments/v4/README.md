@@ -49,9 +49,6 @@ pnpm mycelium knowledge add goal --title "…" --confidence 85 --file build-v4
 pnpm mycelium knowledge link build-v4.goal.html html-as-store.decision.html --rel leads_to --label "…"
 ```
 
-(the script is named `mycelium`, not `run`, because `pnpm run <script>` would collide with pnpm's own
-subcommand dispatch)
-
 `<id>` always resolves to `docs/templates/<id>.template.html`; `<command>` is a named export of that
 file's one `<script type="mycelium/command">`. The engine only knows how to find and run that script —
 what `add`/`link` actually do (field shape, where edges go) is declared inside
