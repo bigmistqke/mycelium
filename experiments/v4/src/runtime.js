@@ -6,7 +6,7 @@
 // (non-module) <script src> and a Node side-effect `import` both work over
 // file://, and both see the same globalThis, so this file is loaded
 // identically both ways: <script src="…/runtime.js"></script> in a
-// browser, `import "./runtime.js"` in crawl.ts. See
+// browser, `import "./runtime.js"` in validate.ts. See
 // docs/specs/2026-07-23-mycelium-crawler.spec.html.
 
 globalThis.mycelium = globalThis.mycelium || {}
