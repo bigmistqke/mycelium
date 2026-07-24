@@ -62,6 +62,16 @@ function parseArgs(argv: string[]): ParsedArgs {
 // parse/reserialize formatting noise cancels out on both sides — the only
 // way they can differ is a real change in between. This is what makes
 // list() (below) safe to call on dozens of files just to read them.
+//
+// happy-dom's own parse/serialize round-trip inflates any blank line
+// sitting just before a closing tag into several (a document.write()
+// quirk, not anything this project's own templates do) — collapsed back
+// down here, applied identically at snapshot time and write time so the
+// unchanged-file comparison below still cancels out correctly.
+function normalizeWhitespace(html: string): string {
+  return html.replace(/\n{2,}/g, "\n")
+}
+
 class Filesystem {
   #root: string
   #touched = new Map<string, { doc: Document; original: string } | { deleted: true }>()
@@ -77,7 +87,7 @@ class Filesystem {
       const html = readFileSync(full, "utf8")
       const { document } = parseHTML(html)
       const doc = document as unknown as Document
-      entry = { doc, original: doc.documentElement!.outerHTML }
+      entry = { doc, original: normalizeWhitespace(doc.documentElement!.outerHTML) }
       this.#touched.set(full, entry)
     }
     if (!("doc" in entry)) throw new Error(`${path} was already deleted`)
@@ -118,7 +128,7 @@ class Filesystem {
         console.log(`deleted  ${label}`)
         continue
       }
-      const html = entry.doc.documentElement!.outerHTML
+      const html = normalizeWhitespace(entry.doc.documentElement!.outerHTML)
       if (html === entry.original) continue
       writeFileSync(full, "<!DOCTYPE html>\n" + html + "\n")
       console.log(`wrote    ${label}`)
