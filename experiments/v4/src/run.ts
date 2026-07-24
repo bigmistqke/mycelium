@@ -7,12 +7,23 @@
 import { readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { join, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
 import { parse } from "acorn"
-import { parseHTML, walkHtmlFiles, validateInstance } from "./fs-helpers.ts"
+import { parseHTML, walkHtmlFiles, validateInstance, readStdin } from "./fs-helpers.ts"
 import "./runtime.js"
 
 const { loadModule } = globalThis.mycelium
 
 type Validate = (root: Element, instancePath: string) => Promise<{ ok: boolean; errors: string[] }>
+
+interface Cli {
+  validate: Validate
+  readStdin: () => Promise<string>
+}
+
+interface CommandContext {
+  fs: Filesystem
+  args: ParsedArgs
+  cli: Cli
+}
 
 function findTemplateFile(dir: string, id: string): string | null {
   const target = `${id}.template.html`
@@ -202,9 +213,7 @@ async function main() {
     process.exit(command ? 0 : 1)
   }
 
-  const run = mod[command] as
-    | ((fs: Filesystem, args: ParsedArgs, validate: Validate) => void | Promise<void>)
-    | undefined
+  const run = mod[command] as ((ctx: CommandContext) => void | Promise<void>) | undefined
   if (typeof run !== "function") {
     console.error(`${templateLabel} has no "${command}" command\n`)
     printHelp(id, templateLabel, mod, source)
@@ -222,10 +231,11 @@ async function main() {
   }
 
   const validate: Validate = (root, instancePath) => validateInstance(docsDir, instancePath, root)
+  const cli: Cli = { validate, readStdin }
 
   const fs = new Filesystem(docsDir)
   try {
-    await run(fs, args, validate)
+    await run({ fs, args, cli })
     fs.commit()
   } catch (err) {
     console.error((err as Error).message)

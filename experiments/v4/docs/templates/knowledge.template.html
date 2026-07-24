@@ -596,7 +596,7 @@
    * <type>, a missing required field, or a field the type doesn't allow
    * is rejected and nothing is written.
    */
-  export async function add(fs, args, validate) {
+  export async function add({ fs, args, cli }) {
     requireArgs([args.file, '--file'])
     const type = args._[0]
     const path = `knowledge/${args.file}.${type}.html`
@@ -642,7 +642,7 @@
     field('knowledge-files', args.files)
     field('knowledge-branch', args.branch)
 
-    const result = await validate(root, path)
+    const result = await cli.validate(root, path)
     if (!result.ok) throw new Error(result.errors.join('\n'))
   }
 
@@ -658,7 +658,7 @@
    * to <from-file>, right before its closing tag. Both <from-file> and
    * <to-file> must already exist.
    */
-  export function link(fs, args) {
+  export function link({ fs, args }) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
     fs.get(`knowledge/${args._[1]}`)
     const doc = fs.get(`knowledge/${args._[0]}`)
@@ -686,7 +686,7 @@
    * a disallowed field, or a required field left empty, is rejected and
    * the file on disk is left untouched.
    */
-  export async function update(fs, args, validate) {
+  export async function update({ fs, args, cli }) {
     requireArgs([args._[0], '<file>'])
     const path = `knowledge/${args._[0]}`
     const doc = fs.get(path)
@@ -715,7 +715,7 @@
     field('knowledge-files', args.files)
     field('knowledge-branch', args.branch)
 
-    const result = await validate(root, path)
+    const result = await cli.validate(root, path)
     if (!result.ok) throw new Error(result.errors.join('\n'))
   }
 
@@ -733,7 +733,7 @@
    * edges: one line per <a data-rel> found — source file, rel, href,
    * label text.
    */
-  export function list(fs, args) {
+  export function list({ fs, args }) {
     const kind = args._[0]
     const documents = fs.list('knowledge')
     // Titles/labels are free text and often wrap across multiple indented

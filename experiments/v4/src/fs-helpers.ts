@@ -64,3 +64,13 @@ export async function validateInstance(
     return { ok: false, errors: [`validation setup failed — ${(err as Error).message}`] }
   }
 }
+
+// Drains stdin fully and returns it as a string. The only new shared
+// primitive this project needs for rich-content authoring — what a
+// command's own `-` sentinel means (if anything) is domain knowledge
+// that stays in the command, not here.
+export async function readStdin(): Promise<string> {
+  const chunks: Buffer[] = []
+  for await (const chunk of process.stdin) chunks.push(chunk)
+  return Buffer.concat(chunks).toString("utf8")
+}
