@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: spec.template.html's authoring commands, and date-prefixed filenames for both families</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>spec.template.html's authoring commands, and date-prefixed filenames for both families</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-07-24</spec-date>
+
+  <spec-problem>
+    <p>
+      <code>CLAUDE.md</code>'s own tracked gap: <code>spec.template.html</code> has no
+      <code>type="mycelium/command"</code> script, so every spec doc in this project &mdash; including this
+      one &mdash; is still hand-authored through Write/Edit, the exact workflow
+      <a href="2026-07-23-mycelium-authoring-commands.spec.html">the original authoring-commands spec</a>
+      built <code>add</code>/<code>link</code>/<code>update</code> to eliminate for
+      <code>knowledge-*</code>. <code>spec-doc</code> is a different shape than any
+      <code>knowledge-*</code> type, though, in ways that don't just fall out of copying the existing
+      commands:
+    </p>
+    <ul>
+      <li>One type, not six &mdash; no <code>&lt;type&gt;</code> positional needed.</li>
+      <li>Cross-references live <em>inside</em> the rich-content fields (<code>&lt;a data-rel&gt;</code>
+        nested in <code>spec-design</code>, etc.), never as direct children of <code>&lt;spec-doc&gt;</code>
+        itself &mdash; so there's no edge-attaching operation for a <code>link</code> command to perform.</li>
+      <li>Two of its five required fields, <code>spec-problem</code> and <code>spec-design</code>, are both
+        rich content (real markup, not a one-line value) and both mandatory from the moment a spec is
+        created &mdash; unlike <code>knowledge-detail</code>, which is optional everywhere and could always
+        be filled in by a later <code>update</code> call, a spec's own validator rejects it as incomplete
+        without both, so <code>add</code> itself has to accept rich content for more than one field in the
+        same call.</li>
+      <li>Filenames encode a date (<code>&lt;date&gt;-&lt;topic&gt;.spec.html</code>), which no
+        <code>knowledge-*</code> file has ever needed.</li>
+    </ul>
+  </spec-problem>
+
+  <spec-design>
+    <h2>add and update only &mdash; no link, no list yet</h2>
+    <p>
+      No <code>&lt;type&gt;</code> positional: <code>spec.template.html</code> defines exactly one type,
+      so <code>add</code> takes only flags. No <code>link</code>: since every cross-reference already lives
+      inside a rich-content field's own markup, authoring one is just part of writing that field's content
+      (see "Rich content: one --body flag" below) &mdash; there's no separate "attach an edge to this node"
+      operation the way <code>knowledge-*</code> has. No <code>list</code>, for now: a spec's filename
+      already encodes its date and topic, so the only genuinely hidden field is <code>spec-status</code>; the
+      corpus is small enough that this doesn't yet earn a command the way <code>knowledge list</code> did for
+      a fast-growing, opaquely-named directory. Can be added later, the same way <code>knowledge list</code>
+      itself was added after <code>add</code>/<code>link</code>/<code>update</code> already existed.
+    </p>
+
+    <h2>Filenames: no --date flag anywhere</h2>
+    <p>
+      <code>add</code> computes today's date itself &mdash; local calendar day, zero-padded
+      <code>YYYY-MM-DD</code>, via a small local helper (not a shared export; see "Duplicated, not shared"
+      below):
+    </p>
+    <pre><code>function todayDate() {
+  const d = new Date()
+  const pad = n =&gt; String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}</code></pre>
+    <p>
+      No override flag: every spec written this session used the date it was actually written on, never a
+      backdated or future one, so there's no real use case an explicit <code>--date</code> would serve that
+      "today" doesn't already cover &mdash; one less argument to document, remember, or misuse. For
+      <code>spec-doc</code> specifically, the same computed value fills two places: the filename prefix
+      (<code>&lt;date&gt;-&lt;file&gt;.spec.html</code>) and the required <code>&lt;spec-date&gt;</code>
+      field's content, so they can never drift apart the way a hand-typed date in each spot could.
+    </p>
+
+    <h2>knowledge-* filenames get the same date prefix, separately</h2>
+    <p>
+      Not a new field, not a schema or validator change, not retroactive: existing <code>knowledge/*.html</code>
+      files keep their current names untouched. This only changes how <code>knowledge.template.html</code>'s
+      own <code>add</code> constructs a <em>new</em> file's path, from
+      <code>knowledge/${args.file}.${type}.html</code> to
+      <code>knowledge/${todayDate()}-${args.file}.${type}.html</code> &mdash; the exact same
+      <code>todayDate()</code> shape as <code>spec-doc</code>'s, duplicated into
+      <code>knowledge.template.html</code>'s own command script rather than imported from anywhere. No other
+      command needs to change: <code>update</code>/<code>link</code> both take an existing file's exact
+      current name as an argument, never construct one, so this is fully contained inside <code>add</code>'s
+      one line of path-building logic.
+    </p>
+
+    <h2>Duplicated, not shared</h2>
+    <p>
+      <code>todayDate()</code> lives once in each family's own <code>type="mycelium/command"</code> script
+      (<code>knowledge.template.html</code>'s and <code>spec.template.html</code>'s), not in
+      <code>utils.ts</code> as a shared export. Same reasoning
+      <a data-rel="elaborates" href="../knowledge/duplicate-not-share-loadcheck.decision.html">already
+      applied to <code>loadModule</code>/<code>loadCheck</code></a>: a data: URL-loaded command script can't
+      do a relative import anyway (a data: URL has no hierarchical base to resolve <code>./utils.ts</code>
+      against), and each family's command script is meant to be self-contained &mdash; <code>requireArgs</code>
+      already lives only in <code>knowledge.template.html</code>, not shared with a family that didn't exist
+      yet when it was written. <code>spec.template.html</code>'s own command script gets its own
+      <code>requireArgs</code>, too, not a copy imported from <code>knowledge.template.html</code>.
+    </p>
+
+    <h2>Rich content: one --body flag, not one flag per field</h2>
+    <p>
+      Real options considered and rejected, in the order they came up:
+    </p>
+    <ul>
+      <li><b>A flag per rich field</b> (<code>--problem</code>, <code>--design</code>,
+        <code>--out-of-scope</code>, <code>--open-questions</code>), each independently literal-or-<code>-</code>-for-stdin.
+        Breaks the moment more than one needs stdin in the same call: stdin is one stream, and a second
+        <code>readStdin()</code> call finds it already drained, silently returning an empty section instead
+        of an error.</li>
+      <li><b>A curl-style <code>@</code>-prefix per field</b> (<code>--problem @file</code>,
+        <code>--problem @-</code>). Doesn't actually solve the collision above &mdash; that's fixed by
+        reading from files instead of stdin, which works identically whether it's spelled with an
+        <code>@</code> or a second flag. The <code>@</code> was purely a flag-count question, confusing to
+        present as if it were the fix.</li>
+      <li><b>A file per rich field</b> (<code>--problem-file</code>, <code>--design-file</code>, one real
+        file each). Genuinely solves the collision &mdash; files, unlike stdin, can each be read
+        independently &mdash; but at the cost of needing a separate temp file per field just to write one
+        spec, real friction for what's usually a single sitting of authoring.</li>
+      <li><b>Defer problem/design to a later <code>update</code> call</b>, so <code>add</code> only ever
+        handles single-line fields. Doesn't work at all: <code>spec-problem</code>/<code>spec-design</code>
+        are both required, so <code>add</code>'s own <code>cli.validate()</code> call rejects the node
+        before it's ever written &mdash; there's nothing left for <code>update</code> to fill in
+        afterward.</li>
+    </ul>
+    <p>
+      Landed on: one flag, <code>--body</code>, same literal-or-<code>-</code>-for-stdin shape
+      <code>--detail</code> already has. Its value is a small blob of markup using the field names as their
+      own delimiters &mdash; nothing new to invent, since an author already has to know
+      <code>spec-problem</code>/<code>spec-design</code>/<code>spec-out-of-scope</code>/<code>spec-open-questions</code>
+      by name regardless:
+    </p>
+    <pre><code>mycelium run spec add --title "…" --status draft --file remove-x --body - &lt;&lt;'EOF'
+&lt;spec-problem&gt;
+  &lt;p&gt;Whatever's motivating this.&lt;/p&gt;
+&lt;/spec-problem&gt;
+&lt;spec-design&gt;
+  &lt;p&gt;The approach, with a real code block:&lt;/p&gt;
+  &lt;pre&gt;&lt;code&gt;const x = 1&lt;/code&gt;&lt;/pre&gt;
+&lt;/spec-design&gt;
+EOF</code></pre>
+    <p>
+      One flag, one stdin stream (or one literal string, for a trivial case), no collision possible &mdash;
+      because there's only ever one thing being read, and it can carry as many or as few of the four
+      sections as the call actually needs. Not present in the blob at all: that field is left alone.
+    </p>
+    <p>
+      Parsing reuses the exact mechanism already used for <code>knowledge-detail</code>'s own real-markup
+      insertion, wrapped and queried by tag name:
+    </p>
+    <pre><code>function extractSections(cli, bodyMarkup) {
+  const { document } = cli.parseHTML(`&lt;div&gt;${bodyMarkup}&lt;/div&gt;`)
+  const wrapper = document.querySelector('div')
+  const sections = {}
+  for (const tag of ['spec-problem', 'spec-design', 'spec-out-of-scope', 'spec-open-questions']) {
+    const el = wrapper.querySelector(tag)
+    if (el) sections[tag] = el.innerHTML
+  }
+  return sections
+}</code></pre>
+    <p>
+      This needs <code>cli</code> to expose <code>parseHTML</code> (already in <code>utils.ts</code>,
+      alongside <code>validate</code>/<code>readStdin</code>) as a fourth capability, since the command
+      script itself can't import it directly. A typo'd or malformed tag inside the blob needs no special
+      handling: it just fails to match any expected tag name, that field silently stays unset, and
+      <code>cli.validate()</code> catches the resulting "missing <code>spec-problem</code>" the normal way
+      &mdash; the same safety net every other malformed-input case in this project already falls back on,
+      not a new failure mode to design around.
+    </p>
+
+    <h2>update: the existing per-field convention, applied per tag found</h2>
+    <p>
+      <code>update</code>'s established rule for every optional field &mdash; omitted leaves it untouched,
+      an explicit empty value removes it, anything else upserts it &mdash; maps directly onto
+      <code>--body</code>'s contents, just checked per tag instead of per flag: a tag absent from the blob
+      means that field isn't touched by this call at all; a tag present but empty
+      (<code>&lt;spec-design&gt;&lt;/spec-design&gt;</code>) removes the field; a tag with real content
+      upserts it, matching <code>knowledge-detail</code>'s own upsert logic (overwrite via
+      <code>innerHTML</code> if the field already exists, create and append if not).
+    </p>
+  </spec-design>
+
+  <spec-out-of-scope>
+    <ul>
+      <li><b>No <code>list</code> command for specs.</b> Named directly above as deferred, not rejected
+        &mdash; the corpus and the "what's hidden" surface are both small enough right now that
+        <code>ls docs/specs/</code> plus opening a file covers most of what it would add.</li>
+      <li><b>No retroactive renaming of existing <code>knowledge/*.html</code> files.</b> The date prefix
+        only applies to files <code>add</code> creates from here forward. Renaming existing files would also
+        mean rewriting every <code>&lt;a href&gt;</code> that currently points at them by their un-prefixed
+        name across the whole graph &mdash; a much bigger, more error-prone operation than this spec's
+        actual scope, and not something asked for.</li>
+      <li><b>No per-field rich-content flags.</b> Considered and rejected above, alongside the
+        <code>@</code>-prefix and per-field-file alternatives &mdash; <code>--body</code> covers the
+        single-field case fine (a blob containing only one tag), so keeping both would just be two ways to
+        do the same thing.</li>
+      <li><b>No <code>--date</code> override flag.</b> Considered and rejected above &mdash; nothing in this
+        project's actual usage has ever needed a spec dated other than the day it was written.</li>
+    </ul>
+  </spec-out-of-scope>
+</spec-doc>
+
+<footer>
+  Next: add <code>todayDate()</code> and the filename change to <code>knowledge.template.html</code>'s
+  <code>add</code>; add <code>cli.parseHTML</code> in <code>run.ts</code>; build
+  <code>spec.template.html</code>'s <code>type="mycelium/command"</code> script with its own
+  <code>requireArgs</code>/<code>todayDate()</code> and the <code>add</code>/<code>update</code> commands
+  described above.
+</footer>
+
+</body>
+</html>
