@@ -596,6 +596,14 @@
     }
   }
 
+  // Local to this file on purpose, not shared with spec.template.html's
+  // own copy — see docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html.
+  function todayDate() {
+    const d = new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  }
+
   /**
    * Create a new knowledge-<type> node file.
    *
@@ -606,19 +614,21 @@
    * <type> is one of goal|decision|option|action|outcome|observation.
    * --status only applies to goal/decision/action (default "pending").
    * --prompt only applies to goal. --file is required and becomes
-   * knowledge/<slug>.<type>.html. --detail is free-form markup (real
-   * HTML, including <script> — no tag restriction); pass --detail - to
-   * read it from stdin instead of the command line, for anything more
-   * than a one-line value. The built node is validated against its own
-   * type's validator before being written — an unrecognized <type>, a
-   * missing required field, or a field the type doesn't allow is
-   * rejected and nothing is written.
+   * knowledge/<today's-date>-<slug>.<type>.html — the date isn't a flag,
+   * it's today's actual date, matching the convention spec.template.html's
+   * own add already uses. --detail is free-form markup (real HTML,
+   * including <script> — no tag restriction); pass --detail - to read it
+   * from stdin instead of the command line, for anything more than a
+   * one-line value. The built node is validated against its own type's
+   * validator before being written — an unrecognized <type>, a missing
+   * required field, or a field the type doesn't allow is rejected and
+   * nothing is written.
    */
   export async function add({ fs, args, cli }) {
     requireArgs([args.file, '--file'])
     const detail = args.detail === '-' ? await cli.readStdin() : args.detail
     const type = args._[0]
-    const path = `knowledge/${args.file}.${type}.html`
+    const path = `knowledge/${todayDate()}-${args.file}.${type}.html`
     const doc = fs.create(path, `<!DOCTYPE html>
 <html lang="en">
 <head>

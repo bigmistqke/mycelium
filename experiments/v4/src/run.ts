@@ -14,6 +14,7 @@ type Validate = (root: Element, instancePath: string) => Promise<{ ok: boolean; 
 interface Cli {
   validate: Validate
   readStdin: () => Promise<string>
+  parseHTML: (html: string) => { document: Document }
 }
 
 interface CommandContext {
@@ -263,7 +264,7 @@ async function main() {
   }
 
   const validate: Validate = (root, instancePath) => validateInstance(docsDir, instancePath, root)
-  const cli: Cli = { validate, readStdin }
+  const cli: Cli = { validate, readStdin, parseHTML }
 
   const fs = new Filesystem(docsDir)
   try {
