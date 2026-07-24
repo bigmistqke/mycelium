@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: reverse the shared runtime back to globalThis</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Reverse src/runtime.js from a real ES module (requiring a server for one live demo)
+    back to the globalThis/classic-script version, so every document keeps working with a plain
+    double-click, no exceptions</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <a data-rel="depends_on" href="./2026-07-23-crawler-built.outcome.html">reconsidered immediately after the
+    real-module version shipped and was verified working</a>
+  <a data-rel="leads_to" href="./2026-07-23-write-authoring-spec.action.html">led to noticing the same no-built-in-
+    ontology principle also applied to authoring, not just reading</a>
+</knowledge-decision>
+
+<p>
+  Both directions were already spike-verified before the first decision, so this wasn't new research, just
+  re-weighing the same evidence: real <code>import</code>/<code>export</code> syntax for one small function,
+  against "just open it, no server, ever" holding with zero exceptions across every document in this
+  project. On reflection the second property is not a minor nicety here &mdash; it's the specific thing that
+  kept getting a genuine reaction tonight, turn after turn. Added <code>runtime.d.ts</code>
+  (<code>declare global</code>) alongside the reversal so <code>crawl.ts</code> keeps real types without
+  needing an actual <code>export</code> anywhere.
+</p>
+
+</body>
+</html>

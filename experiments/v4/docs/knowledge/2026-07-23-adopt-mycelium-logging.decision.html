@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: adopt mycelium logging project-wide</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Adopt knowledge/*.html nodes as the project-wide decision log, replacing deciduous for
+    all new work, not just v4</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <a data-rel="depends_on" href="./2026-07-23-knowledge-nodes-written.outcome.html">the template series and its
+    dogfood nodes were proven first</a>
+  <a data-rel="leads_to" href="./2026-07-23-rewrite-claude-md-and-hooks.action.html">led to rewriting CLAUDE.md and
+    the enforcement hooks</a>
+</knowledge-decision>
+
+<p>
+  deciduous's existing ~400 nodes (v0 through tonight) are frozen, not migrated: still real history, still
+  queryable read-only via the <code>deciduous</code> CLI, just no longer where new work gets logged. There
+  is still no crawler or <code>mycelium run</code> &mdash; this is a hand-authoring workflow, same as every
+  node written tonight, now made the actual project mechanism instead of an experiment's proof case.
+</p>
+
+</body>
+</html>

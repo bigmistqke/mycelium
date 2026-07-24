@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: rewrite CLAUDE.md and the hooks</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Rewrite CLAUDE.md's decision-graph workflow and the two enforcement hooks
+    (require-action-node.sh, post-commit-reminder.sh) to point at knowledge/*.html instead of
+    deciduous</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="leads_to" href="./2026-07-23-claude-md-and-hooks-rewritten.outcome.html">led to the switch actually
+    taking effect</a>
+</knowledge-action>
+<p>
+  <code>require-action-node.sh</code> now checks file mtimes under <code>experiments/v4/knowledge/</code>
+  for a recent <code>.goal.html</code>/<code>.action.html</code> instead of parsing
+  <code>deciduous nodes</code> output; <code>post-commit-reminder.sh</code> points at writing a
+  <code>knowledge-commit</code> field instead of a <code>deciduous add --commit HEAD</code> call.
+  <code>.deciduous/</code> itself is untouched.
+</p>
+</body></html>
