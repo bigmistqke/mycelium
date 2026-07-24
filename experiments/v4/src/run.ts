@@ -7,10 +7,7 @@
 import { readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { join, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
 import { parse } from "acorn"
-import { parseHTML, walkHtmlFiles, validateInstance, readStdin } from "./fs-helpers.ts"
-import "./runtime.js"
-
-const { loadModule } = globalThis.mycelium
+import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
 
 type Validate = (root: Element, instancePath: string) => Promise<{ ok: boolean; errors: string[] }>
 

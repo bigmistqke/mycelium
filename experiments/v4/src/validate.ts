@@ -5,10 +5,7 @@
 import { readFileSync } from "node:fs"
 import { styleText } from "node:util"
 import { resolve as resolvePath, sep } from "node:path"
-import { parseHTML, walkHtmlFiles, resolveTemplateRef } from "./fs-helpers.ts"
-import "./runtime.js"
-
-const { loadCheck } = globalThis.mycelium
+import { parseHTML, walkHtmlFiles, resolveTemplateRef, loadCheck } from "./utils.ts"
 
 interface ParsedDoc {
   path: string
