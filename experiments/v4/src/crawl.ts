@@ -3,6 +3,7 @@
 // any project builds on top of them. See docs/specs/2026-07-23-mycelium-crawler.spec.html.
 
 import { readFileSync } from "node:fs"
+import { styleText } from "node:util"
 import { dirname, resolve as resolvePath, sep } from "node:path"
 import { parseHTML, walkHtmlFiles } from "./fs-helpers.ts"
 import "./runtime.js"
@@ -102,50 +103,66 @@ async function main() {
   const templatesDir = resolvePath(dir, "templates") + sep
   const auditDocuments = documents.filter((d) => !d.path.startsWith(templatesDir))
 
-  console.log(`${documents.length} documents, ${templates.size} templates, ${instances.length} instances, ${audits.length} audits\n`)
-
-  let pass = 0
+  let checked = 0
   let fail = 0
+  const failures: string[] = []
+
   for (const instance of instances) {
+    checked++
     const key = resolveTemplateRef(instance.file, instance.conformsTo)
     const template = templates.get(key)
     const label = `${relative(dir, instance.file)}  (${instance.conformsTo})`
 
     if (!template || !template.validatorScript) {
-      console.log(`FAIL  ${label}: no template found at ${key}`)
       fail++
+      failures.push(`FAIL  ${label}\n      no template found at ${key}`)
       continue
     }
 
     try {
       const check = await loadCheck(template.validatorScript)
       const result = check(instance.element) as CheckResult
-      console.log(`${result.ok ? "PASS " : "FAIL "} ${label}`)
-      if (!result.ok) console.log(`      ${JSON.stringify(result)}`)
-      result.ok ? pass++ : fail++
+      if (!result.ok) {
+        fail++
+        failures.push(`FAIL  ${label}\n${formatItems(result)}`)
+      }
     } catch (err) {
-      console.log(`FAIL  ${label}: validator threw — ${(err as Error).message}`)
       fail++
+      failures.push(`FAIL  ${label}\n      validator threw — ${(err as Error).message}`)
     }
   }
 
-  console.log(`\nvalidators: ${pass} pass, ${fail} fail\n`)
-
   for (const audit of audits) {
+    checked++
     const label = `${audit.name}  (${relative(dir, audit.file)}${audit.touches ? `, touches: ${audit.touches}` : ""})`
     try {
       const check = await loadCheck(audit.scriptSource)
       const result = (await check(auditDocuments)) as CheckResult
-      console.log(`${result.ok ? "PASS " : "FAIL "} ${label}`)
-      console.log(`      ${JSON.stringify(result)}`)
+      if (!result.ok) {
+        fail++
+        failures.push(`FAIL  ${label}\n${formatItems(result)}`)
+      }
     } catch (err) {
-      console.log(`FAIL  ${label}: audit threw — ${(err as Error).message}`)
+      fail++
+      failures.push(`FAIL  ${label}\n      audit threw — ${(err as Error).message}`)
     }
+  }
+
+  console.log(styleText(fail === 0 ? "green" : "red", `${checked} checked, ${fail} fail`))
+  for (const f of failures) {
+    console.log("")
+    console.log(styleText("red", f))
   }
 }
 
 function relative(from: string, to: string): string {
   return to.startsWith(from) ? to.slice(from.length + 1) : to
+}
+
+function formatItems(result: CheckResult): string {
+  const items = (result.errors ?? result.violations) as string[] | undefined
+  if (!items || items.length === 0) return `      ${JSON.stringify(result)}`
+  return items.map((item) => `      ${item}`).join("\n")
 }
 
 main()
