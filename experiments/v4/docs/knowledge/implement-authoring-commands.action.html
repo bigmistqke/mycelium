@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Action: implement mycelium run</title>
@@ -8,7 +7,6 @@
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
-
 <knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
   <knowledge-title>Build src/run.ts (the fs.get/fs.create/fs.delete engine and CLI dispatch), extend
     src/runtime.js with loadModule, and add knowledge.template.html's type="mycelium/command" script for
@@ -18,8 +16,8 @@
   <knowledge-branch>main</knowledge-branch>
   <a data-rel="depends_on" href="./write-authoring-spec.action.html">implements the spec this action
     followed</a>
-<a href="./wire-up-cli-in-claude-md.action.html" data-rel="leads_to">led to actually wiring the CLI into the governing workflow</a></knowledge-action>
-
+  <a href="./wire-up-cli-in-claude-md.action.html" data-rel="leads_to">led to actually wiring the CLI into the governing workflow</a>
+</knowledge-action>
 <p>
   Two implementation details the spec left slightly open, resolved pragmatically rather than reopened as
   design questions: the <code>fs</code> context resolves every path relative to the crawl root
@@ -28,6 +26,4 @@
   <code>--flag value</code> pairs plus bare positionals, no short-flag alias table, keeping the parser
   itself free of any per-command knowledge.
 </p>
-
-</body>
-</html>
+</body></html>

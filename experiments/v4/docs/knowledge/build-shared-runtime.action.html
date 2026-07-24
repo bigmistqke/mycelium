@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Action: build the shared runtime</title>
@@ -8,7 +7,6 @@
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
-
 <knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
   <knowledge-title>Extract loadCheck (the data: URL script-execution trick) into a shared src/runtime.js,
     imported by both the crawler and the browser-facing live demos as a real ES module</knowledge-title>
@@ -20,7 +18,6 @@
   <a data-rel="leads_to" href="./crawler-built.outcome.html">led to the crawler running for real against
     the actual docs/ corpus</a>
 </knowledge-action>
-
 <p>
   Preceded by real spikes, not just discussion: confirmed classic (non-module) scripts and <code>data:</code>
   URL imports both work over <code>file://</code>, real ES module imports of a local sibling file do not
@@ -30,6 +27,4 @@
   over accepting a small server requirement, rather than contorting every shared piece of code around
   <code>file://</code> forever.
 </p>
-
-</body>
-</html>
+</body></html>

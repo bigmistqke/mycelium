@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Action: scaffold the crawler package</title>
@@ -8,7 +7,6 @@
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
-
 <knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
   <knowledge-title>Move DESIGN.html, theme.css, templates/, specs/, and knowledge/ into experiments/v4/docs/;
     add experiments/v4/package.json (@mycelium/v4, linkedom) and src/, joining the pnpm workspace</knowledge-title>
@@ -20,7 +18,6 @@
   <a data-rel="leads_to" href="./build-shared-runtime.action.html">led to building the shared runtime,
     the crawler's first real piece</a>
 </knowledge-action>
-
 <p>
   The move was a single wholesale directory rename — everything inside it links relative to its own
   siblings, never more than one level up, so nothing internal broke; only <code>CLAUDE.md</code> and the two
@@ -30,6 +27,4 @@
   correctly, and <code>linkedom</code> parses a real node file and reads <code>data-conforms-to</code> and
   <code>data-rel</code> edges correctly.
 </p>
-
-</body>
-</html>
+</body></html>
