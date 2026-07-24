@@ -531,14 +531,11 @@
   <p>
     Runs the exact two <code>data-audits</code> scripts above, not a hand-copied re-implementation &mdash;
     their source text is pulled straight from the <code>&lt;script&gt;</code> tags and dynamically
-    <code>import()</code>ed from a <code>data:</code> URL via <code>loadCheck</code>, loaded from the same
-    <code>../../src/runtime.js</code> <a href="../specs/2026-07-23-mycelium-crawler.spec.html">the
-    crawler</a> uses under Node &mdash; shared code, not a hand-copy, and still works with a plain
-    double-click. That file has no <code>export</code> on purpose: a real ES module import would be
-    CORS-checked, and <code>file://</code> has no stable origin to satisfy that check. Loaded here instead
-    as a classic <code>&lt;script src&gt;</code> (exempt from that check, same as this file's own
-    <code>&lt;link rel="stylesheet"&gt;</code> tags always have been), attaching to <code>globalThis</code>
-    so both this page and <code>validate.ts</code> see the same function. Their <code>documents</code> argument
+    <code>import()</code>ed from a <code>data:</code> URL via a local <code>loadCheck</code>, the same trick
+    (and the same five lines) <a href="../specs/2026-07-23-mycelium-crawler.spec.html">the
+    crawler</a> uses under Node in <code>utils.ts</code> &mdash; duplicated, not shared, since a real
+    cross-file import would be CORS-checked with no stable origin to satisfy it over <code>file://</code>,
+    and still works with a plain double-click either way. Their <code>documents</code> argument
     here is just <code>[{ path: 'sample', dom: sample-instances }]</code>, a one-file stand-in for a real
     crawl. The samples were wired so extraction still produces one real violation per audit:
     <code>sample-observation</code> has no edges at all, and <code>sample-outcome</code> has only an
@@ -547,9 +544,11 @@
 
   <pre id="audit-output">running&hellip;</pre>
 
-  <script src="../../src/runtime.js"></script>
   <script type="module">
-    const { loadCheck } = window.mycelium
+    async function loadCheck(scriptSource) {
+      const mod = await import(`data:text/javascript,${encodeURIComponent(scriptSource)}`)
+      return mod.check
+    }
 
     const documents = [{ path: 'sample', dom: document.getElementById('sample-instances') }]
     const orphansSource = document.querySelector('script[data-audits="orphans-except-goal"]').textContent
