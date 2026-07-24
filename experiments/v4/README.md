@@ -11,8 +11,10 @@ docs/            every document — templates, specs, and the real knowledge gra
   DESIGN.html
   theme.css
   templates/     knowledge.template.html, spec.template.html — the two node vocabularies
-  specs/         design specs, themselves conforming to spec.template.html
-  knowledge/     the real graph: this project's own decision history
+  specs/         design specs, themselves conforming to spec.template.html,
+                 named <date>-<topic>.spec.html
+  knowledge/     the real graph: this project's own decision history,
+                 named <date>-<slug>.<type>.html
 src/             Node-only, reads/writes docs/, never opened as a webpage
   validate.ts    reads: validate + audit every document
   run.ts         writes: `run <id> <command> [args]`, template-declared authoring
@@ -45,7 +47,8 @@ is; it only knows the templating protocol (`<template>`,
 ```sh
 pnpm mycelium <id> --help                 # list that template's commands, from their own doc comments
 pnpm mycelium knowledge add goal --title "…" --confidence 85 --file build-v4
-pnpm mycelium knowledge link build-v4.goal.html html-as-store.decision.html --rel leads_to --label "…"
+  # writes docs/knowledge/<today's-date>-build-v4.goal.html
+pnpm mycelium knowledge link 2026-07-23-build-v4.goal.html 2026-07-23-html-as-store.decision.html --rel leads_to --label "…"
 ```
 
 `<id>` always resolves to `docs/templates/<id>.template.html`; `<command>` is a named export of that
@@ -55,6 +58,13 @@ what `add`/`link` actually do (field shape, where edges go) is declared inside
 `/** … */` comment right above its `export function`, which is also what `--help` prints — one source for
 both. Full design:
 [`docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`](docs/specs/2026-07-23-mycelium-authoring-commands.spec.html).
+
+`add` prefixes the filename it writes with today's actual date, computed the same way in both
+`knowledge.template.html`'s and `spec.template.html`'s own `add` — `--file build-v4` on `knowledge add`
+never writes `knowledge/build-v4.goal.html`, only `knowledge/<date>-build-v4.goal.html`. It's not a flag
+and can't be overridden; the date is whatever day `add` actually ran on, so a node's filename and its
+place in chronological order can never drift apart. Full design:
+[`docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html`](docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html).
 
 ## Opening the documents directly
 
