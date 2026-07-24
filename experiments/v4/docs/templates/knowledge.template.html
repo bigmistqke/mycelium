@@ -655,9 +655,12 @@
    * leads_to, or a new label if the project genuinely needs one — the
    * vocabulary is open. Appends
    * <a data-rel="<rel>" href="<relative path to to-file>">label</a>
-   * to <from-file>, right before its closing tag.
+   * to <from-file>, right before its closing tag. Both <from-file> and
+   * <to-file> must already exist.
    */
   export function link(fs, args) {
+    requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
+    fs.get(`knowledge/${args._[1]}`)
     const doc = fs.get(`knowledge/${args._[0]}`)
     const root = doc.querySelector('[data-conforms-to]')
     const a = doc.createElement('a')
@@ -719,11 +722,14 @@
   /**
    * List every node or edge in the real knowledge graph (docs/knowledge/).
    *
-   *   mycelium run knowledge list nodes
+   *   mycelium run knowledge list nodes [--status S] [--type T]
    *   mycelium run knowledge list edges
    *
    * nodes: one line per file — path, type (read off the root element's
    * own tag name), status (blank if the type has none), title.
+   * --status and --type optionally filter which nodes print; --type
+   * matches the bare type (e.g. "goal", not "knowledge-goal"), the same
+   * form `add <type>` takes.
    * edges: one line per <a data-rel> found — source file, rel, href,
    * label text.
    */
@@ -741,8 +747,10 @@
         if (!el) continue
         const type = el.tagName.toLowerCase()
         const family = type.split('-')[0]
-        const title = oneLine(el.querySelector(`${family}-title`)?.textContent ?? '')
         const status = oneLine(el.querySelector(`${family}-status`)?.textContent ?? '')
+        if (args.status !== undefined && status !== args.status) continue
+        if (args.type !== undefined && type !== `${family}-${args.type}`) continue
+        const title = oneLine(el.querySelector(`${family}-title`)?.textContent ?? '')
         console.log(`${path}\t${type}\t${status}\t${title}`)
       }
       return
@@ -761,7 +769,7 @@
       return
     }
 
-    console.error(`unknown list kind "${kind}" — expected "nodes" or "edges"`)
+    throw new Error(`unknown list kind "${kind}" — expected "nodes" or "edges"`)
   }
 </script>
 
