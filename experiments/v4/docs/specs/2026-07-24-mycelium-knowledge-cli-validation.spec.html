@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: validate CLI input for add/link/update/list, reusing the existing validators</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>validate CLI input for add/link/update/list, reusing the existing validators</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-07-24</spec-date>
+
+  <spec-problem>
+    <p>
+      <code>knowledge list nodes</code> can't filter by status or type &mdash; the question that started
+      this ("any pending goals?") had to be answered with <code>grep</code> over the CLI's own output,
+      because the CLI has no way to ask itself. Looking at why turned up the same gap repeated across every
+      command in <code>knowledge.template.html</code>'s <code>type="mycelium/command"</code> script: none of
+      <code>add</code>, <code>link</code>, or <code>update</code> check their own required arguments before
+      acting.
+    </p>
+    <p>
+      Confirmed against the real commands, in a scratch copy of <code>docs/</code> except where noted:
+    </p>
+    <ul>
+      <li><code>add nonsense --file x --title y</code> silently writes <code>x.nonsense.html</code> for a
+        type that isn't one of the six real ones &mdash; no error, just a file <code>pnpm validate</code>
+        will later choke on.</li>
+      <li><code>add</code> with the <code>&lt;type&gt;</code> positional omitted crashes: a raw
+        <code>TypeError</code> with the entire command script dumped inline as a <code>data:</code> URL in
+        the stack trace.</li>
+      <li><code>link a b</code> without <code>--rel</code> <b>silently writes <code>data-rel="undefined"</code></b>
+        to the <code>&lt;from&gt;</code> file &mdash; no crash, no warning, wrong data committed to disk.
+        Hit for real against this project's own live graph while investigating this problem
+        (<code>build-v4.goal.html</code> briefly gained a <code>data-rel="undefined"</code> edge before
+        being reverted with <code>git checkout</code>).</li>
+      <li><code>add goal --commit abc1234 --title "…" --file x</code> writes cleanly &mdash; <code>&lt;knowledge-commit&gt;</code>
+        isn't in <code>knowledge-goal</code>'s allowed-field list, but nothing in <code>add</code> knows
+        that. Only a later <code>pnpm validate</code> catches it
+        (<code>unexpected &lt;knowledge-commit&gt; on knowledge-goal</code>), by which point the bad file
+        has already been sitting in the graph.</li>
+    </ul>
+    <p>
+      <code>list</code> is the one command that got its own input-checking right (a bad/missing
+      <code>&lt;kind&gt;</code> gets a clean, specific error message) &mdash; but even it doesn't set a
+      failing exit code, so the error is easy to miss in a script. The common thread: three of four commands
+      trust their input completely and lean on <code>pnpm validate</code>, run afterward by a human, as the
+      only safety net.
+    </p>
+  </spec-problem>
+
+  <spec-design>
+    <h2>Reuse the six validators, don't invent a second schema</h2>
+    <p>
+      The obvious fix for "<code>add</code>/<code>update</code> don't know what fields a type allows" is to
+      give them a copy of that knowledge. Rejected (see <code>&lt;spec-out-of-scope&gt;</code>): the six
+      <code>data-validates</code> scripts in <code>knowledge.template.html</code> already are that
+      knowledge, each with its own <code>allowed = [&hellip;]</code> array. A second copy inside the command
+      script would be a second place for the same fact to drift out of sync from the first.
+    </p>
+    <p>
+      Instead, <code>add</code> and <code>update</code> build or mutate the node exactly as they do today,
+      then run the type's own real validator against the result before anything is written &mdash; the same
+      code <code>pnpm validate</code> already runs, just moved earlier. <code>validate.ts</code>'s
+      <code>main()</code> already contains this exact operation (resolve <code>data-conforms-to</code>,
+      find the matching <code>data-validates</code> script, load it, run <code>check()</code>), just inlined
+      into its per-instance loop. Two small extractions into <code>src/fs-helpers.ts</code> (already the
+      module shared between <code>run.ts</code> and <code>validate.ts</code>):
+    </p>
+    <ul>
+      <li><code>resolveTemplateRef(instanceFile, conformsTo)</code> &mdash; moved verbatim out of
+        <code>validate.ts</code>, pure path math, no behavior change. <code>validate.ts</code> imports it
+        instead of defining its own copy.</li>
+      <li><code>validateInstance(docsDir, instancePath, element)</code> &mdash; new. Given an element and the
+        path of the file it lives in, resolves its <code>data-conforms-to</code>, reads <em>that one</em>
+        template file fresh, finds the matching <code>data-validates</code> script, loads and runs it.
+        Returns <code>{ ok, errors }</code> uniformly and never throws &mdash; "no template found for this
+        type" is a reported failure, not an exception, mirroring how <code>validate.ts</code> already treats
+        that case.</li>
+    </ul>
+    <p>
+      <code>validate.ts</code> keeps its own batched, whole-corpus discovery machinery untouched: it reads
+      every template file once up front, shared across 50+ instances, which is a genuinely different job
+      from "check the one node a command just built." Forcing both call sites through one implementation
+      would either cost <code>validate.ts</code> a real file read per instance (a perf regression for no
+      reason) or force the new single-node helper to accept a pre-built templates map it doesn't need.
+      Sharing only the pure path-math piece gets the duplication that actually matters without entangling
+      two different jobs.
+    </p>
+    <p>
+      <code>run.ts</code>'s <code>main()</code> builds a <code>validate(root, instancePath)</code> closure
+      over <code>docsDir</code>, backed by the new helper, and passes it as a third argument to every
+      command:
+    </p>
+    <pre><code>const run = mod[command] as (fs: Filesystem, args: ParsedArgs, validate: Validate) => void | Promise&lt;void&gt;
+await run(fs, args, validate)
+fs.commit()</code></pre>
+    <p>
+      <code>add</code> and <code>update</code> call it after building/mutating their node; on
+      <code>!ok</code> they throw an <code>Error</code> listing the validator's own messages. This also
+      catches a bad <code>&lt;type&gt;</code> on <code>add</code> for free: constructing
+      <code>&lt;knowledge-nonsense data-conforms-to="&hellip;#knowledge-nonsense"&gt;</code> and validating
+      it hits the exact same "no template found" path a genuine broken reference would, with no special-case
+      type-checking code needed anywhere.
+    </p>
+
+    <h2>Abort-on-invalid costs nothing extra</h2>
+    <p>
+      <code>Filesystem.commit()</code> (in <code>run.ts</code>) only ever runs after <code>await run(fs,
+      args, validate)</code> returns successfully &mdash; that sequencing already exists today. A command
+      that throws never reaches <code>commit()</code>, so nothing it touched gets written: no rollback
+      logic, no partial-write cleanup, no new mechanism. This is also why the design in the previous section
+      doesn't need to special-case "write nothing on failure" &mdash; the architecture already guarantees it
+      as a side effect of a plain <code>throw</code>.
+    </p>
+
+    <h2>Required-argument checks, only where a validator can't cover it</h2>
+    <p>
+      A small local <code>requireArgs(args, names)</code> guard, defined once at the top of
+      <code>knowledge.template.html</code>'s <code>mycelium/command</code> script (not in the generic
+      engine &mdash; each template family's command script owns its own argument conventions, the way this
+      file already works), throws a plain, clean <code>Error</code> naming what's missing. Used only for
+      what <code>validateInstance</code> genuinely can't catch, since anything a type's own validator already
+      checks (a missing title, a missing confidence) doesn't need a second, duplicate check in
+      <code>requireArgs</code>:
+    </p>
+    <ul>
+      <li><b><code>add</code></b>: <code>--file</code> only &mdash; needed to know what filename to write
+        before any validation is even possible.</li>
+      <li><b><code>link</code></b>: <code>&lt;from&gt;</code>, <code>&lt;to&gt;</code>, and
+        <code>--rel</code>. There's no validator for edges to lean on &mdash; the <code>--rel</code>
+        vocabulary is deliberately open (per <code>knowledge.template.html</code>'s own docs), so only
+        presence can be checked, not the value. This directly fixes the <code>data-rel="undefined"</code>
+        bug from <code>&lt;spec-problem&gt;</code>.</li>
+      <li><b><code>update</code></b>: the target <code>&lt;file&gt;</code> positional only.</li>
+      <li><b><code>list</code></b>: its existing <code>&lt;kind&gt;</code> check (must be
+        <code>nodes</code>/<code>edges</code>) is kept as-is in shape, just switched from
+        <code>console.error(&hellip;); return</code> to a thrown <code>Error</code>, so it fails the same
+        way every other command now does.</li>
+    </ul>
+    <p>
+      <code>link</code> additionally calls <code>fs.get(`knowledge/${to}`)</code> (result discarded) before
+      making any change, purely to confirm <code>&lt;to&gt;</code> exists &mdash; reusing the exact
+      existence-check <code>&lt;from&gt;</code> already gets for free from its own <code>fs.get()</code>
+      call, rather than adding a separate <code>existsSync</code>-style mechanism. <code>fs</code> is already
+      the command's first argument, so this costs nothing beyond the one extra call.
+    </p>
+
+    <h2><code>list</code>: filters and a failing exit code</h2>
+    <p>
+      <code>list nodes</code>/<code>list edges</code> accept two new optional flags,
+      <code>--status</code> and <code>--type</code>, applied as a plain filter over the lines the command
+      already builds &mdash; no new abstraction, no change to <code>fs.list('knowledge')</code> itself.
+    </p>
+    <pre><code>mycelium run knowledge list nodes --status pending
+mycelium run knowledge list nodes --type goal</code></pre>
+
+    <h2>One clean error path for every command</h2>
+    <p>
+      <code>run.ts</code>'s <code>main()</code> wraps <code>await run(fs, args, validate)</code> in a single
+      <code>try/catch</code>: on any thrown error &mdash; a <code>requireArgs</code> failure, a
+      <code>validateInstance</code> rejection, or a plain filesystem error like "file not found" &mdash; it
+      prints <code>err.message</code> alone (no stack, no <code>data:</code> URL dump) to stderr and exits
+      1. One change, and every command's failure mode becomes equally clean, including failure modes this
+      spec doesn't add any new code for (e.g. <code>update</code> on a file that doesn't exist).
+    </p>
+  </spec-design>
+
+  <spec-out-of-scope>
+    <ul>
+      <li><b>No new schema table.</b> Considered and rejected in <code>&lt;spec-design&gt;</code>'s first
+        section: it would be a second place "what fields does a goal allow" is defined, guaranteed to drift
+        from the six validators that already define it.</li>
+      <li><b>Not fixing <code>--help</code>'s positional-only quirk.</b> <code>mycelium run knowledge list
+        nodes --help</code> today silently runs <code>list nodes</code> instead of printing help, because
+        <code>--help</code> is only special-cased when typed immediately after the family id, before any
+        command name. Real, but a separate problem from commands trusting their own required input &mdash;
+        not touched here.</li>
+    </ul>
+  </spec-out-of-scope>
+</spec-doc>
+
+<footer>
+  Next: extract <code>resolveTemplateRef</code> and add <code>validateInstance</code> to
+  <code>fs-helpers.ts</code>, wire the <code>validate</code> argument through <code>run.ts</code>, then add
+  <code>requireArgs</code> and the per-command checks to <code>knowledge.template.html</code>'s command
+  script.
+</footer>
+
+</body>
+</html>
