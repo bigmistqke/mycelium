@@ -49,18 +49,18 @@ export async function validateInstance(
   const key = resolveTemplateRef(instanceFile, conformsTo)
   const [templateFile, fragId] = key.split("#")
 
-  const { document } = parseHTML(readFileSync(templateFile, "utf8"))
-  const scriptSource = (document as unknown as Document)
-    .querySelector(`script[data-validates="#${fragId}"]`)
-    ?.textContent
-
-  if (!scriptSource) return { ok: false, errors: [`no template found at ${key}`] }
-
   try {
+    const { document } = parseHTML(readFileSync(templateFile, "utf8"))
+    const scriptSource = (document as unknown as Document)
+      .querySelector(`script[data-validates="#${fragId}"]`)
+      ?.textContent
+
+    if (!scriptSource) return { ok: false, errors: [`no template found at ${key}`] }
+
     const check = await globalThis.mycelium.loadCheck(scriptSource)
     const result = check(element) as { ok: boolean; errors?: string[]; violations?: string[] }
     return { ok: result.ok, errors: (result.errors ?? result.violations ?? []) as string[] }
   } catch (err) {
-    return { ok: false, errors: [`validator threw — ${(err as Error).message}`] }
+    return { ok: false, errors: [`validation setup failed — ${(err as Error).message}`] }
   }
 }
