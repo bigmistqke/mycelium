@@ -100,42 +100,47 @@
       that established this</a> for the full reasoning.
     </p>
 
-    <h2>CLI: two flags, not one with a sentinel</h2>
+    <h2>CLI: one flag, an exact-match sentinel for stdin</h2>
     <p>
-      <code>add</code>/<code>update</code> gain two new flags:
+      <code>add</code>/<code>update</code> gain one new flag:
     </p>
-    <pre><code>--detail "short inline text"          # literal value, same as --title today
---detail-file &lt;path&gt;                  # read the value from a file
---detail-file -                        # read the value from stdin</code></pre>
+    <pre><code>--detail "short inline text"    # literal value, same as --title today
+--detail -                      # read the value from stdin</code></pre>
     <p>
-      Two flags rather than one flag with a value-prefix sentinel (the way <code>curl -d @file</code> uses
-      <code>@</code> to mean "read this from a file instead of treating it literally"). Every existing flag
-      in this project's commands (<code>--title</code>, <code>--commit</code>, <code>--files</code>,
-      <code>--branch</code>) is a plain, single-purpose name with no special value syntax; a sentinel would
-      make <code>--detail</code> the one flag in the whole CLI whose behavior depends on the first character
-      of its value, discoverable only by reading source, not from <code>--help</code>. <code>-F</code>
-      taking a real filename or a literal <code>-</code> for stdin is a well-worn Unix convention (also
-      <code>tar</code>, <code>cp</code>, plenty of others) &mdash; reused here for the <em>value</em> of
-      <code>--detail-file</code> specifically, not as a reason to collapse it back into one flag with
-      <code>--detail</code>.
+      This went through two earlier drafts before landing here. The first (rejected) was a single flag
+      disambiguated by a value prefix, the way <code>curl -d @file</code> uses <code>@</code> to mean "read
+      this from a file instead of treating it literally" &mdash; workable, but it makes <code>--detail</code>
+      the one flag in the CLI whose behavior depends on the first character of its value, discoverable only
+      by reading source. The second (also rejected, and what this document originally specified) was two
+      flags, <code>--detail</code> for literal text and <code>--detail-file &lt;path-or-dash&gt;</code> for
+      file- or stdin-sourced content &mdash; git's <code>-m</code>/<code>-F</code> split.
     </p>
     <p>
-      This also gives every author a proportionate tool: a one-sentence clarification stays a plain
-      <code>--detail "…"</code>, no heredoc ceremony required; anything with real paragraphs, code blocks, or
-      a demo script goes through <code>--detail-file</code>, where shell quoting never touches the content at
-      all.
+      Both were solving a problem that doesn't need a dedicated flag at all: file-sourced content is just
+      stdin sourced from a file, which shell redirection already does without any help from this program.
     </p>
+    <pre><code>--detail - &lt; path/to/fragment.html            # file-sourced, via redirection
+cat fragment.html | mycelium run knowledge add … --detail -   # or piped
+--detail - &lt;&lt;'EOF'                             # or a heredoc, same as before
+…
+EOF</code></pre>
     <p>
-      Both flags given at once is rejected with a clear error, not silently resolved by precedence &mdash;
-      consistent with this project's existing preference (established in the previous plan) for a command
-      that catches a contradiction in its own input rather than guessing which one the author meant.
+      So one flag is enough: a literal value is used as-is, and the single-character value <code>-</code>
+      means "read stdin instead" &mdash; the same well-worn Unix convention <code>git commit -F -</code>,
+      <code>tar</code>, and <code>cp</code> already use, just applied directly to <code>--detail</code>
+      instead of a second flag. This isn't the same kind of guess an earlier "quoted means text, unquoted
+      means path" idea would have needed (rejected during brainstorming, before this document existed, for
+      being outright impossible &mdash; the shell strips quote characters before a program ever sees
+      <code>argv</code>, so a quoted and unquoted value with the same text are indistinguishable). Checking
+      whether a value is exactly <code>-</code> is a plain, unambiguous equality check; there's no third "is
+      this a path" case left to guess at, because there's no path case at all anymore.
     </p>
 
     <h2>Shared input-resolution helper, not knowledge-specific code</h2>
     <p>
-      The logic that turns <code>--detail</code>/<code>--detail-file</code> into an actual markup string
-      (read the literal value, or read a file, or read stdin when the value is <code>-</code>) is a new
-      export in <code>src/fs-helpers.ts</code>, alongside <code>resolveTemplateRef</code>/<code>validateInstance</code>
+      The logic that turns <code>--detail</code>'s value into an actual markup string (the literal value, or
+      stdin's content when the value is exactly <code>-</code>) is a new export in
+      <code>src/fs-helpers.ts</code>, alongside <code>resolveTemplateRef</code>/<code>validateInstance</code>
       &mdash; not written inline inside <code>knowledge.template.html</code>'s command script. This matters
       because <code>spec.template.html</code> doesn't have a <code>type="mycelium/command"</code> script yet
       (a known, already-tracked gap), but when it does, its own <code>add</code>/<code>update</code> will
@@ -192,8 +197,8 @@ knowledge/other-node.goal.html	knowledge-goal	completed	Another title	</code></p
 <footer>
   Next: add <code>knowledge-detail</code> to all six <code>&lt;template&gt;</code> entries and their
   validators' <code>allowed</code> arrays, add the shared input-resolution helper to
-  <code>fs-helpers.ts</code>, wire <code>--detail</code>/<code>--detail-file</code> into <code>add</code>/<code>update</code>,
-  and add the <code>[+detail]</code> column to <code>list</code>.
+  <code>fs-helpers.ts</code>, wire <code>--detail</code> into <code>add</code>/<code>update</code>, and add
+  the <code>[+detail]</code> column to <code>list</code>.
 </footer>
 
 </body>
