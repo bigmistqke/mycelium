@@ -602,18 +602,22 @@
    *
    *   mycelium run knowledge add <type> --title "…" --confidence NN --file <slug>
    *     [--status pending|active|completed|rejected] [--prompt "…"]
-   *     [--commit HASH] [--files "…"] [--branch NAME]
+   *     [--detail "…" | --detail -] [--commit HASH] [--files "…"] [--branch NAME]
    *
    * <type> is one of goal|decision|option|action|outcome|observation.
    * --status only applies to goal/decision/action (default "pending").
    * --prompt only applies to goal. --file is required and becomes
-   * knowledge/<slug>.<type>.html. The built node is validated against
-   * its own type's validator before being written — an unrecognized
-   * <type>, a missing required field, or a field the type doesn't allow
-   * is rejected and nothing is written.
+   * knowledge/<slug>.<type>.html. --detail is free-form markup (real
+   * HTML, including <script> — no tag restriction); pass --detail - to
+   * read it from stdin instead of the command line, for anything more
+   * than a one-line value. The built node is validated against its own
+   * type's validator before being written — an unrecognized <type>, a
+   * missing required field, or a field the type doesn't allow is
+   * rejected and nothing is written.
    */
   export async function add({ fs, args, cli }) {
     requireArgs([args.file, '--file'])
+    const detail = args.detail === '-' ? await cli.readStdin() : args.detail
     const type = args._[0]
     const path = `knowledge/${args.file}.${type}.html`
     const doc = fs.create(path, `<!DOCTYPE html>
@@ -654,6 +658,11 @@
     field('knowledge-confidence', args.confidence ?? '70')
     if (REQUIRES_STATUS.includes(type)) field('knowledge-status', args.status ?? 'pending')
     if (type === 'goal') field('knowledge-prompt', args.prompt)
+    if (detail) {
+      const el = doc.createElement('knowledge-detail')
+      el.innerHTML = detail
+      root.appendChild(el)
+    }
     field('knowledge-commit', args.commit)
     field('knowledge-files', args.files)
     field('knowledge-branch', args.branch)
@@ -691,19 +700,23 @@
    *
    *   mycelium run knowledge update <file> [--title "…"] [--confidence NN]
    *     [--status pending|active|completed|rejected] [--prompt "…"]
-   *     [--commit HASH] [--files "…"] [--branch NAME]
+   *     [--detail "…" | --detail - | --detail ""] [--commit HASH]
+   *     [--files "…"] [--branch NAME]
    *
    * <file> is an existing knowledge/<slug>.<type>.html file; its type is
    * read off its own root element, not passed again. Per flag: omitted
    * leaves the field untouched, any other value upserts it (overwrite if
    * the tag is already present, append if not), and an explicit empty
-   * value ("") removes the field entirely. The resulting node is
-   * validated against its own type's validator before being written —
-   * a disallowed field, or a required field left empty, is rejected and
+   * value ("") removes the field entirely. --detail follows the same
+   * rule, but is free-form markup rather than plain text — pass
+   * --detail - to read it from stdin. The resulting node is validated
+   * against its own type's validator before being written — a
+   * disallowed field, or a required field left empty, is rejected and
    * the file on disk is left untouched.
    */
   export async function update({ fs, args, cli }) {
     requireArgs([args._[0], '<file>'])
+    const detail = args.detail === '-' ? await cli.readStdin() : args.detail
     const path = `knowledge/${args._[0]}`
     const doc = fs.get(path)
     const root = doc.querySelector('[data-conforms-to]')
@@ -727,6 +740,18 @@
     field('knowledge-confidence', args.confidence)
     field('knowledge-status', args.status)
     field('knowledge-prompt', args.prompt)
+    if (detail !== undefined) {
+      const existing = root.querySelector('knowledge-detail')
+      if (detail === '') {
+        existing?.remove()
+      } else if (existing) {
+        existing.innerHTML = detail
+      } else {
+        const el = doc.createElement('knowledge-detail')
+        el.innerHTML = detail
+        root.appendChild(el)
+      }
+    }
     field('knowledge-commit', args.commit)
     field('knowledge-files', args.files)
     field('knowledge-branch', args.branch)
