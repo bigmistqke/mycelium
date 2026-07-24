@@ -198,6 +198,184 @@
   </script>
 </div>
 
+<h2>Authoring commands</h2>
+<p>
+  <code>add</code> and <code>update</code>, declared once for this template &mdash; same
+  <code>type="mycelium/command"</code> convention
+  <a href="./knowledge.template.html">knowledge.template.html</a> already uses, and the same reasons: never
+  run in a browser (no live demo below, unlike the <code>data-validates</code> script above), and each
+  command's own <code>/** &hellip; */</code> comment is its only documentation, so
+  <code>mycelium run spec --help</code> and the usage shown here can never drift apart. No
+  <code>link</code>: every cross-reference a spec makes already lives inside one of its rich fields' own
+  markup (a <code>&lt;a data-rel&gt;</code> written directly into <code>--body</code>'s content), so there's
+  no separate "attach an edge" operation the way <code>knowledge-*</code> needs one. No <code>list</code>,
+  yet: see <a href="../specs/2026-07-24-mycelium-spec-authoring-commands.spec.html">the design spec</a> for
+  why that's deferred, not forgotten.
+</p>
+<script type="mycelium/command">
+  // Local to this file on purpose, not imported from knowledge.template.html
+  // or shared via utils.ts — a data: URL-loaded command script can't do a
+  // relative import anyway (no hierarchical base to resolve against), and
+  // each family's command script is meant to be self-contained. See
+  // docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html.
+  function requireArgs(...checks) {
+    for (const [value, label] of checks) {
+      if (value === undefined) throw new Error(`missing required argument: ${label}`)
+    }
+  }
+
+  function todayDate() {
+    const d = new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  }
+
+  const BODY_TAGS = ['spec-problem', 'spec-design', 'spec-out-of-scope', 'spec-open-questions']
+
+  // Parses --body's resolved value once and pulls out whichever of the four
+  // rich-content tags are present, keyed by tag name. A tag not mentioned
+  // in the blob simply isn't a key in the result — add/update both treat
+  // that as "nothing said about this field," never as "clear it."
+  function extractSections(cli, bodyMarkup) {
+    const { document } = cli.parseHTML(`<div>${bodyMarkup}</div>`)
+    const wrapper = document.querySelector('div')
+    const sections = {}
+    for (const tag of BODY_TAGS) {
+      const el = wrapper.querySelector(tag)
+      if (el) sections[tag] = el.innerHTML
+    }
+    return sections
+  }
+
+  /**
+   * Create a new spec-doc file.
+   *
+   *   mycelium run spec add --title "…" --file <topic>
+   *     [--status draft|approved|implemented] [--body "…" | --body -]
+   *
+   * --file is required and becomes docs/specs/<today's-date>-<topic>.spec.html
+   * — the date isn't a flag, it's today's actual date, used for both the
+   * filename and the <spec-date> field so they can never drift apart.
+   * --status defaults to "draft" if omitted. --body is a blob of markup
+   * using <spec-problem>/<spec-design>/<spec-out-of-scope>/<spec-open-questions>
+   * as its own delimiters — pass --body - to read it from stdin instead of
+   * the command line, for anything more than a trivial one-line value.
+   * spec-problem and spec-design are both required by this template's own
+   * validator, so a --body that omits either one is rejected the same way
+   * a missing --title would be — nothing is written.
+   */
+  export async function add({ fs, args, cli }) {
+    requireArgs([args.file, '--file'])
+    const bodyMarkup = args.body === '-' ? await cli.readStdin() : args.body
+    const sections = bodyMarkup ? extractSections(cli, bodyMarkup) : {}
+
+    const date = todayDate()
+    const path = `specs/${date}-${args.file}.spec.html`
+    const doc = fs.create(path, `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title></title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+</spec-doc>
+
+</body>
+</html>
+`)
+
+    doc.querySelector('title').textContent = `Spec: ${args.title}`
+
+    const root = doc.querySelector('spec-doc')
+    const field = (tag, text) => {
+      if (!text) return
+      const el = doc.createElement(tag)
+      el.textContent = text
+      root.appendChild(el)
+    }
+
+    field('spec-title', args.title)
+    field('spec-status', args.status ?? 'draft')
+    field('spec-date', date)
+    for (const tag of BODY_TAGS) {
+      if (!sections[tag]) continue
+      const el = doc.createElement(tag)
+      el.innerHTML = sections[tag]
+      root.appendChild(el)
+    }
+
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
+  }
+
+  /**
+   * Update fields on an existing spec-doc file.
+   *
+   *   mycelium run spec update <file> [--title "…"]
+   *     [--status draft|approved|implemented] [--body "…" | --body -]
+   *
+   * <file> is an existing docs/specs/<date>-<topic>.spec.html file.
+   * --title/--status follow the usual rule: omitted leaves the field
+   * untouched, any other value upserts it. --body applies that same rule
+   * per tag found inside it, not per flag: a tag absent from --body's
+   * content leaves that field untouched, a tag present but empty removes
+   * the field, a tag with real content upserts it (overwrite if the field
+   * already exists, append if not). spec-date is never touched by
+   * update — only add sets it, once, at creation.
+   */
+  export async function update({ fs, args, cli }) {
+    requireArgs([args._[0], '<file>'])
+    const path = `specs/${args._[0]}`
+    const doc = fs.get(path)
+    const root = doc.querySelector('[data-conforms-to]')
+
+    const field = (tag, text) => {
+      if (text === undefined) return
+      const existing = root.querySelector(tag)
+      if (text === '') {
+        existing?.remove()
+        return
+      }
+      if (existing) existing.textContent = text
+      else {
+        const el = doc.createElement(tag)
+        el.textContent = text
+        root.appendChild(el)
+      }
+    }
+
+    field('spec-title', args.title)
+    field('spec-status', args.status)
+
+    const bodyMarkup = args.body === '-' ? await cli.readStdin() : args.body
+    if (bodyMarkup !== undefined) {
+      const sections = extractSections(cli, bodyMarkup)
+      for (const tag of BODY_TAGS) {
+        if (!(tag in sections)) continue
+        const content = sections[tag]
+        const existing = root.querySelector(tag)
+        if (!content.trim()) {
+          existing?.remove()
+        } else if (existing) {
+          existing.innerHTML = content
+        } else {
+          const el = doc.createElement(tag)
+          el.innerHTML = content
+          root.appendChild(el)
+        }
+      }
+    }
+
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
+  }
+</script>
+
 <h2>Conformance</h2>
 <p>
   Conformance is declared as a <code>data-conforms-to</code> attribute on the element making the claim, not
