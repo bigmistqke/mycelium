@@ -4,8 +4,8 @@
 
 import { readFileSync } from "node:fs"
 import { styleText } from "node:util"
-import { dirname, resolve as resolvePath, sep } from "node:path"
-import { parseHTML, walkHtmlFiles } from "./fs-helpers.ts"
+import { resolve as resolvePath, sep } from "node:path"
+import { parseHTML, walkHtmlFiles, resolveTemplateRef } from "./fs-helpers.ts"
 import "./runtime.js"
 
 const { loadCheck } = globalThis.mycelium
@@ -82,12 +82,6 @@ function discoverInstances(documents: ParsedDoc[]): Instance[] {
     }
   }
   return instances
-}
-
-function resolveTemplateRef(instanceFile: string, conformsTo: string): string {
-  const [relPath, fragId] = conformsTo.split("#")
-  const templateFile = resolvePath(dirname(instanceFile), relPath)
-  return `${templateFile}#${fragId}`
 }
 
 async function main() {
