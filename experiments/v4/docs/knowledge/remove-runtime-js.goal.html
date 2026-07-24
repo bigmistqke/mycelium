@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Remove the shared runtime.js, move loadModule/loadCheck into utils.ts, inline the browser copy</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal">
+  <knowledge-title>Remove the shared runtime.js, move loadModule/loadCheck into utils.ts, inline the browser copy</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-prompt>1. let's remove runtime.js, i don't like it. let's just inline that single function in the knowledge.template.html and you can move its content to utils.ts (and rename fs-helpers.ts to utils.ts) 2. after that let's make spec's mycelium/commands [scoped to just item 1 for this spec; item 2 (spec.template.html's authoring commands) is a separate, sequenced follow-up]</knowledge-prompt>
+  <a data-rel="leads_to" href="./../specs/2026-07-24-mycelium-remove-runtime-js.spec.html">led to the design spec for deleting runtime.js and duplicating the one shared function instead of sharing it</a>
+</knowledge-goal>
+</body></html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: remove runtime.js, move loadModule/loadCheck into utils.ts, inline the browser copy</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>remove runtime.js, move loadModule/loadCheck into utils.ts, inline the browser copy</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-07-24</spec-date>
+
+  <spec-problem>
+    <p>
+      <code>src/runtime.js</code> exists for exactly one reason: <code>loadModule</code>/<code>loadCheck</code>
+      (a five-line wrapper around a <code>data:</code> URL dynamic <code>import()</code>) is used both
+      under Node (<code>run.ts</code>, <code>validate.ts</code>, <code>fs-helpers.ts</code>) and in exactly one
+      browser-facing live demo (<code>knowledge.template.html</code>'s graph-wide-audits section). To share
+      one function across those two contexts without a real ES <code>import</code> (CORS-checked, and
+      <code>file://</code> has no stable origin to satisfy that check), it's written with no <code>export</code>
+      and attached to <code>globalThis.mycelium</code>, loaded as a classic <code>&lt;script src&gt;</code> in
+      the browser and a side-effect <code>import "./runtime.js"</code> under Node. A sibling
+      <code>runtime.d.ts</code> exists purely to give the Node side real types for that global.
+    </p>
+    <p>
+      That's a real file, a side-effect import in three Node modules, a <code>&lt;script src&gt;</code> tag,
+      and a <code>.d.ts</code> file — all in service of sharing a five-line function between exactly two call sites, one
+      of which (the browser one) only exists in one place in the whole project. The machinery is bigger than
+      what it's carrying.
+    </p>
+  </spec-problem>
+
+  <spec-design>
+    <h2>Don't share it — write it twice</h2>
+    <p>
+      <code>loadModule</code>/<code>loadCheck</code> move into <code>src/utils.ts</code> (renamed from
+      <code>fs-helpers.ts</code> — see below) as real, typed exports, keeping the exact signatures
+      <code>runtime.d.ts</code> already declared:
+    </p>
+    <pre><code>export async function loadModule(scriptSource: string): Promise&lt;Record&lt;string, unknown&gt;&gt; {
+  return await import(`data:text/javascript,${encodeURIComponent(scriptSource)}`)
+}
+
+export async function loadCheck(scriptSource: string): Promise&lt;(...args: unknown[]) =&gt; unknown&gt; {
+  const mod = await loadModule(scriptSource)
+  return mod.check as (...args: unknown[]) =&gt; unknown
+}</code></pre>
+    <p>
+      <code>run.ts</code> and <code>validate.ts</code> pick up <code>loadModule</code>/<code>loadCheck</code>
+      through their existing <code>import { ... } from "./utils.ts"</code> line, same as
+      <code>parseHTML</code>/<code>walkHtmlFiles</code>/<code>validateInstance</code>/<code>readStdin</code>
+      already are. <code>utils.ts</code>'s own <code>validateInstance</code> calls the now-local
+      <code>loadCheck</code> directly instead of <code>globalThis.mycelium.loadCheck</code>.
+    </p>
+    <p>
+      The one browser call site — <code>knowledge.template.html</code>'s audits live-demo — gets its own
+      copy, written directly inside the <code>&lt;script type="module"&gt;</code> block that's already there:
+    </p>
+    <pre><code>async function loadCheck(scriptSource) {
+  const mod = await import(`data:text/javascript,${encodeURIComponent(scriptSource)}`)
+  return mod.check
+}</code></pre>
+    <p>
+      Duplicated on purpose, not shared: this is the same trick both sides already independently rely on
+      (<code>import()</code> a <code>data:</code> URL, no real cross-file import, works over
+      <code>file://</code> with no server) — there's no cross-file loading left to coordinate, so there's
+      nothing left for a shared file to actually do.
+    </p>
+
+    <h2>runtime.js and runtime.d.ts are deleted, not deprecated</h2>
+    <p>
+      Both files are removed outright. <code>run.ts</code>/<code>validate.ts</code>/<code>utils.ts</code>
+      lose their <code>import "./runtime.js"</code> side-effect imports; <code>knowledge.template.html</code>
+      loses its <code>&lt;script src="../../src/runtime.js"&gt;&lt;/script&gt;</code> tag. No global type
+      declaration is needed once the Node side is a real, typed import — <code>runtime.d.ts</code>'s whole
+      purpose disappears with the global it was describing.
+    </p>
+
+    <h2>fs-helpers.ts renamed to utils.ts</h2>
+    <p>
+      Follows from the move above, not a separate motivation: once the file holds
+      <code>loadModule</code>/<code>loadCheck</code> alongside <code>parseHTML</code>/<code>walkHtmlFiles</code>/
+      <code>resolveTemplateRef</code>/<code>validateInstance</code>/<code>readStdin</code>, "filesystem
+      helpers" undersells what's actually in there — none of the newly-added functions touch the filesystem
+      at all. <code>git mv</code>, then update the two import sites (<code>run.ts</code>,
+      <code>validate.ts</code>).
+    </p>
+
+    <h2>Documentation: keep the still-true part, drop the shared-file framing</h2>
+    <p>
+      <code>knowledge.template.html</code>'s live-demo prose and <code>README.md</code>'s "Opening the
+      documents directly" section both currently explain the CORS/<code>file://</code>/no-<code>export</code>
+      reasoning in terms of one shared <code>runtime.js</code> file. That reasoning is still entirely true —
+      the <code>data:</code> URL trick is exactly why neither side needs a server — it just needs reframing
+      from "one file, loaded two ways" to "the same trick, written independently on each side." Every frozen
+      spec and <code>knowledge/*.html</code> node that mentions <code>runtime.js</code> stays exactly as
+      written — historical record of what was true when written, same convention this project has followed
+      for every prior rename (see <a data-rel="elaborates"
+      href="./2026-07-24-mycelium-validate-rename.spec.html">the validate-rename spec</a>, which drew the
+      identical living-vs-historical line).
+    </p>
+
+    <h2>Knowledge graph: a new decision, not an edit to the old one</h2>
+    <p>
+      <a data-rel="elaborates" href="../knowledge/reverse-runtime-to-globalthis.decision.html">reverse-runtime-to-globalthis.decision.html</a>
+      recorded choosing <code>globalThis</code>-sharing over real ES imports, specifically to avoid
+      <code>file://</code> CORS. This work doesn't reopen that question or reverse that decision — it
+      answers a narrower one that decision never asked: given <em>something</em> needs sharing across
+      Node/browser without real imports, is a whole shared file with its own loading mechanism warranted for
+      a five-line function with exactly two call sites? Per this project's own convention, the old node is
+      left untouched (it's still correct about the question it actually answered) and a new
+      <code>knowledge-decision</code> records this one, linked back with <code>elaborates</code> rather than
+      <code>contradicts</code>.
+    </p>
+  </spec-design>
+
+  <spec-out-of-scope>
+    <ul>
+      <li><b>Not revisiting the file:// CORS constraint itself.</b> Raised during brainstorming as a real,
+        separate possibility (reconsidering real ES imports project-wide) but explicitly out of scope here —
+        a bigger question about a constraint that still holds for anything actually needing cross-file
+        sharing, not resolved by this change since nothing here needs that anymore.</li>
+      <li><b>Not building spec.template.html's authoring commands.</b> Named as the very next piece of work,
+        but sequenced after this one, not part of it.</li>
+    </ul>
+  </spec-out-of-scope>
+</spec-doc>
+
+<footer>
+  Next: rename fs-helpers.ts to utils.ts, move loadModule/loadCheck in as real exports, delete
+  runtime.js/runtime.d.ts, inline the browser copy, update the two documentation sections, log the new
+  decision node.
+</footer>
+
+</body>
+</html>
