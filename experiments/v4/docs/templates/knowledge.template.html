@@ -571,6 +571,16 @@
 <script type="mycelium/command">
   const REQUIRES_STATUS = ['goal', 'decision', 'action']
 
+  // Throws a clean, specific error for the handful of arguments no
+  // validator can ever catch (which file to write, which file to open,
+  // whether --rel was given at all) — everything else is left to each
+  // type's own knowledge-validates script, run via `validate` below.
+  function requireArgs(...checks) {
+    for (const [value, label] of checks) {
+      if (value === undefined) throw new Error(`missing required argument: ${label}`)
+    }
+  }
+
   /**
    * Create a new knowledge-<type> node file.
    *
@@ -581,11 +591,16 @@
    * <type> is one of goal|decision|option|action|outcome|observation.
    * --status only applies to goal/decision/action (default "pending").
    * --prompt only applies to goal. --file is required and becomes
-   * knowledge/<slug>.<type>.html.
+   * knowledge/<slug>.<type>.html. The built node is validated against
+   * its own type's validator before being written — an unrecognized
+   * <type>, a missing required field, or a field the type doesn't allow
+   * is rejected and nothing is written.
    */
-  export function add(fs, args) {
+  export async function add(fs, args, validate) {
+    requireArgs([args.file, '--file'])
     const type = args._[0]
-    const doc = fs.create(`knowledge/${args.file}.${type}.html`, `<!DOCTYPE html>
+    const path = `knowledge/${args.file}.${type}.html`
+    const doc = fs.create(path, `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -603,7 +618,12 @@
 </html>
 `)
 
-    const pageTitle = `${type[0].toUpperCase()}${type.slice(1)}: ${args.title}`
+    // type is unchecked above, deliberately — String(type) keeps this line
+    // from throwing when <type> was never passed at all (args._[0] is
+    // undefined); an unrecognized or missing type is instead caught by
+    // validate() below, the same way a typo'd type would be.
+    const typeLabel = String(type)
+    const pageTitle = `${typeLabel.charAt(0).toUpperCase()}${typeLabel.slice(1)}: ${args.title}`
     doc.querySelector('title').textContent = pageTitle
 
     const root = doc.querySelector(`knowledge-${type}`)
@@ -621,6 +641,9 @@
     field('knowledge-commit', args.commit)
     field('knowledge-files', args.files)
     field('knowledge-branch', args.branch)
+
+    const result = await validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
   }
 
   /**
@@ -655,10 +678,15 @@
    * read off its own root element, not passed again. Per flag: omitted
    * leaves the field untouched, any other value upserts it (overwrite if
    * the tag is already present, append if not), and an explicit empty
-   * value ("") removes the field entirely.
+   * value ("") removes the field entirely. The resulting node is
+   * validated against its own type's validator before being written —
+   * a disallowed field, or a required field left empty, is rejected and
+   * the file on disk is left untouched.
    */
-  export function update(fs, args) {
-    const doc = fs.get(`knowledge/${args._[0]}`)
+  export async function update(fs, args, validate) {
+    requireArgs([args._[0], '<file>'])
+    const path = `knowledge/${args._[0]}`
+    const doc = fs.get(path)
     const root = doc.querySelector('[data-conforms-to]')
 
     const field = (tag, text) => {
@@ -683,6 +711,9 @@
     field('knowledge-commit', args.commit)
     field('knowledge-files', args.files)
     field('knowledge-branch', args.branch)
+
+    const result = await validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
   }
 
   /**
