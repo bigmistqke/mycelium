@@ -32,16 +32,24 @@ as `deciduous add`/`deciduous link` never did. `add` creates a node,
 `link` connects two, `update` fills in or clears a field on one that
 already exists (e.g. adding `<knowledge-commit>` to an action node once
 its commit exists) — the field-update gap this section used to name here
-is closed. One real gap remains, not silently papered over: it only
-covers the `knowledge-*` family — `spec.template.html` has no
-`type="mycelium/command"` script yet, so spec docs still need
-hand-authoring. Copying the closest existing spec under
-`experiments/v4/docs/specs/` as a starting point is still the fastest
-correct way to do that. Full design:
+is closed. Spec docs get the same treatment now too, via
+`spec.template.html`'s own `add`/`update` — no `link` (a spec's
+cross-references live inside its own rich-field markup, not as separate
+edges) and no `list` yet (deferred, not forgotten):
+
+```bash
+pnpm --filter @mycelium/v4 mycelium spec add --title "…" --file <topic> [--status draft|approved|implemented] --body "…"
+pnpm --filter @mycelium/v4 mycelium spec update <file> [--title "…"] [--status S] [--body "…"]
+```
+No hand-authoring gap remains for either family. Full design:
 `experiments/v4/docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`
-(commands) and
+(commands),
 `experiments/v4/docs/specs/2026-07-23-mycelium-update-command.spec.html`
-(`update`, and the closed-schema validator check that backs it).
+(`update`, and the closed-schema validator check that backs it), and
+`experiments/v4/docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html`
+(spec's own `add`/`update`, its single `--body` flag covering multiple
+rich fields at once, and the date-prefixed-filename convention both
+families now share).
 
 ### The Core Rule
 
