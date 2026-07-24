@@ -767,7 +767,8 @@
    *   mycelium run knowledge list edges
    *
    * nodes: one line per file — path, type (read off the root element's
-   * own tag name), status (blank if the type has none), title.
+   * own tag name), status (blank if the type has none), title, and a
+   * [+detail] marker (blank if the node has no non-empty knowledge-detail).
    * --status and --type optionally filter which nodes print; --type
    * matches the bare type (e.g. "goal", not "knowledge-goal"), the same
    * form `add <type>` takes.
@@ -792,7 +793,8 @@
         if (args.status !== undefined && status !== args.status) continue
         if (args.type !== undefined && type !== `${family}-${args.type}`) continue
         const title = oneLine(el.querySelector(`${family}-title`)?.textContent ?? '')
-        console.log(`${path}\t${type}\t${status}\t${title}`)
+        const hasDetail = !!el.querySelector(`${family}-detail`)?.textContent.trim()
+        console.log(`${path}\t${type}\t${status}\t${title}\t${hasDetail ? '[+detail]' : ''}`)
       }
       return
     }
