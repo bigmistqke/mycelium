@@ -3,7 +3,7 @@
 // any project builds on top of them. See docs/specs/2026-07-23-mycelium-crawler.spec.html.
 
 import { readFileSync } from "node:fs"
-import { dirname, resolve as resolvePath } from "node:path"
+import { dirname, resolve as resolvePath, sep } from "node:path"
 import { parseHTML, walkHtmlFiles } from "./fs-helpers.ts"
 import "./runtime.js"
 
@@ -94,6 +94,13 @@ async function main() {
   const documents = parseAll(dir)
   const { templates, audits } = discoverTemplatesAndAudits(documents)
   const instances = discoverInstances(documents)
+  // Audits answer whole-graph questions ("is every outcome linked to?"); the
+  // template's own live-demo sample instances aren't real graph data, just a
+  // documentation fixture, so they'd corrupt that answer if left in. Per-
+  // instance validation (below) is unaffected — it validates one element in
+  // isolation, so a sample instance in the mix is harmless there.
+  const templatesDir = resolvePath(dir, "templates") + sep
+  const auditDocuments = documents.filter((d) => !d.path.startsWith(templatesDir))
 
   console.log(`${documents.length} documents, ${templates.size} templates, ${instances.length} instances, ${audits.length} audits\n`)
 
@@ -128,7 +135,7 @@ async function main() {
     const label = `${audit.name}  (${relative(dir, audit.file)}${audit.touches ? `, touches: ${audit.touches}` : ""})`
     try {
       const check = await loadCheck(audit.scriptSource)
-      const result = (await check(documents)) as CheckResult
+      const result = (await check(auditDocuments)) as CheckResult
       console.log(`${result.ok ? "PASS " : "FAIL "} ${label}`)
       console.log(`      ${JSON.stringify(result)}`)
     } catch (err) {
