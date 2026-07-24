@@ -522,7 +522,7 @@
     CORS-checked, and <code>file://</code> has no stable origin to satisfy that check. Loaded here instead
     as a classic <code>&lt;script src&gt;</code> (exempt from that check, same as this file's own
     <code>&lt;link rel="stylesheet"&gt;</code> tags always have been), attaching to <code>globalThis</code>
-    so both this page and <code>crawl.ts</code> see the same function. Their <code>documents</code> argument
+    so both this page and <code>validate.ts</code> see the same function. Their <code>documents</code> argument
     here is just <code>[{ path: 'sample', dom: sample-instances }]</code>, a one-file stand-in for a real
     crawl. The samples were wired so extraction still produces one real violation per audit:
     <code>sample-observation</code> has no edges at all, and <code>sample-outcome</code> has only an

@@ -14,9 +14,9 @@ docs/            every document — templates, specs, and the real knowledge gra
   specs/         design specs, themselves conforming to spec.template.html
   knowledge/     the real graph: this project's own decision history
 src/             Node-only, reads/writes docs/, never opened as a webpage
-  crawl.ts       reads: validate + audit every document
+  validate.ts    reads: validate + audit every document
   run.ts         writes: `run <id> <command> [args]`, template-declared authoring
-  runtime.js     shared script-execution helper, loaded by crawl.ts, run.ts,
+  runtime.js     shared script-execution helper, loaded by validate.ts, run.ts,
                  and one browser-facing live demo — no `export`, on purpose,
                  see "Opening the documents directly" below
   runtime.d.ts   types for runtime.js's globalThis.mycelium, editor-only
@@ -27,10 +27,10 @@ src/             Node-only, reads/writes docs/, never opened as a webpage
 Node ≥24. Type annotations in `.ts` files are stripped natively at run time —
 no build step, no `tsx`/`ts-node`.
 
-## Running the crawler
+## Running the validator
 
 ```sh
-pnpm crawl [dir]   # defaults to ./docs
+pnpm validate [dir]   # defaults to ./docs
 ```
 
 Walks every `.html` file under `dir`, runs each instance's per-type

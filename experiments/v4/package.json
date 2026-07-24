@@ -8,7 +8,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "crawl": "node src/crawl.ts",
+    "validate": "node src/validate.ts",
     "mycelium": "node src/run.ts"
   },
   "dependencies": {

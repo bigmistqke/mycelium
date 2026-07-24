@@ -1,5 +1,5 @@
 // mycelium run <id> <command> [args…]. Protocol-only, same discipline as
-// crawl.ts: the engine knows <template>, data-conforms-to, and how to find
+// validate.ts: the engine knows <template>, data-conforms-to, and how to find
 // the one script[type="mycelium/command"] a template file declares — never
 // what any command actually does. See
 // docs/specs/2026-07-23-mycelium-authoring-commands.spec.html.

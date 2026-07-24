@@ -107,9 +107,9 @@ experiments/v4/docs/knowledge/<slug>.<type>.html   (type = goal|decision|option|
 
 **Root `knowledge-goal` nodes are the ONLY valid orphans** — exactly what
 `orphans-except-goal` (one of `knowledge.template.html`'s two collocated
-audits) checks for, now for real: `pnpm crawl` runs it against the actual
-files, not just sample markup. Still worth checking by eye before a crawl,
-but it's an automated gate now, not just a judgment call.
+audits) checks for, now for real: `pnpm validate` runs it against the actual
+files, not just sample markup. Still worth checking by eye before running
+`pnpm validate`, but it's an automated gate now, not just a judgment call.
 
 The six `data-rel` edge labels, unchanged from deciduous:
 `depends_on`, `blocks`, `supports`, `contradicts`, `alternative_to`,
@@ -149,7 +149,7 @@ does this on purpose.
 ### Audit Checklist (Before Every Commit)
 
 Same three questions deciduous asked. The first two are automated now —
-`pnpm crawl` runs `dangling-outcome` and `orphans-except-goal` against the
+`pnpm validate` runs `dangling-outcome` and `orphans-except-goal` against the
 real files:
 
 1. Does every **knowledge-outcome** link back to what caused it? (`dangling-outcome`)
@@ -160,10 +160,10 @@ real files:
 ### Session Start Checklist
 
 ```bash
-pnpm --filter @mycelium/v4 crawl                 # every node, validated for real, both audits run
+pnpm --filter @mycelium/v4 validate              # every node, validated for real, both audits run
 git status                                       # current state
 ```
-`pnpm crawl` now answers most of what `deciduous nodes`/`deciduous edges`
+`pnpm validate` now answers most of what `deciduous nodes`/`deciduous edges`
 did — it validates every instance against its own template and runs both
 graph-wide audits against the real files, not sample fixtures. What it
 still doesn't do: print a clean list of nodes/edges the way `deciduous
