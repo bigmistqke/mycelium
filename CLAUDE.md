@@ -81,7 +81,10 @@ is the source of truth for exact required/optional fields per type — don't
 duplicate that table here, read it. In short: every type has `title` and
 `confidence`; `status` (`pending`/`active`/`completed`/`rejected`) is on
 `goal`/`decision`/`action` only; `commit`/`files`/`branch` are optional on
-`action`/`outcome` only; `prompt` is optional, `goal` only.
+`action`/`outcome` only; `prompt` is optional, `goal` only; `detail` is
+optional on every type (free-form content, including `<script>`, no tag
+restriction — see
+`experiments/v4/docs/specs/2026-07-24-mycelium-knowledge-detail-field.spec.html`).
 
 ```html
 experiments/v4/docs/knowledge/<slug>.<type>.html   (type = goal|decision|option|action|outcome|observation)

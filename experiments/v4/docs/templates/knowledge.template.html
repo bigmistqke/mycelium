@@ -62,13 +62,15 @@
 
 <h3><code>knowledge-goal</code></h3>
 <p>What the user asked for. Fields: <code>title</code>, <code>confidence</code>, <code>status</code>,
-  optional <code>prompt</code> (the verbatim request, for root goals and major direction changes).</p>
+  optional <code>prompt</code> (the verbatim request, for root goals and major direction changes), optional
+  <code>detail</code>.</p>
 <template id="knowledge-goal">
   <knowledge-goal>
     <knowledge-title></knowledge-title>
     <knowledge-confidence></knowledge-confidence>
     <knowledge-status></knowledge-status>
     <knowledge-prompt></knowledge-prompt>
+    <knowledge-detail></knowledge-detail>
   </knowledge-goal>
 </template>
 <pre><code>&lt;knowledge-goal data-conforms-to="./knowledge.template.html#knowledge-goal"&gt;
@@ -94,9 +96,11 @@
     if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
       errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
     }
-    const prompt = el.querySelector('knowledge-prompt')
-    if (prompt && !prompt.textContent.trim()) errors.push('<knowledge-prompt> present but empty — omit it instead')
-    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-prompt']
+    for (const tag of ['knowledge-prompt', 'knowledge-detail']) {
+      const node = el.querySelector(tag)
+      if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
+    }
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-prompt', 'knowledge-detail']
     for (const child of el.children) {
       const tag = child.tagName.toLowerCase()
       if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-goal`)
@@ -107,12 +111,13 @@
 
 <h3><code>knowledge-decision</code></h3>
 <p>A choice made between approaches. Fields: <code>title</code>, <code>confidence</code>,
-  <code>status</code>.</p>
+  <code>status</code>, optional <code>detail</code>.</p>
 <template id="knowledge-decision">
   <knowledge-decision>
     <knowledge-title></knowledge-title>
     <knowledge-confidence></knowledge-confidence>
     <knowledge-status></knowledge-status>
+    <knowledge-detail></knowledge-detail>
   </knowledge-decision>
 </template>
 <pre><code>&lt;knowledge-decision data-conforms-to="./knowledge.template.html#knowledge-decision"&gt;
@@ -137,7 +142,9 @@
     if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
       errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
     }
-    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status']
+    const detail = el.querySelector('knowledge-detail')
+    if (detail && !detail.textContent.trim()) errors.push('<knowledge-detail> present but empty — omit it instead')
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-detail']
     for (const child of el.children) {
       const tag = child.tagName.toLowerCase()
       if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-decision`)
@@ -150,11 +157,12 @@
 <p>One alternative considered within a decision. No <code>status</code> &mdash; the option was or wasn't
   chosen, that's what an edge to its parent decision says, not a lifecycle of its own. Linked to its parent
   with <code>&lt;a data-rel="depends_on"&gt;</code>, the closest of the six edge labels. Fields:
-  <code>title</code>, <code>confidence</code>.</p>
+  <code>title</code>, <code>confidence</code>, optional <code>detail</code>.</p>
 <template id="knowledge-option">
   <knowledge-option>
     <knowledge-title></knowledge-title>
     <knowledge-confidence></knowledge-confidence>
+    <knowledge-detail></knowledge-detail>
   </knowledge-option>
 </template>
 <pre><code>&lt;knowledge-option data-conforms-to="./knowledge.template.html#knowledge-option"&gt;
@@ -175,7 +183,9 @@
     if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
       errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
     }
-    const allowed = ['knowledge-title', 'knowledge-confidence']
+    const detail = el.querySelector('knowledge-detail')
+    if (detail && !detail.textContent.trim()) errors.push('<knowledge-detail> present but empty — omit it instead')
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-detail']
     for (const child of el.children) {
       const tag = child.tagName.toLowerCase()
       if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-option`)
@@ -186,12 +196,14 @@
 
 <h3><code>knowledge-action</code></h3>
 <p>About to write or edit code. Fields: <code>title</code>, <code>confidence</code>, <code>status</code>,
-  optional <code>commit</code>/<code>files</code>/<code>branch</code> once it's tied to real work.</p>
+  optional <code>detail</code>, optional <code>commit</code>/<code>files</code>/<code>branch</code> once
+  it's tied to real work.</p>
 <template id="knowledge-action">
   <knowledge-action>
     <knowledge-title></knowledge-title>
     <knowledge-confidence></knowledge-confidence>
     <knowledge-status></knowledge-status>
+    <knowledge-detail></knowledge-detail>
     <knowledge-commit></knowledge-commit>
     <knowledge-files></knowledge-files>
     <knowledge-branch></knowledge-branch>
@@ -221,11 +233,11 @@
     if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
       errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
     }
-    for (const tag of ['knowledge-commit', 'knowledge-files', 'knowledge-branch']) {
+    for (const tag of ['knowledge-detail', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']) {
       const node = el.querySelector(tag)
       if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
     }
-    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-detail', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']
     for (const child of el.children) {
       const tag = child.tagName.toLowerCase()
       if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-action`)
@@ -237,11 +249,12 @@
 <h3><code>knowledge-outcome</code></h3>
 <p>Something worked or failed. No <code>status</code> &mdash; an outcome is the record of what happened, not
   a thing that has a lifecycle itself. Fields: <code>title</code>, <code>confidence</code>, optional
-  <code>commit</code>/<code>files</code>/<code>branch</code>.</p>
+  <code>detail</code>, optional <code>commit</code>/<code>files</code>/<code>branch</code>.</p>
 <template id="knowledge-outcome">
   <knowledge-outcome>
     <knowledge-title></knowledge-title>
     <knowledge-confidence></knowledge-confidence>
+    <knowledge-detail></knowledge-detail>
     <knowledge-commit></knowledge-commit>
     <knowledge-files></knowledge-files>
     <knowledge-branch></knowledge-branch>
@@ -265,11 +278,11 @@
     if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
       errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
     }
-    for (const tag of ['knowledge-commit', 'knowledge-files', 'knowledge-branch']) {
+    for (const tag of ['knowledge-detail', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']) {
       const node = el.querySelector(tag)
       if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
     }
-    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-detail', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']
     for (const child of el.children) {
       const tag = child.tagName.toLowerCase()
       if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-outcome`)
@@ -280,11 +293,12 @@
 
 <h3><code>knowledge-observation</code></h3>
 <p>Something noticed along the way, not yet a decision. Fields: <code>title</code>,
-  <code>confidence</code>.</p>
+  <code>confidence</code>, optional <code>detail</code>.</p>
 <template id="knowledge-observation">
   <knowledge-observation>
     <knowledge-title></knowledge-title>
     <knowledge-confidence></knowledge-confidence>
+    <knowledge-detail></knowledge-detail>
   </knowledge-observation>
 </template>
 <pre><code>&lt;knowledge-observation data-conforms-to="./knowledge.template.html#knowledge-observation"&gt;
@@ -304,7 +318,9 @@
     if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
       errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
     }
-    const allowed = ['knowledge-title', 'knowledge-confidence']
+    const detail = el.querySelector('knowledge-detail')
+    if (detail && !detail.textContent.trim()) errors.push('<knowledge-detail> present but empty — omit it instead')
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-detail']
     for (const child of el.children) {
       const tag = child.tagName.toLowerCase()
       if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-observation`)
