@@ -16,10 +16,9 @@ docs/            every document — templates, specs, and the real knowledge gra
 src/             Node-only, reads/writes docs/, never opened as a webpage
   validate.ts    reads: validate + audit every document
   run.ts         writes: `run <id> <command> [args]`, template-declared authoring
-  runtime.js     shared script-execution helper, loaded by validate.ts, run.ts,
-                 and one browser-facing live demo — no `export`, on purpose,
-                 see "Opening the documents directly" below
-  runtime.d.ts   types for runtime.js's globalThis.mycelium, editor-only
+  utils.ts       shared helpers: HTML parsing, template resolution, per-instance
+                 validation, stdin reading, and the data: URL script loader — see
+                 "Opening the documents directly" below
 ```
 
 ## Requirements
@@ -60,11 +59,11 @@ both. Full design:
 ## Opening the documents directly
 
 Every file under `docs/` is meant to be opened straight in a browser, no
-server required — no exceptions. That's why `src/runtime.js`, the one bit
-of code shared between the crawler and a browser live demo, has no
-`export`: a real ES module import is CORS-checked even for local files, and
-`file://` has no stable origin to satisfy that check. Loaded instead as a
-classic `<script src>` (exempt from that check, same as this project's
-`<link rel="stylesheet">` tags always have been) that attaches to
-`globalThis`, so both sides see the same function without either one
-needing a server.
+server required — no exceptions. A real ES module import is CORS-checked
+even for local files, and `file://` has no stable origin to satisfy that
+check — which is why the one thing that would otherwise need importing
+across the Node/browser boundary (a five-line `data:` URL script loader)
+isn't imported at all: it's written once in `src/utils.ts` for the Node
+side, and duplicated directly inline in the one browser-facing live demo
+that needs it, rather than shared through a file either side would have to
+import.
