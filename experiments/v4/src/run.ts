@@ -72,6 +72,29 @@ function normalizeWhitespace(html: string): string {
   return html.replace(/\n{2,}/g, "\n")
 }
 
+// Reindents the data-conforms-to root's direct children with consistent
+// 2-space indentation, matching this project's own hand-authored style.
+// Plain appendChild() — what every command's field()-style helper does —
+// leaves every field butted up against its neighbor with no whitespace at
+// all. Strips any existing whitespace-only text children first and
+// rebuilds from scratch, so this is safe to call more than once on the
+// same document (get() calls it once for the comparison snapshot; commit()
+// calls it again as the last step before writing, after whatever a
+// command did to the tree in between). Reformats one level only —
+// anything nested inside a child (e.g. knowledge-detail's own markup) is
+// left exactly as authored, since reformatting arbitrary nested content
+// risks corrupting significant whitespace inside <pre>/<script>.
+function indentRootChildren(doc: Document): void {
+  const root = doc.querySelector("[data-conforms-to]")
+  if (!root) return
+  for (const node of Array.from(root.childNodes)) {
+    if (node.nodeType === 3 && !node.textContent?.trim()) node.remove()
+  }
+  const children = Array.from(root.children)
+  for (const el of children) root.insertBefore(doc.createTextNode("\n  "), el)
+  if (children.length > 0) root.appendChild(doc.createTextNode("\n"))
+}
+
 class Filesystem {
   #root: string
   #touched = new Map<string, { doc: Document; original: string } | { deleted: true }>()
@@ -87,6 +110,7 @@ class Filesystem {
       const html = readFileSync(full, "utf8")
       const { document } = parseHTML(html)
       const doc = document as unknown as Document
+      indentRootChildren(doc)
       entry = { doc, original: normalizeWhitespace(doc.documentElement!.outerHTML) }
       this.#touched.set(full, entry)
     }
@@ -128,6 +152,7 @@ class Filesystem {
         console.log(`deleted  ${label}`)
         continue
       }
+      indentRootChildren(entry.doc)
       const html = normalizeWhitespace(entry.doc.documentElement!.outerHTML)
       if (html === entry.original) continue
       writeFileSync(full, "<!DOCTYPE html>\n" + html + "\n")
