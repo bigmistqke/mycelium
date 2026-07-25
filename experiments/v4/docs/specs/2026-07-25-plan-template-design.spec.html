@@ -115,7 +115,10 @@
   lookup to direct children, matching the unexpected-field check's existing behavior — has to land before
   <code>plan.template.html</code> can be built correctly. Backward-compatible: identical behavior for every
   existing single-level instance, since a direct-children scan and a subtree scan return the same first match
-  whenever there's no nested same-tag element in the first place.
+  whenever there's no nested same-tag element in the first place. The same direct-children-only lookup
+  discipline also applies to <code>plan.template.html</code>'s own command code whenever it reads or upserts
+  a field on a <code>plan-task</code>/<code>plan-step</code> (which may itself contain nested same-named
+  fields) — not just to the shared validator.
 </p>
 <h3><code>plan-check</code>: a fourth conforming type, not a field</h3>
 <p>
@@ -142,12 +145,11 @@
 </ul>
 <p>
   At most one <code>plan-check</code> per <code>plan-step</code> — <code>plan-step</code>'s own
-  <code>&lt;template&gt;</code> declares it as a single optional field (checked via one
-  <code>querySelector('plan-check')</code>, matching only the first), so a step wanting two independent
-  checks would need to be split into two steps instead. Because <code>plan-check</code> is its own
-  conforming type rather than a plain field, creating or editing one takes <em>two</em>
-  <code>cli.validate()</code> calls in the owning command — one for the <code>plan-step</code> itself,
-  one for the nested <code>plan-check</code> — not one.
+  <code>&lt;template&gt;</code> declares it as a single optional field (checked via one direct-child lookup,
+  matching only the first), so a step wanting two independent checks would need to be split into two steps
+  instead. Because <code>plan-check</code> is its own conforming type rather than a plain field, creating or
+  editing one takes <em>two</em> <code>cli.validate()</code> calls in the owning command — one for the
+  <code>plan-step</code> itself, one for the nested <code>plan-check</code> — not one.
 </p>
 <p>
   <code>mycelium run plan check &lt;file&gt; [&lt;step-id&gt;]</code> runs the check(s) it finds (one named
@@ -155,8 +157,7 @@
   reports pass/fail per step, and <em>only on pass</em> flips that step's <code>plan-status</code> to
   <code>completed</code>. A failing check leaves status untouched rather than marking it <code>rejected</code>
   — a red step mid-TDD-cycle isn't abandoned, just not done yet. Steps with no <code>plan-check</code>
-  are never touched by <code>check</code>; they can only be completed by hand, via <code>update-step</code>
-  below.
+  are never touched by <code>check</code>; they can only be completed by hand, via <code>update</code> below.
 </p>
 <h3>Cross-linking</h3>
 <p>
@@ -171,31 +172,32 @@
 </p>
 <h3>CLI commands</h3>
 <p>
-  Eight <code>mycelium/command</code> exports in <code>plan.template.html</code> — more than
-  <code>knowledge</code>'s five, justified by the extra nesting a plan has that a knowledge node doesn't.
-  Three creation commands, three update commands (one per nesting level, each following the same
-  upsert/clear-on-empty-string convention every other family's <code>update</code> already uses — there is no
-  separate one-off "flip a step's status" command; status is just one of the fields <code>update-task</code>/<code>update-step</code>
-  can set, the same way <code>plan-status</code> is just one of the fields <code>update</code> can set on the
-  doc itself), plus <code>check</code> and <code>list</code>:
+  Four <code>mycelium/command</code> exports in <code>plan.template.html</code>: <code>add</code>,
+  <code>update</code>, <code>check</code>, <code>list</code>. <code>add</code> and <code>update</code> each
+  take a <em>kind</em> (<code>doc|task|step</code>) as their own first positional argument and dispatch
+  internally — the exact convention <code>knowledge add &lt;type&gt;</code> already established in this
+  project, reused here rather than inventing four separate hyphenated command names
+  (<code>add-task</code>, <code>add-step</code>, …), which JavaScript can't export as plain
+  identifiers and which this project's own <code>--help</code> doc-comment matcher (keyed off a plain
+  <code>export function</code>/<code>export const</code> declaration) wouldn't recognize either.
 </p>
 <ul>
-  <li><code>add</code> — <code>mycelium run plan add --title "…" --file &lt;topic&gt; --goal "…" --architecture "…" [--status …] [--tech-stack "…"] [--global-constraints "…"]</code>.
+  <li><code>add doc</code> — <code>mycelium run plan add doc --title "…" --file &lt;topic&gt; --goal "…" --architecture "…" [--status …] [--tech-stack "…"] [--global-constraints "…"]</code>.
     Creates <code>plans/&lt;today&gt;-&lt;topic&gt;.plan.html</code> with header fields only, no tasks yet
     — the same way <code>knowledge add goal</code> creates a bare node.</li>
-  <li><code>add-task</code> — <code>mycelium run plan add-task &lt;file&gt; --title "…" --files "…" [--interfaces "…"] [--status …]</code>.
-    Appends one <code>&lt;plan-task id="task-N"&gt;</code> (N = current task count + 1), prints the new task
-    id.</li>
-  <li><code>add-step</code> — <code>mycelium run plan add-step &lt;file&gt; &lt;task-id&gt; --title "…" [--detail "…" | --detail -] [--check-command "…" [--expected-success true|false] [--expected-output "…"]]</code>.
+  <li><code>add task</code> — <code>mycelium run plan add task &lt;file&gt; --title "…" --files "…" [--interfaces "…"] [--status …]</code>.
+    Appends one <code>&lt;plan-task id="task-N"&gt;</code> (N = current task count + 1) to the doc's
+    <code>plan-doc</code> root, prints the new task id.</li>
+  <li><code>add step</code> — <code>mycelium run plan add step &lt;file&gt; &lt;task-id&gt; --title "…" [--detail "…" | --detail -] [--check-command "…" [--expected-success true|false] [--expected-output "…"]]</code>.
     Appends one <code>&lt;plan-step id="&lt;task-id&gt;-step-M"&gt;</code> (status <code>pending</code>)
     inside the named task, with a nested <code>plan-check</code> when <code>--check-command</code> is given;
     prints the new step id.</li>
-  <li><code>update</code> — <code>mycelium run plan update &lt;file&gt; [--title] [--status] [--goal] [--architecture] [--tech-stack] [--global-constraints]</code>.
+  <li><code>update doc</code> — <code>mycelium run plan update doc &lt;file&gt; [--title] [--status] [--goal] [--architecture] [--tech-stack] [--global-constraints]</code>.
     Scoped to the doc's own header fields.</li>
-  <li><code>update-task</code> — <code>mycelium run plan update-task &lt;file&gt; &lt;task-id&gt; [--title] [--status] [--files] [--interfaces]</code>.
+  <li><code>update task</code> — <code>mycelium run plan update task &lt;file&gt; &lt;task-id&gt; [--title] [--status] [--files] [--interfaces]</code>.
     Scoped to one existing task's own fields; omitted flags leave the field untouched, an explicit empty
     value clears an optional field, same convention as every other <code>update</code>.</li>
-  <li><code>update-step</code> — <code>mycelium run plan update-step &lt;file&gt; &lt;step-id&gt; [--title] [--status pending|completed] [--detail] [--check-command] [--expected-success] [--expected-output]</code>.
+  <li><code>update step</code> — <code>mycelium run plan update step &lt;file&gt; &lt;step-id&gt; [--title] [--status pending|completed] [--detail] [--check-command] [--expected-success] [--expected-output]</code>.
     Scoped to one existing step; covers both the common case (flip <code>--status</code> after finishing a
     step by hand) and creating/editing/clearing its nested <code>plan-check</code> after the fact (e.g.
     fixing a flaky test command) — <code>--check-command ""</code> removes the whole
@@ -213,7 +215,10 @@
   IDs are sequential and doc-scoped (<code>task-1</code>, <code>task-1-step-1</code>, <code>task-2-step-3</code>),
   generated at append time from the current sibling count — the same style already used for the
   <code>sample-goal</code>/<code>sample-decision</code> ids in <code>knowledge.template.html</code>'s own live
-  demo.
+  demo. A step/task is addressed for <code>update</code>/<code>check</code> purely by its <code>id</code>
+  attribute via <code>getElementById</code>, not by tag name or position, so id collisions across a single
+  plan file are the only thing that could misdirect a lookup — sequential per-parent generation already rules
+  that out.
 </p>
 </spec-design>
   <spec-out-of-scope>
