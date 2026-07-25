@@ -97,7 +97,15 @@ async function main() {
   // isolation, so a sample instance in the mix is harmless there.
   const templatesDir = resolvePath(dir, "templates") + sep
   const auditDocuments = documents.filter((d) => !d.path.startsWith(templatesDir))
-  const genericCheck = await loadGenericValidator(dir)
+  let genericCheck: ((templateEl: Element, instanceEl: Element) => CheckResult) | null = null
+  try {
+    genericCheck = await loadGenericValidator(dir)
+  } catch {
+    // No template.template.html in this docs tree (e.g. a corpus that
+    // predates the generic validator) -- fall back to requiring every
+    // type to carry its own data-validates script, the same as before
+    // this feature existed, instead of crashing the whole run.
+  }
 
   let checked = 0
   let fail = 0
@@ -116,14 +124,20 @@ async function main() {
     }
 
     try {
-      const generic = genericCheck(template.element, instance.element)
-      let result: CheckResult = generic
+      const generic = genericCheck?.(template.element, instance.element) ?? null
+      const results: CheckResult[] = []
+      if (generic) results.push(generic)
       if (template.validatorScript) {
         const customCheck = await loadCheck(template.file, template.validatorScript)
         const custom = customCheck(instance.element) as CheckResult
-        const customErrors = (custom.errors ?? custom.violations ?? []) as string[]
-        result = { ok: generic.ok && custom.ok, errors: [...generic.errors, ...customErrors] }
+        results.push({ ok: custom.ok, errors: (custom.errors ?? custom.violations ?? []) as string[] })
       }
+      if (results.length === 0) {
+        fail++
+        failures.push(`FAIL  ${label}\n      no generic validator available and no data-validates script`)
+        continue
+      }
+      const result: CheckResult = { ok: results.every((r) => r.ok), errors: results.flatMap((r) => r.errors) }
       if (!result.ok) {
         fail++
         failures.push(`FAIL  ${label}\n${formatItems(result)}`)

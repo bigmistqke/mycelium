@@ -103,15 +103,26 @@ export async function validateInstance(
     const templateEl = doc.querySelector(`template#${fragId}`)
     if (!templateEl) return { ok: false, errors: [`no template found at ${key}`] }
 
-    const genericCheck = await loadGenericValidator(docsDir)
-    const generic = genericCheck(templateEl as unknown as Element, element)
+    let generic: { ok: boolean; errors: string[] } | null = null
+    try {
+      const genericCheck = await loadGenericValidator(docsDir)
+      generic = genericCheck(templateEl as unknown as Element, element)
+    } catch {
+      // No template.template.html in this docs tree -- fall back to
+      // requiring the type's own data-validates script, same as before
+      // this feature existed.
+    }
 
     const script = doc.querySelector(`script[data-validates="#${fragId}"]`)
-    if (!script) return generic
+    if (!script) {
+      if (generic) return generic
+      return { ok: false, errors: [`no generic validator available and no data-validates script for ${key}`] }
+    }
 
     const check = await loadCheck(templateFile, script)
     const custom = check(element) as { ok: boolean; errors?: string[]; violations?: string[] }
     const customErrors = (custom.errors ?? custom.violations ?? []) as string[]
+    if (!generic) return { ok: custom.ok, errors: customErrors }
     return { ok: generic.ok && custom.ok, errors: [...generic.errors, ...customErrors] }
   } catch (err) {
     return { ok: false, errors: [`validation setup failed — ${(err as Error).message}`] }
