@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: template.template.html: schema-via-attributes for template files, replacing hand-written validators</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>template.template.html: schema-via-attributes for template files, replacing hand-written validators</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-07-25</spec-date>
+  <spec-problem>
+<p>
+  Every type declared in <code>knowledge.template.html</code> (six types) and <code>spec.template.html</code>
+  (one type) states its own shape three times over, in three places that can silently drift apart:
+</p>
+<ul>
+  <li>Prose ("Fields: <code>title</code>, <code>confidence</code>, <code>status</code>, optional
+    <code>detail</code>…")</li>
+  <li>A <code>&lt;template id="…"&gt;</code> skeleton of empty placeholder tags, for documentation/copy-paste</li>
+  <li>A hand-written <code>&lt;script data-validates&gt;</code> <code>check()</code> function re-encoding the same
+    required/pattern/enum rules in JS — ~20–30 near-identical lines per type, ~180 lines total across
+    all seven</li>
+</ul>
+<p>
+  Nothing machine-readable ties these together. A tool wanting to answer "what fields does
+  <code>knowledge-goal</code> require, and what values does <code>knowledge-status</code> allow?" has no
+  structured place to read that from today — it would have to scrape prose or parse validator JS. This is
+  what blocks <a data-rel="elaborates" href="../knowledge/2026-07-25-llm-context-overview-doc.goal.html">the
+  LLM-context overview command</a> from showing field-level detail. It's also why
+  <a data-rel="elaborates" href="../knowledge/2026-07-25-template-template-html-now-prerequisite.decision.html">this
+  work was promoted from a deferred idea to a prerequisite</a> — it had already been named as explicitly out
+  of scope in <a href="./2026-07-25-virtual-module-script-imports.spec.html">the virtual-module-imports spec</a>.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>The schema lives on the existing &lt;template&gt;, not in new elements</h3>
+<p>
+  No new wrapper elements (no <code>&lt;template-type&gt;</code>, no <code>&lt;template-field&gt;</code>). The
+  field placeholders already sitting inside each type's <code>&lt;template id="…"&gt;</code> gain three
+  optional attributes directly:
+</p>
+<pre><code>&lt;template id="knowledge-goal"&gt;
+  &lt;knowledge-goal&gt;
+    &lt;knowledge-title required&gt;&lt;/knowledge-title&gt;
+    &lt;knowledge-confidence required pattern="^\d+$"&gt;&lt;/knowledge-confidence&gt;
+    &lt;knowledge-status required enum="pending active completed rejected"&gt;&lt;/knowledge-status&gt;
+    &lt;knowledge-prompt&gt;&lt;/knowledge-prompt&gt;
+    &lt;knowledge-detail&gt;&lt;/knowledge-detail&gt;
+  &lt;/knowledge-goal&gt;
+&lt;/template&gt;</code></pre>
+<ul>
+  <li><code>required</code> — boolean attribute; the field must be present with non-empty text.</li>
+  <li><code>pattern</code> — a JS regex source, tested against the field's trimmed text.</li>
+  <li><code>enum</code> — a whitespace-separated list of the only exact values the field's trimmed text may take.</li>
+  <li>A field with none of the three is optional and free-form — any content, or omitted entirely — but
+    if present, still can't be empty (the existing uniform "present but empty — omit it instead" rule).</li>
+  <li>The full set of field tags declared inside a type's <code>&lt;template&gt;</code> <em>is</em> its allowed
+    set — any instance field not among them is rejected, same as every hand-written validator's current
+    "unexpected &lt;tag&gt;" check.</li>
+</ul>
+<p>
+  <a data-rel="elaborates" href="../knowledge/2026-07-25-template-schema-via-attributes.decision.html">Full
+  rationale and the happy-dom verification behind this shape</a>: a <code>&lt;template&gt;</code>'s children live
+  in <code>.content</code>, a separate inert <code>DocumentFragment</code> — reading a field's attributes
+  means <code>tpl.content.querySelector(…)</code>, not <code>tpl.querySelector(…)</code> directly,
+  and <code>required</code> needs <code>hasAttribute</code> rather than a truthy <code>getAttribute</code> check
+  (present-but-boolean reads back as <code>''</code>).
+</p>
+<h3>template.template.html: vocabulary + one generic validator, not a new instantiable type</h3>
+<p>
+  <code>template.template.html</code> does not declare a <code>&lt;template id="…"&gt;</code> of its own,
+  and no <code>data-conforms-to</code> is added to any other file's <code>&lt;template&gt;</code> elements to mark
+  them as conforming to it. Unlike the growing <code>docs/knowledge/*.html</code> instance corpus, there are only
+  ever a handful of <code>*.template.html</code> files, hand-authored, never mixed — the
+  <code>.template.html</code> filename suffix is already sufficient signal that a file follows this convention,
+  the same way it already signals "this file is a template family" today. Nothing here needs crawler enforcement.
+</p>
+<p>
+  What the file does hold: prose documenting the <code>required</code>/<code>pattern</code>/<code>enum</code>
+  vocabulary above, and one generic validator function, exported the same id-addressable way
+  <code>knowledge.template.html</code>'s own <code>extractGraph</code> already is (<code>#extract-graph</code>),
+  for real cross-file <code>import</code> under Node. Given a type's <code>&lt;template&gt;</code> element and a
+  real instance element, it performs exactly the four checks above — required, pattern, enum,
+  unexpected/empty-optional-field — generically, for any type, from its own markup alone.
+</p>
+<h3>Full replace: the seven hand-written validators are deleted</h3>
+<p>
+  <a data-rel="elaborates" href="../knowledge/2026-07-25-schema-first-then-optional-validator-function.decision.html">Checked
+  against all seven existing <code>check()</code> functions</a> (the six <code>knowledge-*</code> types plus
+  <code>spec-doc</code>): every rule any of them encode — required fields, confidence's 0–100 range,
+  status's enum, the empty-optional-field rule, the unexpected-tag check — is already expressible in the
+  vocabulary above. So this migration adds the attributes to all seven <code>&lt;template&gt;</code> skeletons and
+  deletes all seven <code>&lt;script data-validates&gt;</code> blocks; the crawler falls back to the generic
+  validator whenever a template has no hand-written one. The engine's checking order is schema-first: the generic
+  check always runs, and a hand-written <code>data-validates</code> script — still fully supported, for any
+  future type whose validation genuinely can't be expressed as required/pattern/enum — runs afterward as
+  additional validation on top of it, never as a replacement for it.
+</p>
+<p>
+  This is a real behavior change to the crawler (<code>validate.ts</code>/<code>utils.ts</code>), not just a new
+  file: template discovery currently treats a template with no paired <code>data-validates</code> script as a hard
+  failure ("no template found"); it needs a fallback path to the generic validator instead, used both by
+  <code>validate.ts</code>'s whole-corpus pass and by <code>utils.ts</code>'s <code>validateInstance()</code>
+  (the single-element path <code>run.ts</code>'s <code>add</code>/<code>update</code> commands call).
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+  <li>The LLM-context overview command itself — depends on this work
+    (<a data-rel="elaborates" href="../knowledge/2026-07-25-llm-context-overview-doc.goal.html">tracked as its own
+    goal</a>), but isn't built here.</li>
+  <li>Reverse-DNS-style filename inference for <code>docs/knowledge/*.html</code> instance files (inferring
+    <code>data-conforms-to</code> from a <code>slug.type.family.html</code> naming convention instead of declaring
+    it) — a separate, bigger change to the crawler's "protocol-only, doesn't know about filenames" contract,
+    touching the whole existing instance corpus.
+    <a data-rel="elaborates" href="../knowledge/2026-07-25-reverse-dns-filename-inference.observation.html">Logged
+    as its own deferred observation.</a></li>
+  <li><code>template.template.html</code> being self-conforming (a "template of templates") — it isn't a
+    node type with real instances, so there's nothing for self-conformance to actually check.</li>
+</ul>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>
