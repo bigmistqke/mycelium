@@ -83,11 +83,11 @@
 </p>
 <template id="spec-doc">
   <spec-doc>
-    <spec-title></spec-title>
-    <spec-status></spec-status>
-    <spec-date></spec-date>
-    <spec-problem></spec-problem>
-    <spec-design></spec-design>
+    <spec-title required></spec-title>
+    <spec-status required enum="draft approved implemented"></spec-status>
+    <spec-date required></spec-date>
+    <spec-problem required></spec-problem>
+    <spec-design required></spec-design>
     <spec-out-of-scope></spec-out-of-scope>
     <spec-open-questions></spec-open-questions>
   </spec-doc>
@@ -125,30 +125,7 @@
 </p>
 
 <h2>Validator</h2>
-<script type="module" data-validates="#spec-doc">
-  export function check(root) {
-    const el = root.matches?.('spec-doc') ? root : root.querySelector('spec-doc')
-    if (!el) return { ok: false, errors: ['missing <spec-doc> element'] }
-
-    const errors = []
-    for (const tag of ['spec-title', 'spec-status', 'spec-date', 'spec-problem', 'spec-design']) {
-      const node = el.querySelector(tag)
-      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
-    }
-
-    const statusValue = el.querySelector('spec-status')?.textContent.trim()
-    if (statusValue && !['draft', 'approved', 'implemented'].includes(statusValue)) {
-      errors.push(`<spec-status> must be draft|approved|implemented, got "${statusValue}"`)
-    }
-
-    for (const tag of ['spec-out-of-scope', 'spec-open-questions']) {
-      const node = el.querySelector(tag)
-      if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
-    }
-
-    return { ok: errors.length === 0, errors }
-  }
-</script>
+<p>Validation is handled by the generic validator in <code>template.template.html</code> using the schema attributes on the <code>&lt;template&gt;</code> element above.</p>
 
 <div class="live-demo">
   <h4>This section actually runs</h4>
