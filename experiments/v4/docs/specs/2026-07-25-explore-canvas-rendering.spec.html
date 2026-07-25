@@ -82,9 +82,14 @@
   <h2>Connector layer</h2>
   <p>
     One full-canvas <code>&lt;svg&gt;</code> sits under the panels, holding one <code>&lt;line&gt;</code>
-    per connection. On open, a connector is drawn from the clicking anchor's position to the new panel.
-    Endpoints are recomputed from <code>getBoundingClientRect()</code> on drag and on window resize, for
-    every connector attached to the panel that moved.
+    per connection. A connector always connects two panels, not a pixel inside one — when opened from a
+    content link, the line starts at that link's own position at the moment it's drawn; when opened from
+    the backlinks toggle (below), there's no single clicked element, so it starts at the parent panel's own
+    edge instead. Either way, endpoints are recomputed from <code>getBoundingClientRect()</code> on drag and
+    on window resize, for every connector attached to the panel that moved — the exact starting pixel is
+    never stored anywhere, only which two panels are connected, since it's cheap to recompute live and
+    that's what makes restoring connectors after a reload (below) straightforward rather than needing its
+    own separate mechanism.
   </p>
   <h2>Backlinks</h2>
   <p>
@@ -94,6 +99,20 @@
     path as clicking a forward link. This is the part of the original discussion that made the project
     worth doing at all — the ordinary web only shows outbound links; this makes inbound ones just as
     visible — so it belongs in the first version, not a later one.
+  </p>
+  <h2>URL state</h2>
+  <p>
+    The set of open panels is kept in <code>location.hash</code>, not the query string, so it never round-
+    trips to the server: on every panel open, close, or drag-end (debounced, not on every pointer-move
+    frame), the current canvas — for each open panel, its path, its <code>x</code>/<code>y</code> position,
+    and the path of the panel it was opened from, if any — is serialized into the hash via
+    <code>history.replaceState</code>, so dragging a panel around doesn't spam browser history with an
+    entry per pixel. On page load, if the hash carries state, those panels are rebuilt in place instead of
+    starting from the empty sidebar-only canvas, and a connector is drawn between each restored panel and
+    the one it was opened from, using the same live <code>getBoundingClientRect()</code> recomputation the
+    connector layer already does — nothing about a connector's exact pixel start point needs to be stored
+    for this to work correctly. Pasting a URL to someone else reproduces the same layout for them. No
+    server-side storage and no <code>localStorage</code>: the URL is the only place this state lives.
   </p>
   <h2>Error handling</h2>
   <p>
@@ -107,15 +126,14 @@
   modified: new `serve` command, sibling to `list`; a `renderExplorePage()`
   template-string function (mirrors knowledge.template.html's
   renderGraphPage); the shell page's own client-side script for the
-  sidebar, panel loading, link interception, and connector drawing</code></pre>
+  sidebar, panel loading, link interception, connector drawing, and
+  URL-hash state serialization/restoration</code></pre>
 </spec-design>
   <spec-out-of-scope>
   <ul>
     <li><b>No transclusion.</b> Quoting a passage from one document by reference inside another's panel was
       named early in the original discussion as a further Xanadu idea, but it's a distinct feature from
       making links visible and bidirectional — not needed for this version.</li>
-    <li><b>No persisted canvas layout.</b> Reloading the page starts from an empty canvas plus the sidebar
-      every time; nothing about which panels were open or where they were dragged is saved.</li>
     <li><b>No zoom or minimap.</b> At the scale this project's docs/ tree is actually at (roughly 130
       instances), plain scrolling and dragging is enough; revisit if that stops being true.</li>
     <li><b>No search.</b> The sidebar tree plus backlinks are the two ways to find something; a dedicated
