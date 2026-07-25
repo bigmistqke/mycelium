@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Panel and connector rendering for the docs/ explorer</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Panel and connector rendering for the docs/ explorer</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-07-25</spec-date>
+  <spec-problem>
+  <p>
+    <code>explore list</code> (added to <code>docs/commands/explore.command.html</code> alongside the
+    engine's new <code>&lt;id&gt;.command.html</code> lookup) proves the whole-tree, family-agnostic
+    discovery this tool needs, but it only ever prints a flat text index. The actual goal recorded in
+    <a href="../knowledge/2026-07-25-xanadu-view-for-docs.goal.html">the root goal</a> and
+    <a href="../knowledge/2026-07-25-transpointing-windows-not-graph-diagram.decision.html">the
+    transpointing-windows decision</a> was a canvas of real document panels connected by visible lines,
+    not a list and not a precomputed diagram (that's what <code>knowledge generate graph</code> already
+    is, and deliberately isn't this). Nothing renders that yet.
+  </p>
+  <p>
+    A real constraint surfaced while starting this design: the shadow-DOM isolation decision assumed a
+    panel loads its content by fetching the real document when it's opened, but every other generated page
+    in this project (<code>generate graph</code>'s output) is opened as a bare <code>file://</code> page,
+    and browsers generally block <code>fetch()</code> of local files from <code>file://</code> with no
+    server behind it. Resolved by having the command itself start a local HTTP server rooted at
+    <code>docs/</code>, so every panel's <code>fetch()</code> is a same-origin request against a real
+    server rather than a blocked local-file read.
+  </p>
+</spec-problem>
+  <spec-design>
+  <h2>Command and server</h2>
+  <p>
+    A new command, <code>mycelium run explore serve [--port &lt;n&gt;]</code>, added to
+    <code>explore.command.html</code> alongside <code>list</code>. It starts a plain
+    <code>node:http</code> server (no framework — nothing else in this project pulls one in either) rooted
+    at <code>docs/</code>: any request path maps directly to a file under <code>docs/</code> and is served
+    as static content, except <code>GET /</code>, which serves a generated shell page. The shell page comes
+    from a <code>renderExplorePage()</code> template-string function, the same shape
+    <code>generate graph</code>'s own <code>renderGraphPage()</code> already uses. The command prints the
+    server's URL and leaves opening a browser to the person running it, matching
+    <code>generate graph</code>'s existing behavior rather than adding OS-specific "open a browser" logic.
+    It runs until interrupted; nothing it does needs cleanup on exit.
+  </p>
+  <h2>Sidebar</h2>
+  <p>
+    Computed server-side on each request to <code>/</code>: walk <code>docs/</code> into a nested
+    file/directory tree and inline it as JSON into the shell page, the same inlining pattern
+    <code>generate graph</code> uses for its own graph payload. Rendered client-side as a collapsible tree
+    in a fixed left-hand panel. Clicking a file entry opens it as a panel — the same function used when a
+    link inside an already-open panel is clicked.
+  </p>
+  <h2>Panel lifecycle</h2>
+  <p>
+    Opening a path: if a panel for that path is already open, focus it instead of opening a duplicate —
+    without this, two different documents linking to the same target would each spawn their own copy.
+    Otherwise: <code>fetch</code> the path, parse the response with <code>DOMParser</code>, take
+    <code>.body.innerHTML</code> and the resolved <code>href</code> of every <code>&lt;link
+    rel=stylesheet&gt;</code> in its <code>&lt;head&gt;</code> (resolved against the fetch response's own
+    URL, so <code>../theme.css</code>-style relative paths still work no matter where the panel sits on the
+    page). Build a panel: an absolutely-positioned <code>&lt;div&gt;</code> with a shadow root, a small
+    header outside the shadow root (title from the fetched <code>&lt;title&gt;</code>, a close button) so
+    panel chrome stays consistent regardless of what a document's own stylesheet does, and inject the
+    resolved stylesheet <code>&lt;link&gt;</code> tags plus the body content inside the shadow root. New
+    panels spawn with a simple fixed-offset cascade from whichever panel or sidebar entry opened them — no
+    auto-layout algorithm, since dragging is always available to fix placement and this project already has
+    an actual layout-solver precedent (<code>cytoscape.js</code> in <code>generate graph</code>) it's
+    deliberately not reaching for here.
+  </p>
+  <h2>Link interception</h2>
+  <p>
+    Any <code>&lt;a href&gt;</code> click inside a panel's shadow root is caught by a listener on the shadow
+    root — composed events still bubble out of shadow boundaries — and opens the target as a new panel with
+    a connector instead of navigating the page. No special-casing <code>data-rel</code> versus a plain
+    link: anything with an <code>href</code> behaves the same way, matching this tool's existing
+    "no per-family, no per-attribute special knowledge" discipline from <code>list</code>.
+  </p>
+  <h2>Connector layer</h2>
+  <p>
+    One full-canvas <code>&lt;svg&gt;</code> sits under the panels, holding one <code>&lt;line&gt;</code>
+    per connection. On open, a connector is drawn from the clicking anchor's position to the new panel.
+    Endpoints are recomputed from <code>getBoundingClientRect()</code> on drag and on window resize, for
+    every connector attached to the panel that moved.
+  </p>
+  <h2>Backlinks</h2>
+  <p>
+    Each panel's header shows a count of documents that link to it, computed from the same whole-tree
+    <code>[data-conforms-to]</code>/<code>[data-rel]</code> walk <code>list</code> already does, with a
+    toggle that opens every one of them at once, connectors included, using the exact same open-a-panel
+    path as clicking a forward link. This is the part of the original discussion that made the project
+    worth doing at all — the ordinary web only shows outbound links; this makes inbound ones just as
+    visible — so it belongs in the first version, not a later one.
+  </p>
+  <h2>Error handling</h2>
+  <p>
+    A fetch that comes back 404 (a stale link, a deleted file) renders as a small inline error state in
+    place of the panel's content rather than failing silently or breaking the rest of the canvas. A port
+    already in use fails the command immediately, before any server state exists, with a message naming the
+    port.
+  </p>
+  <h2>Where this lives</h2>
+  <pre><code>docs/commands/explore.command.html
+  modified: new `serve` command, sibling to `list`; a `renderExplorePage()`
+  template-string function (mirrors knowledge.template.html's
+  renderGraphPage); the shell page's own client-side script for the
+  sidebar, panel loading, link interception, and connector drawing</code></pre>
+</spec-design>
+  <spec-out-of-scope>
+  <ul>
+    <li><b>No transclusion.</b> Quoting a passage from one document by reference inside another's panel was
+      named early in the original discussion as a further Xanadu idea, but it's a distinct feature from
+      making links visible and bidirectional — not needed for this version.</li>
+    <li><b>No persisted canvas layout.</b> Reloading the page starts from an empty canvas plus the sidebar
+      every time; nothing about which panels were open or where they were dragged is saved.</li>
+    <li><b>No zoom or minimap.</b> At the scale this project's docs/ tree is actually at (roughly 130
+      instances), plain scrolling and dragging is enough; revisit if that stops being true.</li>
+    <li><b>No search.</b> The sidebar tree plus backlinks are the two ways to find something; a dedicated
+      search box is a reasonable later addition, not a blocker for a first version.</li>
+    <li><b>No auto-layout algorithm for panel placement.</b> Considered and rejected in favor of simple
+      cascade-from-parent placement plus manual dragging — see "Panel lifecycle" above.</li>
+  </ul>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>
