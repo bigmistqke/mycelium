@@ -116,7 +116,7 @@
   <em>only on pass</em> flips that step's <code>plan-status</code> to <code>completed</code>. A failing check
   leaves status untouched rather than marking it <code>rejected</code> — a red step mid-TDD-cycle isn't
   abandoned, just not done yet. Steps with no <code>plan-check</code> are never touched by <code>check</code>;
-  they can only be completed by hand, via <code>plan step</code> below.
+  they can only be completed by hand, via <code>update-step</code> below.
 </p>
 <h3>Cross-linking</h3>
 <p>
@@ -131,8 +131,13 @@
 </p>
 <h3>CLI commands</h3>
 <p>
-  Seven <code>mycelium/command</code> exports in <code>plan.template.html</code> — more than
-  <code>knowledge</code>'s five, justified by the extra nesting level a plan has that a knowledge node doesn't:
+  Eight <code>mycelium/command</code> exports in <code>plan.template.html</code> — more than
+  <code>knowledge</code>'s five, justified by the extra nesting level a plan has that a knowledge node
+  doesn't. Three creation commands, three update commands (one per nesting level, each following the same
+  upsert/clear-on-empty-string convention every other family's <code>update</code> already uses — there is no
+  separate one-off "flip a step's status" command; status is just one of the fields <code>update-task</code>/<code>update-step</code>
+  can set, the same way <code>plan-status</code> is just one of the fields <code>update</code> can set on the
+  doc itself), plus <code>check</code> and <code>list</code>:
 </p>
 <ul>
   <li><code>add</code> — <code>mycelium run plan add --title "…" --file &lt;topic&gt; --goal "…" --architecture "…" [--status …] [--tech-stack "…"] [--global-constraints "…"]</code>.
@@ -145,10 +150,15 @@
     Appends one <code>&lt;plan-step id="&lt;task-id&gt;-step-M" status="pending"&gt;</code> inside the named
     task, prints the new step id.</li>
   <li><code>update</code> — <code>mycelium run plan update &lt;file&gt; [--title] [--status] [--goal] [--architecture] [--tech-stack] [--global-constraints]</code>.
-    Same upsert/clear-on-empty-string convention every other family's <code>update</code> already uses,
-    scoped to the doc's own header fields.</li>
-  <li><code>step</code> — <code>mycelium run plan step &lt;file&gt; &lt;step-id&gt; --status pending|completed</code>.
-    The manual fast-path for steps with no <code>plan-check</code> (e.g. "commit").</li>
+    Scoped to the doc's own header fields.</li>
+  <li><code>update-task</code> — <code>mycelium run plan update-task &lt;file&gt; &lt;task-id&gt; [--title] [--status] [--files] [--interfaces]</code>.
+    Scoped to one existing task's own fields; omitted flags leave the field untouched, an explicit empty
+    value clears an optional field, same convention as every other <code>update</code>.</li>
+  <li><code>update-step</code> — <code>mycelium run plan update-step &lt;file&gt; &lt;step-id&gt; [--title] [--status pending|completed] [--detail] [--check-command] [--expected-success] [--expected-output]</code>.
+    Scoped to one existing step; covers both the common case (flip <code>--status</code> after finishing a
+    step by hand) and editing/replacing/clearing its <code>plan-check</code> after the fact (e.g. fixing a
+    flaky test command), rather than requiring the check to be right the first time at
+    <code>add-step</code>.</li>
   <li><code>check</code> — <code>mycelium run plan check &lt;file&gt; [&lt;step-id&gt;]</code>. The
     mechanics above.</li>
   <li><code>list</code> — <code>mycelium run plan list &lt;file&gt;</code>. One line per step: task
