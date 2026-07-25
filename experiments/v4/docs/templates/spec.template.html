@@ -130,8 +130,9 @@
 <div class="live-demo">
   <h4>This section actually runs</h4>
   <p>
-    A sample <code>&lt;spec-doc&gt;</code> instance, checked by the validator above. It omits both optional
-    sections, which is valid.
+    A sample <code>&lt;spec-doc&gt;</code> instance, checked by <code>template.template.html</code>'s generic
+    validator, per the attributes on this type's own <code>&lt;template&gt;</code> above. It omits both
+    optional sections, which is valid.
   </p>
 
   <div id="sample-instance">
@@ -180,7 +181,7 @@
   <code>add</code> and <code>update</code>, declared once for this template &mdash; same
   <code>type="mycelium/command"</code> convention
   <a href="./knowledge.template.html">knowledge.template.html</a> already uses, and the same reasons: never
-  run in a browser (no live demo below, unlike the <code>data-validates</code> script above), and each
+  run in a browser (no live demo below, unlike <code>template.template.html</code>'s validator above), and each
   command's own <code>/** &hellip; */</code> comment is its only documentation, so
   <code>mycelium run spec --help</code> and the usage shown here can never drift apart. No
   <code>link</code>: every cross-reference a spec makes already lives inside one of its rich fields' own

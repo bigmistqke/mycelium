@@ -57,7 +57,9 @@
   Given a type's <code>&lt;template&gt;</code> element and a real instance element, reads the vocabulary
   above straight out of the template's own content and performs the same four checks every hand-written
   <code>check()</code> function in this project used to write by hand: required-and-non-empty, pattern,
-  enum, and unexpected/empty-optional fields. A <code>&lt;template&gt;</code>'s children live in
+  enum, and unexpected/empty-optional fields — including one check, unexpected-field rejection, that
+  <code>spec-doc</code>'s own old validator never had, applied here uniformly since there's no reason a
+  schema-declared type should differ. A <code>&lt;template&gt;</code>'s children live in
   <code>.content</code>, a separate inert <code>DocumentFragment</code> — reading a field's attributes goes
   through <code>templateEl.content</code>, not the template element directly (verified against happy-dom,
   the DOM engine this project runs on).

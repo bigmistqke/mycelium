@@ -10,7 +10,8 @@ in [`docs/DESIGN.html`](docs/DESIGN.html).
 docs/            every document — templates, specs, and the real knowledge graph
   DESIGN.html
   theme.css
-  templates/     knowledge.template.html, spec.template.html — the two node vocabularies
+  templates/     knowledge.template.html, spec.template.html — the two node vocabularies,
+                 plus template.template.html, the schema vocabulary they both use
   specs/         design specs, themselves conforming to spec.template.html,
                  named <date>-<topic>.spec.html
   knowledge/     the real graph: this project's own decision history,
@@ -34,12 +35,15 @@ no build step, no `tsx`/`ts-node`.
 pnpm validate [dir]   # defaults to ./docs
 ```
 
-Walks every `.html` file under `dir`, runs each instance's per-type
-validator against its own parsed subtree, and runs every collocated
-cross-document audit it finds — all against the real files, not sample
-fixtures. The crawler has no built-in notion of what a "goal" or an "edge"
-is; it only knows the templating protocol (`<template>`,
-`data-conforms-to`, `data-validates`, `data-audits`). Full design:
+Walks every `.html` file under `dir`, validates each instance against its
+own parsed subtree — a generic, attribute-driven check read off the
+type's `<template>` (see `templates/template.template.html`), falling
+back to a type's own `data-validates` script as additional validation
+when one still exists — and runs every collocated cross-document audit
+it finds — all against the real files, not sample fixtures. The crawler
+has no built-in notion of what a "goal" or an "edge" is; it only knows
+the templating protocol (`<template>`, `data-conforms-to`,
+`data-validates`, `data-audits`). Full design:
 [`docs/specs/2026-07-23-mycelium-crawler.spec.html`](docs/specs/2026-07-23-mycelium-crawler.spec.html).
 
 ## Writing a new node or edge

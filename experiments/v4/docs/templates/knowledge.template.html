@@ -194,7 +194,8 @@
 <div class="live-demo">
   <h4>This section actually runs</h4>
   <p>
-    One sample instance per type, checked by that type's validator above. Wired together with real
+    One sample instance per type, checked by <code>template.template.html</code>'s generic validator, per
+    the attributes on each type's own <code>&lt;template&gt;</code> above. Wired together with real
     <code>data-rel</code> edges, not just sitting side by side &mdash; the graph-wide audits below parse
     <em>this exact markup</em> for their input, nothing hand-typed.
   </p>
@@ -473,7 +474,7 @@
   <a href="../specs/2026-07-23-mycelium-authoring-commands.spec.html">the design spec</a> for why this is
   one script per template file rather than one per command or per type, and why
   <code>type="mycelium/command"</code> instead of <code>type="module"</code>. Never run in a browser: no
-  live demo below, unlike every <code>data-validates</code>/<code>data-audits</code> script above. Each
+  live demo below, unlike every <code>data-audits</code> script above. Each
   command's own <code>/** &hellip; */</code> comment is its only documentation &mdash;
   <code>mycelium run knowledge --help</code> (or an unrecognized command) prints every exported command's
   name and doc comment straight from this file, so the usage shown here and the usage the CLI reports can
