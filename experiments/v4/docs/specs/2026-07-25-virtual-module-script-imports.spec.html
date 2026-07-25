@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Virtual ES modules extracted from template-embedded script blocks</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Virtual ES modules extracted from template-embedded script blocks</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-07-25</spec-date>
+  <spec-problem>
+<p>
+  Two <code>knowledge-decision</code> nodes from this session settled the shape of a mechanism —
+  <a data-rel="specifies" href="../knowledge/2026-07-25-virtual-module-extraction-not-concatenation.decision.html">extract
+  embedded scripts into virtual ES modules rather than concatenate</a> and
+  <a data-rel="specifies" href="../knowledge/2026-07-25-id-based-cross-script-imports.decision.html">address them via
+  <code>#id</code> fragments</a> — without specifying it fully enough to build. This doc is that specification.
+</p>
+<p>
+  Today, a template-embedded <code>&lt;script type="mycelium/command"&gt;</code> or
+  <code>&lt;script data-validates&gt;</code> block is loaded as a single self-contained blob (a <code>data:</code> URL,
+  per <code>spec.template.html</code>'s own comment on the subject). A <code>data:</code> URL has no hierarchical base,
+  so a relative <code>import</code> inside one has nothing to resolve against — which is why every family's script
+  duplicates whatever logic it needs instead of sharing it. That's a deliberate, already-made choice at small scale:
+  <a data-rel="alternative_to" href="../knowledge/2026-07-24-duplicate-not-share-loadcheck.decision.html">duplicate-not-share-loadcheck</a>
+  chose to duplicate a five-line function across two call sites rather than build sharing machinery for it. But once
+  more than a function or two needs sharing — a <code>slugify</code> helper, a Markdown parser, another family's own
+  validator delegated to for a nested foreign type — duplication stops being viable, and nothing about the
+  <code>data:</code> URL model can simply be relaxed without losing the property that a template's script stays a
+  single, self-contained, inspectable blob: no build step, nothing to keep in sync, no persisted artifact that can
+  drift from its source.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>Extraction</h3>
+<p>
+  Every <code>&lt;script&gt;</code> block embedded in a <code>.template.html</code> file — a
+  <code>type="mycelium/command"</code> block, a <code>data-validates</code> block, any future kind — is extracted at
+  load time into its own real ES module. Extraction is not a build step and produces no file on disk: the mechanism
+  below reads the real <code>.template.html</code> file, finds the script's text via the project's existing HTML
+  parser (not a regex — attributes and nested markup make a hand-rolled pattern fragile), and hands that text to
+  Node's module system as the source for a synthetic URL. Nothing is cached across invocations; every run
+  re-extracts from the real file, the same "derive fresh, never persist" discipline this project already applies to
+  backlinks.
+</p>
+<h3>Addressing: only an explicit id is importable</h3>
+<p>
+  A script block becomes importable only if its <code>&lt;script&gt;</code> tag carries an explicit <code>id</code>
+  attribute — distinct from any <code>data-validates="#type-id"</code> it might also carry, since "what type this
+  script checks" and "what name you call this script by" are different questions and a type could plausibly have more
+  than one addressable script. An id'd script is imported the same way anything else in this project is already
+  cross-referenced — a fragment on a path:
+</p>
+<pre><code>import { slugify } from "../format-utils.html#slugify"
+import { check as checkKnowledgeDecision } from "../knowledge.template.html#knowledge-decision-validate"</code></pre>
+<p>
+  A script with <em>no</em> id is simply not part of the import address space. That's not a gap needing a fallback
+  name — it's the correct boundary: only scripts that opt in by declaring an id are addressable from outside their
+  own file. The module system still needs some identity to hand the JS engine when it evaluates an un-id'd script
+  (engines want a module URL for stack traces regardless of whether anyone imports it), but that identity is derived
+  deterministically from the script's file path and its position among that file's <code>&lt;script&gt;</code> tags —
+  never assigned randomly. A random identity would need to be remembered to reproduce, which is exactly the kind of
+  persisted derived-state this design avoids everywhere else; a positional identity is recomputed identically every
+  time, from nothing but the file that's already there.
+</p>
+<h3>Resolution: Node's own module-customization hooks, not a data: URL</h3>
+<p>
+  Confirmed working by direct prototype, not inferred: a <code>data:</code> URL module in Node cannot resolve
+  anything requiring a hierarchical base — not a relative path, not even an absolute filesystem path, not a
+  <code>package.json</code> subpath import. Only a fully self-sufficient URL works from inside one (a
+  <code>file://</code> URL, a <code>node:</code> builtin, or another <code>data:</code> URL used directly as a
+  specifier). That ruled out extending today's <code>loadModule</code> (a plain <code>import("data:text/javascript,…")</code>,
+  per <code>utils.ts</code>) by rewriting specifier text alone.
+</p>
+<p>
+  Node's real extension point for this is <code>node:module</code>'s <code>register()</code>, which installs a pair
+  of hooks — <code>resolve(specifier, context, nextResolve)</code> and <code>load(url, context, nextLoad)</code> —
+  that every module resolution and load in the process passes through:
+</p>
+<ul>
+  <li><code>resolve</code> recognizes a specifier matching <code>&lt;path&gt;#&lt;id&gt;</code> — using the URL
+    spec's own native fragment syntax (<code>new URL(specifier, parentURL)</code> splits path from id for free, no
+    custom string parsing) — and mints a synthetic <code>file://</code> URL that sits in the <em>same real
+    directory</em> as the referenced HTML file, marked so <code>load</code> can recognize it
+    (confirmed pattern: <code>file://&lt;dir&gt;/&lt;basename&gt;.__mycelium_virtual__.&lt;id&gt;.mjs</code>).
+    Anything else is passed to <code>nextResolve</code>, unmodified.</li>
+  <li><code>load</code> recognizes that synthetic URL, reads the real HTML file, extracts the script text for that
+    id, and returns it as the module's source (<code>{ format: "module", source, shortCircuit: true }</code>).
+    Anything else is passed to <code>nextLoad</code>, unmodified — including every one of today's existing
+    <code>data:text/javascript,…</code> calls, which never match this pattern and keep working exactly as they do
+    now.</li>
+</ul>
+<p>
+  Because the synthetic URL is a real, hierarchical <code>file://</code> URL living beside the real file, a plain
+  relative import written inside the extracted script — <code>import { slugify } from "./format-utils.mjs"</code> —
+  needs no special handling at all: it resolves against that synthetic URL's directory using Node's completely
+  ordinary default resolution, which is the real file's real directory. Both hooks fall through for it via
+  <code>nextResolve</code>/<code>nextLoad</code>, and Node loads the real file normally. This was prototyped
+  end-to-end — a fake template file with an embedded script importing a real neighboring <code>.mjs</code> helper,
+  resolved and executed with no rewriting of the inner import at all.
+</p>
+<p>
+  Integration is additive: <code>register()</code> is called once, early, in <code>run.ts</code>'s and
+  <code>validate.ts</code>'s <code>main()</code>. Nothing about today's <code>loadModule</code>/<code>loadCheck</code>
+  in <code>utils.ts</code> needs to change.
+</p>
+<h3>What this unlocks</h3>
+<ul>
+  <li>
+    <strong>Shared helpers</strong> — a <code>slugify</code>, a generic "require these tags present" validator
+    helper, a Markdown or TypeScript parser — can live once and be imported by any family's script, real ES
+    <code>import</code>/<code>export</code>, no scope collisions, no hand-copied duplicate logic.
+  </li>
+  <li>
+    <strong>Cross-family validator delegation</strong> — a family whose content can nest another family's type (a
+    <code>spec-design</code> section containing a <code>&lt;knowledge-decision&gt;</code>, say) can import that
+    other type's own validator and delegate to it, instead of either re-implementing a check for content it doesn't
+    own or silently trusting it's well-formed.
+  </li>
+  <li>
+    <strong>Cross-family command reuse</strong> — a command that needs to resolve and confirm another family's id is
+    valid (not just that the string is present) can call into that family's own resolution logic directly.
+  </li>
+</ul>
+<p>
+  This is the same underlying question <code>duplicate-not-share-loadcheck</code> already answered once, just at a
+  different scale: sharing machinery wasn't worth it for one five-line function used in two places; it becomes worth
+  it once the target is "any family, sharing with any other family, indefinitely" rather than two known call sites
+  inside the engine itself.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+  <li>Non-HTML target formats for a family's own validator (Markdown, TypeScript) — a separate, larger question,
+    tracked as its own observation rather than specified here.</li>
+  <li>A <code>render()</code> hook so a non-HTML citer shows up in a generated cross-reference view — named as a gap
+    elsewhere, not addressed by this mechanism.</li>
+  <li>A <code>template.template.html</code> that validates template files themselves.</li>
+  <li>Whether a command script should be allowed to import a validator script and vice versa, as opposed to just
+    "any script may import any id'd script" — this doc specifies the mechanism, not a permission policy on top of
+    it.</li>
+</ul>
+</spec-out-of-scope>
+  <spec-open-questions>
+<ol>
+  <li>Within one CLI invocation, if several imports resolve <code>id</code>s out of the same source file, is that
+    file parsed once and cached for the run, or re-parsed per import (the current prototype re-parses every time)?
+    Re-parsing is simpler and keeps "always derive fresh" uniform; caching is the obvious performance answer if a
+    file is imported from many times in one run. Unresolved.</li>
+  <li>Two different elements in one file could each declare the same <code>id</code> for different purposes — a
+    <code>&lt;template id="spec-doc"&gt;</code> and, separately, some future <code>&lt;script id="spec-doc"&gt;</code>
+    — since HTML itself doesn't stop that. Does the loader need its own collision check independent of the DOM's,
+    or is "don't reuse an id across element kinds in one file" left as an authoring discipline?</li>
+  <li>Only static <code>import</code>/<code>export … from</code> declarations are addressed here. A dynamic
+    <code>import("…")</code> expression using the same <code>&lt;path&gt;#&lt;id&gt;</code> form would go through the
+    same hooks and likely just work, but that hasn't been prototyped — noted as untested, not assumed.</li>
+</ol>
+</spec-open-questions>
+</spec-doc>
+</body></html>

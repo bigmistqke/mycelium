@@ -213,21 +213,17 @@
   why that's deferred, not forgotten.
 </p>
 <script type="mycelium/command">
-  // Local to this file on purpose, not imported from knowledge.template.html
-  // or shared via utils.ts — a data: URL-loaded command script can't do a
-  // relative import anyway (no hierarchical base to resolve against), and
-  // each family's command script is meant to be self-contained. See
-  // docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html.
+  import { todayDate } from "./shared.ts"
+
+  // Still local on purpose, unlike todayDate above: two lines, one call
+  // site each in this file, not worth a shared import for. See
+  // docs/specs/2026-07-25-virtual-module-script-imports.spec.html for why
+  // sharing is possible at all now — it wasn't when this comment last
+  // said otherwise.
   function requireArgs(...checks) {
     for (const [value, label] of checks) {
       if (value === undefined) throw new Error(`missing required argument: ${label}`)
     }
-  }
-
-  function todayDate() {
-    const d = new Date()
-    const pad = (n) => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
   }
 
   const BODY_TAGS = ['spec-problem', 'spec-design', 'spec-out-of-scope', 'spec-open-questions']

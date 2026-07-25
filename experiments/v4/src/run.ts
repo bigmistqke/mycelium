@@ -6,8 +6,11 @@
 
 import { readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { join, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
+import { register } from "node:module"
 import { parse } from "acorn"
 import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
+
+register("./script-hooks.ts", import.meta.url)
 
 type Validate = (root: Element, instancePath: string) => Promise<{ ok: boolean; errors: string[] }>
 
@@ -239,7 +242,7 @@ async function main() {
   }
 
   const source = script.textContent ?? ""
-  const mod = await loadModule(source)
+  const mod = await loadModule(templateFile, script)
 
   if (!command || command === "--help" || command === "-h") {
     printHelp(id, templateLabel, mod, source)

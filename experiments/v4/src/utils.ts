@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, join, resolve as resolvePath } from "node:path"
+import { pathToFileURL } from "node:url"
 import { Window } from "happy-dom"
 
 export function parseHTML(html: string): { document: Document } {
@@ -30,21 +31,37 @@ export function resolveTemplateRef(instanceFile: string, conformsTo: string): st
   return `${templateFile}#${fragId}`
 }
 
-// A data: URL dynamic import — the one trick that lets a script's source
-// text (pulled straight from a <script> tag, not a real file) run as a
-// real ES module with no server and no real cross-file import, which
-// would otherwise be CORS-checked with no stable origin to satisfy it
-// over file://. Used identically for a type's validator, a graph-wide
-// audit, and a template's own authoring commands. The one browser call
-// site (knowledge.template.html's audits live-demo) duplicates these same
-// five lines directly rather than importing this file — see
-// docs/specs/2026-07-24-mycelium-remove-runtime-js.spec.html.
-export async function loadModule(scriptSource: string): Promise<Record<string, unknown>> {
-  return await import(`data:text/javascript,${encodeURIComponent(scriptSource)}`)
+// Identifies a script within its own document for script-hooks.ts's
+// resolve()/load() to re-find later: its own id if it declared one
+// (making it importable from elsewhere, per
+// docs/knowledge/2026-07-25-id-based-cross-script-imports.decision.html),
+// otherwise a positional token computed identically here and in load() —
+// derived from the file, never persisted or assigned randomly.
+function locatorFor(script: Element): string {
+  const id = script.getAttribute("id")
+  if (id) return id
+  const scripts = Array.from(script.ownerDocument!.querySelectorAll("script"))
+  return `@${scripts.indexOf(script)}`
 }
 
-export async function loadCheck(scriptSource: string): Promise<(...args: unknown[]) => unknown> {
-  const mod = await loadModule(scriptSource)
+// Runs a template-embedded <script> as a real ES module, addressed by its
+// real file and its locator within that file (see locatorFor above) —
+// script-hooks.ts's resolve()/load() hooks (registered once by run.ts and
+// validate.ts) turn "<file>#<locator>" into a synthetic file: URL sitting
+// beside the real file, then re-extract that exact script's text as the
+// module's source. Real file: URL, real hierarchical base, so the
+// script's own relative imports (a shared helper, another family's
+// validator via the same #locator form) resolve normally — unlike the
+// data: URL this replaced, which had no base to resolve anything against.
+// See docs/specs/2026-07-25-virtual-module-script-imports.spec.html.
+export async function loadModule(filePath: string, script: Element): Promise<Record<string, unknown>> {
+  const locator = encodeURIComponent(locatorFor(script))
+  const fileUrl = pathToFileURL(filePath).href
+  return await import(`${fileUrl}#${locator}`)
+}
+
+export async function loadCheck(filePath: string, script: Element): Promise<(...args: unknown[]) => unknown> {
+  const mod = await loadModule(filePath, script)
   return mod.check as (...args: unknown[]) => unknown
 }
 
@@ -68,13 +85,11 @@ export async function validateInstance(
 
   try {
     const { document } = parseHTML(readFileSync(templateFile, "utf8"))
-    const scriptSource = (document as unknown as Document)
-      .querySelector(`script[data-validates="#${fragId}"]`)
-      ?.textContent
+    const script = (document as unknown as Document).querySelector(`script[data-validates="#${fragId}"]`)
 
-    if (!scriptSource) return { ok: false, errors: [`no template found at ${key}`] }
+    if (!script) return { ok: false, errors: [`no template found at ${key}`] }
 
-    const check = await loadCheck(scriptSource)
+    const check = await loadCheck(templateFile, script)
     const result = check(element) as { ok: boolean; errors?: string[]; violations?: string[] }
     return { ok: result.ok, errors: (result.errors ?? result.violations ?? []) as string[] }
   } catch (err) {

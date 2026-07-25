@@ -5,7 +5,10 @@
 import { readFileSync } from "node:fs"
 import { styleText } from "node:util"
 import { resolve as resolvePath, sep } from "node:path"
+import { register } from "node:module"
 import { parseHTML, walkHtmlFiles, resolveTemplateRef, loadCheck } from "./utils.ts"
+
+register("./script-hooks.ts", import.meta.url)
 
 interface ParsedDoc {
   path: string
@@ -15,14 +18,14 @@ interface ParsedDoc {
 interface TemplateInfo {
   id: string
   file: string
-  validatorScript: string | null
+  validatorScript: Element | null
 }
 
 interface AuditInfo {
   name: string
   touches: string | null
   file: string
-  scriptSource: string
+  scriptElement: Element
 }
 
 interface CheckResult {
@@ -50,14 +53,14 @@ function discoverTemplatesAndAudits(documents: ParsedDoc[]) {
     for (const script of Array.from(dom.querySelectorAll("script[data-validates]"))) {
       const ref = script.getAttribute("data-validates")!.replace(/^#/, "")
       const info = templates.get(`${path}#${ref}`)
-      if (info) info.validatorScript = script.textContent
+      if (info) info.validatorScript = script
     }
     for (const script of Array.from(dom.querySelectorAll("script[data-audits]"))) {
       audits.push({
         name: script.getAttribute("data-audits")!,
         touches: script.getAttribute("data-touches"),
         file: path,
-        scriptSource: script.textContent ?? "",
+        scriptElement: script,
       })
     }
   }
@@ -111,7 +114,7 @@ async function main() {
     }
 
     try {
-      const check = await loadCheck(template.validatorScript)
+      const check = await loadCheck(template.file, template.validatorScript)
       const result = check(instance.element) as CheckResult
       if (!result.ok) {
         fail++
@@ -127,7 +130,7 @@ async function main() {
     checked++
     const label = `${audit.name}  (${relative(dir, audit.file)}${audit.touches ? `, touches: ${audit.touches}` : ""})`
     try {
-      const check = await loadCheck(audit.scriptSource)
+      const check = await loadCheck(audit.file, audit.scriptElement)
       const result = (await check(auditDocuments)) as CheckResult
       if (!result.ok) {
         fail++
