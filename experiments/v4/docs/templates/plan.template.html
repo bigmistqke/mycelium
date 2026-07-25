@@ -204,6 +204,7 @@
 </p>
 <script type="mycelium/command">
   import { todayDate } from "./shared.ts"
+  import { execSync } from "node:child_process"
 
   function requireArgs(...checks) {
     for (const [value, label] of checks) {
@@ -423,6 +424,77 @@
       const checkResult = await cli.validate(check, path)
       if (!checkResult.ok) throw new Error(checkResult.errors.join("\n"))
     }
+  }
+
+  function runCheckCommand(command) {
+    try {
+      const stdout = execSync(command, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] })
+      return { success: true, output: stdout }
+    } catch (err) {
+      return { success: false, output: `${err.stdout ?? ""}${err.stderr ?? ""}` }
+    }
+  }
+
+  /**
+   * Run the plan-check(s) attached to one step, or every step in the doc.
+   *
+   *   mycelium run plan check <file> [<step-id>]
+   *
+   * Shells out to each plan-check-command found (one named step, or
+   * every plan-step with a plan-check if no step-id is given) via
+   * node:child_process, compares the exit code against
+   * plan-check-success (default "true" — exit 0 required; "false" —
+   * nonzero required) and, if plan-check-output is present,
+   * substring-matches it against combined stdout+stderr. On a pass,
+   * flips that step's plan-status to "completed" — a failing check
+   * leaves status untouched, since a red step mid-TDD-cycle isn't
+   * abandoned, just not done yet. Steps with no plan-check are
+   * skipped, not touched. Throws (nonzero exit) if any checked step
+   * failed.
+   */
+  export async function check({ fs, args, cli }) {
+    requireArgs([args._[0], "<file>"])
+    const path = `plans/${args._[0]}`
+    const doc = fs.get(path)
+    const stepId = args._[1]
+
+    const steps = stepId
+      ? [doc.getElementById(stepId)].filter(Boolean)
+      : Array.from(doc.querySelectorAll("plan-step"))
+    if (stepId && steps.length === 0) throw new Error(`no <plan-step id="${stepId}"> found in ${args._[0]}`)
+
+    let anyFail = false
+    for (const step of steps) {
+      const checkEl = directChild(step, "plan-check")
+      if (!checkEl) {
+        if (stepId) console.log(`SKIP  ${step.id}  (no plan-check)`)
+        continue
+      }
+      const commandEl = directChild(checkEl, "plan-check-command")
+      if (!commandEl) throw new Error(`<plan-step id="${step.id}"> has a <plan-check> with no <plan-check-command>`)
+      const command = commandEl.textContent.trim()
+      const expectedSuccess = (directChild(checkEl, "plan-check-success")?.textContent.trim() ?? "true") !== "false"
+      const expectedOutput = directChild(checkEl, "plan-check-output")?.textContent.trim()
+
+      const { success, output } = runCheckCommand(command)
+      const outputOk = expectedOutput ? output.includes(expectedOutput) : true
+      const pass = success === expectedSuccess && outputOk
+
+      if (pass) {
+        field(doc, step, "plan-status", "completed")
+        console.log(`PASS  ${step.id}`)
+      } else {
+        anyFail = true
+        const reason = success !== expectedSuccess
+          ? `command ${success ? "succeeded" : "failed"}, expected ${expectedSuccess ? "success" : "failure"}`
+          : `output missing "${expectedOutput}"`
+        console.log(`FAIL  ${step.id}  (${reason})`)
+      }
+    }
+
+    const result = await cli.validate(doc.querySelector("plan-doc"), path)
+    if (!result.ok) throw new Error(result.errors.join("\n"))
+    if (anyFail) throw new Error("one or more checks failed")
   }
 
   /**
