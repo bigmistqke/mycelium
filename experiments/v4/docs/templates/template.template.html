@@ -85,7 +85,7 @@
       const tag = field.tagName.toLowerCase()
       allowed.push(tag)
       const required = field.hasAttribute('required')
-      const node = el.querySelector(tag)
+      const node = Array.from(el.children).find((c) => c.tagName.toLowerCase() === tag)
       const text = node?.textContent.trim() ?? ''
 
       if (!node) {
