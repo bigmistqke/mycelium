@@ -4,7 +4,7 @@
 // what any command actually does. See
 // docs/specs/2026-07-23-mycelium-authoring-commands.spec.html.
 
-import { readFileSync, writeFileSync, unlinkSync } from "node:fs"
+import { mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { dirname, relative as relativePath, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
 import { parse } from "acorn"
@@ -85,27 +85,61 @@ function normalizeWhitespace(html: string): string {
   return html.replace(/\n{2,}/g, "\n")
 }
 
-// Reindents the data-conforms-to root's direct children with consistent
-// 2-space indentation, matching this project's own hand-authored style.
-// Plain appendChild() — what every command's field()-style helper does —
-// leaves every field butted up against its neighbor with no whitespace at
-// all. Strips any existing whitespace-only text children first and
-// rebuilds from scratch, so this is safe to call more than once on the
-// same document (get() calls it once for the comparison snapshot; commit()
-// calls it again as the last step before writing, after whatever a
-// command did to the tree in between). Reformats one level only —
-// anything nested inside a child (e.g. knowledge-detail's own markup) is
-// left exactly as authored, since reformatting arbitrary nested content
-// risks corrupting significant whitespace inside <pre>/<script>.
+// Reindents every data-conforms-to element's direct children with
+// consistent 2-space-per-level indentation, matching this project's own
+// hand-authored style. Plain appendChild() — what every command's
+// field()-style helper does — leaves every field butted up against its
+// neighbor with no whitespace at all. Strips any existing whitespace-only
+// text children first and rebuilds from scratch, so this is safe to call
+// more than once on the same document (get() calls it once for the
+// comparison snapshot; commit() calls it again as the last step before
+// writing, after whatever a command did to the tree in between).
+//
+// Most families (knowledge-*, spec-doc) only ever have one conforming
+// element per document, so this used to look for a single root. plan-*
+// nests conforming types three deep (plan-doc > plan-task > plan-step >
+// plan-check), so every [data-conforms-to] element in the document is now
+// reindented independently, each at a depth based on how many *other
+// conforming elements* (not raw DOM ancestors — <html>/<head>/<body>
+// don't count) contain it. A top-level root (depth 0) gets exactly the
+// indentation this function has always produced; a nested one gets
+// indented two spaces deeper per level of conforming-element nesting.
+//
+// Still reformats one level only, per element — anything nested inside a
+// non-conforming child (e.g. knowledge-detail's or plan-detail's own
+// arbitrary markup) is left exactly as authored, since reformatting
+// arbitrary nested content risks corrupting significant whitespace inside
+// <pre>/<script>.
 function indentRootChildren(doc: Document): void {
-  const root = doc.querySelector("[data-conforms-to]")
-  if (!root) return
-  for (const node of Array.from(root.childNodes)) {
-    if (node.nodeType === 3 && !node.textContent?.trim()) node.remove()
+  const roots = Array.from(doc.querySelectorAll("[data-conforms-to]"))
+
+  const depthOf = (el: Element): number => {
+    let depth = 0
+    let cur = el.parentElement
+    while (cur) {
+      if (cur.hasAttribute("data-conforms-to")) depth++
+      cur = cur.parentElement
+    }
+    return depth
   }
-  const children = Array.from(root.children)
-  for (const el of children) root.insertBefore(doc.createTextNode("\n  "), el)
-  if (children.length > 0) root.appendChild(doc.createTextNode("\n"))
+
+  // Deepest first, so a parent's own re-indentation (inserting whitespace
+  // text nodes as its children) doesn't shift the position of a nested
+  // [data-conforms-to] child before that child has already been
+  // processed relative to ITS OWN children.
+  roots.sort((a, b) => depthOf(b) - depthOf(a))
+
+  for (const root of roots) {
+    const depth = depthOf(root)
+    const indent = "  ".repeat(depth + 1)
+    const closeIndent = "  ".repeat(depth)
+    for (const node of Array.from(root.childNodes)) {
+      if (node.nodeType === 3 && !node.textContent?.trim()) node.remove()
+    }
+    const children = Array.from(root.children)
+    for (const el of children) root.insertBefore(doc.createTextNode(`\n${indent}`), el)
+    if (children.length > 0) root.appendChild(doc.createTextNode(`\n${closeIndent}`))
+  }
 }
 
 class Filesystem {
@@ -168,6 +202,7 @@ class Filesystem {
       indentRootChildren(entry.doc)
       const html = normalizeWhitespace(entry.doc.documentElement!.outerHTML)
       if (html === entry.original) continue
+      mkdirSync(dirname(full), { recursive: true })
       writeFileSync(full, "<!DOCTYPE html>\n" + html + "\n")
       console.log(`wrote    ${label}`)
       written.push(full)
