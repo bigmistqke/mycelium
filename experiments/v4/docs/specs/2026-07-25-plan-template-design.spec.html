@@ -35,7 +35,20 @@
 <p>
   New family <code>plan-*</code>, root type <code>plan-doc</code>, one file per plan at
   <code>docs/plans/&lt;date&gt;-&lt;topic&gt;.plan.html</code> — a new <code>plans/</code> directory,
-  sibling to <code>knowledge/</code> and <code>specs/</code>.
+  sibling to <code>knowledge/</code> and <code>specs/</code>. Four conforming types share this one file,
+  nested three deep, each independently addressable via its own <code>data-conforms-to</code> — the same
+  pattern <code>spec.template.html</code>'s own "Conformance" section already documents ("a document can have
+  exactly one typed root and any number of typed elements nested inside it, each independently addressable").
+  <code>plan-doc</code> contains <code>plan-task</code>s, each conforming to <code>#plan-task</code>;
+  <code>plan-task</code> contains <code>plan-step</code>s, each conforming to <code>#plan-step</code>;
+  <code>plan-step</code> contains at most one <code>plan-check</code>, conforming to <code>#plan-check</code>.
+  A parent's own <code>&lt;template&gt;</code> only ever declares a nested child tag as "may be present" —
+  it can't and doesn't reach into that child's own internal shape; that's the independently-conforming
+  child's own job, which is also why each of the three nested types needs its own <code>data-conforms-to</code>
+  in the first place: the crawler behind <code>pnpm validate</code> finds every validatable instance purely
+  by scanning for <code>[data-conforms-to]</code> anywhere in the tree, so without one, a <code>plan-task</code>'s
+  (or <code>plan-step</code>'s, or <code>plan-check</code>'s) own required-field rules would never be checked
+  at all.
 </p>
 <pre><code>&lt;plan-doc&gt;
   &lt;plan-title&gt;…&lt;/plan-title&gt;
@@ -45,78 +58,105 @@
   &lt;plan-architecture&gt;… 2-3 sentences …&lt;/plan-architecture&gt;
   &lt;plan-tech-stack&gt;… optional …&lt;/plan-tech-stack&gt;
   &lt;plan-global-constraints&gt;… optional …&lt;/plan-global-constraints&gt;
-  &lt;plan-task id="task-1"&gt;
+  &lt;plan-task id="task-1" data-conforms-to="../templates/plan.template.html#plan-task"&gt;
     &lt;plan-title&gt;…&lt;/plan-title&gt;
     &lt;plan-status&gt;pending | active | completed | rejected&lt;/plan-status&gt;
     &lt;plan-files&gt;… Create/Modify/Test …&lt;/plan-files&gt;
     &lt;plan-interfaces&gt;… optional: Consumes/Produces …&lt;/plan-interfaces&gt;
-    &lt;plan-step id="task-1-step-1" status="pending"&gt;
+    &lt;plan-step id="task-1-step-1" data-conforms-to="../templates/plan.template.html#plan-step"&gt;
       &lt;plan-title&gt;Write the failing test&lt;/plan-title&gt;
+      &lt;plan-status&gt;pending | completed&lt;/plan-status&gt;
       &lt;plan-detail&gt;… optional: code, exact commands …&lt;/plan-detail&gt;
-      &lt;plan-check command="pytest tests/foo.py::test_bar -v"
-                  expected-success="false"
-                  expected-output="function not defined"&gt;&lt;/plan-check&gt;
+      &lt;plan-check data-conforms-to="../templates/plan.template.html#plan-check"&gt;
+        &lt;plan-check-command&gt;pytest tests/foo.py::test_bar -v&lt;/plan-check-command&gt;
+        &lt;plan-check-success&gt;false&lt;/plan-check-success&gt;
+        &lt;plan-check-output&gt;function not defined&lt;/plan-check-output&gt;
+      &lt;/plan-check&gt;
     &lt;/plan-step&gt;
   &lt;/plan-task&gt;
 &lt;/plan-doc&gt;</code></pre>
 <p>
-  <code>plan-title</code>/<code>plan-status</code> exist at all three nesting levels (doc, task, step), which
-  is deliberate — fields belong to the family, not to one type within it, the same rule
+  <code>plan-title</code>/<code>plan-status</code> exist at all three levels of the doc/task/step nesting,
+  which is deliberate — fields belong to the family, not to one type within it, the same rule
   <code>spec.template.html</code> already documents for why <code>spec-title</code> isn't
-  <code>spec-doc-title</code>. It does mean the generic validator must query direct children only
-  (<code>shape.children</code> / <code>el.children</code>, never a deep <code>querySelector</code>) so a
-  task's own title isn't confused with its parent doc's or a sibling step's — <code>template.template.html</code>'s
-  existing <code>validateFromTemplate</code> already scopes this way, so this needs no new validator logic,
-  just confirmation it keeps doing so once fields repeat three levels deep instead of one.
+  <code>spec-doc-title</code>. It does mean the shared generic validator (<code>template.template.html</code>'s
+  <code>validateFromTemplate</code>) must look up a field among only the element's own direct children, not
+  anywhere in its subtree — otherwise checking, say, a <code>plan-task</code>'s own <code>plan-title</code>
+  could accidentally match a nested <code>plan-step</code>'s title instead. This is a real, separate fix
+  needed in shared infrastructure (also used by <code>knowledge-*</code>/<code>spec-doc</code>, though a
+  no-op for both today, since neither has nested same-name fields) — see "Prerequisite fix" below.
 </p>
 <p>
   <code>plan-doc</code> and <code>plan-task</code> both use the full four-value status enum
   (<code>pending|active|completed|rejected</code>) — reusing <code>knowledge-status</code>'s exact vocabulary
   rather than inventing a new one, since a plan's and a task's lifecycle both genuinely span all four states.
   <code>plan-step</code> gets its own narrower two-value enum, <code>pending|completed</code>: a single step
-  is only ever done or not — no "active" mid-step, no "rejected" for one isolated step — which is the same
-  reasoning that already justifies <code>knowledge-option</code>/<code>knowledge-outcome</code>/<code>knowledge-observation</code>
+  is only ever done or not — no "active" mid-step, no "rejected" for one isolated step — the same reasoning
+  that already justifies <code>knowledge-option</code>/<code>knowledge-outcome</code>/<code>knowledge-observation</code>
   omitting <code>status</code> entirely rather than forcing an enum with values that never apply.
 </p>
 <p>
   Required fields: <code>plan-title</code>/<code>plan-status</code>/<code>plan-date</code>/<code>plan-goal</code>/<code>plan-architecture</code>
   on <code>plan-doc</code>; <code>plan-title</code>/<code>plan-status</code>/<code>plan-files</code> on
-  <code>plan-task</code>; <code>plan-title</code>/<code>plan-status</code> on <code>plan-step</code>.
-  <code>plan-tech-stack</code>/<code>plan-global-constraints</code> (doc), <code>plan-interfaces</code>
-  (task), and <code>plan-detail</code>/<code>plan-check</code> (step) are all optional — a task with no
-  interfaces to state, or a step needing no runnable check, simply omits the tag.
+  <code>plan-task</code>; <code>plan-title</code>/<code>plan-status</code> on <code>plan-step</code>;
+  <code>plan-check-command</code> on <code>plan-check</code>. <code>plan-tech-stack</code>/<code>plan-global-constraints</code>
+  (doc), <code>plan-interfaces</code> (task), <code>plan-detail</code>/<code>plan-check</code> (step), and
+  <code>plan-check-success</code>/<code>plan-check-output</code> (check) are all optional.
 </p>
-<h3><code>plan-check</code> mechanics</h3>
-<pre><code>&lt;plan-check command="pytest tests/foo.py::test_bar -v"
-            expected-success="true"
-            expected-output="function not defined"&gt;&lt;/plan-check&gt;</code></pre>
+<h3>Prerequisite fix: direct-child field scoping in the shared validator</h3>
+<p>
+  <code>template.template.html</code>'s <code>validateFromTemplate</code> currently locates a declared
+  field's value with a deep <code>el.querySelector(tag)</code> — it searches the instance's entire subtree,
+  not just its direct children. Its separate "unexpected field" check already does this correctly
+  (<code>Array.from(el.children)</code>, direct children only); only the required/pattern/enum lookup doesn't.
+  This has never mattered before: no existing <code>knowledge-*</code> or <code>spec-doc</code> instance
+  nests a same-named field inside itself. <code>plan-*</code> is the first family where it does
+  (<code>plan-title</code>/<code>plan-status</code> at three nesting levels), so the fix — scoping that
+  lookup to direct children, matching the unexpected-field check's existing behavior — has to land before
+  <code>plan.template.html</code> can be built correctly. Backward-compatible: identical behavior for every
+  existing single-level instance, since a direct-children scan and a subtree scan return the same first match
+  whenever there's no nested same-tag element in the first place.
+</p>
+<h3><code>plan-check</code>: a fourth conforming type, not a field</h3>
+<p>
+  A shell command a step can be verified against:
+</p>
+<pre><code>&lt;plan-check data-conforms-to="../templates/plan.template.html#plan-check"&gt;
+  &lt;plan-check-command&gt;pytest tests/foo.py::test_bar -v&lt;/plan-check-command&gt;
+  &lt;plan-check-success&gt;true | false&lt;/plan-check-success&gt;
+  &lt;plan-check-output&gt;function not defined&lt;/plan-check-output&gt;
+&lt;/plan-check&gt;</code></pre>
 <ul>
-  <li><code>command</code> (required) — a shell command, run via a plain <code>node:child_process</code>
-    call from the <code>check</code> command below. The runtime is confirmed unsandboxed real Node (command
-    scripts load as genuine ES modules via a <code>file:</code> URL <code>import()</code>, no VM sandbox, no
-    permission flag) with no existing <code>cli.exec</code> convenience — <code>plan check</code> is
-    the first command in this project to shell out, and does so directly rather than waiting on a
-    convenience that doesn't exist yet.</li>
-  <li><code>expected-success</code> (optional, default <code>"true"</code>) — <code>"true"</code>
-    requires exit code 0, <code>"false"</code> requires nonzero. Exists specifically for the TDD red/green
-    cycle: writing-plans' own Step 2 ("run it, make sure it fails") is exactly
-    <code>expected-success="false"</code>.</li>
-  <li><code>expected-output</code> (optional) — a plain substring match against combined stdout+stderr,
-    not a full regex (YAGNI; extend later if real plans need more).</li>
+  <li><code>plan-check-command</code> (required) — a shell command, run via a plain
+    <code>node:child_process</code> call from the <code>check</code> command below. The runtime is confirmed
+    unsandboxed real Node (command scripts load as genuine ES modules via a <code>file:</code> URL
+    <code>import()</code>, no VM sandbox, no permission flag) with no existing <code>cli.exec</code>
+    convenience — <code>plan check</code> is the first command in this project to shell out, and does
+    so directly rather than waiting on a convenience that doesn't exist yet.</li>
+  <li><code>plan-check-success</code> (optional, enum <code>true|false</code>, code default
+    <code>"true"</code> when absent) — <code>"true"</code> requires exit code 0, <code>"false"</code>
+    requires nonzero. Exists specifically for the TDD red/green cycle: writing-plans' own Step 2 ("run it,
+    make sure it fails") is exactly <code>plan-check-success</code> = <code>false</code>.</li>
+  <li><code>plan-check-output</code> (optional) — a plain substring match against combined
+    stdout+stderr, not a full regex (YAGNI; extend later if real plans need more).</li>
 </ul>
 <p>
-  At most one <code>plan-check</code> per <code>plan-step</code> — today's generic validator checks a
-  single occurrence per tag (<code>querySelector</code>, not <code>querySelectorAll</code>), so allowing more
-  than one would need new validator machinery for a case real plans may never need: a step wanting two
-  independent checks can simply be split into two steps.
+  At most one <code>plan-check</code> per <code>plan-step</code> — <code>plan-step</code>'s own
+  <code>&lt;template&gt;</code> declares it as a single optional field (checked via one
+  <code>querySelector('plan-check')</code>, matching only the first), so a step wanting two independent
+  checks would need to be split into two steps instead. Because <code>plan-check</code> is its own
+  conforming type rather than a plain field, creating or editing one takes <em>two</em>
+  <code>cli.validate()</code> calls in the owning command — one for the <code>plan-step</code> itself,
+  one for the nested <code>plan-check</code> — not one.
 </p>
 <p>
   <code>mycelium run plan check &lt;file&gt; [&lt;step-id&gt;]</code> runs the check(s) it finds (one named
-  step, or every <code>plan-check</code> in the doc if no step is given), reports pass/fail per step, and
-  <em>only on pass</em> flips that step's <code>plan-status</code> to <code>completed</code>. A failing check
-  leaves status untouched rather than marking it <code>rejected</code> — a red step mid-TDD-cycle isn't
-  abandoned, just not done yet. Steps with no <code>plan-check</code> are never touched by <code>check</code>;
-  they can only be completed by hand, via <code>update-step</code> below.
+  step, or every <code>plan-step</code> with a <code>plan-check</code> in the doc if no step is given),
+  reports pass/fail per step, and <em>only on pass</em> flips that step's <code>plan-status</code> to
+  <code>completed</code>. A failing check leaves status untouched rather than marking it <code>rejected</code>
+  — a red step mid-TDD-cycle isn't abandoned, just not done yet. Steps with no <code>plan-check</code>
+  are never touched by <code>check</code>; they can only be completed by hand, via <code>update-step</code>
+  below.
 </p>
 <h3>Cross-linking</h3>
 <p>
@@ -132,8 +172,8 @@
 <h3>CLI commands</h3>
 <p>
   Eight <code>mycelium/command</code> exports in <code>plan.template.html</code> — more than
-  <code>knowledge</code>'s five, justified by the extra nesting level a plan has that a knowledge node
-  doesn't. Three creation commands, three update commands (one per nesting level, each following the same
+  <code>knowledge</code>'s five, justified by the extra nesting a plan has that a knowledge node doesn't.
+  Three creation commands, three update commands (one per nesting level, each following the same
   upsert/clear-on-empty-string convention every other family's <code>update</code> already uses — there is no
   separate one-off "flip a step's status" command; status is just one of the fields <code>update-task</code>/<code>update-step</code>
   can set, the same way <code>plan-status</code> is just one of the fields <code>update</code> can set on the
@@ -147,8 +187,9 @@
     Appends one <code>&lt;plan-task id="task-N"&gt;</code> (N = current task count + 1), prints the new task
     id.</li>
   <li><code>add-step</code> — <code>mycelium run plan add-step &lt;file&gt; &lt;task-id&gt; --title "…" [--detail "…" | --detail -] [--check-command "…" [--expected-success true|false] [--expected-output "…"]]</code>.
-    Appends one <code>&lt;plan-step id="&lt;task-id&gt;-step-M" status="pending"&gt;</code> inside the named
-    task, prints the new step id.</li>
+    Appends one <code>&lt;plan-step id="&lt;task-id&gt;-step-M"&gt;</code> (status <code>pending</code>)
+    inside the named task, with a nested <code>plan-check</code> when <code>--check-command</code> is given;
+    prints the new step id.</li>
   <li><code>update</code> — <code>mycelium run plan update &lt;file&gt; [--title] [--status] [--goal] [--architecture] [--tech-stack] [--global-constraints]</code>.
     Scoped to the doc's own header fields.</li>
   <li><code>update-task</code> — <code>mycelium run plan update-task &lt;file&gt; &lt;task-id&gt; [--title] [--status] [--files] [--interfaces]</code>.
@@ -156,9 +197,11 @@
     value clears an optional field, same convention as every other <code>update</code>.</li>
   <li><code>update-step</code> — <code>mycelium run plan update-step &lt;file&gt; &lt;step-id&gt; [--title] [--status pending|completed] [--detail] [--check-command] [--expected-success] [--expected-output]</code>.
     Scoped to one existing step; covers both the common case (flip <code>--status</code> after finishing a
-    step by hand) and editing/replacing/clearing its <code>plan-check</code> after the fact (e.g. fixing a
-    flaky test command), rather than requiring the check to be right the first time at
-    <code>add-step</code>.</li>
+    step by hand) and creating/editing/clearing its nested <code>plan-check</code> after the fact (e.g.
+    fixing a flaky test command) — <code>--check-command ""</code> removes the whole
+    <code>plan-check</code>, a non-empty value upserts <code>plan-check-command</code> (creating the
+    <code>plan-check</code> wrapper first if none exists yet), and <code>--expected-success</code>/<code>--expected-output</code>
+    upsert their own fields within it.</li>
   <li><code>check</code> — <code>mycelium run plan check &lt;file&gt; [&lt;step-id&gt;]</code>. The
     mechanics above.</li>
   <li><code>list</code> — <code>mycelium run plan list &lt;file&gt;</code>. One line per step: task
