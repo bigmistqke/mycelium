@@ -448,8 +448,10 @@
    * step: <task-id> (e.g. "task-1") is found via getElementById.
    * Appends one <plan-step id="<task-id>-step-M">, status "pending",
    * inside that task. --check-command creates a nested <plan-check>
-   * (plan-check-success defaults to "true" if --expected-success is
-   * omitted). Prints the new step's id.
+   * (plan-check-success is omitted when --expected-success isn't
+   * given — the check command (not yet built) treats an absent
+   * plan-check-success as true when it runs). Prints the new step's
+   * id.
    */
   export async function add({ fs, args, cli }) {
     const kind = args._[0]
