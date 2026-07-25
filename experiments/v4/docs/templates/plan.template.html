@@ -331,54 +331,164 @@
     if (!result.ok) throw new Error(result.errors.join("\n"))
   }
 
+  function buildCheck(doc, checkCommand, expectedSuccess, expectedOutput) {
+    const check = doc.createElement("plan-check")
+    check.setAttribute("data-conforms-to", "../templates/plan.template.html#plan-check")
+    field(doc, check, "plan-check-command", checkCommand)
+    field(doc, check, "plan-check-success", expectedSuccess)
+    field(doc, check, "plan-check-output", expectedOutput)
+    return check
+  }
+
+  async function addStep({ fs, args, cli }) {
+    requireArgs([args._[1], "<file>"], [args._[2], "<task-id>"], [args.title, "--title"])
+    const path = `plans/${args._[1]}`
+    const doc = fs.get(path)
+    const task = doc.getElementById(args._[2])
+    if (!task) throw new Error(`no <plan-task id="${args._[2]}"> found in ${args._[1]}`)
+
+    const id = nextId(task, "plan-step", `${args._[2]}-step`)
+    const step = doc.createElement("plan-step")
+    step.setAttribute("id", id)
+    step.setAttribute("data-conforms-to", "../templates/plan.template.html#plan-step")
+
+    const detail = args.detail === "-" ? await cli.readStdin() : args.detail
+
+    field(doc, step, "plan-title", args.title)
+    field(doc, step, "plan-status", "pending")
+    if (detail) {
+      const el = doc.createElement("plan-detail")
+      el.innerHTML = detail
+      step.appendChild(el)
+    }
+
+    let check = null
+    if (args["check-command"]) {
+      check = buildCheck(doc, args["check-command"], args["expected-success"], args["expected-output"])
+      step.appendChild(check)
+    }
+
+    task.appendChild(step)
+
+    const stepResult = await cli.validate(step, path)
+    if (!stepResult.ok) throw new Error(stepResult.errors.join("\n"))
+    if (check) {
+      const checkResult = await cli.validate(check, path)
+      if (!checkResult.ok) throw new Error(checkResult.errors.join("\n"))
+    }
+
+    console.log(id)
+  }
+
+  async function updateStep({ fs, args, cli }) {
+    requireArgs([args._[1], "<file>"], [args._[2], "<step-id>"])
+    const path = `plans/${args._[1]}`
+    const doc = fs.get(path)
+    const step = doc.getElementById(args._[2])
+    if (!step) throw new Error(`no <plan-step id="${args._[2]}"> found in ${args._[1]}`)
+
+    field(doc, step, "plan-title", args.title)
+    field(doc, step, "plan-status", args.status)
+
+    const detail = args.detail === "-" ? await cli.readStdin() : args.detail
+    if (detail !== undefined) {
+      const existing = directChild(step, "plan-detail")
+      if (detail === "") existing?.remove()
+      else if (existing) existing.innerHTML = detail
+      else {
+        const el = doc.createElement("plan-detail")
+        el.innerHTML = detail
+        step.appendChild(el)
+      }
+    }
+
+    let check = directChild(step, "plan-check")
+    if (args["check-command"] === "") {
+      check?.remove()
+      check = null
+    } else if (args["check-command"] !== undefined && !check) {
+      check = buildCheck(doc, args["check-command"], args["expected-success"], args["expected-output"])
+      step.appendChild(check)
+    } else if (check) {
+      field(doc, check, "plan-check-command", args["check-command"])
+      field(doc, check, "plan-check-success", args["expected-success"])
+      field(doc, check, "plan-check-output", args["expected-output"])
+    } else if (args["expected-success"] !== undefined || args["expected-output"] !== undefined) {
+      throw new Error("--expected-success/--expected-output require --check-command when no plan-check exists yet")
+    }
+
+    const stepResult = await cli.validate(step, path)
+    if (!stepResult.ok) throw new Error(stepResult.errors.join("\n"))
+    if (check) {
+      const checkResult = await cli.validate(check, path)
+      if (!checkResult.ok) throw new Error(checkResult.errors.join("\n"))
+    }
+  }
+
   /**
-   * Create a new plan-doc/plan-task.
+   * Create a new plan-doc/plan-task/plan-step.
    *
    *   mycelium run plan add doc --title "…" --file <topic> --goal "…"
    *     --architecture "…" [--status pending|active|completed|rejected]
    *     [--tech-stack "…"] [--global-constraints "…"]
    *   mycelium run plan add task <file> --title "…" --files "…"
    *     [--interfaces "…"] [--status pending|active|completed|rejected]
+   *   mycelium run plan add step <file> <task-id> --title "…"
+   *     [--detail "…" | --detail -] [--check-command "…"]
+   *     [--expected-success true|false] [--expected-output "…"]
    *
    * doc: --file is required and becomes
-   * docs/plans/<today's-date>-<topic>.plan.html — the date isn't a
-   * flag, it's today's actual date, used for both the filename and the
-   * <plan-date> field so they can never drift apart. --status defaults
-   * to "pending" if omitted.
+   * docs/plans/<today's-date>-<topic>.plan.html. --status defaults to
+   * "pending" if omitted.
    *
    * task: <file> is an existing plan-doc file. Appends one
-   * <plan-task id="task-N"> (N = current task count + 1) to the doc's
-   * <plan-doc> root, prints the new task's id on its own line.
+   * <plan-task id="task-N"> to the doc's <plan-doc> root, prints the
+   * new task's id.
+   *
+   * step: <task-id> (e.g. "task-1") is found via getElementById.
+   * Appends one <plan-step id="<task-id>-step-M">, status "pending",
+   * inside that task. --check-command creates a nested <plan-check>
+   * (plan-check-success defaults to "true" if --expected-success is
+   * omitted). Prints the new step's id.
    */
   export async function add({ fs, args, cli }) {
     const kind = args._[0]
     if (kind === "doc") return addDoc({ fs, args, cli })
     if (kind === "task") return addTask({ fs, args, cli })
+    if (kind === "step") return addStep({ fs, args, cli })
     throw new Error(`unknown add kind "${kind}" — expected "doc", "task", or "step"`)
   }
 
   /**
-   * Update fields on an existing plan-doc/plan-task.
+   * Update fields on an existing plan-doc/plan-task/plan-step.
    *
    *   mycelium run plan update doc <file> [--title "…"] [--status …]
    *     [--goal "…"] [--architecture "…"] [--tech-stack "…"]
    *     [--global-constraints "…"]
    *   mycelium run plan update task <file> <task-id> [--title]
    *     [--status] [--files] [--interfaces]
+   *   mycelium run plan update step <file> <step-id> [--title]
+   *     [--status pending|completed] [--detail "…" | --detail -]
+   *     [--check-command "…"] [--expected-success true|false]
+   *     [--expected-output "…"]
    *
-   * doc: <file> is an existing docs/plans/<date>-<topic>.plan.html
-   * file. Per flag: omitted leaves the field untouched, any other
-   * value upserts it, an explicit empty value ("") removes an optional
-   * field. plan-date is never touched here — only add sets it, once,
-   * at creation.
+   * doc/task: per-flag upsert/clear-on-empty-string convention, same as
+   * every other update in this project.
    *
-   * task: <task-id> (e.g. "task-1") is found via getElementById.
-   * Same per-flag upsert/clear-on-empty-string convention as doc.
+   * step: same per-flag convention for title/status/detail.
+   * --check-command "" removes the whole nested plan-check;
+   * --check-command with a non-empty value upserts plan-check-command,
+   * creating the plan-check wrapper first if none exists yet;
+   * --expected-success/--expected-output upsert their own fields
+   * within an existing (or just-created) plan-check — passing either
+   * one when no plan-check exists and --check-command wasn't also
+   * given is an error.
    */
   export async function update({ fs, args, cli }) {
     const kind = args._[0]
     if (kind === "doc") return updateDoc({ fs, args, cli })
     if (kind === "task") return updateTask({ fs, args, cli })
+    if (kind === "step") return updateStep({ fs, args, cli })
     throw new Error(`unknown update kind "${kind}" — expected "doc", "task", or "step"`)
   }
 </script>
