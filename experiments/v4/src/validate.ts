@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs"
 import { styleText } from "node:util"
 import { resolve as resolvePath, sep } from "node:path"
 import { register } from "node:module"
-import { parseHTML, walkHtmlFiles, resolveTemplateRef, loadCheck } from "./utils.ts"
+import { parseHTML, walkHtmlFiles, resolveTemplateRef, loadCheck, loadGenericValidator } from "./utils.ts"
 
 register("./script-hooks.ts", import.meta.url)
 
@@ -18,6 +18,7 @@ interface ParsedDoc {
 interface TemplateInfo {
   id: string
   file: string
+  element: Element
   validatorScript: Element | null
 }
 
@@ -48,7 +49,7 @@ function discoverTemplatesAndAudits(documents: ParsedDoc[]) {
   for (const { path, dom } of documents) {
     for (const tpl of Array.from(dom.querySelectorAll("template[id]"))) {
       const id = tpl.getAttribute("id")!
-      templates.set(`${path}#${id}`, { id, file: path, validatorScript: null })
+      templates.set(`${path}#${id}`, { id, file: path, element: tpl, validatorScript: null })
     }
     for (const script of Array.from(dom.querySelectorAll("script[data-validates]"))) {
       const ref = script.getAttribute("data-validates")!.replace(/^#/, "")
@@ -96,6 +97,7 @@ async function main() {
   // isolation, so a sample instance in the mix is harmless there.
   const templatesDir = resolvePath(dir, "templates") + sep
   const auditDocuments = documents.filter((d) => !d.path.startsWith(templatesDir))
+  const genericCheck = await loadGenericValidator(dir)
 
   let checked = 0
   let fail = 0
@@ -107,15 +109,21 @@ async function main() {
     const template = templates.get(key)
     const label = `${relative(dir, instance.file)}  (${instance.conformsTo})`
 
-    if (!template || !template.validatorScript) {
+    if (!template) {
       fail++
       failures.push(`FAIL  ${label}\n      no template found at ${key}`)
       continue
     }
 
     try {
-      const check = await loadCheck(template.file, template.validatorScript)
-      const result = check(instance.element) as CheckResult
+      const generic = genericCheck(template.element, instance.element)
+      let result: CheckResult = generic
+      if (template.validatorScript) {
+        const customCheck = await loadCheck(template.file, template.validatorScript)
+        const custom = customCheck(instance.element) as CheckResult
+        const customErrors = (custom.errors ?? custom.violations ?? []) as string[]
+        result = { ok: generic.ok && custom.ok, errors: [...generic.errors, ...customErrors] }
+      }
       if (!result.ok) {
         fail++
         failures.push(`FAIL  ${label}\n${formatItems(result)}`)

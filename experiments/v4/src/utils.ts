@@ -65,6 +65,20 @@ export async function loadCheck(filePath: string, script: Element): Promise<(...
   return mod.check as (...args: unknown[]) => unknown
 }
 
+// Imports the one generic validator shared by every type that doesn't
+// declare its own data-validates script (see template.template.html).
+// A plain dynamic import, resolved by the same script-hooks.ts hook
+// loadCheck's own loadModule relies on -- both run.ts and validate.ts
+// already call register() before either of them ever reaches this
+// function, so the hook is always active by the time it's called.
+export async function loadGenericValidator(
+  docsDir: string,
+): Promise<(templateEl: Element, instanceEl: Element) => { ok: boolean; errors: string[] }> {
+  const templateTemplateFile = resolvePath(docsDir, "templates/template.template.html")
+  const mod = await import(`${pathToFileURL(templateTemplateFile).href}#validate-from-template`)
+  return mod.validateFromTemplate as (templateEl: Element, instanceEl: Element) => { ok: boolean; errors: string[] }
+}
+
 // Validates one element against its own declared type, for callers (like
 // run.ts's authoring commands) that only ever need to check a single node
 // they just built or mutated — not validate.ts's whole-corpus batch pass.
@@ -85,13 +99,20 @@ export async function validateInstance(
 
   try {
     const { document } = parseHTML(readFileSync(templateFile, "utf8"))
-    const script = (document as unknown as Document).querySelector(`script[data-validates="#${fragId}"]`)
+    const doc = document as unknown as Document
+    const templateEl = doc.querySelector(`template#${fragId}`)
+    if (!templateEl) return { ok: false, errors: [`no template found at ${key}`] }
 
-    if (!script) return { ok: false, errors: [`no template found at ${key}`] }
+    const genericCheck = await loadGenericValidator(docsDir)
+    const generic = genericCheck(templateEl as unknown as Element, element)
+
+    const script = doc.querySelector(`script[data-validates="#${fragId}"]`)
+    if (!script) return generic
 
     const check = await loadCheck(templateFile, script)
-    const result = check(element) as { ok: boolean; errors?: string[]; violations?: string[] }
-    return { ok: result.ok, errors: (result.errors ?? result.violations ?? []) as string[] }
+    const custom = check(element) as { ok: boolean; errors?: string[]; violations?: string[] }
+    const customErrors = (custom.errors ?? custom.violations ?? []) as string[]
+    return { ok: generic.ok && custom.ok, errors: [...generic.errors, ...customErrors] }
   } catch (err) {
     return { ok: false, errors: [`validation setup failed — ${(err as Error).message}`] }
   }
