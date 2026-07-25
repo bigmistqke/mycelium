@@ -494,6 +494,34 @@
   }
 
   /**
+   * Print a flat progress view of every step in a plan-doc.
+   *
+   *   mycelium run plan list <file>
+   *
+   * One line per plan-step: task id, task title, step id, step title,
+   * status, and a [has-check] marker (blank if the step has no
+   * plan-check). Doesn't re-run any checks — reports whatever
+   * plan-status is already on disk.
+   */
+  export function list({ fs, args }) {
+    requireArgs([args._[0], "<file>"])
+    const path = `plans/${args._[0]}`
+    const doc = fs.get(path)
+    const oneLine = (text) => text.trim().replace(/\s+/g, " ")
+
+    for (const task of Array.from(doc.querySelectorAll("plan-task"))) {
+      const taskTitle = oneLine(directChild(task, "plan-title")?.textContent ?? "")
+      const steps = Array.from(task.children).filter((c) => c.tagName.toLowerCase() === "plan-step")
+      for (const step of steps) {
+        const stepTitle = oneLine(directChild(step, "plan-title")?.textContent ?? "")
+        const status = oneLine(directChild(step, "plan-status")?.textContent ?? "")
+        const hasCheck = directChild(step, "plan-check") ? "[has-check]" : ""
+        console.log(`${task.id}\t${taskTitle}\t${step.id}\t${stepTitle}\t${status}\t${hasCheck}`)
+      }
+    }
+  }
+
+  /**
    * Create a new plan-doc/plan-task/plan-step.
    *
    *   mycelium run plan add doc --title "…" --file <topic> --goal "…"
