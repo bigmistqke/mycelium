@@ -11,6 +11,13 @@
 // data:text/javascript,… calls) falls through to Node's default resolver
 // and loader unmodified.
 //
+// A bare "#<locator>" (no path) is the same-document shorthand href="#id"
+// already has on the web: it addresses a script in the importing script's
+// own file, not a different one. Only recognized when the importer is
+// itself one of this mechanism's own synthetic virtual-module URLs — an
+// ordinary file importing a bare "#foo" is Node's own reserved
+// package-subpath-import syntax and is left for nextResolve, unmodified.
+//
 // <locator> is either a real id (an author wrote <script id="…">, so the
 // script is addressable from outside its own file) or a positional token
 // "@N" (the Nth <script> tag in that document, computed identically at
@@ -39,11 +46,35 @@ function isHtmlPath(pathname: string): boolean {
   return /\.html?$/.test(pathname)
 }
 
+function syntheticUrlFor(htmlPath: string, locator: string): string {
+  const dir = htmlPath.slice(0, htmlPath.lastIndexOf("/"))
+  const base = htmlPath.slice(htmlPath.lastIndexOf("/") + 1)
+  return `file://${dir}/${base}.${MARKER}.${encodeURIComponent(locator)}.mjs`
+}
+
+// If url is one of this mechanism's own synthetic virtual-module URLs,
+// returns the real .html file path it was derived from; otherwise null.
+// The inverse of syntheticUrlFor, used to find "my own file" when a bare
+// "#id" specifier gives no path of its own to resolve.
+function realHtmlPathFromSyntheticUrl(url: string): string | null {
+  if (!url.startsWith("file://") || !url.endsWith(".mjs")) return null
+  const withoutScheme = url.slice("file://".length)
+  const markerIndex = withoutScheme.lastIndexOf(`.${MARKER}.`)
+  return markerIndex === -1 ? null : withoutScheme.slice(0, markerIndex)
+}
+
 export async function resolve(
   specifier: string,
   context: ResolveContext,
   nextResolve: (specifier: string, context: ResolveContext) => Promise<NextResolveResult>,
 ): Promise<NextResolveResult> {
+  if (specifier.startsWith("#") && context.parentURL) {
+    const htmlPath = realHtmlPathFromSyntheticUrl(context.parentURL)
+    if (htmlPath) {
+      const locator = decodeURIComponent(specifier.slice(1))
+      return { url: syntheticUrlFor(htmlPath, locator), shortCircuit: true }
+    }
+  }
   if (specifier.includes("#")) {
     const parentURL = context.parentURL ?? `file://${process.cwd()}/`
     let resolved: URL
@@ -55,10 +86,7 @@ export async function resolve(
     if (resolved.protocol === "file:" && resolved.hash.length > 1 && isHtmlPath(resolved.pathname)) {
       const locator = decodeURIComponent(resolved.hash.slice(1))
       const htmlPath = decodeURIComponent(resolved.pathname)
-      const dir = htmlPath.slice(0, htmlPath.lastIndexOf("/"))
-      const base = htmlPath.slice(htmlPath.lastIndexOf("/") + 1)
-      const syntheticUrl = `file://${dir}/${base}.${MARKER}.${encodeURIComponent(locator)}.mjs`
-      return { url: syntheticUrl, shortCircuit: true }
+      return { url: syntheticUrlFor(htmlPath, locator), shortCircuit: true }
     }
   }
   return nextResolve(specifier, context)
