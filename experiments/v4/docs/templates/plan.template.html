@@ -204,7 +204,7 @@
 </p>
 <script type="mycelium/command">
   import { todayDate } from "./shared.ts"
-  import { execSync } from "node:child_process"
+  import { spawnSync } from "node:child_process"
 
   function requireArgs(...checks) {
     for (const [value, label] of checks) {
@@ -427,12 +427,8 @@
   }
 
   function runCheckCommand(command) {
-    try {
-      const stdout = execSync(command, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] })
-      return { success: true, output: stdout }
-    } catch (err) {
-      return { success: false, output: `${err.stdout ?? ""}${err.stderr ?? ""}` }
-    }
+    const result = spawnSync(command, { shell: true, encoding: "utf8" })
+    return { success: result.status === 0, output: `${result.stdout ?? ""}${result.stderr ?? ""}` }
   }
 
   /**
