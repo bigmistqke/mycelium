@@ -202,6 +202,19 @@
   convention <code>knowledge add &lt;type&gt;</code> already established, reused here instead of four
   separate hyphenated command names, which JavaScript can't export as plain identifiers.
 </p>
+<p>
+  <code>check</code> shells out to a step's <code>plan-check-command</code> (or every step's, if no step id is
+  given), compares the exit code against <code>plan-check-success</code> and, if present, substring-matches
+  <code>plan-check-output</code> against combined stdout/stderr. A pass flips that step's
+  <code>plan-status</code> to <code>completed</code>; a fail leaves it untouched and the command exits
+  nonzero once every step has been tried. Steps with no <code>plan-check</code> are skipped, not treated as
+  failures.
+</p>
+<p>
+  <code>list</code> is read-only: one line per <code>plan-step</code> (its task's id/title, its own id/title,
+  status, and whether it has a <code>plan-check</code>), reporting whatever's already on disk rather than
+  re-running anything &mdash; a flat progress view over a plan-doc's nested tasks/steps.
+</p>
 <script type="mycelium/command">
   import { todayDate } from "./shared.ts"
   import { spawnSync } from "node:child_process"
@@ -234,6 +247,20 @@
   function nextId(root, tag, prefix) {
     const count = Array.from(root.children).filter((c) => c.tagName.toLowerCase() === tag).length
     return `${prefix}-${count + 1}`
+  }
+
+  // fs.get() surfaces a raw ENOENT (or similar) error on a missing file —
+  // fine for an internal bug, unhelpful for the plainly-wrong-input case
+  // of a typo'd or nonexistent plan file. Every plan-* command that reads
+  // an existing plan.html goes through this instead of calling fs.get()
+  // directly, so that case gets one consistent, clear message.
+  function getPlanFile(fs, path) {
+    try {
+      return fs.get(path)
+    } catch (err) {
+      if (err.code === "ENOENT") throw new Error(`${path} does not exist`)
+      throw err
+    }
   }
 
   async function addDoc({ fs, args, cli }) {
@@ -276,7 +303,7 @@
   async function updateDoc({ fs, args, cli }) {
     requireArgs([args._[1], "<file>"])
     const path = `plans/${args._[1]}`
-    const doc = fs.get(path)
+    const doc = getPlanFile(fs, path)
     const root = doc.querySelector("plan-doc")
     if (!root) throw new Error(`${args._[1]} has no <plan-doc> root`)
 
@@ -294,7 +321,7 @@
   async function addTask({ fs, args, cli }) {
     requireArgs([args._[1], "<file>"], [args.title, "--title"], [args.files, "--files"])
     const path = `plans/${args._[1]}`
-    const doc = fs.get(path)
+    const doc = getPlanFile(fs, path)
     const planDoc = doc.querySelector("plan-doc")
     if (!planDoc) throw new Error(`${args._[1]} has no <plan-doc> root`)
 
@@ -319,7 +346,7 @@
   async function updateTask({ fs, args, cli }) {
     requireArgs([args._[1], "<file>"], [args._[2], "<task-id>"])
     const path = `plans/${args._[1]}`
-    const doc = fs.get(path)
+    const doc = getPlanFile(fs, path)
     const task = doc.getElementById(args._[2])
     if (!task) throw new Error(`no <plan-task id="${args._[2]}"> found in ${args._[1]}`)
 
@@ -344,7 +371,7 @@
   async function addStep({ fs, args, cli }) {
     requireArgs([args._[1], "<file>"], [args._[2], "<task-id>"], [args.title, "--title"])
     const path = `plans/${args._[1]}`
-    const doc = fs.get(path)
+    const doc = getPlanFile(fs, path)
     const task = doc.getElementById(args._[2])
     if (!task) throw new Error(`no <plan-task id="${args._[2]}"> found in ${args._[1]}`)
 
@@ -384,7 +411,7 @@
   async function updateStep({ fs, args, cli }) {
     requireArgs([args._[1], "<file>"], [args._[2], "<step-id>"])
     const path = `plans/${args._[1]}`
-    const doc = fs.get(path)
+    const doc = getPlanFile(fs, path)
     const step = doc.getElementById(args._[2])
     if (!step) throw new Error(`no <plan-step id="${args._[2]}"> found in ${args._[1]}`)
 
@@ -427,7 +454,13 @@
   }
 
   function runCheckCommand(command) {
-    const result = spawnSync(command, { shell: true, encoding: "utf8" })
+    const result = spawnSync(command, {
+      shell: true,
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+      timeout: 5 * 60 * 1000,
+    })
+    if (result.error) throw new Error(`check command could not run: ${result.error.message}`)
     return { success: result.status === 0, output: `${result.stdout ?? ""}${result.stderr ?? ""}` }
   }
 
@@ -447,11 +480,18 @@
    * abandoned, just not done yet. Steps with no plan-check are
    * skipped, not touched. Throws (nonzero exit) if any checked step
    * failed.
+   *
+   * Each plan-check-command runs from the directory `mycelium` itself
+   * was invoked from, typically `experiments/v4/`, with a 5-minute
+   * timeout — a hanging command fails the check rather than hanging
+   * `plan check` indefinitely.
    */
   export async function check({ fs, args, cli }) {
     requireArgs([args._[0], "<file>"])
     const path = `plans/${args._[0]}`
-    const doc = fs.get(path)
+    const doc = getPlanFile(fs, path)
+    const planDoc = doc.querySelector("plan-doc")
+    if (!planDoc) throw new Error(`${args._[0]} has no <plan-doc> root`)
     const stepId = args._[1]
 
     const steps = stepId
@@ -478,6 +518,8 @@
 
       if (pass) {
         field(doc, step, "plan-status", "completed")
+        const result = await cli.validate(step, path)
+        if (!result.ok) throw new Error(result.errors.join("\n"))
         console.log(`PASS  ${step.id}`)
       } else {
         anyFail = true
@@ -488,8 +530,6 @@
       }
     }
 
-    const result = await cli.validate(doc.querySelector("plan-doc"), path)
-    if (!result.ok) throw new Error(result.errors.join("\n"))
     if (anyFail) throw new Error("one or more checks failed")
   }
 
@@ -506,7 +546,7 @@
   export function list({ fs, args }) {
     requireArgs([args._[0], "<file>"])
     const path = `plans/${args._[0]}`
-    const doc = fs.get(path)
+    const doc = getPlanFile(fs, path)
     const oneLine = (text) => text.trim().replace(/\s+/g, " ")
 
     for (const task of Array.from(doc.querySelectorAll("plan-task"))) {
@@ -545,9 +585,8 @@
    * Appends one <plan-step id="<task-id>-step-M">, status "pending",
    * inside that task. --check-command creates a nested <plan-check>
    * (plan-check-success is omitted when --expected-success isn't
-   * given — the check command (not yet built) treats an absent
-   * plan-check-success as true when it runs). Prints the new step's
-   * id.
+   * given — the check command treats an absent plan-check-success
+   * as true when it runs). Prints the new step's id.
    */
   export async function add({ fs, args, cli }) {
     const kind = args._[0]
