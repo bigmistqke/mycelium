@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Templates: template.template.html — the schema vocabulary</title>
+<link rel="stylesheet" href="../theme.css">
+</head>
+<body>
+
+<h1>Templates: template.template.html — the schema vocabulary</h1>
+<div class="meta">
+  <div><b>Purpose:</b> documents the <code>required</code>/<code>pattern</code>/<code>enum</code> attribute
+    vocabulary that turns an existing <code>&lt;template id="…"&gt;</code> skeleton into a machine-readable
+    schema, and hosts the one generic validator function that reads it</div>
+  <div><b>Not a node type:</b> unlike <code>knowledge.template.html</code> or <code>spec.template.html</code>,
+    this file declares no <code>&lt;template id="…"&gt;</code> of its own and nothing conforms to it via
+    <code>data-conforms-to</code> — there are only ever a handful of <code>*.template.html</code> files,
+    hand-authored, never mixed, so the <code>.template.html</code> filename suffix is already sufficient
+    signal that a file follows this convention. Nothing here needs crawler enforcement.</div>
+  <div><b>Sibling of:</b> <code>knowledge.template.html</code>, <code>spec.template.html</code></div>
+</div>
+
+<h2>The vocabulary</h2>
+<p>
+  Every type's <code>&lt;template id="…"&gt;</code> already contains one empty placeholder element per
+  field, for documentation/copy-paste. Three optional attributes on those placeholders turn that skeleton
+  into a schema, without adding any new wrapper elements:
+</p>
+<ul>
+  <li><code>required</code> — boolean attribute (no value). The field must be present with non-empty text.
+    Absent entirely, or present but only whitespace, both fail the same way: "missing or empty".</li>
+  <li><code>pattern</code> — a JS regular expression source, tested against the field's trimmed text
+    content.</li>
+  <li><code>enum</code> — a whitespace-separated list of the only exact values the field's trimmed text may
+    take.</li>
+</ul>
+<p>
+  A field with none of the three is optional and free-form: any content is allowed, or the field may be
+  omitted entirely — but if it's present at all, it still can't be empty (present-but-whitespace-only is
+  always rejected, required or not, with "present but empty — omit it instead"). The full set of field tags
+  declared inside a type's <code>&lt;template&gt;</code> is also its <em>allowed</em> set: any same-family
+  field on a real instance that isn't among them is rejected as unexpected.
+</p>
+<pre><code>&lt;template id="knowledge-goal"&gt;
+  &lt;knowledge-goal&gt;
+    &lt;knowledge-title required&gt;&lt;/knowledge-title&gt;
+    &lt;knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"&gt;&lt;/knowledge-confidence&gt;
+    &lt;knowledge-status required enum="pending active completed rejected"&gt;&lt;/knowledge-status&gt;
+    &lt;knowledge-prompt&gt;&lt;/knowledge-prompt&gt;
+    &lt;knowledge-detail&gt;&lt;/knowledge-detail&gt;
+  &lt;/knowledge-goal&gt;
+&lt;/template&gt;</code></pre>
+
+<h2>The generic validator</h2>
+<p>
+  Given a type's <code>&lt;template&gt;</code> element and a real instance element, reads the vocabulary
+  above straight out of the template's own content and performs the same four checks every hand-written
+  <code>check()</code> function in this project used to write by hand: required-and-non-empty, pattern,
+  enum, and unexpected/empty-optional fields. A <code>&lt;template&gt;</code>'s children live in
+  <code>.content</code>, a separate inert <code>DocumentFragment</code> — reading a field's attributes goes
+  through <code>templateEl.content</code>, not the template element directly (verified against happy-dom,
+  the DOM engine this project runs on).
+</p>
+<script type="module" id="validate-from-template">
+  // Given a type's own <template> definition (with required/pattern/enum
+  // attributes on its field placeholders) and a real instance element,
+  // validates the instance purely from what the template declares -- no
+  // per-type code. See "The generic validator" above.
+  export function validateFromTemplate(templateEl, instanceRoot) {
+    const shape = templateEl.content.firstElementChild
+    const rootTag = shape.tagName.toLowerCase()
+    const el = instanceRoot.tagName?.toLowerCase() === rootTag
+      ? instanceRoot
+      : instanceRoot.querySelector(rootTag)
+    if (!el) return { ok: false, errors: [`missing <${rootTag}> element`] }
+
+    const familyPrefix = rootTag.split('-')[0] + '-'
+    const allowed = []
+    const errors = []
+
+    for (const field of Array.from(shape.children)) {
+      const tag = field.tagName.toLowerCase()
+      allowed.push(tag)
+      const required = field.hasAttribute('required')
+      const node = el.querySelector(tag)
+      const text = node?.textContent.trim() ?? ''
+
+      if (!node) {
+        if (required) errors.push(`missing or empty <${tag}>`)
+        continue
+      }
+      if (!text) {
+        errors.push(required ? `missing or empty <${tag}>` : `<${tag}> present but empty — omit it instead`)
+        continue
+      }
+
+      const pattern = field.getAttribute('pattern')
+      if (pattern && !new RegExp(pattern).test(text)) {
+        errors.push(`<${tag}> must match ${pattern}, got "${text}"`)
+      }
+      const enumAttr = field.getAttribute('enum')
+      if (enumAttr) {
+        const values = enumAttr.trim().split(/\s+/)
+        if (!values.includes(text)) errors.push(`<${tag}> must be ${values.join('|')}, got "${text}"`)
+      }
+    }
+
+    for (const child of Array.from(el.children)) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith(familyPrefix) && !allowed.includes(tag)) {
+        errors.push(`unexpected <${tag}> on ${rootTag}`)
+      }
+    }
+
+    return { ok: errors.length === 0, errors }
+  }
+</script>
+
+<h2>Checking order: schema first, hand-written validator second</h2>
+<p>
+  A type may still declare its own <code>&lt;script data-validates&gt;</code> alongside its
+  <code>&lt;template&gt;</code>, for logic this vocabulary genuinely can't express. When one exists, the
+  crawler runs the generic check above first, then the hand-written one, and a node is only valid if both
+  pass — the hand-written script is additional validation layered on top of the schema, never a replacement
+  for it. None of this project's seven existing types need one any more; see
+  <a data-rel="elaborates" href="../knowledge/2026-07-25-schema-first-then-optional-validator-function.decision.html">the
+  decision record</a>.
+</p>
+
+</body>
+</html>
