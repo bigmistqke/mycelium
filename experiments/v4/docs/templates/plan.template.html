@@ -195,5 +195,139 @@
   </script>
 </div>
 
+<h2>Authoring commands</h2>
+<p>
+  <code>add</code> and <code>update</code> each take a <em>kind</em> (<code>doc</code>, <code>task</code>, or
+  <code>step</code>) as their own first positional argument and dispatch internally &mdash; the same
+  convention <code>knowledge add &lt;type&gt;</code> already established, reused here instead of four
+  separate hyphenated command names, which JavaScript can't export as plain identifiers.
+</p>
+<script type="mycelium/command">
+  import { todayDate } from "./shared.ts"
+
+  function requireArgs(...checks) {
+    for (const [value, label] of checks) {
+      if (value === undefined) throw new Error(`missing required argument: ${label}`)
+    }
+  }
+
+  function directChild(root, tag) {
+    return Array.from(root.children).find((c) => c.tagName.toLowerCase() === tag)
+  }
+
+  function field(doc, root, tag, text) {
+    if (text === undefined) return
+    const existing = directChild(root, tag)
+    if (text === "") {
+      existing?.remove()
+      return
+    }
+    if (existing) existing.textContent = text
+    else {
+      const el = doc.createElement(tag)
+      el.textContent = text
+      root.appendChild(el)
+    }
+  }
+
+  function nextId(root, tag, prefix) {
+    const count = Array.from(root.children).filter((c) => c.tagName.toLowerCase() === tag).length
+    return `${prefix}-${count + 1}`
+  }
+
+  async function addDoc({ fs, args, cli }) {
+    requireArgs([args.file, "--file"], [args.goal, "--goal"], [args.architecture, "--architecture"])
+    const date = todayDate()
+    const path = `plans/${date}-${args.file}.plan.html`
+    const doc = fs.create(path, `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title></title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/plan.template.css">
+</head>
+<body>
+
+<plan-doc data-conforms-to="../templates/plan.template.html#plan-doc">
+</plan-doc>
+
+</body>
+</html>
+`)
+
+    doc.querySelector("title").textContent = `Plan: ${args.title}`
+
+    const root = doc.querySelector("plan-doc")
+    field(doc, root, "plan-title", args.title)
+    field(doc, root, "plan-status", args.status ?? "pending")
+    field(doc, root, "plan-date", date)
+    field(doc, root, "plan-goal", args.goal)
+    field(doc, root, "plan-architecture", args.architecture)
+    field(doc, root, "plan-tech-stack", args["tech-stack"])
+    field(doc, root, "plan-global-constraints", args["global-constraints"])
+
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join("\n"))
+  }
+
+  async function updateDoc({ fs, args, cli }) {
+    requireArgs([args._[1], "<file>"])
+    const path = `plans/${args._[1]}`
+    const doc = fs.get(path)
+    const root = doc.querySelector("plan-doc")
+    if (!root) throw new Error(`${args._[1]} has no <plan-doc> root`)
+
+    field(doc, root, "plan-title", args.title)
+    field(doc, root, "plan-status", args.status)
+    field(doc, root, "plan-goal", args.goal)
+    field(doc, root, "plan-architecture", args.architecture)
+    field(doc, root, "plan-tech-stack", args["tech-stack"])
+    field(doc, root, "plan-global-constraints", args["global-constraints"])
+
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join("\n"))
+  }
+
+  /**
+   * Create a new plan-doc.
+   *
+   *   mycelium run plan add doc --title "…" --file <topic> --goal "…"
+   *     --architecture "…" [--status pending|active|completed|rejected]
+   *     [--tech-stack "…"] [--global-constraints "…"]
+   *
+   * --file is required and becomes
+   * docs/plans/<today's-date>-<topic>.plan.html — the date isn't a
+   * flag, it's today's actual date, used for both the filename and the
+   * <plan-date> field so they can never drift apart. --status defaults
+   * to "pending" if omitted. No tasks are created yet.
+   */
+  export async function add({ fs, args, cli }) {
+    const kind = args._[0]
+    if (kind === "doc") return addDoc({ fs, args, cli })
+    throw new Error(`unknown add kind "${kind}" — expected "doc", "task", or "step"`)
+  }
+
+  /**
+   * Update fields on an existing plan-doc.
+   *
+   *   mycelium run plan update doc <file> [--title "…"] [--status …]
+   *     [--goal "…"] [--architecture "…"] [--tech-stack "…"]
+   *     [--global-constraints "…"]
+   *
+   * <file> is an existing docs/plans/<date>-<topic>.plan.html file. Per
+   * flag: omitted leaves the field untouched, any other value upserts
+   * it, an explicit empty value ("") removes an optional field.
+   * plan-date is never touched here — only add sets it, once, at
+   * creation.
+   */
+  export async function update({ fs, args, cli }) {
+    const kind = args._[0]
+    if (kind === "doc") return updateDoc({ fs, args, cli })
+    throw new Error(`unknown update kind "${kind}" — expected "doc", "task", or "step"`)
+  }
+</script>
+
 </body>
 </html>
