@@ -530,7 +530,20 @@
       }
     }
 
-    if (anyFail) throw new Error("one or more checks failed")
+    if (anyFail) {
+      // Every mutation still in memory at this point is already
+      // known-valid — each passing step was individually validated with
+      // cli.validate() right after being flipped to completed, above.
+      // main()'s own fs.commit() call (after run() returns) is never
+      // reached once this throws, so without an explicit flush here, a
+      // mixed pass/fail run over multiple steps would silently discard
+      // even the genuinely-passing steps' plan-status flips. This does
+      // NOT apply to the per-step cli.validate() throw earlier in this
+      // function — that one means "this specific mutation is invalid,
+      // don't persist it," which committing here would defeat.
+      fs.commit()
+      throw new Error("one or more checks failed")
+    }
   }
 
   /**
