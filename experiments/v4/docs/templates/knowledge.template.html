@@ -57,6 +57,13 @@
   that a verbatim prompt belongs on root goals and major direction changes, not on every downstream node,
   so a <code>knowledge-goal</code> without one is valid, not incomplete.
 </p>
+<p>
+  Both of these rules — and every other type's required/optional fields — are now expressed as
+  <code>required</code>/<code>pattern</code>/<code>enum</code> attributes directly on each type's own
+  <code>&lt;template&gt;</code> below, read generically by
+  <a href="./template.template.html">template.template.html</a>'s validator, rather than as hand-written
+  per-type JS.
+</p>
 
 <h2>The six types</h2>
 
@@ -66,9 +73,9 @@
   <code>detail</code>.</p>
 <template id="knowledge-goal">
   <knowledge-goal>
-    <knowledge-title></knowledge-title>
-    <knowledge-confidence></knowledge-confidence>
-    <knowledge-status></knowledge-status>
+    <knowledge-title required></knowledge-title>
+    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
+    <knowledge-status required enum="pending active completed rejected"></knowledge-status>
     <knowledge-prompt></knowledge-prompt>
     <knowledge-detail></knowledge-detail>
   </knowledge-goal>
@@ -79,44 +86,15 @@
   &lt;knowledge-status&gt;active&lt;/knowledge-status&gt;
   &lt;knowledge-prompt&gt;we are playing around with mycelium&hellip;&lt;/knowledge-prompt&gt;
 &lt;/knowledge-goal&gt;</code></pre>
-<script type="module" data-validates="#knowledge-goal">
-  export function check(root) {
-    const el = root.matches?.('knowledge-goal') ? root : root.querySelector('knowledge-goal')
-    if (!el) return { ok: false, errors: ['missing <knowledge-goal> element'] }
-    const errors = []
-    for (const tag of ['knowledge-title', 'knowledge-confidence', 'knowledge-status']) {
-      const node = el.querySelector(tag)
-      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
-    }
-    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
-    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
-      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
-    }
-    const status = el.querySelector('knowledge-status')?.textContent.trim()
-    if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
-      errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
-    }
-    for (const tag of ['knowledge-prompt', 'knowledge-detail']) {
-      const node = el.querySelector(tag)
-      if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
-    }
-    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-prompt', 'knowledge-detail']
-    for (const child of el.children) {
-      const tag = child.tagName.toLowerCase()
-      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-goal`)
-    }
-    return { ok: errors.length === 0, errors }
-  }
-</script>
 
 <h3><code>knowledge-decision</code></h3>
 <p>A choice made between approaches. Fields: <code>title</code>, <code>confidence</code>,
   <code>status</code>, optional <code>detail</code>.</p>
 <template id="knowledge-decision">
   <knowledge-decision>
-    <knowledge-title></knowledge-title>
-    <knowledge-confidence></knowledge-confidence>
-    <knowledge-status></knowledge-status>
+    <knowledge-title required></knowledge-title>
+    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
+    <knowledge-status required enum="pending active completed rejected"></knowledge-status>
     <knowledge-detail></knowledge-detail>
   </knowledge-decision>
 </template>
@@ -125,33 +103,6 @@
   &lt;knowledge-confidence&gt;80&lt;/knowledge-confidence&gt;
   &lt;knowledge-status&gt;active&lt;/knowledge-status&gt;
 &lt;/knowledge-decision&gt;</code></pre>
-<script type="module" data-validates="#knowledge-decision">
-  export function check(root) {
-    const el = root.matches?.('knowledge-decision') ? root : root.querySelector('knowledge-decision')
-    if (!el) return { ok: false, errors: ['missing <knowledge-decision> element'] }
-    const errors = []
-    for (const tag of ['knowledge-title', 'knowledge-confidence', 'knowledge-status']) {
-      const node = el.querySelector(tag)
-      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
-    }
-    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
-    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
-      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
-    }
-    const status = el.querySelector('knowledge-status')?.textContent.trim()
-    if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
-      errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
-    }
-    const detail = el.querySelector('knowledge-detail')
-    if (detail && !detail.textContent.trim()) errors.push('<knowledge-detail> present but empty — omit it instead')
-    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-detail']
-    for (const child of el.children) {
-      const tag = child.tagName.toLowerCase()
-      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-decision`)
-    }
-    return { ok: errors.length === 0, errors }
-  }
-</script>
 
 <h3><code>knowledge-option</code></h3>
 <p>One alternative considered within a decision. No <code>status</code> &mdash; the option was or wasn't
@@ -160,8 +111,8 @@
   <code>title</code>, <code>confidence</code>, optional <code>detail</code>.</p>
 <template id="knowledge-option">
   <knowledge-option>
-    <knowledge-title></knowledge-title>
-    <knowledge-confidence></knowledge-confidence>
+    <knowledge-title required></knowledge-title>
+    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-detail></knowledge-detail>
   </knowledge-option>
 </template>
@@ -170,29 +121,6 @@
   &lt;knowledge-confidence&gt;40&lt;/knowledge-confidence&gt;
   &lt;a data-rel="depends_on" href="./knowledge.template.html"&gt;considered for this file, rejected in favor of one bundled file&lt;/a&gt;
 &lt;/knowledge-option&gt;</code></pre>
-<script type="module" data-validates="#knowledge-option">
-  export function check(root) {
-    const el = root.matches?.('knowledge-option') ? root : root.querySelector('knowledge-option')
-    if (!el) return { ok: false, errors: ['missing <knowledge-option> element'] }
-    const errors = []
-    for (const tag of ['knowledge-title', 'knowledge-confidence']) {
-      const node = el.querySelector(tag)
-      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
-    }
-    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
-    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
-      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
-    }
-    const detail = el.querySelector('knowledge-detail')
-    if (detail && !detail.textContent.trim()) errors.push('<knowledge-detail> present but empty — omit it instead')
-    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-detail']
-    for (const child of el.children) {
-      const tag = child.tagName.toLowerCase()
-      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-option`)
-    }
-    return { ok: errors.length === 0, errors }
-  }
-</script>
 
 <h3><code>knowledge-action</code></h3>
 <p>About to write or edit code. Fields: <code>title</code>, <code>confidence</code>, <code>status</code>,
@@ -200,9 +128,9 @@
   it's tied to real work.</p>
 <template id="knowledge-action">
   <knowledge-action>
-    <knowledge-title></knowledge-title>
-    <knowledge-confidence></knowledge-confidence>
-    <knowledge-status></knowledge-status>
+    <knowledge-title required></knowledge-title>
+    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
+    <knowledge-status required enum="pending active completed rejected"></knowledge-status>
     <knowledge-detail></knowledge-detail>
     <knowledge-commit></knowledge-commit>
     <knowledge-files></knowledge-files>
@@ -216,35 +144,6 @@
   &lt;knowledge-commit&gt;9794442&lt;/knowledge-commit&gt;
   &lt;knowledge-branch&gt;main&lt;/knowledge-branch&gt;
 &lt;/knowledge-action&gt;</code></pre>
-<script type="module" data-validates="#knowledge-action">
-  export function check(root) {
-    const el = root.matches?.('knowledge-action') ? root : root.querySelector('knowledge-action')
-    if (!el) return { ok: false, errors: ['missing <knowledge-action> element'] }
-    const errors = []
-    for (const tag of ['knowledge-title', 'knowledge-confidence', 'knowledge-status']) {
-      const node = el.querySelector(tag)
-      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
-    }
-    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
-    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
-      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
-    }
-    const status = el.querySelector('knowledge-status')?.textContent.trim()
-    if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
-      errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
-    }
-    for (const tag of ['knowledge-detail', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']) {
-      const node = el.querySelector(tag)
-      if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
-    }
-    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-detail', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']
-    for (const child of el.children) {
-      const tag = child.tagName.toLowerCase()
-      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-action`)
-    }
-    return { ok: errors.length === 0, errors }
-  }
-</script>
 
 <h3><code>knowledge-outcome</code></h3>
 <p>Something worked or failed. No <code>status</code> &mdash; an outcome is the record of what happened, not
@@ -252,8 +151,8 @@
   <code>detail</code>, optional <code>commit</code>/<code>files</code>/<code>branch</code>.</p>
 <template id="knowledge-outcome">
   <knowledge-outcome>
-    <knowledge-title></knowledge-title>
-    <knowledge-confidence></knowledge-confidence>
+    <knowledge-title required></knowledge-title>
+    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-detail></knowledge-detail>
     <knowledge-commit></knowledge-commit>
     <knowledge-files></knowledge-files>
@@ -265,39 +164,14 @@
   &lt;knowledge-confidence&gt;92&lt;/knowledge-confidence&gt;
   &lt;knowledge-commit&gt;9794442&lt;/knowledge-commit&gt;
 &lt;/knowledge-outcome&gt;</code></pre>
-<script type="module" data-validates="#knowledge-outcome">
-  export function check(root) {
-    const el = root.matches?.('knowledge-outcome') ? root : root.querySelector('knowledge-outcome')
-    if (!el) return { ok: false, errors: ['missing <knowledge-outcome> element'] }
-    const errors = []
-    for (const tag of ['knowledge-title', 'knowledge-confidence']) {
-      const node = el.querySelector(tag)
-      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
-    }
-    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
-    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
-      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
-    }
-    for (const tag of ['knowledge-detail', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']) {
-      const node = el.querySelector(tag)
-      if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
-    }
-    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-detail', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']
-    for (const child of el.children) {
-      const tag = child.tagName.toLowerCase()
-      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-outcome`)
-    }
-    return { ok: errors.length === 0, errors }
-  }
-</script>
 
 <h3><code>knowledge-observation</code></h3>
 <p>Something noticed along the way, not yet a decision. Fields: <code>title</code>,
   <code>confidence</code>, optional <code>detail</code>.</p>
 <template id="knowledge-observation">
   <knowledge-observation>
-    <knowledge-title></knowledge-title>
-    <knowledge-confidence></knowledge-confidence>
+    <knowledge-title required></knowledge-title>
+    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-detail></knowledge-detail>
   </knowledge-observation>
 </template>
@@ -305,29 +179,6 @@
   &lt;knowledge-title&gt;Removing the &lt;style&gt; block made every document read like structured data&lt;/knowledge-title&gt;
   &lt;knowledge-confidence&gt;70&lt;/knowledge-confidence&gt;
 &lt;/knowledge-observation&gt;</code></pre>
-<script type="module" data-validates="#knowledge-observation">
-  export function check(root) {
-    const el = root.matches?.('knowledge-observation') ? root : root.querySelector('knowledge-observation')
-    if (!el) return { ok: false, errors: ['missing <knowledge-observation> element'] }
-    const errors = []
-    for (const tag of ['knowledge-title', 'knowledge-confidence']) {
-      const node = el.querySelector(tag)
-      if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
-    }
-    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
-    if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
-      errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
-    }
-    const detail = el.querySelector('knowledge-detail')
-    if (detail && !detail.textContent.trim()) errors.push('<knowledge-detail> present but empty — omit it instead')
-    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-detail']
-    for (const child of el.children) {
-      const tag = child.tagName.toLowerCase()
-      if (tag.startsWith('knowledge-') && !allowed.includes(tag)) errors.push(`unexpected <${tag}> on knowledge-observation`)
-    }
-    return { ok: errors.length === 0, errors }
-  }
-</script>
 
 <h2>Edges</h2>
 <p>
