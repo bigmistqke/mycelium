@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: plan.template.html: a runnable-step plan family for v4</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>plan.template.html: a runnable-step plan family for v4</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-07-25</spec-date>
+  <spec-problem>
+<p>
+  <code>knowledge.template.html</code> and <code>spec.template.html</code> gave v4 a way to log decisions
+  and design docs as hypermedia nodes instead of a SQLite table (deciduous) or Markdown (the
+  <code>superpowers:brainstorming</code> skill's default). The third leg of that pipeline,
+  <code>superpowers:writing-plans</code>, still only writes plain Markdown to
+  <code>docs/superpowers/plans/YYYY-MM-DD-&lt;feature-name&gt;.md</code>: a header (Goal/Architecture/Tech
+  Stack/Global Constraints) followed by Task N blocks, each with a Files/Interfaces block and a numbered list
+  of tiny Steps, each step a <code>- [ ]</code> checkbox, some of them literally "run this command, expect
+  this result." None of that is queryable, linkable, or runnable the way a knowledge or spec node is — a
+  step's own verification command is prose a human has to read and execute by hand, and progress tracking is
+  whatever checkboxes happen to say in a file nobody else's tooling can see.
+</p>
+<p>
+  This spec designs <code>plan.template.html</code>: the same override
+  <code>spec.template.html</code> already made for brainstorming's spec output, made for writing-plans' plan
+  output instead, project-wide — not just for v4-internal work.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>Tag family &amp; file shape</h3>
+<p>
+  New family <code>plan-*</code>, root type <code>plan-doc</code>, one file per plan at
+  <code>docs/plans/&lt;date&gt;-&lt;topic&gt;.plan.html</code> — a new <code>plans/</code> directory,
+  sibling to <code>knowledge/</code> and <code>specs/</code>.
+</p>
+<pre><code>&lt;plan-doc&gt;
+  &lt;plan-title&gt;…&lt;/plan-title&gt;
+  &lt;plan-status&gt;pending | active | completed | rejected&lt;/plan-status&gt;
+  &lt;plan-date&gt;YYYY-MM-DD&lt;/plan-date&gt;
+  &lt;plan-goal&gt;… one sentence …&lt;/plan-goal&gt;
+  &lt;plan-architecture&gt;… 2-3 sentences …&lt;/plan-architecture&gt;
+  &lt;plan-tech-stack&gt;… optional …&lt;/plan-tech-stack&gt;
+  &lt;plan-global-constraints&gt;… optional …&lt;/plan-global-constraints&gt;
+  &lt;plan-task id="task-1"&gt;
+    &lt;plan-title&gt;…&lt;/plan-title&gt;
+    &lt;plan-status&gt;pending | active | completed | rejected&lt;/plan-status&gt;
+    &lt;plan-files&gt;… Create/Modify/Test …&lt;/plan-files&gt;
+    &lt;plan-interfaces&gt;… optional: Consumes/Produces …&lt;/plan-interfaces&gt;
+    &lt;plan-step id="task-1-step-1" status="pending"&gt;
+      &lt;plan-title&gt;Write the failing test&lt;/plan-title&gt;
+      &lt;plan-detail&gt;… optional: code, exact commands …&lt;/plan-detail&gt;
+      &lt;plan-check command="pytest tests/foo.py::test_bar -v"
+                  expected-success="false"
+                  expected-output="function not defined"&gt;&lt;/plan-check&gt;
+    &lt;/plan-step&gt;
+  &lt;/plan-task&gt;
+&lt;/plan-doc&gt;</code></pre>
+<p>
+  <code>plan-title</code>/<code>plan-status</code> exist at all three nesting levels (doc, task, step), which
+  is deliberate — fields belong to the family, not to one type within it, the same rule
+  <code>spec.template.html</code> already documents for why <code>spec-title</code> isn't
+  <code>spec-doc-title</code>. It does mean the generic validator must query direct children only
+  (<code>shape.children</code> / <code>el.children</code>, never a deep <code>querySelector</code>) so a
+  task's own title isn't confused with its parent doc's or a sibling step's — <code>template.template.html</code>'s
+  existing <code>validateFromTemplate</code> already scopes this way, so this needs no new validator logic,
+  just confirmation it keeps doing so once fields repeat three levels deep instead of one.
+</p>
+<p>
+  <code>plan-doc</code> and <code>plan-task</code> both use the full four-value status enum
+  (<code>pending|active|completed|rejected</code>) — reusing <code>knowledge-status</code>'s exact vocabulary
+  rather than inventing a new one, since a plan's and a task's lifecycle both genuinely span all four states.
+  <code>plan-step</code> gets its own narrower two-value enum, <code>pending|completed</code>: a single step
+  is only ever done or not — no "active" mid-step, no "rejected" for one isolated step — which is the same
+  reasoning that already justifies <code>knowledge-option</code>/<code>knowledge-outcome</code>/<code>knowledge-observation</code>
+  omitting <code>status</code> entirely rather than forcing an enum with values that never apply.
+</p>
+<p>
+  Required fields: <code>plan-title</code>/<code>plan-status</code>/<code>plan-date</code>/<code>plan-goal</code>/<code>plan-architecture</code>
+  on <code>plan-doc</code>; <code>plan-title</code>/<code>plan-status</code>/<code>plan-files</code> on
+  <code>plan-task</code>; <code>plan-title</code>/<code>plan-status</code> on <code>plan-step</code>.
+  <code>plan-tech-stack</code>/<code>plan-global-constraints</code> (doc), <code>plan-interfaces</code>
+  (task), and <code>plan-detail</code>/<code>plan-check</code> (step) are all optional — a task with no
+  interfaces to state, or a step needing no runnable check, simply omits the tag.
+</p>
+<h3><code>plan-check</code> mechanics</h3>
+<pre><code>&lt;plan-check command="pytest tests/foo.py::test_bar -v"
+            expected-success="true"
+            expected-output="function not defined"&gt;&lt;/plan-check&gt;</code></pre>
+<ul>
+  <li><code>command</code> (required) — a shell command, run via a plain <code>node:child_process</code>
+    call from the <code>check</code> command below. The runtime is confirmed unsandboxed real Node (command
+    scripts load as genuine ES modules via a <code>file:</code> URL <code>import()</code>, no VM sandbox, no
+    permission flag) with no existing <code>cli.exec</code> convenience — <code>plan check</code> is
+    the first command in this project to shell out, and does so directly rather than waiting on a
+    convenience that doesn't exist yet.</li>
+  <li><code>expected-success</code> (optional, default <code>"true"</code>) — <code>"true"</code>
+    requires exit code 0, <code>"false"</code> requires nonzero. Exists specifically for the TDD red/green
+    cycle: writing-plans' own Step 2 ("run it, make sure it fails") is exactly
+    <code>expected-success="false"</code>.</li>
+  <li><code>expected-output</code> (optional) — a plain substring match against combined stdout+stderr,
+    not a full regex (YAGNI; extend later if real plans need more).</li>
+</ul>
+<p>
+  At most one <code>plan-check</code> per <code>plan-step</code> — today's generic validator checks a
+  single occurrence per tag (<code>querySelector</code>, not <code>querySelectorAll</code>), so allowing more
+  than one would need new validator machinery for a case real plans may never need: a step wanting two
+  independent checks can simply be split into two steps.
+</p>
+<p>
+  <code>mycelium run plan check &lt;file&gt; [&lt;step-id&gt;]</code> runs the check(s) it finds (one named
+  step, or every <code>plan-check</code> in the doc if no step is given), reports pass/fail per step, and
+  <em>only on pass</em> flips that step's <code>plan-status</code> to <code>completed</code>. A failing check
+  leaves status untouched rather than marking it <code>rejected</code> — a red step mid-TDD-cycle isn't
+  abandoned, just not done yet. Steps with no <code>plan-check</code> are never touched by <code>check</code>;
+  they can only be completed by hand, via <code>plan step</code> below.
+</p>
+<h3>Cross-linking</h3>
+<p>
+  <code>plan-doc</code> links to the <code>spec-doc</code> it implements with a newly minted
+  <code>data-rel="implements"</code> edge — the open vocabulary CLAUDE.md already invites minting into
+  when a project genuinely needs a label neither of the original six nor <code>specifies</code>/<code>elaborates</code>
+  already covers. Once a <code>plan-step</code> is actually executed, CLAUDE.md's existing knowledge-logging
+  rules are unchanged: a step doesn't replace <code>knowledge add action</code>/<code>outcome</code>, it's
+  linked to the resulting <code>knowledge-action</code>/<code>knowledge-outcome</code> node the same way any
+  two nodes link today — a plain <code>&lt;a data-rel="leads_to" href="…#task-1-step-2"&gt;</code>
+  in either direction, no new field required.
+</p>
+<h3>CLI commands</h3>
+<p>
+  Seven <code>mycelium/command</code> exports in <code>plan.template.html</code> — more than
+  <code>knowledge</code>'s five, justified by the extra nesting level a plan has that a knowledge node doesn't:
+</p>
+<ul>
+  <li><code>add</code> — <code>mycelium run plan add --title "…" --file &lt;topic&gt; --goal "…" --architecture "…" [--status …] [--tech-stack "…"] [--global-constraints "…"]</code>.
+    Creates <code>plans/&lt;today&gt;-&lt;topic&gt;.plan.html</code> with header fields only, no tasks yet
+    — the same way <code>knowledge add goal</code> creates a bare node.</li>
+  <li><code>add-task</code> — <code>mycelium run plan add-task &lt;file&gt; --title "…" --files "…" [--interfaces "…"] [--status …]</code>.
+    Appends one <code>&lt;plan-task id="task-N"&gt;</code> (N = current task count + 1), prints the new task
+    id.</li>
+  <li><code>add-step</code> — <code>mycelium run plan add-step &lt;file&gt; &lt;task-id&gt; --title "…" [--detail "…" | --detail -] [--check-command "…" [--expected-success true|false] [--expected-output "…"]]</code>.
+    Appends one <code>&lt;plan-step id="&lt;task-id&gt;-step-M" status="pending"&gt;</code> inside the named
+    task, prints the new step id.</li>
+  <li><code>update</code> — <code>mycelium run plan update &lt;file&gt; [--title] [--status] [--goal] [--architecture] [--tech-stack] [--global-constraints]</code>.
+    Same upsert/clear-on-empty-string convention every other family's <code>update</code> already uses,
+    scoped to the doc's own header fields.</li>
+  <li><code>step</code> — <code>mycelium run plan step &lt;file&gt; &lt;step-id&gt; --status pending|completed</code>.
+    The manual fast-path for steps with no <code>plan-check</code> (e.g. "commit").</li>
+  <li><code>check</code> — <code>mycelium run plan check &lt;file&gt; [&lt;step-id&gt;]</code>. The
+    mechanics above.</li>
+  <li><code>list</code> — <code>mycelium run plan list &lt;file&gt;</code>. One line per step: task
+    title, step title, status, <code>[has-check]</code> marker — a flat progress view in the same
+    spirit as <code>knowledge list nodes</code>. Doesn't re-run checks, just reports the current
+    <code>plan-status</code> already on disk.</li>
+</ul>
+<p>
+  IDs are sequential and doc-scoped (<code>task-1</code>, <code>task-1-step-1</code>, <code>task-2-step-3</code>),
+  generated at append time from the current sibling count — the same style already used for the
+  <code>sample-goal</code>/<code>sample-decision</code> ids in <code>knowledge.template.html</code>'s own live
+  demo.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+  <li>Wiring <code>writing-plans</code>/<code>executing-plans</code>/<code>subagent-driven-development</code>
+    themselves to actually target this template instead of Markdown — this spec only designs the shape
+    plan-doc takes and the commands that operate on it, the same way <code>spec.template.html</code>'s own
+    spec didn't rewrite <code>brainstorming</code>'s skill file in the same pass.</li>
+  <li>Automatically generating a plan-doc's tasks/steps from a spec-doc's <code>spec-design</code> content
+    (e.g. a <code>plan add --from-spec</code>) — parked as an open question below, not designed here.</li>
+  <li>A task-level status that's automatically derived by rolling up its children steps' statuses —
+    <code>plan-task</code>'s own status stays independently settable via <code>plan update</code>/hand-editing
+    for now, same as <code>knowledge-action</code> never auto-derives from anything either.</li>
+  <li>Full regex or multi-assertion checks in <code>plan-check</code> — <code>expected-output</code> is
+    a plain substring match only.</li>
+</ul>
+</spec-out-of-scope>
+  <spec-open-questions>
+<ul>
+  <li>Should a follow-up spec design <code>plan add --from-spec &lt;spec-file&gt;</code>, scaffolding
+    <code>plan-task</code>/<code>plan-step</code> skeletons out of a spec's own <code>spec-design</code>
+    content? Flagged as a stretch goal during brainstorming, deliberately not committed to here.</li>
+  <li>Is a <code>plan next &lt;file&gt;</code> command (print the first <code>plan-step</code> with
+    <code>status="pending"</code> in document order) worth adding alongside <code>list</code>, mirroring how
+    <code>executing-plans</code>/<code>subagent-driven-development</code> already ask "what's the next task"
+    during real execution? Deferred rather than designed, the same way <code>spec.template.html</code>
+    deferred its own <code>list</code> command.</li>
+  <li><code>expected-output</code>'s substring match is case-sensitive and literal (no wildcard/regex) —
+    revisit if a real plan's steps need more than that.</li>
+</ul>
+</spec-open-questions>
+</spec-doc>
+</body></html>
