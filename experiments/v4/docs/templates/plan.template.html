@@ -236,7 +236,7 @@
   }
 
   async function addDoc({ fs, args, cli }) {
-    requireArgs([args.file, "--file"], [args.goal, "--goal"], [args.architecture, "--architecture"])
+    requireArgs([args.title, "--title"], [args.file, "--file"], [args.goal, "--goal"], [args.architecture, "--architecture"])
     const date = todayDate()
     const path = `plans/${date}-${args.file}.plan.html`
     const doc = fs.create(path, `<!DOCTYPE html>
