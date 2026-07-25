@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Templates: plan-*</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="./plan.template.css">
+</head>
+<body>
+
+<h1>Templates: plan-*</h1>
+<div class="meta">
+  <div><b>Node types:</b> <code>plan-doc</code>, <code>plan-task</code>, <code>plan-step</code>,
+    <code>plan-check</code> &mdash; four templates, one file, nested three deep, per the family-file
+    convention</div>
+  <div><b>File naming:</b> this file is <code>plan.template.html</code>, named after the <code>plan-*</code>
+    family it defines. Documents that conform to <code>plan-doc</code> are named
+    <code>&lt;date&gt;-&lt;topic&gt;.plan.html</code></div>
+  <div><b>Purpose:</b> the shape an implementation plan takes when written as a v4 node instead of the
+    <code>superpowers:writing-plans</code> skill's default Markdown &mdash; the same override
+    <code>spec.template.html</code> already made for <code>superpowers:brainstorming</code>'s spec output</div>
+  <div><b>Sibling of:</b> <code>knowledge.template.html</code>, <code>spec.template.html</code></div>
+  <div><b>Styling:</b> <code>./plan.template.css</code>, this family's own rendering rules, plus the shared
+    <code>../theme.css</code> every document links</div>
+</div>
+
+<h2>Four nested conforming types, not one flat schema</h2>
+<p>
+  <code>plan-doc</code> contains <code>plan-task</code>s, each independently conforming to
+  <code>#plan-task</code>; <code>plan-task</code> contains <code>plan-step</code>s, each conforming to
+  <code>#plan-step</code>; <code>plan-step</code> contains at most one <code>plan-check</code>, conforming to
+  <code>#plan-check</code>. This is the same pattern <a href="./spec.template.html">spec.template.html</a>'s
+  own "Conformance" section documents: a document can have any number of typed elements nested inside it,
+  each independently addressable via its own <code>data-conforms-to</code>. A parent's own
+  <code>&lt;template&gt;</code> only ever declares a nested child tag as "may be present" &mdash; it can't
+  reach into that child's own internal shape, which is why each of the three nested types needs its own
+  <code>data-conforms-to</code>: <code>pnpm validate</code>'s crawler finds every validatable instance purely
+  by scanning for <code>[data-conforms-to]</code> anywhere in the tree.
+</p>
+<p>
+  <code>plan-title</code>/<code>plan-status</code> repeat across all three nesting levels (doc, task, step)
+  &mdash; fields belong to the family, not to one type within it, same as every other family here. This is
+  exactly the scenario that required fixing <code>template.template.html</code>'s generic validator to scope
+  its field lookups to direct children only, rather than searching an instance's entire subtree.
+</p>
+
+<h2>The four types</h2>
+
+<h3><code>plan-doc</code></h3>
+<p>Fields: <code>title</code>, <code>status</code>, <code>date</code>, <code>goal</code>,
+  <code>architecture</code>, optional <code>tech-stack</code>, optional <code>global-constraints</code>,
+  optional (repeatable) <code>plan-task</code> children.</p>
+<template id="plan-doc">
+  <plan-doc>
+    <plan-title required></plan-title>
+    <plan-status required enum="pending active completed rejected"></plan-status>
+    <plan-date required></plan-date>
+    <plan-goal required></plan-goal>
+    <plan-architecture required></plan-architecture>
+    <plan-tech-stack></plan-tech-stack>
+    <plan-global-constraints></plan-global-constraints>
+    <plan-task></plan-task>
+  </plan-doc>
+</template>
+<pre><code>&lt;plan-doc data-conforms-to="./plan.template.html#plan-doc"&gt;
+  &lt;plan-title&gt;&hellip;&lt;/plan-title&gt;
+  &lt;plan-status&gt;active&lt;/plan-status&gt;
+  &lt;plan-date&gt;2026-07-25&lt;/plan-date&gt;
+  &lt;plan-goal&gt;&hellip;&lt;/plan-goal&gt;
+  &lt;plan-architecture&gt;&hellip;&lt;/plan-architecture&gt;
+&lt;/plan-doc&gt;</code></pre>
+
+<h3><code>plan-task</code></h3>
+<p>Fields: <code>title</code>, <code>status</code>, <code>files</code>, optional <code>interfaces</code>,
+  optional (repeatable) <code>plan-step</code> children.</p>
+<template id="plan-task">
+  <plan-task>
+    <plan-title required></plan-title>
+    <plan-status required enum="pending active completed rejected"></plan-status>
+    <plan-files required></plan-files>
+    <plan-interfaces></plan-interfaces>
+    <plan-step></plan-step>
+  </plan-task>
+</template>
+<pre><code>&lt;plan-task id="task-1" data-conforms-to="./plan.template.html#plan-task"&gt;
+  &lt;plan-title&gt;&hellip;&lt;/plan-title&gt;
+  &lt;plan-status&gt;pending&lt;/plan-status&gt;
+  &lt;plan-files&gt;Create: &hellip;&lt;/plan-files&gt;
+&lt;/plan-task&gt;</code></pre>
+
+<h3><code>plan-step</code></h3>
+<p>Fields: <code>title</code>, <code>status</code> (narrower enum than doc/task &mdash; a single step is only
+  ever done or not), optional <code>detail</code>, optional <code>plan-check</code> child.</p>
+<template id="plan-step">
+  <plan-step>
+    <plan-title required></plan-title>
+    <plan-status required enum="pending completed"></plan-status>
+    <plan-detail></plan-detail>
+    <plan-check></plan-check>
+  </plan-step>
+</template>
+<pre><code>&lt;plan-step id="task-1-step-1" data-conforms-to="./plan.template.html#plan-step"&gt;
+  &lt;plan-title&gt;Write the failing test&lt;/plan-title&gt;
+  &lt;plan-status&gt;pending&lt;/plan-status&gt;
+&lt;/plan-step&gt;</code></pre>
+
+<h3><code>plan-check</code></h3>
+<p>Fields: <code>command</code>, optional <code>success</code> (enum <code>true|false</code>, code default
+  <code>"true"</code> when absent), optional <code>output</code> (a plain substring match).</p>
+<template id="plan-check">
+  <plan-check>
+    <plan-check-command required></plan-check-command>
+    <plan-check-success enum="true false"></plan-check-success>
+    <plan-check-output></plan-check-output>
+  </plan-check>
+</template>
+<pre><code>&lt;plan-check data-conforms-to="./plan.template.html#plan-check"&gt;
+  &lt;plan-check-command&gt;pytest tests/foo.py::test_bar -v&lt;/plan-check-command&gt;
+  &lt;plan-check-success&gt;false&lt;/plan-check-success&gt;
+  &lt;plan-check-output&gt;function not defined&lt;/plan-check-output&gt;
+&lt;/plan-check&gt;</code></pre>
+
+<div class="live-demo">
+  <h4>This section actually runs</h4>
+  <p>
+    One realistic nested instance (a doc containing a task containing a step containing a check), checked by
+    a locally-defined direct-children-scoped validator &mdash; duplicated rather than imported, the same way
+    <code>knowledge.template.html</code>'s own live-demo validator duplicates rather than imports (a
+    browser-loaded module has no reliable way to import across files over <code>file://</code>). The real
+    authoritative check is <code>pnpm validate</code>, which does use the real shared
+    <code>validateFromTemplate</code> under Node.
+  </p>
+
+  <div id="sample-instances" style="display:none">
+    <plan-doc id="sample-doc" data-conforms-to="./plan.template.html#plan-doc">
+      <plan-title>Sample plan</plan-title>
+      <plan-status>active</plan-status>
+      <plan-date>2026-07-25</plan-date>
+      <plan-goal>Build the thing.</plan-goal>
+      <plan-architecture>Do it in a few small steps.</plan-architecture>
+      <plan-task id="sample-task" data-conforms-to="./plan.template.html#plan-task">
+        <plan-title>Sample task</plan-title>
+        <plan-status>active</plan-status>
+        <plan-files>Create: src/thing.ts</plan-files>
+        <plan-step id="sample-step" data-conforms-to="./plan.template.html#plan-step">
+          <plan-title>Sample step</plan-title>
+          <plan-status>pending</plan-status>
+          <plan-check id="sample-check" data-conforms-to="./plan.template.html#plan-check">
+            <plan-check-command>echo ok</plan-check-command>
+            <plan-check-success>true</plan-check-success>
+          </plan-check>
+        </plan-step>
+      </plan-task>
+    </plan-doc>
+  </div>
+
+  <pre id="validator-output">running...</pre>
+
+  <script type="module">
+    function directChild(root, tag) {
+      return Array.from(root.children).find((c) => c.tagName.toLowerCase() === tag)
+    }
+
+    function checkGeneric(el, required, enums) {
+      const errors = []
+      for (const f of required) {
+        const node = directChild(el, f)
+        if (!node || !node.textContent.trim()) errors.push(`missing or empty <${f}>`)
+      }
+      for (const [f, values] of Object.entries(enums)) {
+        const node = directChild(el, f)
+        const text = node?.textContent.trim()
+        if (text && !values.includes(text)) errors.push(`<${f}> must be ${values.join('|')}, got "${text}"`)
+      }
+      return { ok: errors.length === 0, errors }
+    }
+
+    const specs = [
+      ['plan-doc', 'sample-doc', ['plan-title', 'plan-status', 'plan-date', 'plan-goal', 'plan-architecture'], { 'plan-status': ['pending', 'active', 'completed', 'rejected'] }],
+      ['plan-task', 'sample-task', ['plan-title', 'plan-status', 'plan-files'], { 'plan-status': ['pending', 'active', 'completed', 'rejected'] }],
+      ['plan-step', 'sample-step', ['plan-title', 'plan-status'], { 'plan-status': ['pending', 'completed'] }],
+      ['plan-check', 'sample-check', ['plan-check-command'], { 'plan-check-success': ['true', 'false'] }],
+    ]
+
+    const container = document.getElementById('sample-instances')
+    const lines = specs.map(([tag, id, required, enums]) => {
+      const el = container.querySelector(`#${id}`)
+      const result = checkGeneric(el, required, enums)
+      return result.ok ? `PASS  <${tag}>` : `FAIL  <${tag}>: ${result.errors.join('; ')}`
+    })
+    const out = document.getElementById('validator-output')
+    out.textContent = lines.join('\n')
+    out.className = lines.every((l) => l.startsWith('PASS')) ? 'pass' : 'fail'
+  </script>
+</div>
+
+</body>
+</html>

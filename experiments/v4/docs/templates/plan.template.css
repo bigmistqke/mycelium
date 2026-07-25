@@ -1,0 +1,47 @@
+/* The plan-* field vocabulary: four nested conforming types (doc, task,
+   step, check) sharing plan-title/plan-status where they overlap. Every
+   tag is hyphenated so it can never collide with a current or future
+   standard HTML element. Selectors stay scoped under each root type so
+   this file's rules can never leak onto another template's same-named
+   field tags (see spec.template.css). */
+plan-doc, plan-task, plan-step, plan-check {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  background: var(--code-bg);
+  margin: 1.25rem 0;
+}
+plan-task, plan-step, plan-check { margin-left: 1.5rem; }
+plan-doc > plan-title, plan-task > plan-title, plan-step > plan-title {
+  display: block;
+  font-weight: 700;
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+plan-doc > plan-status, plan-task > plan-status, plan-step > plan-status, plan-doc > plan-date {
+  display: inline-block;
+  margin-right: 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+plan-doc > plan-status::before, plan-task > plan-status::before, plan-step > plan-status::before { content: "status: "; }
+plan-doc > plan-date::before { content: "date: "; }
+plan-doc > plan-goal, plan-doc > plan-architecture, plan-doc > plan-tech-stack, plan-doc > plan-global-constraints,
+plan-task > plan-files, plan-task > plan-interfaces, plan-step > plan-detail {
+  display: block;
+  margin-top: 0.75rem;
+}
+plan-check > plan-check-command {
+  display: block;
+  font-family: monospace;
+  margin-top: 0.5rem;
+}
+plan-check > plan-check-success, plan-check > plan-check-output {
+  display: block;
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-top: 0.35rem;
+}
+plan-check > plan-check-success::before { content: "expect success: "; }
+plan-check > plan-check-output::before { content: "expect output contains: "; }
