@@ -571,6 +571,51 @@
   </script>
 </div>
 
+<h2>Graph extraction, shared via a real cross-script import</h2>
+<p>
+  <code>extractGraph(documents)</code> below is deliberately <em>not</em> what the two audits above call —
+  they keep their own inline copy on purpose, since each audit's <code>&lt;script data-audits&gt;</code> also
+  runs as a browser live-demo via a <code>data:</code> URL import, and a <code>data:</code> URL module has no
+  hierarchical base to resolve a cross-script <code>import</code> against (the same reasoning
+  <a data-rel="elaborates" href="../knowledge/2026-07-24-duplicate-not-share-loadcheck.decision.html">duplicate-not-share-loadcheck</a>
+  already gave for a smaller case). The <code>generate</code> command below has no such constraint — it only
+  ever runs under Node via <code>mycelium run</code> — so it imports this copy for real, by <code>id</code>,
+  the way
+  <a data-rel="elaborates" href="../knowledge/2026-07-25-id-based-cross-script-imports.decision.html">the
+  addressing decision</a> intended and
+  <a data-rel="elaborates" href="../knowledge/2026-07-25-defer-cross-template-import-demo.decision.html">the
+  deferred-demo decision</a> left for whenever a real use case showed up.
+</p>
+<script type="module" id="extract-graph">
+  const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
+
+  export function extractGraph(documents) {
+    const nodes = []
+    const edges = []
+    for (const { path, dom } of documents) {
+      for (const tag of TYPES) {
+        const family = tag.split('-')[0]
+        for (const el of dom.querySelectorAll(tag)) {
+          nodes.push({
+            id: el.id || path,
+            type: tag,
+            title: el.querySelector(`${family}-title`)?.textContent.trim() ?? '',
+            status: el.querySelector(`${family}-status`)?.textContent.trim() ?? '',
+          })
+        }
+      }
+      for (const a of dom.querySelectorAll('a[data-rel]')) {
+        const source = a.closest(TYPES.join(','))
+        if (!source) continue
+        const href = a.getAttribute('href')
+        const to = href.startsWith('#') ? href.slice(1) : new URL(href, 'file://' + path).pathname
+        edges.push({ from: source.id || path, to, rel: a.getAttribute('data-rel'), label: a.textContent.trim() })
+      }
+    }
+    return { nodes, edges }
+  }
+</script>
+
 <h2>Authoring commands</h2>
 <p>
   <code>add</code> and <code>link</code>, declared once for the whole family &mdash; see
@@ -584,6 +629,11 @@
   never drift apart.
 </p>
 <script type="mycelium/command">
+  import { todayDate } from "./shared.ts"
+  import { extractGraph } from "./knowledge.template.html#extract-graph"
+  import { tmpdir } from "node:os"
+  import { join, resolve as resolvePath } from "node:path"
+
   const REQUIRES_STATUS = ['goal', 'decision', 'action']
 
   // Throws a clean, specific error for the handful of arguments no
@@ -594,14 +644,6 @@
     for (const [value, label] of checks) {
       if (value === undefined) throw new Error(`missing required argument: ${label}`)
     }
-  }
-
-  // Local to this file on purpose, not shared with spec.template.html's
-  // own copy — see docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html.
-  function todayDate() {
-    const d = new Date()
-    const pad = (n) => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
   }
 
   /**
@@ -822,6 +864,179 @@
     }
 
     throw new Error(`unknown list kind "${kind}" — expected "nodes" or "edges"`)
+  }
+
+  function renderGraphPage(graphJson) {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge graph</title>
+<style>
+  html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; background: #fafafa; }
+  #cy { width: 100%; height: 100vh; display: block; }
+  #legend { position: fixed; top: 10px; left: 10px; background: rgba(255,255,255,0.92); padding: 8px 12px;
+    border-radius: 6px; font-size: 12px; line-height: 1.7; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+  #legend .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  #detail { position: fixed; bottom: 10px; right: 10px; max-width: 320px; background: rgba(255,255,255,0.96);
+    padding: 12px 30px 12px 14px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    box-sizing: border-box; font-size: 13px; line-height: 1.5; opacity: 0; transform: translateY(6px);
+    pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; }
+  #detail.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  #detail .detail-kind { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+    margin-bottom: 6px; }
+  #detail .detail-title { font-size: 14px; font-weight: 600; }
+  #detail-close { position: absolute; top: 6px; right: 8px; border: none; background: none; font-size: 16px;
+    cursor: pointer; color: #888; line-height: 1; padding: 0; }
+</style>
+</head>
+<body>
+<div id="legend">
+  <div><span class="swatch" style="background:#4c8bf5"></span>goal</div>
+  <div><span class="swatch" style="background:#9b59b6"></span>decision</div>
+  <div><span class="swatch" style="background:#c39bd3"></span>option</div>
+  <div><span class="swatch" style="background:#27ae60"></span>action</div>
+  <div><span class="swatch" style="background:#e67e22"></span>outcome</div>
+  <div><span class="swatch" style="background:#95a5a6"></span>observation</div>
+</div>
+<div id="cy"></div>
+<div id="detail"></div>
+<script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"><\/script>
+<script id="graph-data" type="application/json">${graphJson}<\/script>
+<script>
+  const graph = JSON.parse(document.getElementById('graph-data').textContent)
+  const COLORS = {
+    'knowledge-goal': '#4c8bf5',
+    'knowledge-decision': '#9b59b6',
+    'knowledge-option': '#c39bd3',
+    'knowledge-action': '#27ae60',
+    'knowledge-outcome': '#e67e22',
+    'knowledge-observation': '#95a5a6',
+  }
+
+  function truncate(text, max) {
+    return text.length > max ? text.slice(0, max - 1).trimEnd() + '…' : text
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+  }
+
+  const detail = document.getElementById('detail')
+  function showDetail(kind, title) {
+    detail.innerHTML = '<button id="detail-close" aria-label="Close">×<\/button>'
+      + '<div class="detail-kind">' + escapeHtml(kind) + '<\/div>'
+      + '<div class="detail-title">' + escapeHtml(title) + '<\/div>'
+    detail.classList.add('open')
+    document.getElementById('detail-close').addEventListener('click', () => detail.classList.remove('open'))
+  }
+
+  const cy = cytoscape({
+    container: document.getElementById('cy'),
+    elements: [
+      ...graph.nodes.map(n => ({ data: {
+        id: n.id,
+        label: truncate(n.title || n.id, 28),
+        fullLabel: n.title || n.id,
+        type: n.type,
+        status: n.status,
+      } })),
+      ...graph.edges.map(e => ({ data: {
+        source: e.from,
+        target: e.to,
+        label: e.rel,
+        fullLabel: e.label || e.rel,
+      } })),
+    ],
+    style: [
+      { selector: 'node', style: {
+          'background-color': (ele) => COLORS[ele.data('type')] ?? '#888',
+          'label': 'data(label)',
+          'font-size': 9,
+          'width': 26,
+          'height': 26,
+          'text-wrap': 'none',
+          'color': '#222',
+          'text-valign': 'bottom',
+          'text-margin-y': 6,
+        } },
+      { selector: 'edge', style: {
+          'width': 1.5,
+          'line-color': '#bbb',
+          'target-arrow-color': '#bbb',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier',
+          'label': 'data(label)',
+          'font-size': 7,
+          'color': '#999',
+        } },
+    ],
+    layout: { name: 'cose', animate: false, padding: 40 },
+  })
+
+  cy.on('tap', 'node', (evt) => {
+    const d = evt.target.data()
+    showDetail(d.status ? d.type + ' · ' + d.status : d.type, d.fullLabel)
+  })
+  cy.on('tap', 'edge', (evt) => {
+    const d = evt.target.data()
+    showDetail(d.label, d.fullLabel)
+  })
+  cy.on('tap', (evt) => {
+    if (evt.target === cy) detail.classList.remove('open')
+  })
+<\/script>
+</body>
+</html>
+`
+  }
+
+  /**
+   * Generate a visualization of the knowledge graph.
+   *
+   *   mycelium run knowledge generate graph [--out <path>]
+   *
+   * Walks every knowledge/*.html file, extracts {nodes, edges} via
+   * extractGraph (imported from this same file's #extract-graph script —
+   * see "Graph extraction, shared via a real cross-script import" above
+   * for why the audits don't share this copy), and writes a self-
+   * contained HTML page with the graph data inlined as JSON and
+   * cytoscape.js pulled from a CDN to render and lay it out. --out <path>
+   * writes straight to that path (relative to docs/, or absolute) for
+   * committing a snapshot; omitted, writes to a temp file under the OS
+   * temp dir and prints a file:// URL to open it.
+   */
+  export function generate({ fs, args }) {
+    const kind = args._[0]
+    if (kind !== 'graph') throw new Error(`unknown generate kind "${kind}" — expected "graph"`)
+
+    // extractGraph resolves cross-file edges by URL against each document's
+    // own path, so that path has to be a real absolute filesystem path —
+    // fs.list()'s paths are relative to docs/, the same root run.ts itself
+    // resolves as "./docs" from the CLI's own working directory.
+    const documents = fs.list('knowledge').map(({ path, doc }) => ({
+      path: resolvePath('./docs', path),
+      dom: doc,
+    }))
+    const { nodes, edges } = extractGraph(documents)
+
+    // Some edges point outside knowledge/ entirely — a leads_to into a
+    // spec-doc, say — which extractGraph has no way to know isn't one of
+    // its own six types since it only ever scanned knowledge/. cytoscape
+    // requires both endpoints of every edge to be real elements in the
+    // graph, so those get dropped here, not silently: logged, so a link
+    // to a real spec doc doesn't look like a link to nowhere.
+    const nodeIds = new Set(nodes.map((n) => n.id))
+    const validEdges = edges.filter((e) => nodeIds.has(e.from) && nodeIds.has(e.to))
+    if (validEdges.length < edges.length) {
+      console.log(`note: ${edges.length - validEdges.length} edge(s) to non-knowledge files omitted from the graph`)
+    }
+
+    const payload = JSON.stringify({ nodes, edges: validEdges }).replace(/</g, '\\u003c')
+    const outPath = args.out ?? join(tmpdir(), `mycelium-knowledge-graph-${Date.now()}.html`)
+    fs.create(outPath, renderGraphPage(payload))
+    console.log(`open: file://${resolvePath('./docs', outPath)}`)
   }
 </script>
 

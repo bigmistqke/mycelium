@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Implement mycelium run knowledge generate graph command</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Implement mycelium run knowledge generate graph command</knowledge-title>
+  <knowledge-confidence>70</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-detail>Add a generate command to knowledge.template.html's mycelium/command script block, alongside add/link/update/list. mycelium run knowledge generate graph [--out &lt;path&gt;]: walks fs.list('knowledge'), extracts {nodes, edges} (reusing/exporting the extractGraph logic from the orphans-except-goal audit rather than a third duplicate -- a real use case for the new &lt;path&gt;#&lt;id&gt; virtual-module import), and writes a self-contained HTML file with the graph data inlined as JSON plus a CDN script tag for the rendering lib. No --out: write to a scratch/temp path and print/open it. --out &lt;path&gt;: write straight to that path for later git commit.</knowledge-detail>
+  <a data-rel="leads_to" href="./2026-07-25-generate-graph-command-shipped.outcome.html">shipped</a>
+</knowledge-action>
+</body></html>
