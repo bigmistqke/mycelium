@@ -5,7 +5,7 @@
 // docs/specs/2026-07-23-mycelium-authoring-commands.spec.html.
 
 import { readFileSync, writeFileSync, unlinkSync } from "node:fs"
-import { join, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
+import { dirname, relative as relativePath, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
 import { parse } from "acorn"
 import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
@@ -26,9 +26,21 @@ interface CommandContext {
   cli: Cli
 }
 
+// A command host is either a content family's own <id>.template.html
+// (instances conform to it via data-conforms-to) or a singleton
+// <id>.command.html with no instances of its own — a whole-docs-tree tool
+// like docs/commands/explore.command.html. Both are found the same way,
+// searched in that order so a family template always wins a name clash.
+const TEMPLATE_FILE_SUFFIXES = ["template.html", "command.html"]
+
 function findTemplateFile(dir: string, id: string): string | null {
-  const target = `${id}.template.html`
-  return walkHtmlFiles(dir).find((f) => f.endsWith(`/${target}`)) ?? null
+  const files = walkHtmlFiles(dir)
+  for (const suffix of TEMPLATE_FILE_SUFFIXES) {
+    const target = `${id}.${suffix}`
+    const found = files.find((f) => f.endsWith(`/${target}`))
+    if (found) return found
+  }
+  return null
 }
 
 interface ParsedArgs {
@@ -227,9 +239,9 @@ async function main() {
   }
 
   const docsDir = resolvePath("./docs")
-  const templateFile = findTemplateFile(join(docsDir, "templates"), id)
+  const templateFile = findTemplateFile(docsDir, id)
   if (!templateFile) {
-    console.error(`no template file found for "${id}" (looked for ${id}.template.html)`)
+    console.error(`no command host found for "${id}" (looked for ${id}.template.html or ${id}.command.html)`)
     process.exit(1)
   }
   const templateLabel = relativePath(docsDir, templateFile)

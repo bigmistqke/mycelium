@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commands: explore</title>
+<link rel="stylesheet" href="../theme.css">
+</head>
+<body>
+
+<h1>Commands: explore</h1>
+<div class="meta">
+  <div><b>Purpose:</b> whole-<code>docs/</code>-tree commands that don't belong to any one content family
+    &mdash; the same reason <code>knowledge generate graph</code> can't be it: that command deliberately
+    only ever looks inside <code>knowledge/</code>, and no single family's own <code>*.template.html</code>
+    is the right scope for something that needs to see knowledge/, specs/, and everything else at once.</div>
+  <div><b>Not a template:</b> like <code>template.template.html</code>, this file declares no
+    <code>&lt;template id="…"&gt;</code> and nothing conforms to it via <code>data-conforms-to</code> &mdash;
+    unlike it, this one does have commands, which is exactly why it isn't named
+    <code>explore.template.html</code>: that suffix already means "instances conform to this," and nothing
+    does here.</div>
+  <div><b>Found the same way as a family template:</b> <code>mycelium run explore &lt;command&gt;</code>
+    resolves through the same <code>&lt;id&gt;.template.html</code>-or-<code>&lt;id&gt;.command.html</code>
+    lookup every other command uses &mdash; the engine doesn't distinguish the two once it's found the
+    file, only in what it means for that file to exist.</div>
+</div>
+
+<h2>Commands</h2>
+<p>
+  Everything here is protocol-only in what it reads: the <code>data-conforms-to</code> attribute and
+  whatever a real instance's own root tag happens to be, never a specific family's field names. Nothing
+  below imports <code>knowledge.template.html</code> or <code>spec.template.html</code>, and nothing here
+  changes when a new content family is added.
+</p>
+<script type="mycelium/command">
+  /**
+   * List every data-conforms-to instance across the whole docs/ tree,
+   * regardless of which family it belongs to.
+   *
+   *   mycelium run explore list
+   *
+   * One line per instance: its path (relative to docs/), its own root
+   * tag name, and its data-conforms-to value. Instances are found purely
+   * by the presence of the data-conforms-to attribute — every matching
+   * element in a document, not just the first — the same generic signal
+   * and the same querySelectorAll validate.ts's own crawl uses, so this
+   * needs no per-family knowledge and picks up any future family for
+   * free. That also means a template file's own live worked-example
+   * instances (knowledge.template.html has six, one per type) are listed
+   * too, same as validate.ts counts them — this tool doesn't special-case
+   * templates any more than it special-cases any other family. Files
+   * with no data-conforms-to element at all (DESIGN.html, command files
+   * like this one) are silently skipped, not an error: absence of the
+   * attribute just means "not an instance."
+   */
+  export async function list({ fs }) {
+    for (const { path, doc } of fs.list(".")) {
+      for (const root of Array.from(doc.querySelectorAll("[data-conforms-to]"))) {
+        const tag = root.tagName.toLowerCase()
+        const conformsTo = root.getAttribute("data-conforms-to")
+        console.log(`${path}\t${tag}\t${conformsTo}`)
+      }
+    }
+  }
+</script>
+
+</body>
+</html>
