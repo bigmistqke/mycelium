@@ -76,13 +76,32 @@ function parseArgs(argv: string[]): ParsedArgs {
 // way they can differ is a real change in between. This is what makes
 // list() (below) safe to call on dozens of files just to read them.
 //
-// happy-dom's own parse/serialize round-trip inflates any blank line
-// sitting just before a closing tag into several (a document.write()
-// quirk, not anything this project's own templates do) — collapsed back
-// down here, applied identically at snapshot time and write time so the
-// unchanged-file comparison below still cancels out correctly.
-function normalizeWhitespace(html: string): string {
-  return html.replace(/\n{2,}/g, "\n")
+// happy-dom's parse/serialize round-trip inflates whitespace-only text
+// nodes, and it compounds on every write. Normalized on the DOM rather
+// than on the serialized string: at that layer "formatting or content?"
+// is not a guess, because a whitespace-only text node is formatting by
+// definition — unless it sits inside <pre>, where every byte is content.
+// An earlier string-level version collapsed blank lines everywhere and
+// silently rewrote transcribed code, taking every paragraph break out of
+// a 67-line block while leaving it byte-faithful otherwise.
+//
+// Runs before both serializations, like indentRootChildren, so the
+// unchanged-file comparison still cancels out.
+function collapseFormattingWhitespace(node: Node, inPre = false): void {
+  for (const child of Array.from(node.childNodes)) {
+    if (child.nodeType === 3) {
+      const text = child.textContent ?? ""
+      if (!inPre && text.trim() === "") child.textContent = text.replace(/\n{2,}/g, "\n")
+      continue
+    }
+    const tag = (child as Element).tagName?.toLowerCase()
+    collapseFormattingWhitespace(child, inPre || tag === "pre")
+  }
+}
+
+function serialize(doc: Document): string {
+  collapseFormattingWhitespace(doc.documentElement!)
+  return doc.documentElement!.outerHTML
 }
 
 // Reindents every data-conforms-to element's direct children with
@@ -158,7 +177,7 @@ class Filesystem {
       const { document } = parseHTML(html)
       const doc = document as unknown as Document
       indentRootChildren(doc)
-      entry = { doc, original: normalizeWhitespace(doc.documentElement!.outerHTML) }
+      entry = { doc, original: serialize(doc) }
       this.#touched.set(full, entry)
     }
     if (!("doc" in entry)) throw new Error(`${path} was already deleted`)
@@ -200,7 +219,7 @@ class Filesystem {
         continue
       }
       indentRootChildren(entry.doc)
-      const html = normalizeWhitespace(entry.doc.documentElement!.outerHTML)
+      const html = serialize(entry.doc)
       if (html === entry.original) continue
       mkdirSync(dirname(full), { recursive: true })
       writeFileSync(full, "<!DOCTYPE html>\n" + html + "\n")
