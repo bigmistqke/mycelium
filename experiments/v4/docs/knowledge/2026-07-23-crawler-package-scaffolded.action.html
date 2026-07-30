@@ -18,8 +18,6 @@
     the crawler's first real piece</a>
   <knowledge-detail><p>Moved <code>DESIGN.html</code>, <code>theme.css</code>, <code>templates/</code>, <code>specs/</code> and <code>knowledge/</code> into <code>experiments/v4/docs/</code>.</p>
 <p>Added <code>experiments/v4/package.json</code> (<code>@mycelium/v4</code>, depending on <code>linkedom</code>) and <code>src/</code>, joining the pnpm workspace.</p>
-</knowledge-detail>
-</knowledge-action>
 <p>
   The move was a single wholesale directory rename — everything inside it links relative to its own
   siblings, never more than one level up, so nothing internal broke; only <code>CLAUDE.md</code> and the two
@@ -29,4 +27,6 @@
   correctly, and <code>linkedom</code> parses a real node file and reads <code>data-conforms-to</code> and
   <code>data-rel</code> edges correctly.
 </p>
+</knowledge-detail>
+</knowledge-action>
 </body></html>

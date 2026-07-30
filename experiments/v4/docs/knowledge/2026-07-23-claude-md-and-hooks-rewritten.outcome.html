@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Outcome: CLAUDE.md and hooks rewritten</title>
@@ -8,21 +7,18 @@
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
-
 <knowledge-outcome data-conforms-to="../templates/knowledge.template.html#knowledge-outcome">
   <knowledge-title>CLAUDE.md and the two enforcement hooks now point at knowledge/*.html; deciduous frozen
     as historical record</knowledge-title>
   <knowledge-confidence>90</knowledge-confidence>
   <knowledge-commit>c9a2696</knowledge-commit>
   <knowledge-branch>main</knowledge-branch>
-</knowledge-outcome>
-
-<p>
+  <knowledge-detail><p>
   Proven live, immediately: committing this switch triggered the rewritten
   <code>post-commit-reminder.sh</code>, which correctly pointed at writing a <code>knowledge-outcome</code>
-  node with a <code>knowledge-commit</code> field instead of a <code>deciduous</code> command &mdash; this
+  node with a <code>knowledge-commit</code> field instead of a <code>deciduous</code> command — this
   file is that reminder, followed.
 </p>
-
-</body>
-</html>
+</knowledge-detail>
+</knowledge-outcome>
+</body></html>

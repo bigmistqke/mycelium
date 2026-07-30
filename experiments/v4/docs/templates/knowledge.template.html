@@ -734,32 +734,30 @@
    *
    *   mycelium run knowledge delete <file>
    *
-   * REFUSES if any other node links to this one, listing the referrers,
-   * rather than deleting and leaving their hrefs pointing at nothing.
-   * Unlink them first — that forces the question of whether the claim
-   * resting on this node survives without it, which is exactly the
-   * judgment a cascade would hide.
+   * Deletes the node AND every edge pointing at it, so no href is left
+   * resolving to nothing. Outgoing edges need no handling — they go with
+   * the file.
    *
-   * Outgoing edges need no handling: they vanish with the file.
+   * Each removed edge is printed, with the node it came from and its
+   * label, because an incoming edge is a claim resting on this node and
+   * dropping it silently would hide that something upstream just lost
+   * its support. Deleting is not undoable from here; the file is in git.
    */
   export function del({ fs, args }) {
     requireArgs([args._[0], '<file>'])
     const target = args._[0]
-    const referrers = fs
-      .list('knowledge')
-      .filter(({ path }) => path !== `knowledge/${target}`)
-      .filter(({ doc }) =>
-        [...doc.querySelectorAll('a[data-rel]')].some((a) => (a.getAttribute('href') ?? '').endsWith(`/${target}`)),
-      )
-      .map(({ path }) => path)
-    if (referrers.length > 0) {
-      throw new Error(
-        `${target} is still linked from ${referrers.length} node(s):\n` +
-          referrers.map((p) => `  ${p}`).join('\n') +
-          `\nunlink them first`,
-      )
+    let removed = 0
+    for (const { path, doc } of fs.list('knowledge')) {
+      if (path === `knowledge/${target}`) continue
+      for (const a of doc.querySelectorAll('a[data-rel]')) {
+        if (!(a.getAttribute('href') ?? '').endsWith(`/${target}`)) continue
+        console.log(`unlinked ${path}  --${a.getAttribute('data-rel')}-->  ${(a.textContent ?? '').trim()}`)
+        a.remove()
+        removed++
+      }
     }
     fs.delete(`knowledge/${target}`)
+    console.log(`deleted  knowledge/${target}  (${removed} incoming edge(s) removed)`)
   }
 
   /**

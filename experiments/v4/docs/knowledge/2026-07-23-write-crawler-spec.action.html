@@ -18,8 +18,6 @@
   <a data-rel="leads_to" href="../specs/2026-07-23-mycelium-crawler.spec.html">the spec this action
     produced</a>
   <knowledge-detail><p>The design spec for the mycelium crawler: a protocol-only engine that discovers templates, instances, and audits, with no built-in ontology.</p>
-</knowledge-detail>
-</knowledge-action>
 <p>
   Corrected mid-brainstorm: the first draft had the crawler itself extracting "nodes" and "edges" from
   <code>data-rel</code>, which is exactly the ontology <a href="../DESIGN.html">DESIGN.html</a> says the CLI
@@ -27,4 +25,6 @@
   real bootstrapping bug in <code>require-action-node.sh</code> itself while writing this: the gate blocked
   writing the very node that would satisfy it, fixed via Bash since only Edit/Write are gated.
 </p>
+</knowledge-detail>
+</knowledge-action>
 </body></html>

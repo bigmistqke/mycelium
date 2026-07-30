@@ -15,8 +15,6 @@
   <a data-rel="leads_to" href="./2026-07-23-claude-md-and-hooks-rewritten.outcome.html">led to the switch actually
     taking effect</a>
   <knowledge-detail><p>Rewrote CLAUDE.md's decision-graph workflow section and the two enforcement hooks — <code>require-action-node.sh</code> and <code>post-commit-reminder.sh</code> — to point at <code>knowledge/*.html</code> instead of deciduous.</p>
-</knowledge-detail>
-</knowledge-action>
 <p>
   <code>require-action-node.sh</code> now checks file mtimes under <code>experiments/v4/knowledge/</code>
   for a recent <code>.goal.html</code>/<code>.action.html</code> instead of parsing
@@ -24,4 +22,6 @@
   <code>knowledge-commit</code> field instead of a <code>deciduous add --commit HEAD</code> call.
   <code>.deciduous/</code> itself is untouched.
 </p>
+</knowledge-detail>
+</knowledge-action>
 </body></html>
