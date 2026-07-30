@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Derive plan-task and plan-doc status from steps instead of storing it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal">
+  <knowledge-title>Derive plan-task and plan-doc status from steps instead of storing it</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-prompt>let's do the plan-task status derivation</knowledge-prompt>
+  <knowledge-detail><p>Deferred when the harness plan closed, now picked up. The observed failure:
+after task-1 ran, all three of its steps read <code>completed</code> while the
+task containing them still read <code>pending</code>. One task in, and the plan
+misreported itself; correcting it took a hand-run
+<code>plan update task … --status completed</code>.</p>
+<p>The argument is not new to this project. It is
+<a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a>
+applied to a second family — don't store it, derive it from the layer below —
+and the evidence for it is on both sides: 361 of deciduous's 400 nodes sit at
+<code>pending</code> because nobody went back, and this plan reproduced the same
+failure inside a single task.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-30-plan-task-status-should-derive.observation.html">the finding that prompted it</a>
+</knowledge-goal>
+</body></html>

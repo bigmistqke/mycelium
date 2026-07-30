@@ -9,7 +9,6 @@
 <body>
 <plan-doc data-conforms-to="../templates/plan.template.html#plan-doc">
   <plan-title>Stop the harness manufacturing clutter; gate on shape, not rate</plan-title>
-  <plan-status>completed</plan-status>
   <plan-date>2026-07-30</plan-date>
   <plan-goal>Remove the tooling that manufactures low-information nodes, replace it with audits that check the shape of what was written, restore a read path so the graph pays back the effort of writing it, and repair the graph so those audits can fail the build honestly. Terminal state: no mechanism produces a node on a timer, two audits are live and failing, and the graph passes them — 47 over-long titles and 14 hollow actions, 52 distinct nodes, all repaired.</plan-goal>
   <plan-architecture>Four moves against the same cause. (1) Deletion: require-action-node.sh (15-minute Edit/Write gate, source of 47% action nodes) and post-commit-reminder.sh (per-commit prompting, contradicts stop-per-commit-nodes.decision.html) are removed and unwired from .claude/settings.json. (2) Documentation: --detail enters CLAUDE.md's add and update signatures, since the CLI has supported it since 4738449 and its absence from the copy-pasteable signature is the entire cause of 0-of-8 adoption in the newest batch. (3) Audits: title-length and hollow-action are added as data-audits scripts inside knowledge.template.html, collocated with the two audits already there and discovered by the existing crawler with no engine change. They fail the build rather than warning, which is why task-6 repairs the graph inside this pass instead of deferring it — a gate that ships permanently red gets bypassed. A third audit, decision-without-alternative, was cut for the same reason: it flagged 17 of 21 decisions and could only go green by inventing rejected alternatives from months ago. (4) Read path: /recover is replaced rather than merely deleted — a knowledge recover command surfaces the graph's live threads at session start, so capture pays the writer back instead of reading as pure tax. Dead slash commands driving frozen systems are removed alongside.</plan-architecture>
@@ -17,7 +16,6 @@
   <plan-global-constraints>plan-check commands run from experiments/v4/, so repo-root paths are ../../. Nothing here deletes knowledge nodes — pruning the graph is a separate, later pass, and task-6 repairs nodes rather than removing them. pnpm validate is green at every step except the window between task-3 (the audits land) and task-6 (the repair finishes); red inside that window is expected and is the worklist, and the pass is not done until it is green again. Deleting a hook that writes on a rate and adding one that reads at session start is not a contradiction — see fix-incentives-before-guardrails.decision.html. Deliberately out of scope: the plan-step record guardrail (a plan-check asserting a knowledge node links back to task-N), deferred because it must query the graph by shape while the tag axis and the import cut are unsettled; writing it now means writing it twice.</plan-global-constraints>
   <plan-task id="task-1" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Delete the node-manufacturing hooks</plan-title>
-    <plan-status>completed</plan-status>
     <plan-files>.claude/hooks/require-action-node.sh, .claude/hooks/post-commit-reminder.sh, .claude/settings.json</plan-files>
     <plan-interfaces>settings.json keeps its enabledPlugins block; both hook entries are removed, leaving hooks empty or absent.</plan-interfaces>
     <plan-step id="task-1-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
@@ -47,7 +45,6 @@
   </plan-task>
   <plan-task id="task-2" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Put --detail in every documented signature</plan-title>
-    <plan-status>completed</plan-status>
     <plan-files>CLAUDE.md</plan-files>
     <plan-interfaces>knowledge add and knowledge update signatures gain [--detail "…" | --detail -]; the update signature also gains --detail "" to clear.</plan-interfaces>
     <plan-step id="task-2-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
@@ -61,7 +58,6 @@
   </plan-task>
   <plan-task id="task-3" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Add the two shape audits</plan-title>
-    <plan-status>completed</plan-status>
     <plan-files>docs/templates/knowledge.template.html</plan-files>
     <plan-interfaces>Two new data-audits scripts beside orphans-except-goal and dangling-outcome, following the same data-audits/data-touches convention; discovered by src/validate.ts with no engine change.</plan-interfaces>
     <plan-step id="task-3-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
@@ -93,7 +89,6 @@
   </plan-task>
   <plan-task id="task-4" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Remove slash commands driving frozen systems</plan-title>
-    <plan-status>completed</plan-status>
     <plan-files>.claude/commands/decision.md, .claude/commands/work.md, .claude/commands/mycelium-v0-describe.md, .claude/commands/mycelium-v0-explore.md, .claude/commands/mycelium-v0-sync.md, .claude/commands/mycelium-v2-example.md</plan-files>
     <plan-interfaces>commit.md survives untouched; recover.md is deliberately NOT deleted here — it moves to task-5, where its replacement lands in the same unit of work.</plan-interfaces>
     <plan-step id="task-4-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
@@ -107,7 +102,6 @@
   </plan-task>
   <plan-task id="task-5" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Replace /recover with a real read path over the HTML graph</plan-title>
-    <plan-status>completed</plan-status>
     <plan-files>docs/templates/knowledge.template.html, .claude/settings.json, .claude/commands/recover.md, CLAUDE.md</plan-files>
     <plan-interfaces>A new `recover` command exported from knowledge.template.html's existing script[type="mycelium/command"], beside add/link/update/list/generate — discovered by src/run.ts with no engine change, and read-only: it calls fs.list("knowledge") and mutates nothing, so commit() writes no files. Invoked as `pnpm mycelium knowledge recover`.</plan-interfaces>
     <plan-step id="task-5-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
@@ -137,7 +131,6 @@
   </plan-task>
   <plan-task id="task-6" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Repair the 52 flagged nodes and close the gate green</plan-title>
-    <plan-status>completed</plan-status>
     <plan-files>docs/knowledge/*.html</plan-files>
     <plan-interfaces>Repair only — every node keeps its identity, its edges and its filename. Nothing is deleted here; pruning the graph is a separate later pass. Edits go through mycelium knowledge update, not by hand.</plan-interfaces>
     <plan-step id="task-6-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
