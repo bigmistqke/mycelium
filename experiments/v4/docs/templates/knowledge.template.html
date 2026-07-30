@@ -224,6 +224,16 @@
       <knowledge-status>completed</knowledge-status>
       <knowledge-commit>abc1234</knowledge-commit>
     </knowledge-action>
+    <knowledge-action id="sample-hollow-action" data-conforms-to="./knowledge.template.html#knowledge-action">
+      <knowledge-title>
+        Sample action carrying a title long enough to run past the hundred-and-forty character limit,
+        written across several source lines so the demo also proves the audit measures the collapsed
+        text rather than any single line of it
+      </knowledge-title>
+      <knowledge-confidence>60</knowledge-confidence>
+      <knowledge-status>completed</knowledge-status>
+      <a data-rel="depends_on" href="#sample-decision">edged on purpose, so it stays out of the orphan audit</a>
+    </knowledge-action>
     <knowledge-outcome id="sample-outcome" data-conforms-to="./knowledge.template.html#knowledge-outcome">
       <knowledge-title>Sample outcome</knowledge-title>
       <knowledge-confidence>92</knowledge-confidence>
@@ -284,13 +294,21 @@
 <p>
   <a href="../DESIGN.html">DESIGN.html</a> makes the case that a graph-wide audit isn't a separate
   constraint language, it's a script &mdash; the same kind of script that validates one instance against
-  one template, just pointed at the whole node/edge set instead of one element. These two live here, next
-  to the six types, rather than in a file of their own: both only ever concern relationships between
-  <code>knowledge-*</code> types, a family already bundled in this one file, so there's nothing to link
+  one template, just pointed at the whole node/edge set instead of one element. These four live here, next
+  to the six types, rather than in a file of their own: each only ever concerns <code>knowledge-*</code>
+  types, a family already bundled in this one file, so there's nothing to link
   across and nothing gained by separating them. A future audit that spans <em>two</em> families &mdash; say,
   checking a <code>spec-doc</code>'s <code>specifies</code> edge actually resolves to a real
   <code>knowledge-action</code> &mdash; would earn its own file, since neither family's template file could
-  host it without redeclaring the other's types. Neither audit below is that.
+  host it without redeclaring the other's types. None of the audits below is that.
+</p>
+<p>
+  Two of them ask about edges (<code>orphans-except-goal</code>, <code>dangling-outcome</code>) and two ask
+  about the <em>shape of a single node's own fields</em> (<code>title-length</code>,
+  <code>hollow-action</code>). The second pair still belongs here rather than in each type's
+  <code>data-validates</code> script: a per-instance validator answers "is this markup well-formed," which
+  an over-long title and an empty action both are. What they violate is a convention about how the graph is
+  written &mdash; a whole-corpus property, checked the same way and reported in the same list.
 </p>
 <p>
   The convention: <code>data-validates="#id"</code> marks a script checking one instance against one
@@ -378,10 +396,90 @@
   }
 </script>
 
+<h3>title-length</h3>
+<p>
+  A <code>knowledge-title</code> past 140 characters is a paragraph filed in the wrong field: the finding
+  is still legible, but it can't be scanned in a list, and whatever nuance it carries is invisible to
+  anything that reads titles as labels. <code>knowledge-detail</code> is where that text belongs, and has
+  been since the field existed.
+</p>
+<p>
+  <strong>140 is a judgment, not a boundary found in the data.</strong> Measured over the whole graph on
+  2026-07-30, the count falls smoothly &mdash; 61 nodes over 100 characters, 47 over 140, 17 over 300,
+  median 84, p90 302. There is no knee to calibrate against, so no threshold here can be justified by the
+  distribution; 140 is picked as "about two lines of a title" and should be argued with on those terms
+  rather than defended as empirical. The offenders are spread across the whole history, not one bad batch.
+</p>
+<p>
+  Titles are read from the parsed DOM and whitespace-collapsed before measuring, so a title wrapped across
+  several source lines is measured as it reads rather than per line &mdash; 14 of the 47 wrap, and a
+  line-oriented regex silently misses every one of them.
+</p>
+<script type="module" data-audits="title-length" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
+  const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
+  const LIMIT = 140
+
+  function extractTitles(documents) {
+    const titles = []
+    for (const { path, dom } of documents) {
+      for (const tag of TYPES) {
+        for (const el of dom.querySelectorAll(tag)) {
+          const title = el.querySelector('knowledge-title')?.textContent ?? ''
+          titles.push({ id: el.id || path, title: title.trim().replace(/\s+/g, ' ') })
+        }
+      }
+    }
+    return titles
+  }
+
+  export function check(documents) {
+    const violations = extractTitles(documents)
+      .filter(n => n.title.length > LIMIT)
+      .map(n => n.id)
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<h3>hollow-action</h3>
+<p>
+  A <code>knowledge-action</code> with neither a non-empty <code>knowledge-detail</code> nor a
+  <code>knowledge-commit</code> asserts that work happened without saying what it was or pointing at the
+  diff &mdash; it is either redundant with git or empty. Either field alone clears it: CLAUDE.md's own rule
+  says an action spanning several commits should omit the hash, so the detail carries it instead.
+</p>
+<p>
+  Deliberately <em>not</em> a required field on the <code>knowledge-action</code> template. Requiring both
+  outright would reject the legitimate shapes (an action mid-flight has no commit yet); requiring either
+  one is a property of the pair, which a per-field <code>required</code> attribute can't express and this
+  audit can.
+</p>
+<script type="module" data-audits="hollow-action" data-touches="knowledge-action">
+  function extractActions(documents) {
+    const actions = []
+    for (const { path, dom } of documents) {
+      for (const el of dom.querySelectorAll('knowledge-action')) {
+        actions.push({
+          id: el.id || path,
+          detail: (el.querySelector('knowledge-detail')?.textContent ?? '').trim(),
+          commit: (el.querySelector('knowledge-commit')?.textContent ?? '').trim(),
+        })
+      }
+    }
+    return actions
+  }
+
+  export function check(documents) {
+    const violations = extractActions(documents)
+      .filter(a => !a.detail && !a.commit)
+      .map(a => a.id)
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
 <div class="live-demo">
   <h4>This section actually runs</h4>
   <p>
-    Runs the exact two <code>data-audits</code> scripts above, not a hand-copied re-implementation &mdash;
+    Runs the exact four <code>data-audits</code> scripts above, not a hand-copied re-implementation &mdash;
     their source text is pulled straight from the <code>&lt;script&gt;</code> tags and dynamically
     <code>import()</code>ed from a <code>data:</code> URL via a local <code>loadCheck</code>, the same trick
     (and the same five lines) <a href="../specs/2026-07-23-mycelium-crawler.spec.html">the
@@ -390,8 +488,12 @@
     and still works with a plain double-click either way. Their <code>documents</code> argument
     here is just <code>[{ path: 'sample', dom: sample-instances }]</code>, a one-file stand-in for a real
     crawl. The samples were wired so extraction still produces one real violation per audit:
-    <code>sample-observation</code> has no edges at all, and <code>sample-outcome</code> has only an
-    outgoing edge (to <code>sample-action</code>), nothing pointing into it.
+    <code>sample-observation</code> has no edges at all, <code>sample-outcome</code> has only an
+    outgoing edge (to <code>sample-action</code>), nothing pointing into it, and
+    <code>sample-hollow-action</code> carries neither a detail nor a commit <em>and</em> a title past the
+    limit, so it is the one violation of both shape audits. It carries an outgoing
+    <code>depends_on</code> edge purely so it doesn't also show up in <code>orphans-except-goal</code> and
+    change what that demo asserts.
   </p>
 
   <pre id="audit-output">running&hellip;</pre>
@@ -403,29 +505,33 @@
     }
 
     const documents = [{ path: 'sample', dom: document.getElementById('sample-instances') }]
-    const orphansSource = document.querySelector('script[data-audits="orphans-except-goal"]').textContent
-    const danglingSource = document.querySelector('script[data-audits="dangling-outcome"]').textContent
+    const expected = {
+      'orphans-except-goal': ['sample-observation'],
+      'dangling-outcome': ['sample-outcome'],
+      'title-length': ['sample-hollow-action'],
+      'hollow-action': ['sample-hollow-action'],
+    }
 
-    const orphans = await (await loadCheck(orphansSource))(documents)
-    const dangling = await (await loadCheck(danglingSource))(documents)
-    const orphansExpected = ['sample-observation']
-    const danglingExpected = ['sample-outcome']
-    const orphansCorrect = JSON.stringify(orphans.violations.sort()) === JSON.stringify(orphansExpected)
-    const danglingCorrect = JSON.stringify(dangling.violations.sort()) === JSON.stringify(danglingExpected)
-
-    const lines = [
-      `orphans-except-goal: violations = [${orphans.violations.join(', ')}]  ${orphansCorrect ? 'PASS (matches expected)' : 'FAIL (expected [' + orphansExpected.join(', ') + '])'}`,
-      `dangling-outcome:    violations = [${dangling.violations.join(', ')}]  ${danglingCorrect ? 'PASS (matches expected)' : 'FAIL (expected [' + danglingExpected.join(', ') + '])'}`,
-    ]
+    const lines = []
+    let allCorrect = true
+    for (const [name, want] of Object.entries(expected)) {
+      const source = document.querySelector(`script[data-audits="${name}"]`).textContent
+      const result = await (await loadCheck(source))(documents)
+      const correct = JSON.stringify(result.violations.sort()) === JSON.stringify(want)
+      allCorrect = allCorrect && correct
+      lines.push(`${(name + ':').padEnd(21)}violations = [${result.violations.join(', ')}]  ${correct ? 'PASS (matches expected)' : 'FAIL (expected [' + want.join(', ') + '])'}`)
+    }
     const out = document.getElementById('audit-output')
     out.textContent = lines.join('\n')
-    out.className = (orphansCorrect && danglingCorrect) ? 'pass' : 'fail'
+    out.className = allCorrect ? 'pass' : 'fail'
   </script>
 </div>
 
 <h2>Graph extraction, shared via a real cross-script import</h2>
 <p>
-  <code>extractGraph(documents)</code> below is deliberately <em>not</em> what the two audits above call —
+  <code>extractGraph(documents)</code> below is deliberately <em>not</em> what the two graph-consuming audits
+  above call (<code>orphans-except-goal</code> and <code>dangling-outcome</code> — <code>title-length</code>
+  and <code>hollow-action</code> read fields rather than edges, so they never need a graph at all) —
   they keep their own inline copy on purpose, since each audit's <code>&lt;script data-audits&gt;</code> also
   runs as a browser live-demo via a <code>data:</code> URL import, and a <code>data:</code> URL module has no
   hierarchical base to resolve a cross-script <code>import</code> against (the same reasoning

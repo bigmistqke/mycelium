@@ -61,12 +61,12 @@
   </plan-task>
   <plan-task id="task-3" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Add the two shape audits</plan-title>
-    <plan-status>pending</plan-status>
+    <plan-status>completed</plan-status>
     <plan-files>docs/templates/knowledge.template.html</plan-files>
     <plan-interfaces>Two new data-audits scripts beside orphans-except-goal and dangling-outcome, following the same data-audits/data-touches convention; discovered by src/validate.ts with no engine change.</plan-interfaces>
     <plan-step id="task-3-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Write the title-length audit</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>A knowledge-title beyond roughly 140 characters is a paragraph in the wrong field. The original prediction — flags the 8 newest nodes and few or none of the rest — was measured on 2026-07-30 and is false: it flags 47 of 149, and the 2026-07-27 batch is the smallest contributor (11 from 07-23, 4 from 07-24, 24 from 07-25, 8 from 07-27). There is no knee to calibrate against either; the count falls smoothly from 61 over 100 chars to 17 over 300, median 84, p90 302. So 140 is a deliberate judgment, not a boundary found in the data, and it should be documented as such rather than justified by a distribution that does not support it.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>grep -q 'data-audits="title-length"' docs/templates/knowledge.template.html</plan-check-command>
@@ -74,7 +74,7 @@
     </plan-step>
     <plan-step id="task-3-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Write the hollow-action audit</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>An action node with neither knowledge-detail nor knowledge-commit is either redundant with git or empty. 53 of 65 actions carry a commit; this targets what is left plus any commit-carrying action whose title merely restates the commit subject.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>grep -q 'data-audits="hollow-action"' docs/templates/knowledge.template.html</plan-check-command>
@@ -82,7 +82,7 @@
     </plan-step>
     <plan-step id="task-3-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Confirm the audits fire, and capture the repair worklist</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>This step expects validate to FAIL, and that failure is the deliverable: it is the list task-6 works through. A green run here would mean the audits detect nothing. Red is a transient state inside this pass, not a shipped one — the audits fail the build, so the pass is unfinished until task-6 closes them. Expected at this point: 47 title-length violations and 14 hollow-action violations, 52 distinct nodes.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>pnpm validate</plan-check-command>
@@ -93,12 +93,12 @@
   </plan-task>
   <plan-task id="task-4" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Remove slash commands driving frozen systems</plan-title>
-    <plan-status>pending</plan-status>
+    <plan-status>completed</plan-status>
     <plan-files>.claude/commands/decision.md, .claude/commands/work.md, .claude/commands/mycelium-v0-describe.md, .claude/commands/mycelium-v0-explore.md, .claude/commands/mycelium-v0-sync.md, .claude/commands/mycelium-v2-example.md</plan-files>
     <plan-interfaces>commit.md survives untouched; recover.md is deliberately NOT deleted here — it moves to task-5, where its replacement lands in the same unit of work.</plan-interfaces>
     <plan-step id="task-4-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Delete the deciduous-era and v0/v2 commands, except recover.md</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>decision.md and work.md are both allowed-tools: Bash(deciduous:*), driving the frozen CLI. decision.md additionally documents the five-node-per-feature chain with one-line titles, which is the exact shape of January's 195-node grind. The four mycelium-v0/v2 commands go with their packages. recover.md drives the same frozen CLI and is equally dead, but it is the only thing in the repo that ever read the graph back, so deleting it here would leave the graph write-only between this task and its replacement. It is handled in task-5 instead, paired with the command that replaces it.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>sh -c 'test ! -e ../../.claude/commands/decision.md &amp;&amp; test ! -e ../../.claude/commands/work.md &amp;&amp; test ! -e ../../.claude/commands/mycelium-v0-sync.md &amp;&amp; test -f ../../.claude/commands/commit.md'</plan-check-command>

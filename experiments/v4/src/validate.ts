@@ -169,6 +169,9 @@ async function main() {
     console.log("")
     console.log(styleText("red", f))
   }
+
+  // exitCode rather than exit() so the output above still flushes.
+  if (fail > 0) process.exitCode = 1
 }
 
 function relative(from: string, to: string): string {
