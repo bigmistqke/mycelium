@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Declare belonging, derive liveness</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Declare belonging, derive liveness</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-detail><p>A status enum assumes linear history with a single endpoint. What deciduous #5 calls the missing <em>retirement</em> concept is not a property of each node: v0's decisions are dormant because the v0 exploration was abandoned — one fact denormalized across 200 nodes, and the next abandonment costs another 200 stamps.</p>
+<p>Split what <code>status</code> conflates. <strong>Belonging</strong> (which exploration a node is part of) never changes and can be multi-valued, so it is declared, as a topic tag. <strong>Liveness</strong> (whether it still holds) changes because of events outside the node, so it is derived from topology: one <code>v0-abandoned</code> node with edges to what it supersedes, and an audit computes reachability.</p>
+<p>Grounded in the project's own record — #325: <em>Composition makes decision status DERIVED, not declared… don't store it, derive it from the layer below. Solves metadata maintenance by eliminating the metadata.</em> And #364: <em>Because it is derived it CANNOT ROT.</em></p></knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-30-unify-knowledge-graph-fix-harness.goal.html">part 3 of the goal</a>
+</knowledge-decision>
+</body></html>

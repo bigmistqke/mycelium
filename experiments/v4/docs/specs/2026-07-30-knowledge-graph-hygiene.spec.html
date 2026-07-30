@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Unify the knowledge graph and replace the rate gate with shape audits</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Unify the knowledge graph and replace the rate gate with shape audits</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-07-30</spec-date>
+  <spec-problem>
+<p>Two corpora hold this project's decision history, and both are degraded in
+the same way for different reasons. Deciduous holds 400 SQLite nodes, frozen
+2026-07-23. The v4 HTML graph holds 137 nodes and is live. Neither can be read
+as a narrative, which is what a knowledge graph is for.</p>
+<p><strong>Measured on the v4 graph, 2026-07-30:</strong></p>
+<ul>
+  <li>65 of 137 nodes (47%) are <code>action</code>; 53 of those carry a commit
+  hash, so their content is what the commit message already says.</li>
+  <li><code>option</code> 0, <code>contradicts</code> 0, <code>blocks</code> 0.
+  The graph cannot express a rejected alternative or a reversal.</li>
+  <li>Edge labels <code>resolves</code> and <code>produced</code> are used once
+  each and both duplicate <code>leads_to</code>.</li>
+  <li>The 2026-07-27 batch averages 415 characters per title against 117 for
+  the rest of the graph, and uses <code>knowledge-detail</code> zero times in
+  eight nodes.</li>
+  <li>77 of 137 nodes predate <code>knowledge-detail</code> (added 4738449,
+  2026-07-24 15:19). Of the 52 written after it existed, 12 use it.</li>
+</ul>
+<p><strong>Measured on deciduous:</strong> 400 nodes, 463 edges, zero
+descriptions — the field exists and was never populated, so the entire finding
+sits in <code>title</code>, averaging 616 characters across the July 2026
+material. 361 of 400 sit at status <code>pending</code>. The edge vocabulary
+collapsed to <code>leads_to</code> (448), <code>chosen</code> (11),
+<code>rejected</code> (4).</p>
+<p><strong>The cause is the harness, not editorial judgment.</strong></p>
+<ul>
+  <li><code>require-action-node.sh</code> blocks every Edit and Write unless a
+  <code>.goal.html</code> or <code>.action.html</code> was touched in the last
+  15 minutes. That is a rate, not an event: a long session must emit an action
+  node every quarter hour to keep working. This is the 47%.</li>
+  <li>Neither that hook's guidance block nor CLAUDE.md's <code>add</code> and
+  <code>update</code> signatures mention <code>--detail</code>, though the CLI
+  has supported it on both since 4738449. <code>detail</code> appears in
+  CLAUDE.md once, in prose, as a parenthetical. An agent copies the signature,
+  not the prose. This is the title-cramming.</li>
+  <li><code>post-commit-reminder.sh</code> prompts a node per commit, which
+  <code>stop-per-commit-nodes.decision.html</code> decided against. Its text
+  also still claims the CLI cannot update existing nodes, which
+  <code>update</code> fixed.</li>
+  <li><code>/decision</code> documents a five-node-per-feature chain
+  (goal to decision to option to action to outcome) with one-line titles —
+  the exact shape of deciduous's 195-node January feature grind. It and
+  <code>/work</code> and <code>/recover</code> are all
+  <code>allowed-tools: Bash(deciduous:*)</code>, driving the frozen CLI;
+  <code>/recover</code> is labelled USE THIS ON SESSION START. Seven of eight
+  project slash commands target frozen or doomed systems.</li>
+</ul>
+<p><strong>This inverts deciduous #349.</strong> That node established the
+project's founding result: discipline fails (52% compliance with a bolded
+CLAUDE.md instruction) and protocols work (near-total compliance with a hook).
+v4 built the protocol, and the protocol works — which is the problem. It
+enforces "emit an action node every 15 minutes" at close to 100%. The
+corollary never logged: <em>a protocol that works enforces whatever it
+encodes, including the clutter.</em> A time-based trigger encodes "log at a
+rate" when the goal is "log when there is something to say."</p>
+</spec-problem>
+  <spec-design>
+<p>Three parts, in dependency order. The harness changes first, because the
+audits are what identify what to prune, and because a migration into an
+unfixed harness refills with clutter at one action per 15 minutes.</p>
+<h3>Part 1 — Shape audits replace the rate gate</h3>
+<p>The 15-minute timer gates on <em>quantity</em>: did you log? Every measured
+failure is <em>quality</em>: is what you logged shaped right? Quantity is what
+a timer can measure, which is why the harness measures it.</p>
+<p>The good triggers — a rejected alternative, a contradicted prediction, a
+correction — are not machine-detectable. No hook can tell that something was
+learned. But the failures are all machine-detectable, and that is enough.</p>
+<ul>
+  <li><code>title-length</code> — a title beyond roughly 140 characters is a
+  paragraph in the wrong field. Measured 2026-07-30: this flags <strong>47 of
+  149</strong> nodes, not the 8 first assumed. The 2026-07-27 batch is the
+  smallest contributor (11 from 07-23, 4 from 07-24, 24 from 07-25, 8 from
+  07-27), so title-cramming is a graph-wide habit, not one bad night. There is
+  also no knee in the distribution to calibrate against — median 84, p90 302,
+  and the count falls smoothly (&gt;100: 61, &gt;140: 47, &gt;200: 28,
+  &gt;300: 17). 140 is a judgment call, not a discovered boundary.</li>
+  <li><code>hollow-action</code> — an <code>action</code> with neither
+  <code>detail</code> nor <code>commit</code> is either redundant with git or
+  empty.</li>
+  <li><s><code>decision-without-alternative</code></s> — <strong>cut
+  2026-07-30.</strong> A decision with no <code>option</code> and no
+  <code>alternative_to</code> edge does record a choice without a choosing, and
+  it measured 17 of 21. It is removed anyway, because under a failing gate an
+  audit must be repairable and this one is not: it asks what was rejected months
+  ago, which was frequently never written down. The only ways to go green would
+  be to invent alternatives or to suppress the audit — the first is worse than
+  the gap, the second is the decay this spec exists to prevent. An audit nobody
+  can satisfy honestly teaches that audits get bypassed.</li>
+</ul>
+<p>So two audits, not three. Both are repairable from material that already
+exists, which is what makes failing the build a real gate rather than a
+permanent red. Scope: <strong>52 distinct nodes of 149</strong>.</p>
+<p>These are <code>data-audits</code> scripts collocated in
+<code>knowledge.template.html</code> beside the two that already live there,
+discovered and run by the existing crawler. No new machinery.</p>
+<p><code>require-action-node.sh</code> and <code>post-commit-reminder.sh</code>
+are both deleted. v3's lesson survives intact: this is still a protocol rather
+than discipline, gating on shape instead of rate. It cannot make an agent
+notice something worth logging — nothing can — but it stops the two failure
+modes that are measurable.</p>
+<h3>Part 2 — A vocabulary that can hold a story</h3>
+<ul>
+  <li><code>--detail</code> enters every documented signature: CLAUDE.md's
+  <code>add</code> and <code>update</code>, and any hook or skill guidance
+  text. This single omission is the whole 0-of-8.</li>
+  <li><code>contradicts</code> is taught and used. It exists in the vocabulary
+  and has never fired, while the July 2026 deciduous record is built from
+  reversals — four documented self-corrections in one session.</li>
+  <li><code>option</code> is taught. Zero in v4, 48 in deciduous; the only
+  skill teaching it points at the dead CLI.</li>
+  <li><code>resolves</code> and <code>produced</code> fold into
+  <code>leads_to</code>.</li>
+  <li>The dead slash commands are removed: <code>/decision</code> and
+  <code>/work</code> (frozen CLI, and <code>/decision</code> teaches the grind),
+  plus the v0 and v2 commands.</li>
+  <li><code>/recover</code> is <em>replaced</em>, not just removed. It drives the
+  same frozen CLI, but it is the only thing that ever read the graph back, and
+  deleting it in the pass that adds write pressure gets the incentive backwards —
+  the design-rationale literature's failure mode is that the writer is not the
+  beneficiary. A <code>knowledge recover</code> command surfaces the live threads
+  (active goals, decisions with no outcome, contested claims) and runs at
+  SessionStart. Deletion and replacement ship together, so the read path is never
+  absent.</li>
+</ul>
+<h3>Part 3 — Unify, with belonging declared and liveness derived</h3>
+<p>A status enum assumes linear history with a single endpoint. What deciduous
+node #5 calls the missing "retirement" concept is not a property of each node
+at all — v0's decisions are dormant because the v0 exploration was abandoned,
+one fact denormalized across 200 nodes. Adding a fifth enum value is exactly
+the hand-maintained metadata that #364 predicts will rot.</p>
+<p>Split what <code>status</code> conflates:</p>
+<ul>
+  <li><strong>Belonging</strong> — which exploration a node is part of. Never
+  changes, can be multi-valued. <em>Declared</em>, as a topic tag.</li>
+  <li><strong>Liveness</strong> — whether it still holds. Changes because of
+  events outside the node. <em>Derived</em> from topology: one
+  <code>v0-abandoned</code> node with edges to what it supersedes, and an audit
+  computes reachability.</li>
+</ul>
+<p>Subdirectories are rejected despite the navigability gain. They cost a
+rewrite of every <code>./&lt;node&gt;.html</code>, <code>../theme.css</code>
+and <code>../templates/</code> reference across roughly 320 files; they break
+inbound links whenever a node moves; and they force exclusive membership, when
+v0's query-interface decision belongs both to v0 and to the v3 synthesis that
+leans on it. A directory hard-codes one grouping; tags let every grouping be
+derived, including a generated index. Grouping is a query, not a mkdir.</p>
+<p>The migration cut criterion: <strong>keep what git cannot tell you</strong>
+— evidence, rejection, reversal. Git already records what changed, when, and a
+one-line why; it cannot record what was rejected, what turned out wrong, or
+what evidence was gathered.</p>
+<p><strong>The criterion selects, it does not decide.</strong> All 400 nodes
+were read on 2026-07-30 and the cut is now made per node, not by applying the
+rule mechanically to reach a number. The earlier "roughly 183" estimate is
+withdrawn: it was derived before anyone had read the corpus, and reading it
+showed the rule alone keeps too much. Every <code>decision</code> plus its
+<code>option</code> children passes — which covers #2–#5 (TypeScript vs Rust vs
+Hybrid) and #43/#44 (package manager → pnpm) equally, though only one of those
+ever mattered. The missing test is <em>did the choice have consequences</em>,
+and no rule supplies it.</p>
+<p>Two constraints bound the per-node review. The transitive closure over
+citations still holds, so no surviving node is left with a dangling reference
+such as #270. And the v4 graph already cites #5, #20, #325, #349, #350, #351
+and #364, so those and their closure are kept regardless of the review —
+otherwise the graph cannot resolve its own citations, which is the concrete
+argument for doing the import at all.</p>
+<p>Long titles split into a real title plus <code>detail</code> — the same
+repair on both corpora, since the 2026-07-27 batch has deciduous's shape.
+Inline citations such as #270 and #349 become <code>data-rel</code> edges.</p>
+<h3>Sequence</h3>
+<ol>
+  <li>Harness fixes, the read path, and the two audits.</li>
+  <li>Prune and repair the local 137, calibrating audit thresholds against
+  material that can be judged by hand.</li>
+  <li>Import deciduous under the cut, into an already-clean graph.</li>
+</ol>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+  <li>The monorepo restructure that prompted this work — hoisting v4 to the
+  repo root, dropping the pnpm workspace, and the fate of v0 through v3.
+  Related but separable, and this spec should not block on it.</li>
+  <li>Deriving <code>status</code> in general. It sits at 88
+  <code>completed</code>, 7 <code>pending</code>, 4 <code>active</code>, so it
+  carries almost no information already, and the same derive-don't-declare
+  argument applies — but changing it is far larger than this migration.</li>
+  <li>GitHub Pages publishing of the graph, and the crawler gaps that remain
+  versus deciduous (branch grouping, multi-user sync).</li>
+</ul>
+</spec-out-of-scope>
+  <spec-open-questions>
+<ul>
+  <li><strong>Answered 2026-07-30. What positively triggers a node?</strong> The
+  trigger is a moment, not an event a hook can watch, so it is guardrailed in
+  four layers rather than detected. (1) Make the graph get read, so capture pays
+  the writer back — a <code>recover</code> command over the HTML graph, wired to
+  SessionStart. (2) Make capture cheap at that moment — <code>--detail</code> in
+  every documented signature. (3) Trigger on context-loss (PreCompact, SessionEnd)
+  rather than on a clock. (4) A plan-step check asserting a task recorded
+  something. Layers 1 and 2 are incentive fixes and come first; 3 and 4 are
+  guardrails for when that is not enough. Layer 4 is deferred until the tag axis
+  and the import cut settle. See
+  <code>fix-incentives-before-guardrails.decision.html</code>.</li>
+  <li><strong>Still open. What axis do topic tags run on?</strong> Sharpened: the
+  two candidates are not peers. Chapter (v0, v3-verify-gate, v4-templates) is
+  <em>load-bearing</em> — Part 3 derives liveness from topology, and a
+  <code>v0-abandoned</code> node with edges to what it supersedes only works if
+  chapter membership is declared. Theme (verification, derivation, templates) is
+  additive: it connects the July material to the 2026-07-27 batch, but no
+  mechanism depends on it. So chapter ships; theme waits until something needs
+  it.</li>
+  <li><strong>Answered 2026-07-30, and it replaces the ~183 estimate.</strong>
+  The cut is decided per node by reading all 400, not by applying the criterion
+  mechanically. Reading them produced two corrections to this spec. <em>First,
+  the criterion over-keeps.</em> "Keep what git cannot tell you" retains every
+  <code>decision</code>+<code>option</code> pair, which covers both #2–#5
+  (TypeScript vs Rust vs Hybrid, foundational) and #43/#44 (package manager →
+  pnpm, worthless). Same shape by the rule, opposite value. A second filter is
+  needed — <em>did the choice have consequences?</em> — and it is a judgment no
+  criterion makes. <em>Second, this spec had the uncertain block backwards</em>
+  (see below). A floor exists regardless: the v4 graph already cites #5, #20,
+  #325, #349, #350, #351 and #364, so those plus their closure are
+  non-negotiable — otherwise the graph cannot resolve its own citations.</li>
+  <li><strong>Correction. The 87 January vision observations are not the least
+  certain block.</strong> This spec named them as such. Reading them, they are
+  among the most valuable material in the corpus: two prior-art surveys
+  (#228–#244 on Intentional Programming, JetBrains MPS, Unison, Alloy, TLA+,
+  Hazel, Subtext; #278–#288 on MLIR, Nanopass, refinement types and the EE
+  verification parallel), plus #245/#246 on why Intentional Programming never
+  shipped — the same question this project is currently inside. The genuinely
+  low-value block is the Jan 12–14 implementation record: 29 bare
+  <code>Committed:</code> outcomes and 19 feature-request goals that git holds
+  verbatim.</li>
+  <li><strong>Answered 2026-07-30. Do the audits fail the build or only
+  warn?</strong> Fail hard, and repair before turning them on — so repair is a
+  prerequisite of this pass, not a later one. Warning was rejected as the thing
+  that decays to 52%.
+  <p>This forced a second decision. Failing only works if every audit is
+  satisfiable, so <code>decision-without-alternative</code> was cut — it flagged
+  17 of 21 decisions and could not be repaired without inventing rejected
+  alternatives from months ago. That leaves <code>title-length</code> (47 nodes,
+  move the title into <code>detail</code>) and <code>hollow-action</code> (14 of
+  65 actions, add a commit or a detail): <strong>52 distinct nodes of 149</strong>,
+  all repairable from material that exists.</p>
+  <p>The general rule this establishes: <em>a failing gate may only contain
+  checks that can be satisfied honestly.</em> An audit that can only go green by
+  fabrication or suppression teaches that audits get bypassed, which costs more
+  than the check was worth. The gap it named is real and stays visible in the
+  vocabulary work — <code>option</code> and <code>contradicts</code> get taught —
+  it just stops being a build gate.</p></li>
+</ul>
+</spec-open-questions>
+</spec-doc>
+</body></html>

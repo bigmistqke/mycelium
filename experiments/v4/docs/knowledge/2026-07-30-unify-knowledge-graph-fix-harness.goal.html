@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Unify the knowledge graph and fix the harness that manufactures its clutter</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal">
+  <knowledge-title>Unify the knowledge graph and fix the harness that manufactures its clutter</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-prompt>this is now our main focus: unifying + cleaning up the knowledge graph and updating the skills for a better hygiene</knowledge-prompt>
+  <knowledge-detail><p>Two corpora to unify: deciduous's 400 SQLite nodes (frozen 2026-07-23) and v4's 137 HTML nodes. Both carry the same disease from different causes.</p>
+<p><strong>Measured, this session:</strong></p>
+<ul>
+<li>v4 graph is 47% <code>action</code> nodes (65 of 137), 53 carrying a commit hash.</li>
+<li><code>contradicts</code> 0, <code>blocks</code> 0, <code>option</code> 0 — the graph cannot express a reversal, and reversals are what the July 2026 deciduous record is made of.</li>
+<li>The 2026-07-27 batch averages 415 chars per title against 117 for the rest, and uses <code>knowledge-detail</code> zero times out of eight.</li>
+<li>Deciduous, July 2026: 616 chars per title, because no body field existed.</li>
+</ul>
+<p><strong>Cause is the harness, not judgment.</strong> <code>require-action-node.sh</code> blocks Edit/Write unless a goal/action node was touched in the last 15 minutes — a rate, not an event, which is where 47% actions comes from. Neither that hook's guidance block nor CLAUDE.md's <code>add</code>/<code>update</code> signatures mention <code>--detail</code>, though the CLI has supported it since 4738449 — which is where the title-cramming comes from. <code>/decision</code> documents a five-node-per-feature chain with one-line titles, the exact shape of January's 195-node grind. Seven of eight slash commands drive frozen or doomed systems.</p>
+<p><strong>This is deciduous #349 turned back on itself:</strong> that node proved protocols beat discipline (52% compliance with a bolded instruction, ~100% with a hook). The unlogged corollary is that a protocol that works enforces whatever it encodes, including clutter. A time-based trigger encodes <em>log at a rate</em> when the goal is <em>log when there is something to say</em>.</p></knowledge-detail>
+</knowledge-goal>
+</body></html>

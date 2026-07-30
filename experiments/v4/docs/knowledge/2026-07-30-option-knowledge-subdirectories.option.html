@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option: Rejected: sub-domain directories under knowledge/</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-option data-conforms-to="../templates/knowledge.template.html#knowledge-option">
+  <knowledge-title>Rejected: sub-domain directories under knowledge/</knowledge-title>
+  <knowledge-confidence>30</knowledge-confidence>
+  <knowledge-detail><p>Models chapters directly and would genuinely help navigability at ~320 nodes.</p>
+<p><strong>Rejected on three counts.</strong> Path cost: every <code>./&lt;node&gt;.html</code>, <code>../theme.css</code> and <code>../templates/…</code> reference rewrites across ~320 files, and inbound links break whenever a node moves between chapters. Exclusivity: v0's query-interface decision (#20) belongs both to v0 and to the v3 synthesis (#351) that leans on it, and a directory forces one. Principle: a directory hard-codes one grouping, whereas tags let every grouping be derived, including a generated index. Grouping is a query, not a mkdir.</p></knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-30-declare-belonging-derive-liveness.decision.html">rejected alternative</a>
+</knowledge-option>
+</body></html>

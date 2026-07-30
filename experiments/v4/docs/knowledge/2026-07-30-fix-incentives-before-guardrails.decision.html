@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Fix the read path in this pass; defer the plan-step record guardrail</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Fix the read path in this pass; defer the plan-step record guardrail</knowledge-title>
+  <knowledge-confidence>75</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-detail><p>Two calls resolved together, because they trade against each other. The
+question was where to spend this pass: on making capture <em>read</em> (so
+it pays the writer back) or on making capture <em>enforced</em> (so it
+happens regardless).</p>
+<p><strong>Read path: in scope now.</strong> <code>/recover</code> was the
+only mechanism that ever read the graph back, and it drives the frozen
+deciduous CLI. This plan already deleted it — with nothing replacing it.
+That leaves the graph write-only, which is precisely the failure mode the
+prior art describes: the writer is not the beneficiary, so capture decays
+to tax. Deleting the read path in the same pass that adds write pressure
+gets the incentive exactly backwards. So the deletion and the replacement
+become one unit of work, not a deletion now and a replacement someday.</p>
+<p><strong>Layer 4 (plan-step record guardrail): deferred.</strong> The
+idea is a per-task plan step whose <code>plan-check</code> asserts a
+knowledge node links back to <code>task-N</code> — the plan cannot go
+green without its own record, using the derived-status machinery already
+built rather than an agent remembering. It is a good guardrail and it
+dogfoods well. It is deferred anyway because the check has to query the
+graph by shape, and the graph's shape is still moving: the tag axis is
+undecided and the ~183 cut has not happened. Writing the query now means
+writing it twice.</p>
+<p><strong>Accepted cost of the deferral.</strong> This plan runs without
+the guardrail that would have made it record itself — the exact gap layer
+4 exists to close. That is a deliberate bet that layers 1 and 2 (make the
+graph get read, make capture cheap at the moment) move compliance enough
+on their own that the guardrail is tuning rather than rescue. It is also
+testable rather than assumed, which is the standing lesson from
+<a href="./2026-07-30-fifty-two-percent-figure-is-unreplicated.observation.html">the 52% figure</a>:
+measure the rate after this pass instead of promoting a prediction to a law.</p>
+<p><strong>Note on hooks, since this plan deletes two of them.</strong>
+Adding a SessionStart read hook is not a reversal. The removed hooks fire
+on a rate (every 15 minutes of editing, every commit) and <em>write</em>
+nodes. This one fires at a moment that actually exists (a session begins,
+context is empty) and only <em>reads</em>. That distinction is the whole
+content of <a href="./2026-07-30-gate-on-shape-not-rate.decision.html">gate on shape, not rate</a>.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-30-unify-knowledge-graph-fix-harness.goal.html">resolves where this pass spends its effort</a>
+  <a data-rel="depends_on" href="./2026-07-30-capture-cost-killed-rationale-systems.observation.html">prior art: writer must be the beneficiary</a>
+  <a data-rel="supports" href="./2026-07-30-gate-on-shape-not-rate.decision.html">a read hook at session start is a moment, not a rate</a>
+</knowledge-decision>
+</body></html>

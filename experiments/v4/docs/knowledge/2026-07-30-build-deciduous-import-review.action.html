@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Build a per-node review surface for the 400 frozen deciduous nodes</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Build a per-node review surface for the 400 frozen deciduous nodes</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-detail><p>The import cut was settled by user call as <strong>read every node and decide
+individually</strong>, rather than applying a criterion mechanically and
+accepting the resulting number. 400 nodes is too many to adjudicate in
+conversation, so this builds a scannable review surface: every node with a
+recommended keep/drop, a one-line reason, and a per-row override.</p>
+<p><strong>Reading all 400 produced a finding that changes the criterion.</strong>
+"Keep what git cannot tell you" is necessary but not sufficient. It keeps
+<code>#43</code>/<code>#44</code> ("Package manager choice" → "Use pnpm") — a
+rejection git genuinely does not record and that nobody will ever want. It also
+keeps <code>#2</code>–<code>#5</code> (TypeScript vs Rust vs Hybrid) and
+<code>#116</code>–<code>#123</code> (Louvain vs Infomap vs Leiden, with real
+complexity and connectivity analysis), which are foundational. Identical shape by
+the criterion, opposite value. A second filter is needed —
+<em>did the choice have consequences?</em> — and it is a judgment the criterion
+cannot make, which is precisely why per-node review is the right call here.</p>
+<p><strong>Second finding: the spec's least-certain block is backwards.</strong>
+The spec names the 87 January vision observations as the least certain material.
+Reading them, they are among the <em>most</em> valuable in the corpus: two prior-art
+surveys (<code>#228</code>–<code>#244</code> covering Intentional Programming, MPS,
+Unison, Alloy, TLA+, Hazel, Subtext; <code>#278</code>–<code>#288</code> covering
+MLIR, Nanopass, refinement types and the EE verification parallel), plus
+<code>#245</code>/<code>#246</code> on why Intentional Programming never shipped —
+which is the same question this project is currently living inside. The genuinely
+low-value block is the Jan 12–14 implementation record, not the vision material.</p>
+<p><strong>Defaults encoded in the surface.</strong> Bare implementation records
+(<code>Committed:</code>, <code>Implemented</code>, <code>Added</code>) and
+feature-request goals default to drop, since git holds them verbatim. Decisions and
+options default to keep but are flagged <em>soft</em>, because that is exactly where
+the consequence filter has to be applied by hand. The seven nodes the v4 graph
+already cites are locked keeps — the graph cannot be left unable to resolve its own
+citations.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-30-unify-knowledge-graph-fix-harness.goal.html">the import cut, decided per node</a>
+  <a data-rel="supports" href="./2026-07-30-capture-cost-killed-rationale-systems.observation.html">the prior-art block it cites is itself the material under review</a>
+</knowledge-action>
+</body></html>
