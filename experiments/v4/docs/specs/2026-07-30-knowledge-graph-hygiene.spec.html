@@ -145,19 +145,42 @@ the hand-maintained metadata that #364 predicts will rot.</p>
 <p>Split what <code>status</code> conflates:</p>
 <ul>
   <li><strong>Belonging</strong> — which exploration a node is part of. Never
-  changes, can be multi-valued. <em>Declared</em>, as a topic tag.</li>
+  changes, can be multi-valued. <s><em>Declared</em>, as a topic tag.</s>
+  <strong>Revised 2026-07-30: expressed as edges, not tags.</strong> The date
+  prefix already encodes the chapter (v0 is 01-12 to 01-14, the vision work
+  01-24 to 01-25, the verify gate 07-13 to 07-15, v4 07-23 onward), so a tag
+  restates the filename as a hand-maintained second copy. Multi-membership is
+  already an edge — the case that justified tags, v0's query-interface decision
+  belonging both to v0 and to the v3 synthesis, is written down as #351 citing
+  #20. And declaring it contradicted this section's own citations of #325 and
+  #364. If chapters are ever wanted for reading history as narrative, that is a
+  chapter <em>node</em> with membership edges, reusing the mechanism below
+  rather than adding a second one.</li>
   <li><strong>Liveness</strong> — whether it still holds. Changes because of
   events outside the node. <em>Derived</em> from topology: one
   <code>v0-abandoned</code> node with edges to what it supersedes, and an audit
-  computes reachability.</li>
+  computes reachability. Unchanged.</li>
 </ul>
+<p><strong>The import rule that follows, and it is a requirement rather than a
+filter:</strong> a deciduous node is imported only if it can be linked to
+material already present. Relevance stops being a per-node judgment and becomes a
+property of the topology. #20 arrives because #351 cites it; #43 (package manager
+→ pnpm) does not, because nothing refers to it and nothing would. Most of the v0
+implementation history fails to link and therefore never arrives — so the
+clutter tags would have hidden does not get created. This is the standard
+<code>orphans-except-goal</code> already applies to new nodes, applied to
+imported ones. See
+<a href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do not
+tag</a>.</p>
 <p>Subdirectories are rejected despite the navigability gain. They cost a
 rewrite of every <code>./&lt;node&gt;.html</code>, <code>../theme.css</code>
 and <code>../templates/</code> reference across roughly 320 files; they break
 inbound links whenever a node moves; and they force exclusive membership, when
 v0's query-interface decision belongs both to v0 and to the v3 synthesis that
-leans on it. A directory hard-codes one grouping; tags let every grouping be
-derived, including a generated index. Grouping is a query, not a mkdir.</p>
+leans on it. A directory hard-codes one grouping; edges let every grouping be
+derived, including a generated index. Grouping is a query, not a mkdir — and
+after the 2026-07-30 revision above, the query runs over edges rather than over
+a tag vocabulary that would have needed its own discipline.</p>
 <p>The migration cut criterion: <strong>keep what git cannot tell you</strong>
 — evidence, rejection, reversal. Git already records what changed, when, and a
 one-line why; it cannot record what was rejected, what turned out wrong, or
@@ -211,17 +234,22 @@ Inline citations such as #270 and #349 become <code>data-rel</code> edges.</p>
   every documented signature. (3) Trigger on context-loss (PreCompact, SessionEnd)
   rather than on a clock. (4) A plan-step check asserting a task recorded
   something. Layers 1 and 2 are incentive fixes and come first; 3 and 4 are
-  guardrails for when that is not enough. Layer 4 is deferred until the tag axis
-  and the import cut settle. See
-  <code>fix-incentives-before-guardrails.decision.html</code>.</li>
-  <li><strong>Still open. What axis do topic tags run on?</strong> Sharpened: the
-  two candidates are not peers. Chapter (v0, v3-verify-gate, v4-templates) is
-  <em>load-bearing</em> — Part 3 derives liveness from topology, and a
-  <code>v0-abandoned</code> node with edges to what it supersedes only works if
-  chapter membership is declared. Theme (verification, derivation, templates) is
-  additive: it connects the July material to the 2026-07-27 batch, but no
-  mechanism depends on it. So chapter ships; theme waits until something needs
-  it.</li>
+  guardrails for when that is not enough. Layer 4 is deferred until the import
+  cut settles — no longer until the tag axis settles, since tags were dropped.
+  See <code>fix-incentives-before-guardrails.decision.html</code>.</li>
+  <li><strong>Closed 2026-07-30 by dropping the premise. What axis do topic tags
+  run on?</strong> Neither — there are no tags. The question was on its way to
+  "chapter is load-bearing, theme is additive" when the prior worry it existed to
+  serve turned out to be better answered without tags at all. Tags were a way to
+  <em>hide</em> imported material that did not belong; requiring every imported
+  node to link to something present means it is never created. The date prefix
+  already carries the chapter, multi-membership was already an edge, and
+  declaring belonging contradicted the same section's citation of #364. Recorded
+  in
+  <a href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do not
+  tag</a>, which contradicts the tag half of
+  <code>declare-belonging-derive-liveness</code> and leaves the liveness half
+  standing.</li>
   <li><strong>Answered 2026-07-30, and it replaces the ~183 estimate.</strong>
   The cut is decided per node by reading all 400, not by applying the criterion
   mechanically. Reading them produced two corrections to this spec. <em>First,
