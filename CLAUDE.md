@@ -10,10 +10,33 @@ As of 2026-07-23 this project's decision graph is written as HTML nodes under
 (the SQLite-backed CLI) for all new logging, project-wide, not just
 v4-related work — even though v4 itself is still nominally "the experiment,"
 there's nowhere better for this to live yet. `deciduous`'s existing ~400
-nodes (v0 through 2026-07-23) are **frozen, not migrated**: still real
-history, still queryable read-only via the `deciduous` CLI, just no longer
-where new work gets logged. Full reasoning:
+nodes (v0 through 2026-07-23) are **frozen**: still real history, still
+queryable read-only via the `deciduous` CLI, just no longer where new work
+gets logged. Full reasoning:
 `experiments/v4/docs/specs/2026-07-23-deciduous-template-series.spec.html`.
+
+**60 of those 400 were imported on 2026-07-30**, by one rule: a node comes in
+only if it can be linked to material already here. See
+`experiments/v4/docs/knowledge/2026-07-30-link-do-not-tag.decision.html`.
+Imported nodes keep their original date in the filename — that prefix is what
+records which exploration a node belongs to, which is why `add` grew a
+`--date` flag and why you should leave it alone when authoring.
+
+### CRITICAL: how to cite a deciduous node
+
+Two forms, and the difference is load-bearing:
+
+| Form | Means |
+|---|---|
+| `<a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a>` | **imported** — the node is in the graph, the link resolves, you can click it |
+| a bare `#311` with no link | **not imported** — a reference into the frozen SQLite log, only resolvable via the `deciduous` CLI |
+
+Never write a bare `#N` for a node that *is* in the graph. `#N` is a foreign
+key into a dead database; once a node is imported it has a real address, and a
+link is checkable where a number is not. Writing the href also forces you to
+open the target, which is the step that catches a wrong reference — two of
+twenty citations pointed at the wrong node before anyone checked
+(`2026-07-30-two-of-twenty-citations-were-hollow.observation.html`).
 
 **Use the CLI to log, don't hand-author.** As of this same day, all three of
 `mycelium run`'s knowledge commands exist and are tested working:

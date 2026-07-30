@@ -730,6 +730,25 @@
   }
 
   /**
+   * Remove a data-rel edge from one node to another.
+   *
+   *   mycelium run knowledge unlink <from-file> <to-file> --rel <rel>
+   *
+   * The inverse of `link`. Without it an edge could be created and its
+   * label corrected but never taken back, so a typo in --rel left a
+   * permanently wrong edge that only a hand edit could clear. Throws if
+   * no such edge exists, rather than silently doing nothing.
+   */
+  export function unlink({ fs, args }) {
+    requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
+    const doc = fs.get(`knowledge/${args._[0]}`)
+    const root = doc.querySelector('[data-conforms-to]')
+    const a = root.querySelector(`a[data-rel="${args.rel}"][href="${args.href}"]`)
+    if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
+    a.remove()
+  }
+
+  /**
    * Update fields on an existing knowledge-<type> node file.
    *
    *   mycelium run knowledge update <file> [--title "…"] [--confidence NN]

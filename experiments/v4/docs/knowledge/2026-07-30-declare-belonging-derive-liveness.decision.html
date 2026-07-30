@@ -12,7 +12,7 @@
   <knowledge-confidence>80</knowledge-confidence>
   <knowledge-status>active</knowledge-status>
   <knowledge-detail><p>A status enum assumes linear history with a single endpoint. What deciduous
-<strong>#310</strong> calls the missing retirement concept is not a property of
+<strong><a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html"><a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">#310</a></a></strong> calls the missing retirement concept is not a property of
 each node: v0's decisions are dormant because the v0 exploration was abandoned —
 one fact denormalized across 200 nodes, and the next abandonment costs another
 200 stamps.</p>
@@ -21,17 +21,17 @@ node is part of) never changes and can be multi-valued.
 <strong>Liveness</strong> (whether it still holds) changes because of events
 outside the node, so it is derived from topology: one <code>v0-abandoned</code>
 node with edges to what it supersedes, and an audit computes reachability.</p>
-<p>Grounded in the project's own record — <strong>#311</strong>: <em>Composition
+<p>Grounded in the project's own record — <strong><a href="./2026-07-13-status-derived-not-declared.observation.html"><a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a></a></strong>: <em>Composition
 makes decision status DERIVED, not declared… don't store it, derive it from the
 layer below. Solves metadata maintenance by eliminating the metadata.</em> And
-#364: <em>Because it is derived it can be RECOMPUTED, which means IT CANNOT
+<a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html"><a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">#364</a></a>: <em>Because it is derived it can be RECOMPUTED, which means IT CANNOT
 ROT.</em></p>
 <p><strong>Citations corrected 2026-07-30.</strong> This node originally cited
 #5 for the retirement concept and #325 for the derived-status quote. Both were
 wrong. #5 is "Hybrid — Rust core with TS interface", an option about
 implementation language; #325 is "ONE LADDER", about v2's gradient and v3's waist
-being the same structure. The claims are sound and the correct sources are #310
-and #311 — the quoted sentence is verbatim #311 — but the pointers were not.
+being the same structure. The claims are sound and the correct sources are <a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html"><a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">#310</a></a>
+and <a href="./2026-07-13-status-derived-not-declared.observation.html"><a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a></a> — the quoted sentence is verbatim <a href="./2026-07-13-status-derived-not-declared.observation.html"><a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a></a> — but the pointers were not.
 Found by reading the targets while computing the import closure. See
 <a href="./2026-07-30-two-of-twenty-citations-were-hollow.observation.html">two of
 twenty citations were hollow</a>.</p>
