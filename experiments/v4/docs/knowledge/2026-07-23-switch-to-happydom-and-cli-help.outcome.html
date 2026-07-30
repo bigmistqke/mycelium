@@ -2,14 +2,21 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Outcome: Switched run.ts and crawl.ts from linkedom to happy-dom, added JSDoc-based --help discovery to the CLI, and fixed a workspace-wide pnpm build-approval regression the dependency swap surfaced</title>
+<title>Outcome: Switched from linkedom to happy-dom and added JSDoc-based --help discovery</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-outcome data-conforms-to="../templates/knowledge.template.html#knowledge-outcome">
-  <knowledge-title>Switched run.ts and crawl.ts from linkedom to happy-dom, added JSDoc-based --help discovery to the CLI, and fixed a workspace-wide pnpm build-approval regression the dependency swap surfaced</knowledge-title>
+  <knowledge-title>Switched from linkedom to happy-dom and added JSDoc-based --help discovery</knowledge-title>
   <knowledge-confidence>85</knowledge-confidence>
   <a data-rel="leads_to" href="./2026-07-23-linkedom-title-escaping-bug.observation.html">closes the underlying gap instead of leaving a patch for just the one instance found</a>
+  <knowledge-detail><p>Three changes landed together:</p>
+<ul>
+  <li><code>run.ts</code> and <code>crawl.ts</code> switched from linkedom to happy-dom.</li>
+  <li>JSDoc-based <code>--help</code> discovery added to the CLI.</li>
+  <li>A workspace-wide pnpm build-approval regression, surfaced by the dependency swap, was fixed.</li>
+</ul>
+</knowledge-detail>
 </knowledge-outcome>
 </body></html>

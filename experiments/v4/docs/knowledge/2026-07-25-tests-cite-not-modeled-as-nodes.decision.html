@@ -2,15 +2,18 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Decision: Tests get no HTML template of their own in a hypothetical derivation-* family — the checker reads @spec JSDoc citations straight from real .ts test source instead, treating tests as citation targets rather than nodes, the same way a git commit is a knowledge-commit field rather than a re-hosted node</title>
+<title>Decision: Tests are citation targets, not nodes in a hypothetical derivation-* family</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
-  <knowledge-title>Tests get no HTML template of their own in a hypothetical derivation-* family — the checker reads @spec JSDoc citations straight from real .ts test source instead, treating tests as citation targets rather than nodes, the same way a git commit is a knowledge-commit field rather than a re-hosted node</knowledge-title>
+  <knowledge-title>Tests are citation targets, not nodes in a hypothetical derivation-* family</knowledge-title>
   <knowledge-confidence>70</knowledge-confidence>
   <knowledge-status>pending</knowledge-status>
   <a data-rel="depends_on" href="./2026-07-25-v4-for-rg-derivation-methodology.goal.html">a design choice within the explored derivation-* family</a>
+  <knowledge-detail><p>Tests get no HTML template of their own in a hypothetical <code>derivation-*</code> family. The checker reads <code>@spec</code> JSDoc citations straight from real <code>.ts</code> test source instead.</p>
+<p>This treats tests as <strong>citation targets rather than nodes</strong> — the same way a git commit is a <code>knowledge-commit</code> field rather than a re-hosted node.</p>
+</knowledge-detail>
 </knowledge-decision>
 </body></html>

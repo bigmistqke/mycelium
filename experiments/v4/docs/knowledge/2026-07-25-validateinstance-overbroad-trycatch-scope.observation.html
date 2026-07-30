@@ -2,15 +2,19 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Observation: utils.ts's validateInstance wraps both loadGenericValidator's load and validateFromTemplate's invocation in one try/catch, so an exception the generic validator throws while checking a specific instance is silently treated as generic-unavailable rather than a loud failure, unlike validate.ts's correctly narrow-scoped equivalent</title>
+<title>Observation: utils.ts's validateInstance has an overbroad try/catch that swallows validator exceptions</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
-  <knowledge-title>utils.ts's validateInstance wraps both loadGenericValidator's load and validateFromTemplate's invocation in one try/catch, so an exception the generic validator throws while checking a specific instance is silently treated as generic-unavailable rather than a loud failure, unlike validate.ts's correctly narrow-scoped equivalent</knowledge-title>
+  <knowledge-title>utils.ts's validateInstance has an overbroad try/catch that swallows validator exceptions</knowledge-title>
   <knowledge-confidence>60</knowledge-confidence>
-  <knowledge-detail>Found during the final-review fix wave's re-review, in src/utils.ts's validateInstance (post 2026-07-25 fix commit e8bcfc8). Not live against any content in this repo today -- would require the generic validator to throw on an already-migrated, already-passing real &lt;template&gt;, which none of the seven real types can trigger, and it doesn't affect the whole-corpus pnpm validate gate (validate.ts's own try/catch is scoped correctly). Parked rather than blocking the template-schema plan's merge. Cheap fix: narrow utils.ts's try block to wrap only the loadGenericValidator(docsDir) call, matching validate.ts's pattern, so an exception from the check itself still falls through to the outer catch's 'validation setup failed' message.</knowledge-detail>
+  <knowledge-detail><p><code>utils.ts</code>'s <code>validateInstance</code> wraps both <code>loadGenericValidator</code>'s load and <code>validateFromTemplate</code>'s invocation in one <code>try</code>/<code>catch</code>, so an exception the generic validator throws while checking a specific instance is silently treated as generic-unavailable rather than a loud failure — unlike <code>validate.ts</code>'s correctly narrow-scoped equivalent.</p>
+<p>Found during the final-review fix wave's re-review, in <code>src/utils.ts</code>'s <code>validateInstance</code> (post 2026-07-25 fix commit <code>e8bcfc8</code>).</p>
+<p>Not live against any content in this repo today — it would require the generic validator to throw on an already-migrated, already-passing real <code>&lt;template&gt;</code>, which none of the seven real types can trigger, and it doesn't affect the whole-corpus <code>pnpm validate</code> gate (<code>validate.ts</code>'s own try/catch is scoped correctly). Parked rather than blocking the template-schema plan's merge.</p>
+<p>Cheap fix: narrow <code>utils.ts</code>'s try block to wrap only the <code>loadGenericValidator(docsDir)</code> call, matching <code>validate.ts</code>'s pattern, so an exception from the check itself still falls through to the outer catch's "validation setup failed" message.</p>
+</knowledge-detail>
   <a data-rel="supports" href="./2026-07-25-template-schema-final-review.action.html">parked finding from this action's re-review</a>
 </knowledge-observation>
 </body></html>

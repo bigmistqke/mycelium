@@ -745,6 +745,16 @@
       }
     }
 
+    // add builds the head <title> as "Type: <title>"; update has to keep it in
+    // step or renaming a node silently desyncs the two.
+    if (args.title) {
+      const typeLabel = root.tagName.toLowerCase().replace('knowledge-', '')
+      const headTitle = doc.querySelector('title')
+      if (headTitle) {
+        headTitle.textContent = `${typeLabel.charAt(0).toUpperCase()}${typeLabel.slice(1)}: ${args.title}`
+      }
+    }
+
     field('knowledge-title', args.title)
     field('knowledge-confidence', args.confidence)
     field('knowledge-status', args.status)

@@ -2,14 +2,17 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Outcome: Cross-script imports work via Node's module-customization hooks (node:module register), not data: URLs — verified end to end, and todayDate's duplication across knowledge/spec command scripts is gone</title>
+<title>Outcome: Cross-script imports work via Node's module-customization hooks, not data: URLs</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-outcome data-conforms-to="../templates/knowledge.template.html#knowledge-outcome">
-  <knowledge-title>Cross-script imports work via Node's module-customization hooks (node:module register), not data: URLs — verified end to end, and todayDate's duplication across knowledge/spec command scripts is gone</knowledge-title>
+  <knowledge-title>Cross-script imports work via Node's module-customization hooks, not data: URLs</knowledge-title>
   <knowledge-confidence>85</knowledge-confidence>
   <knowledge-files>experiments/v4/src/script-hooks.ts, experiments/v4/src/utils.ts, experiments/v4/src/run.ts, experiments/v4/src/validate.ts, experiments/v4/docs/templates/shared.ts, experiments/v4/docs/templates/spec.template.html, experiments/v4/docs/templates/knowledge.template.html</knowledge-files>
+  <knowledge-detail><p>Cross-script imports work via Node's module-customization hooks (<code>node:module</code> <code>register</code>), not <code>data:</code> URLs — verified end to end.</p>
+<p><code>todayDate</code>'s duplication across the knowledge and spec command scripts is gone.</p>
+</knowledge-detail>
 </knowledge-outcome>
 </body></html>

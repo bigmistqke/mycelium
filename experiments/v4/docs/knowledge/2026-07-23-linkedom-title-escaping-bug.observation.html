@@ -2,13 +2,24 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Observation: linkedom does not escape a &lt;title&gt; element's text content when serializing outerHTML, even though .textContent stores it correctly - verified by round-tripping a literal &lt;/title&gt;&lt;script&gt; sequence through it and watching it inject real markup. Fixed in knowledge.template.html's add command by pre-escaping before assignment, since real custom elements like knowledge-title do not have this gap, only the RCDATA title element does</title>
+<title>Observation: linkedom does not escape a title element when serializing outerHTML</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
-  <knowledge-title>linkedom does not escape a &lt;title&gt; element's text content when serializing outerHTML, even though .textContent stores it correctly - verified by round-tripping a literal &lt;/title&gt;&lt;script&gt; sequence through it and watching it inject real markup. Fixed in knowledge.template.html's add command by pre-escaping before assignment, since real custom elements like knowledge-title do not have this gap, only the RCDATA title element does</knowledge-title>
+  <knowledge-title>linkedom does not escape a title element when serializing outerHTML</knowledge-title>
   <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-detail><p><code>.textContent</code> stores the value correctly, but
+<code>outerHTML</code> serializes it unescaped. Verified by round-tripping a
+literal <code>&lt;/title&gt;&lt;script&gt;</code> sequence through it and
+watching it inject real markup.</p>
+<p>Fixed in <code>knowledge.template.html</code>'s <code>add</code> command by
+pre-escaping before assignment.</p>
+<p>Scope of the bug: real custom elements such as <code>knowledge-title</code> do
+not have this gap. Only the RCDATA <code>&lt;title&gt;</code> element does, so
+the fix belongs at that one assignment rather than anywhere a title is
+handled.</p>
+</knowledge-detail>
 </knowledge-observation>
 </body></html>

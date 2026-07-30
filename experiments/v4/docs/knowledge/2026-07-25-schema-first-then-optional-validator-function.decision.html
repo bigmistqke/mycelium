@@ -2,15 +2,18 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Decision: Generic schema check runs first (required/pattern/enum/allowed-fields off the template); a hand-written validator-function becomes optional, additive validation only for logic the schema vocabulary can't express</title>
+<title>Decision: Generic schema check runs first; hand-written validator functions become optional</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
-  <knowledge-title>Generic schema check runs first (required/pattern/enum/allowed-fields off the template); a hand-written validator-function becomes optional, additive validation only for logic the schema vocabulary can't express</knowledge-title>
+  <knowledge-title>Generic schema check runs first; hand-written validator functions become optional</knowledge-title>
   <knowledge-confidence>70</knowledge-confidence>
   <knowledge-status>completed</knowledge-status>
-  <knowledge-detail>Reviewing all seven current check() functions (six knowledge-* types + spec-doc): every rule in every one of them — required fields, confidence's 0-100 range, status's enum, the "optional field present but empty" rule, the unexpected-extra-tag check — is already expressible via required/pattern/enum plus the field list itself. So in practice this resolves to full replace: all seven hand-written functions are deleted once their templates carry the equivalent attributes. Nothing is lost by construction, not by policy — a future type that genuinely needs logic beyond the schema vocabulary can still add a data-validates script, which the crawler would then run in addition to (not instead of) the generic check.</knowledge-detail>
+  <knowledge-detail><p>The generic schema check runs first — required/pattern/enum/allowed-fields read off the template. A hand-written validator-function becomes optional, additive validation only, for logic the schema vocabulary can't express.</p>
+<p>Reviewing all seven current <code>check()</code> functions (six <code>knowledge-*</code> types + spec-doc): every rule in every one of them — required fields, confidence's 0-100 range, status's enum, the "optional field present but empty" rule, the unexpected-extra-tag check — is already expressible via required/pattern/enum plus the field list itself. So in practice this resolves to full replace: all seven hand-written functions are deleted once their templates carry the equivalent attributes.</p>
+<p>Nothing is lost by construction, not by policy — a future type that genuinely needs logic beyond the schema vocabulary can still add a <code>data-validates</code> script, which the crawler would then run in addition to (not instead of) the generic check.</p>
+</knowledge-detail>
 </knowledge-decision>
 </body></html>

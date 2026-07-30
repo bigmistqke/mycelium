@@ -137,12 +137,12 @@
   </plan-task>
   <plan-task id="task-6" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Repair the 52 flagged nodes and close the gate green</plan-title>
-    <plan-status>pending</plan-status>
+    <plan-status>completed</plan-status>
     <plan-files>docs/knowledge/*.html</plan-files>
     <plan-interfaces>Repair only — every node keeps its identity, its edges and its filename. Nothing is deleted here; pruning the graph is a separate later pass. Edits go through mycelium knowledge update, not by hand.</plan-interfaces>
     <plan-step id="task-6-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Move over-long titles into detail</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>47 nodes carry a title past 140 characters, spread across the whole graph rather than one batch: 11 from 07-23, 4 from 07-24, 24 from 07-25, 8 from 07-27. The repair is the same each time — the title becomes a real title, and the paragraph it was carrying moves into knowledge-detail, which is where it belonged and where the field has existed since 4738449. This is the repair that only works because the finding is still legible in the title; it is transcription, not reconstruction.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>sh -c 'test "$(node src/run.ts knowledge list nodes | awk -F"\t" "length(\$4)&gt;140" | wc -l)" -eq 0'</plan-check-command>
@@ -150,7 +150,7 @@
     </plan-step>
     <plan-step id="task-6-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Fill or justify the 14 hollow actions</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>14 of 65 action nodes carry neither a detail nor a commit hash, so they assert that work happened without saying what it was or pointing at the diff. Where the commit exists, attach it with knowledge update --commit. Where the action spanned several commits, CLAUDE.md's own rule says omit the hash and write the detail instead. Both routes use material that exists; neither requires inventing history.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>sh -c 'n=0; for f in docs/knowledge/*.action.html; do grep -q "&lt;knowledge-detail&gt;" "$f" || grep -q "&lt;knowledge-commit&gt;" "$f" || n=$((n+1)); done; test "$n" -eq 0'</plan-check-command>
@@ -158,7 +158,7 @@
     </plan-step>
     <plan-step id="task-6-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Validate green with the audits failing the build</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>The terminal state of the whole pass. Both audits are live and both fail the build, and the graph satisfies them — so the gate is real rather than permanently red. Until this step passes, task-3's audits are shipped in a state where the only way to get work done is to bypass them, which is the failure this plan exists to prevent. The check asserts both audits are present before asserting green, because a bare validate would pass trivially while they do not yet exist.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>sh -c 'grep -q "data-audits=.title-length." docs/templates/knowledge.template.html &amp;&amp; grep -q "data-audits=.hollow-action." docs/templates/knowledge.template.html &amp;&amp; pnpm validate'</plan-check-command>

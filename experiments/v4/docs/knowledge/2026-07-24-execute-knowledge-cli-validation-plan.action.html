@@ -14,5 +14,18 @@
   <a data-rel="depends_on" href="./2026-07-24-knowledge-cli-validation.goal.html">carries out the plan this goal's design led to</a>
   <knowledge-branch>main</knowledge-branch>
   <a data-rel="leads_to" href="./2026-07-24-knowledge-cli-validation-executed.outcome.html">all 4 tasks landed, each individually reviewed clean; final whole-branch review found 0 Critical/Important, ready to merge</a>
+  <knowledge-detail><p>Five commits, which is why this node carries no single
+<code>knowledge-commit</code>:</p>
+<ul>
+  <li><code>015dd91</code> — move <code>resolveTemplateRef</code> into <code>fs-helpers.ts</code>, add <code>validateInstance</code></li>
+  <li><code>0d2240e</code> — wrap template read and parse in try/catch for <code>validateInstance</code></li>
+  <li><code>fdd0d73</code> — wire a <code>validate</code> argument through <code>run.ts</code>, catch errors cleanly</li>
+  <li><code>7d2941e</code> — validate in <code>add</code> and <code>update</code> before writing</li>
+  <li><code>edddd79</code> — close out the plan execution</li>
+</ul>
+<p>The load-bearing choice is <em>validate before writing</em>: a node that fails
+its own type's validator is rejected and nothing reaches disk, so the CLI cannot
+produce a file the crawler will later reject.</p>
+</knowledge-detail>
 </knowledge-action>
 </body></html>

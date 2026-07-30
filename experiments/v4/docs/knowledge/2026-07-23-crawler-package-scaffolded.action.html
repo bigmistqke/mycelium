@@ -2,14 +2,13 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Action: scaffold the crawler package</title>
+<title>Action: Scaffold @mycelium/v4: move docs under experiments/v4/docs/, join the pnpm workspace</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
-  <knowledge-title>Move DESIGN.html, theme.css, templates/, specs/, and knowledge/ into experiments/v4/docs/;
-    add experiments/v4/package.json (@mycelium/v4, linkedom) and src/, joining the pnpm workspace</knowledge-title>
+  <knowledge-title>Scaffold @mycelium/v4: move docs under experiments/v4/docs/, join the pnpm workspace</knowledge-title>
   <knowledge-confidence>88</knowledge-confidence>
   <knowledge-status>completed</knowledge-status>
   <knowledge-branch>main</knowledge-branch>
@@ -17,6 +16,9 @@
     implements</a>
   <a data-rel="leads_to" href="./2026-07-23-build-shared-runtime.action.html">led to building the shared runtime,
     the crawler's first real piece</a>
+  <knowledge-detail><p>Moved <code>DESIGN.html</code>, <code>theme.css</code>, <code>templates/</code>, <code>specs/</code> and <code>knowledge/</code> into <code>experiments/v4/docs/</code>.</p>
+<p>Added <code>experiments/v4/package.json</code> (<code>@mycelium/v4</code>, depending on <code>linkedom</code>) and <code>src/</code>, joining the pnpm workspace.</p>
+</knowledge-detail>
 </knowledge-action>
 <p>
   The move was a single wholesale directory rename — everything inside it links relative to its own

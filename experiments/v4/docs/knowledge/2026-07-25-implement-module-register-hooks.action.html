@@ -2,18 +2,20 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Action: Implement Node module-customization hooks (resolve/load via node:module's register()) for cross-script-block imports, and update the virtual-module spec-doc to match the validated mechanism</title>
+<title>Action: Implement Node module-customization hooks for cross-script-block imports</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
-  <knowledge-title>Implement Node module-customization hooks (resolve/load via node:module's register()) for cross-script-block imports, and update the virtual-module spec-doc to match the validated mechanism</knowledge-title>
+  <knowledge-title>Implement Node module-customization hooks for cross-script-block imports</knowledge-title>
   <knowledge-confidence>70</knowledge-confidence>
   <knowledge-status>active</knowledge-status>
   <a data-rel="depends_on" href="./2026-07-25-virtual-module-extraction-not-concatenation.decision.html">implements the sharing mechanism this decision chose, now validated as Node's module-customization hooks rather than a data: URL</a>
   <a data-rel="leads_to" href="./2026-07-25-cross-script-imports-shipped.outcome.html">shipped</a>
   <knowledge-commit>5e9f6fc</knowledge-commit>
   <knowledge-branch>main</knowledge-branch>
+  <knowledge-detail><p>Implement Node module-customization hooks — <code>resolve</code>/<code>load</code>, registered via <code>node:module</code>'s <code>register()</code> — for cross-script-block imports, and update the virtual-module spec-doc to match the validated mechanism.</p>
+</knowledge-detail>
 </knowledge-action>
 </body></html>

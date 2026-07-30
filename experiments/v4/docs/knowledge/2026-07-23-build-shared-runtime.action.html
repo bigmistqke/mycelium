@@ -2,14 +2,13 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Action: build the shared runtime</title>
+<title>Action: Extract loadCheck into a shared src/runtime.js as a real ES module</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
-  <knowledge-title>Extract loadCheck (the data: URL script-execution trick) into a shared src/runtime.js,
-    imported by both the crawler and the browser-facing live demos as a real ES module</knowledge-title>
+  <knowledge-title>Extract loadCheck into a shared src/runtime.js as a real ES module</knowledge-title>
   <knowledge-confidence>85</knowledge-confidence>
   <knowledge-status>completed</knowledge-status>
   <knowledge-branch>main</knowledge-branch>
@@ -17,6 +16,8 @@
     itself existed and duplicated the same logic a live demo already had</a>
   <a data-rel="leads_to" href="./2026-07-23-crawler-built.outcome.html">led to the crawler running for real against
     the actual docs/ corpus</a>
+  <knowledge-detail><p>Extracts <code>loadCheck</code> — the <code>data:</code> URL script-execution trick — into a shared <code>src/runtime.js</code>, imported by both the crawler and the browser-facing live demos as a real ES module.</p>
+</knowledge-detail>
 </knowledge-action>
 <p>
   Preceded by real spikes, not just discussion: confirmed classic (non-module) scripts and <code>data:</code>
