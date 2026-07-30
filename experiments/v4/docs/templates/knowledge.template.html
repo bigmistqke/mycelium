@@ -704,16 +704,28 @@
    * <a data-rel="<rel>" href="<relative path to to-file>">label</a>
    * to <from-file>, right before its closing tag. Both <from-file> and
    * <to-file> must already exist.
+   *
+   * Upserts on (rel, href): re-linking the same pair with the same rel
+   * rewrites that edge's label instead of appending a second copy, so
+   * the command is idempotent and a label can be corrected without
+   * hand-editing. A different rel between the same two nodes is a
+   * different edge and is added alongside.
    */
   export function link({ fs, args }) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
     fs.get(`knowledge/${args._[1]}`)
     const doc = fs.get(`knowledge/${args._[0]}`)
     const root = doc.querySelector('[data-conforms-to]')
+    const label = args.label ?? args._[2] ?? ''
+    const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${args.href}"]`)
+    if (existing) {
+      existing.textContent = label
+      return
+    }
     const a = doc.createElement('a')
     a.setAttribute('data-rel', args.rel)
     a.setAttribute('href', args.href)
-    a.textContent = args.label ?? args._[2] ?? ''
+    a.textContent = label
     root.appendChild(a)
   }
 
