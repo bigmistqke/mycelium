@@ -25,11 +25,13 @@
 <pre><code>import { readdirSync, statSync } from "node:fs"
 import { join } from "node:path"
 import { Window } from "happy-dom"
+
 export function parseHTML(html: string): { document: Document } {
   const window = new Window()
   window.document.write(html)
   return { document: window.document as unknown as Document }
 }
+
 export function walkHtmlFiles(dir: string): string[] {
   const results: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -45,11 +47,13 @@ export function walkHtmlFiles(dir: string): string[] {
 import { dirname, join, resolve as resolvePath } from "node:path"
 import { Window } from "happy-dom"
 import "./runtime.js"
+
 export function parseHTML(html: string): { document: Document } {
   const window = new Window()
   window.document.write(html)
   return { document: window.document as unknown as Document }
 }
+
 export function walkHtmlFiles(dir: string): string[] {
   const results: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -60,6 +64,7 @@ export function walkHtmlFiles(dir: string): string[] {
   }
   return results
 }
+
 // Given an instance's own file and its data-conforms-to value (a path
 // relative to that file, plus a #fragment naming the type), resolves to
 // "&lt;absolute template file path&gt;#&lt;fragment&gt;" — the same key both the
@@ -70,6 +75,7 @@ export function resolveTemplateRef(instanceFile: string, conformsTo: string): st
   const templateFile = resolvePath(dirname(instanceFile), relPath)
   return `${templateFile}#${fragId}`
 }
+
 // Validates one element against its own declared type, for callers (like
 // run.ts's authoring commands) that only ever need to check a single node
 // they just built or mutated — not validate.ts's whole-corpus batch pass.
@@ -83,14 +89,18 @@ export async function validateInstance(
 ): Promise&lt;{ ok: boolean; errors: string[] }&gt; {
   const conformsTo = element.getAttribute("data-conforms-to")
   if (!conformsTo) return { ok: false, errors: ["missing data-conforms-to attribute"] }
+
   const instanceFile = resolvePath(docsDir, instancePath)
   const key = resolveTemplateRef(instanceFile, conformsTo)
   const [templateFile, fragId] = key.split("#")
+
   const { document } = parseHTML(readFileSync(templateFile, "utf8"))
   const scriptSource = (document as unknown as Document)
     .querySelector(`script[data-validates="#${fragId}"]`)
     ?.textContent
+
   if (!scriptSource) return { ok: false, errors: [`no template found at ${key}`] }
+
   try {
     const check = await globalThis.mycelium.loadCheck(scriptSource)
     const result = check(element) as { ok: boolean; errors?: string[]; violations?: string[] }
@@ -132,11 +142,13 @@ import "./runtime.js"</code></pre>
   }
   return instances
 }
+
 function resolveTemplateRef(instanceFile: string, conformsTo: string): string {
   const [relPath, fragId] = conformsTo.split("#")
   const templateFile = resolvePath(dirname(instanceFile), relPath)
   return `${templateFile}#${fragId}`
 }
+
 async function main() {</code></pre>
 <p>Replace with:</p>
 <pre><code>function discoverInstances(documents: ParsedDoc[]): Instance[] {
@@ -148,6 +160,7 @@ async function main() {</code></pre>
   }
   return instances
 }
+
 async function main() {</code></pre>
 </plan-detail>
     </plan-step>
@@ -171,6 +184,7 @@ node -e "import('./src/fs-helpers.ts').then(m =&gt; console.log(Object.keys(m)))
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/src/fs-helpers.ts experiments/v4/src/validate.ts
 git commit -m "experiment(v4): move resolveTemplateRef into fs-helpers.ts, add validateInstance
+
 resolveTemplateRef was validate.ts's own private helper for resolving a
 data-conforms-to reference to its template file and fragment id --
 exactly the lookup a single-node validation needs too. Moved it,
@@ -195,6 +209,7 @@ import { join, dirname, relative as relativePath, resolve as resolvePath } from 
 import { parse } from "acorn"
 import { parseHTML, walkHtmlFiles } from "./fs-helpers.ts"
 import "./runtime.js"
+
 const { loadModule } = globalThis.mycelium</code></pre>
 <p>Replace with:</p>
 <pre><code>import { readFileSync, writeFileSync, unlinkSync } from "node:fs"
@@ -202,7 +217,9 @@ import { join, dirname, relative as relativePath, resolve as resolvePath } from 
 import { parse } from "acorn"
 import { parseHTML, walkHtmlFiles, validateInstance } from "./fs-helpers.ts"
 import "./runtime.js"
+
 const { loadModule } = globalThis.mycelium
+
 type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boolean; errors: string[] }&gt;</code></pre>
 </plan-detail>
     </plan-step>
@@ -216,7 +233,9 @@ type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boo
     printHelp(id, templateLabel, mod, source)
     process.exit(1)
   }
+
   const args = parseArgs(rest)
+
   // Generic path math for link-style commands: if two file arguments were
   // given (`link &lt;from&gt; &lt;to&gt; …`), precompute the relative href between
   // them so the command never has to know where either file lives on disk.
@@ -224,6 +243,7 @@ type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boo
     const [from, to] = args._
     args.href = "./" + relativePath(dirname(resolvePath(docsDir, from)), resolvePath(docsDir, to))
   }
+
   const fs = new Filesystem(docsDir)
   await run(fs, args)
   fs.commit()
@@ -237,7 +257,9 @@ type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boo
     printHelp(id, templateLabel, mod, source)
     process.exit(1)
   }
+
   const args = parseArgs(rest)
+
   // Generic path math for link-style commands: if two file arguments were
   // given (`link &lt;from&gt; &lt;to&gt; …`), precompute the relative href between
   // them so the command never has to know where either file lives on disk.
@@ -245,7 +267,9 @@ type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boo
     const [from, to] = args._
     args.href = "./" + relativePath(dirname(resolvePath(docsDir, from)), resolvePath(docsDir, to))
   }
+
   const validate: Validate = (root, instancePath) =&gt; validateInstance(docsDir, instancePath, root)
+
   const fs = new Filesystem(docsDir)
   try {
     await run(fs, args, validate)
@@ -278,6 +302,7 @@ echo "exit: $?"</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/src/run.ts
 git commit -m "experiment(v4): wire a validate argument through run.ts, catch errors cleanly
+
 Every command function now receives (fs, args, validate) instead of
 just (fs, args) -- validate(root, instancePath) is a closure over
 docsDir backed by fs-helpers.ts's validateInstance, letting a command
@@ -300,11 +325,13 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
       <plan-detail><p>In <code>experiments/v4/docs/templates/knowledge.template.html</code>, find:</p>
 <pre><code>&lt;script type="mycelium/command"&gt;
   const REQUIRES_STATUS = ['goal', 'decision', 'action']
+
   /**
    * Create a new knowledge-&lt;type&gt; node file.</code></pre>
 <p>Replace with:</p>
 <pre><code>&lt;script type="mycelium/command"&gt;
   const REQUIRES_STATUS = ['goal', 'decision', 'action']
+
   // Throws a clean, specific error for the handful of arguments no
   // validator can ever catch (which file to write, which file to open,
   // whether --rel was given at all) — everything else is left to each
@@ -314,6 +341,7 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
       if (value === undefined) throw new Error(`missing required argument: ${label}`)
     }
   }
+
   /**
    * Create a new knowledge-&lt;type&gt; node file.</code></pre>
 </plan-detail>
@@ -339,13 +367,17 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
 &lt;link rel="stylesheet" href="../templates/knowledge.template.css"&gt;
 &lt;/head&gt;
 &lt;body&gt;
+
 &lt;knowledge-${type} data-conforms-to="../templates/knowledge.template.html#knowledge-${type}"&gt;
 &lt;/knowledge-${type}&gt;
+
 &lt;/body&gt;
 &lt;/html&gt;
 `)
+
     const pageTitle = `${type[0].toUpperCase()}${type.slice(1)}: ${args.title}`
     doc.querySelector('title').textContent = pageTitle
+
     const root = doc.querySelector(`knowledge-${type}`)
     const field = (tag, text) =&gt; {
       if (!text) return
@@ -353,6 +385,7 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
       el.textContent = text
       root.appendChild(el)
     }
+
     field('knowledge-title', args.title)
     field('knowledge-confidence', args.confidence ?? '70')
     if (REQUIRES_STATUS.includes(type)) field('knowledge-status', args.status ?? 'pending')
@@ -384,11 +417,14 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
 &lt;link rel="stylesheet" href="../templates/knowledge.template.css"&gt;
 &lt;/head&gt;
 &lt;body&gt;
+
 &lt;knowledge-${type} data-conforms-to="../templates/knowledge.template.html#knowledge-${type}"&gt;
 &lt;/knowledge-${type}&gt;
+
 &lt;/body&gt;
 &lt;/html&gt;
 `)
+
     // type is unchecked above, deliberately — String(type) keeps this line
     // from throwing when &lt;type&gt; was never passed at all (args._[0] is
     // undefined); an unrecognized or missing type is instead caught by
@@ -396,6 +432,7 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
     const typeLabel = String(type)
     const pageTitle = `${typeLabel.charAt(0).toUpperCase()}${typeLabel.slice(1)}: ${args.title}`
     doc.querySelector('title').textContent = pageTitle
+
     const root = doc.querySelector(`knowledge-${type}`)
     const field = (tag, text) =&gt; {
       if (!text) return
@@ -403,6 +440,7 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
       el.textContent = text
       root.appendChild(el)
     }
+
     field('knowledge-title', args.title)
     field('knowledge-confidence', args.confidence ?? '70')
     if (REQUIRES_STATUS.includes(type)) field('knowledge-status', args.status ?? 'pending')
@@ -410,6 +448,7 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
     field('knowledge-commit', args.commit)
     field('knowledge-files', args.files)
     field('knowledge-branch', args.branch)
+
     const result = await validate(root, path)
     if (!result.ok) throw new Error(result.errors.join('\n'))
   }</code></pre>
@@ -428,6 +467,7 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
   export function update(fs, args) {
     const doc = fs.get(`knowledge/${args._[0]}`)
     const root = doc.querySelector('[data-conforms-to]')
+
     const field = (tag, text) =&gt; {
       if (text === undefined) return
       const existing = root.querySelector(tag)
@@ -442,6 +482,7 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
         root.appendChild(el)
       }
     }
+
     field('knowledge-title', args.title)
     field('knowledge-confidence', args.confidence)
     field('knowledge-status', args.status)
@@ -465,6 +506,7 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
     const path = `knowledge/${args._[0]}`
     const doc = fs.get(path)
     const root = doc.querySelector('[data-conforms-to]')
+
     const field = (tag, text) =&gt; {
       if (text === undefined) return
       const existing = root.querySelector(tag)
@@ -479,6 +521,7 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
         root.appendChild(el)
       }
     }
+
     field('knowledge-title', args.title)
     field('knowledge-confidence', args.confidence)
     field('knowledge-status', args.status)
@@ -486,6 +529,7 @@ command script inlined as a data: URL) a crash produced before."</code></pre>
     field('knowledge-commit', args.commit)
     field('knowledge-files', args.files)
     field('knowledge-branch', args.branch)
+
     const result = await validate(root, path)
     if (!result.ok) throw new Error(result.errors.join('\n'))
   }</code></pre>
@@ -499,6 +543,7 @@ RUN="$(pwd)/experiments/v4/src/run.ts"
 VALIDATE="$(pwd)/experiments/v4/src/validate.ts"
 SCRATCH=$(mktemp -d)
 cp -r experiments/v4/docs "$SCRATCH/docs"
+
 (cd "$SCRATCH" &amp;&amp; node "$RUN" knowledge add observation --title "scratch test" --confidence 60 --file scratch-test)</code></pre>
 <p>Expected: <code>wrote    knowledge/scratch-test.observation.html</code>.</p>
 <pre><code>node "$VALIDATE" "$SCRATCH/docs"</code></pre>
@@ -556,6 +601,7 @@ pnpm validate</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/docs/templates/knowledge.template.html
 git commit -m "experiment(v4): add and update validate before writing
+
 Both commands now build/mutate their node exactly as before, then run
 it through validate() — the same real per-type validator pnpm validate
 already uses — before anything is written. A disallowed field, an
@@ -634,6 +680,7 @@ at. update requires its target &lt;file&gt;."</code></pre>
     // source lines; collapse embedded whitespace so each node/edge still
     // prints as exactly one line, matching this command's own contract.
     const oneLine = (text) =&gt; text.trim().replace(/\s+/g, ' ')
+
     if (kind === 'nodes') {
       for (const { path, doc } of documents) {
         const el = doc.querySelector('[data-conforms-to]')
@@ -646,6 +693,7 @@ at. update requires its target &lt;file&gt;."</code></pre>
       }
       return
     }
+
     if (kind === 'edges') {
       for (const { path, doc } of documents) {
         const el = doc.querySelector('[data-conforms-to]')
@@ -658,6 +706,7 @@ at. update requires its target &lt;file&gt;."</code></pre>
       }
       return
     }
+
     console.error(`unknown list kind "${kind}" — expected "nodes" or "edges"`)
   }</code></pre>
 <p>Replace with:</p>
@@ -682,6 +731,7 @@ at. update requires its target &lt;file&gt;."</code></pre>
     // source lines; collapse embedded whitespace so each node/edge still
     // prints as exactly one line, matching this command's own contract.
     const oneLine = (text) =&gt; text.trim().replace(/\s+/g, ' ')
+
     if (kind === 'nodes') {
       for (const { path, doc } of documents) {
         const el = doc.querySelector('[data-conforms-to]')
@@ -696,6 +746,7 @@ at. update requires its target &lt;file&gt;."</code></pre>
       }
       return
     }
+
     if (kind === 'edges') {
       for (const { path, doc } of documents) {
         const el = doc.querySelector('[data-conforms-to]')
@@ -708,6 +759,7 @@ at. update requires its target &lt;file&gt;."</code></pre>
       }
       return
     }
+
     throw new Error(`unknown list kind "${kind}" — expected "nodes" or "edges"`)
   }</code></pre>
 </plan-detail>
@@ -721,6 +773,7 @@ VALIDATE="$(pwd)/experiments/v4/src/validate.ts"
 SCRATCH=$(mktemp -d)
 cp -r experiments/v4/docs "$SCRATCH/docs"
 cp "$SCRATCH/docs/knowledge/build-v4.goal.html" /tmp/build-v4-before.html
+
 (cd "$SCRATCH" &amp;&amp; node "$RUN" knowledge link build-v4.goal.html html-as-store.decision.html 2&gt;&amp;1)
 echo "exit: $?"
 diff /tmp/build-v4-before.html "$SCRATCH/docs/knowledge/build-v4.goal.html"</code></pre>
@@ -773,6 +826,7 @@ pnpm validate</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/docs/templates/knowledge.template.html
 git commit -m "experiment(v4): link requires its arguments, confirms both files exist; list gets filters
+
 link now throws a clean error if &lt;from-file&gt;, &lt;to-file&gt;, or --rel is
 missing, instead of the --rel case silently writing a literal
 data-rel=\"undefined\" edge to disk (hit for real against this

@@ -25,11 +25,13 @@
 <pre><code>import { readdirSync, statSync } from "node:fs"
 import { join } from "node:path"
 import { Window } from "happy-dom"
+
 export function parseHTML(html: string): { document: Document } {
   const window = new Window()
   window.document.write(html)
   return { document: window.document as unknown as Document }
 }
+
 export function walkHtmlFiles(dir: string): string[] {
   const results: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -49,11 +51,14 @@ export function walkHtmlFiles(dir: string): string[] {
 <pre><code>// The mycelium v4 crawler. Protocol-only: it knows about &lt;template&gt;,
 // data-conforms-to, data-validates, and data-audits — nothing about what
 // any project builds on top of them. See docs/specs/2026-07-23-mycelium-crawler.spec.html.
+
 import { readdirSync, statSync, readFileSync } from "node:fs"
 import { join, dirname, resolve as resolvePath } from "node:path"
 import { Window } from "happy-dom"
 import "./runtime.js"
+
 const { loadCheck } = globalThis.mycelium
+
 function parseHTML(html: string): { document: Document } {
   const window = new Window()
   window.document.write(html)
@@ -63,10 +68,12 @@ function parseHTML(html: string): { document: Document } {
 <pre><code>// The mycelium v4 crawler. Protocol-only: it knows about &lt;template&gt;,
 // data-conforms-to, data-validates, and data-audits — nothing about what
 // any project builds on top of them. See docs/specs/2026-07-23-mycelium-crawler.spec.html.
+
 import { readFileSync } from "node:fs"
 import { dirname, resolve as resolvePath } from "node:path"
 import { parseHTML, walkHtmlFiles } from "./fs-helpers.ts"
 import "./runtime.js"
+
 const { loadCheck } = globalThis.mycelium</code></pre>
 <p>Then remove the now-duplicate <code>walkHtmlFiles</code> function definition later in the same file (currently lines 41-50):</p>
 <pre><code>function walkHtmlFiles(dir: string): string[] {
@@ -90,17 +97,21 @@ const { loadCheck } = globalThis.mycelium</code></pre>
 // the one script[type="mycelium/command"] a template file declares — never
 // what any command actually does. See
 // docs/specs/2026-07-23-mycelium-authoring-commands.spec.html.
+
 import { readdirSync, statSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { join, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
 import { Window } from "happy-dom"
 import { parse } from "acorn"
 import "./runtime.js"
+
 const { loadModule } = globalThis.mycelium
+
 function parseHTML(html: string): { document: Document } {
   const window = new Window()
   window.document.write(html)
   return { document: window.document as unknown as Document }
 }
+
 function walkHtmlFiles(dir: string): string[] {
   const results: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -117,11 +128,13 @@ function walkHtmlFiles(dir: string): string[] {
 // the one script[type="mycelium/command"] a template file declares — never
 // what any command actually does. See
 // docs/specs/2026-07-23-mycelium-authoring-commands.spec.html.
+
 import { readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { join, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
 import { parse } from "acorn"
 import { parseHTML, walkHtmlFiles } from "./fs-helpers.ts"
 import "./runtime.js"
+
 const { loadModule } = globalThis.mycelium</code></pre>
 <p>(<code>join</code> stays imported — <code>findTemplateFile</code>, unchanged, still uses it below.)</p></plan-detail>
     </plan-step>
@@ -139,6 +152,7 @@ pnpm crawl</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/src/fs-helpers.ts experiments/v4/src/crawl.ts experiments/v4/src/run.ts
 git commit -m "experiment(v4): extract parseHTML/walkHtmlFiles into a shared fs-helpers module
+
 Both were duplicated verbatim between crawl.ts and run.ts. A third
 copy was about to appear for the list command's directory-walking
 need — move them into src/fs-helpers.ts once instead, imported by
@@ -169,9 +183,11 @@ both files. No behavior change."</code></pre></plan-detail>
 class Filesystem {
   #root: string
   #touched = new Map&lt;string, { doc: Document; original: string } | { deleted: true }&gt;()
+
   constructor(root: string) {
     this.#root = root
   }
+
   get(path: string): Document {
     const full = resolvePath(this.#root, path)
     let entry = this.#touched.get(full)
@@ -185,6 +201,7 @@ class Filesystem {
     if (!("doc" in entry)) throw new Error(`${path} was already deleted`)
     return entry.doc
   }
+
   create(path: string, seedHtml: string): Document {
     const full = resolvePath(this.#root, path)
     const { document } = parseHTML(seedHtml)
@@ -193,10 +210,12 @@ class Filesystem {
     this.#touched.set(full, { doc: document as unknown as Document, original: "" })
     return document as unknown as Document
   }
+
   delete(path: string): void {
     const full = resolvePath(this.#root, path)
     this.#touched.set(full, { deleted: true })
   }
+
   // Reads every .html file under dir (relative to this Filesystem's root)
   // via get(), so every file it returns is tracked the same way a single
   // get() call would be — no separate read-only path, no separate tracking.
@@ -207,6 +226,7 @@ class Filesystem {
       return { path, doc: this.get(path) }
     })
   }
+
   commit(): string[] {
     const written: string[] = []
     for (const [full, entry] of this.#touched) {
@@ -232,10 +252,12 @@ class Filesystem {
       <plan-detail><pre><code>SCRATCH=$(mktemp -d)
 cp -r experiments/v4/docs "$SCRATCH/docs"
 cd "$SCRATCH"
+
 # create: must still write (new file, no prior snapshot to match)
 node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
   knowledge add action --title "safety fix test" --confidence 60 --file safety-fix-test
 test -f docs/knowledge/safety-fix-test.action.html &amp;&amp; echo "PASS: created"
+
 # update with a real change: must still write
 node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
   knowledge update safety-fix-test.action.html --status completed 2&gt;&amp;1 | grep "wrote.*safety-fix-test"</code></pre>
@@ -263,6 +285,7 @@ pnpm crawl</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/src/run.ts
 git commit -m "experiment(v4): make Filesystem.commit() skip unchanged files, add list(dir)
+
 get()/create() now snapshot each document's serialized HTML at read
 time; commit() compares against that snapshot and only writes what
 actually changed. Without this, list(dir) — a directory-wide read via
@@ -356,6 +379,7 @@ pnpm mycelium knowledge list bogus 2&gt;&amp;1</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/docs/templates/knowledge.template.html
 git commit -m "experiment(v4): add mycelium knowledge list, close the enumeration gap
+
 pnpm crawl reports pass/fail per instance but never a clean
 enumeration, the gap CLAUDE.md names versus deciduous nodes/deciduous
 edges. list nodes/list edges read the real graph via fs.list

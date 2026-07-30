@@ -168,6 +168,7 @@ node experiments/v4/src/crawl.ts "$SCRATCH/docs" 2&gt;&amp;1 | grep "bad.option"
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/docs/templates/knowledge.template.html
 git commit -m "experiment(v4): reject fields outside a knowledge-* type's own shape
+
 Each type's validator only checked that required fields were present,
 never that a node carried nothing beyond its own type's fields — a
 stray &lt;knowledge-status&gt; on a knowledge-option would have passed
@@ -240,16 +241,20 @@ cp -r experiments/v4/docs "$SCRATCH/docs"
 cd "$SCRATCH"
 node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
   knowledge add action --title "scratch test" --confidence 60 --file scratch-update-test
+
 node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
   knowledge update scratch-update-test.action.html --status completed --commit abc1234
 grep -A1 'knowledge-status' docs/knowledge/scratch-update-test.action.html
 grep -A1 'knowledge-commit' docs/knowledge/scratch-update-test.action.html
+
 node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
   knowledge update scratch-update-test.action.html --commit def5678
 grep 'knowledge-commit' docs/knowledge/scratch-update-test.action.html
+
 node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
   knowledge update scratch-update-test.action.html --commit ""
 grep -c 'knowledge-commit' docs/knowledge/scratch-update-test.action.html
+
 cd /Users/bigmistqke/Documents/GitHub/mycelium
 rm -rf "$SCRATCH"</code></pre>
 <p>Expected: after the first <code>update</code>, the file contains <code>&lt;knowledge-status&gt;completed&lt;/knowledge-status&gt;</code> and <code>&lt;knowledge-commit&gt;abc1234&lt;/knowledge-commit&gt;</code> (appended — the seed file from <code>add</code> has neither). After the second <code>update</code>, <code>knowledge-commit</code> shows <code>def5678</code> (overwritten, not duplicated — grepping for the tag returns exactly one match). After the third <code>update</code>, the <code>grep -c</code> count is <code>0</code> (the field was removed entirely, not left empty).</p>
@@ -263,8 +268,10 @@ cp -r experiments/v4/docs "$SCRATCH/docs"
 cd "$SCRATCH"
 node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
   knowledge add option --title "scratch option" --confidence 50 --file scratch-option-test
+
 node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
   knowledge update scratch-option-test.option.html --status active
+
 node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/crawl.ts docs 2&gt;&amp;1 | grep "scratch-option-test"
 cd /Users/bigmistqke/Documents/GitHub/mycelium
 rm -rf "$SCRATCH"</code></pre>
@@ -282,6 +289,7 @@ rm -rf "$SCRATCH"</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/docs/templates/knowledge.template.html
 git commit -m "experiment(v4): add mycelium knowledge update, close the field-update gap
+
 add only ever set fields at creation time; filling in a status or
 commit hash on an existing node — which happens after nearly every
 piece of real work — still meant a hand Read+Edit. update reads the
@@ -351,9 +359,12 @@ correct way to do that. Full design:
       <plan-status>completed</plan-status>
       <plan-detail><p>Find the section (exact heading and surrounding prose):</p>
 <pre><code>### CRITICAL: Link Commits to Actions/Outcomes
+
 **After every git commit, add the hash to the relevant node — but that
 usually means editing the node you already wrote, not writing a new one.**
+
 git commit -m "feat: add auth"
+
 Edit the `knowledge-action` node this commit belongs to and set:
 &lt;knowledge-commit&gt;HEAD's short hash&lt;/knowledge-commit&gt;
 &lt;knowledge-branch&gt;main&lt;/knowledge-branch&gt;</code></pre>
@@ -376,6 +387,7 @@ grep -n "Two real gaps" CLAUDE.md</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add CLAUDE.md
 git commit -m "docs: point CLAUDE.md at mycelium knowledge update, close the gap it named
+
 CLAUDE.md documented two real gaps in the authoring CLI; one of them
 (add only sets fields at creation time) is now closed by the update
 command built in this branch. Update the CLI usage block, narrow the

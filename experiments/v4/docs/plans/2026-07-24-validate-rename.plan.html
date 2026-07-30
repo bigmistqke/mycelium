@@ -35,6 +35,7 @@
   const documents = parseAll(dir)
   const { templates, audits } = discoverTemplatesAndAudits(documents)
   const instances = discoverInstances(documents)
+
   console.log(`${documents.length} documents, ${templates.size} templates, ${instances.length} instances, ${audits.length} audits\n`)</code></pre>
 <p>Replace with:</p>
 <pre><code>async function main() {
@@ -49,6 +50,7 @@
   // isolation, so a sample instance in the mix is harmless there.
   const templatesDir = resolvePath(dir, "templates") + sep
   const auditDocuments = documents.filter((d) =&gt; !d.path.startsWith(templatesDir))
+
   console.log(`${documents.length} documents, ${templates.size} templates, ${instances.length} instances, ${audits.length} audits\n`)</code></pre>
 <p>Then find, later in the same function, inside the audits loop:</p>
 <pre><code>  for (const audit of audits) {
@@ -98,6 +100,7 @@ rm -rf "$SCRATCH"</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/src/crawl.ts
 git commit -m "experiment(v4): exclude docs/templates/ from audit input
+
 Every pnpm crawl run reported the same two audit failures --
 knowledge.template.html's own live-demo sample instances, deliberately
 wired to violate orphans-except-goal/dangling-outcome so the audit
@@ -148,19 +151,23 @@ import { styleText } from "node:util"</code></pre></plan-detail>
   // isolation, so a sample instance in the mix is harmless there.
   const templatesDir = resolvePath(dir, "templates") + sep
   const auditDocuments = documents.filter((d) =&gt; !d.path.startsWith(templatesDir))
+
   let checked = 0
   let fail = 0
   const failures: string[] = []
+
   for (const instance of instances) {
     checked++
     const key = resolveTemplateRef(instance.file, instance.conformsTo)
     const template = templates.get(key)
     const label = `${relative(dir, instance.file)}  (${instance.conformsTo})`
+
     if (!template || !template.validatorScript) {
       fail++
       failures.push(`FAIL  ${label}\n      no template found at ${key}`)
       continue
     }
+
     try {
       const check = await loadCheck(template.validatorScript)
       const result = check(instance.element) as CheckResult
@@ -173,6 +180,7 @@ import { styleText } from "node:util"</code></pre></plan-detail>
       failures.push(`FAIL  ${label}\n      validator threw — ${(err as Error).message}`)
     }
   }
+
   for (const audit of audits) {
     checked++
     const label = `${audit.name}  (${relative(dir, audit.file)}${audit.touches ? `, touches: ${audit.touches}` : ""})`
@@ -188,6 +196,7 @@ import { styleText } from "node:util"</code></pre></plan-detail>
       failures.push(`FAIL  ${label}\n      audit threw — ${(err as Error).message}`)
     }
   }
+
   console.log(styleText(fail === 0 ? "green" : "red", `${checked} checked, ${fail} fail`))
   for (const f of failures) {
     console.log("")
@@ -236,6 +245,7 @@ rm -rf "$SCRATCH"</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/src/crawl.ts
 git commit -m "experiment(v4): quiet, unified, colorized crawl output
+
 Dropped the per-instance PASS line (50+ and growing, never once
 useful for a routine check) and the separate validators: N pass, M
 fail line, replacing both with one summary -- N checked, M fail --
@@ -361,6 +371,7 @@ pnpm validate</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add -A experiments/v4/src/validate.ts experiments/v4/src/crawl.ts experiments/v4/package.json experiments/v4/README.md experiments/v4/src/run.ts experiments/v4/docs/templates/knowledge.template.html CLAUDE.md
 git commit -m "experiment(v4): rename crawl to validate
+
 pnpm crawl was memorable for what the tool does internally (walk the
 tree) but not for what running it is actually asking -- validate the
 graph. Full rename, not an alias: the file, the pnpm script, and

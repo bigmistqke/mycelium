@@ -156,6 +156,7 @@ function buildTree(paths) {
   }
   return root
 }
+
 // One entry per &lt;a href&gt; found anywhere inside a document's own
 // data-conforms-to root, resolved to a docs/-relative path — no
 // special-casing of data-rel versus a plain link, matching this tool's
@@ -181,6 +182,7 @@ function buildEdges(documents) {
   }
   return edges
 }
+
 // Resolves an href found inside docs/&lt;fromPath&gt; to another docs/-relative
 // path, purely with string/array math (no filesystem access — every
 // candidate target either is or isn't already in the known path set,
@@ -510,6 +512,7 @@ git commit -m "experiment(v4): explore serve grows a sidebar for browsing docs/"
       <plan-detail><p>Add this after the <code>panels</code>/<code>canvas</code> declarations near the top of the script (before <code>panelPosition</code>, since <code>openPanel</code> in the next edit calls into this):</p>
 <pre><code>  const svg = document.getElementById("connectors")
   const connectors = [] // { from, to, line }
+
   function edgePoint(rect, towardRect) {
     const cx = rect.left + rect.width / 2
     const cy = rect.top + rect.height / 2
@@ -523,6 +526,7 @@ git commit -m "experiment(v4): explore serve grows a sidebar for browsing docs/"
     const scale = Math.min(scaleX, scaleY)
     return { x: cx + dx * scale, y: cy + dy * scale }
   }
+
   function positionLine(line, fromPath, toPath) {
     const fromEl = panels.get(fromPath)?.el
     const toEl = panels.get(toPath)?.el
@@ -537,6 +541,7 @@ git commit -m "experiment(v4): explore serve grows a sidebar for browsing docs/"
     line.setAttribute("x2", end.x - canvasRect.left)
     line.setAttribute("y2", end.y - canvasRect.top)
   }
+
   function drawConnector(fromPath, toPath) {
     if (!fromPath || !toPath) return
     if (connectors.some((c) =&gt; c.from === fromPath &amp;&amp; c.to === toPath)) return
@@ -545,6 +550,7 @@ git commit -m "experiment(v4): explore serve grows a sidebar for browsing docs/"
     connectors.push({ from: fromPath, to: toPath, line })
     positionLine(line, fromPath, toPath)
   }
+
   function updateConnectorsFor(path) {
     for (const c of connectors) {
       if (c.from === path || c.to === path) positionLine(c.line, c.from, c.to)
@@ -620,6 +626,7 @@ git commit -m "experiment(v4): explore serve opens connected panels on link clic
 <pre><code>    makeDraggable(el, path)</code></pre>
 <p>Add <code>makeDraggable</code> and the drag-end listener registry above <code>openPanel</code>:</p>
 <pre><code>  const dragEndListeners = []
+
   function makeDraggable(el, path) {
     const header = el.querySelector(".panel-header")
     header.style.cursor = "grab"
@@ -633,6 +640,7 @@ git commit -m "experiment(v4): explore serve opens connected panels on link clic
       const state = panels.get(path)
       const originX = state.x
       const originY = state.y
+
       function onMove(ev) {
         state.x = originX + (ev.clientX - startX)
         state.y = originY + (ev.clientY - startY)
@@ -779,6 +787,7 @@ git commit -m "experiment(v4): explore serve shows and opens backlinks per panel
     }))
     history.replaceState(null, "", "#" + encodeURIComponent(JSON.stringify(state)))
   }
+
   async function restoreState() {
     if (!location.hash) return
     let state

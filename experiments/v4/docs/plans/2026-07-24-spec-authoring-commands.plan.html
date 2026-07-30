@@ -23,14 +23,18 @@
       <plan-status>completed</plan-status>
       <plan-detail><p>In <code>experiments/v4/src/run.ts</code>, find:</p>
 <pre><code>import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
+
 type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boolean; errors: string[] }&gt;
+
 interface Cli {
   validate: Validate
   readStdin: () =&gt; Promise&lt;string&gt;
 }</code></pre>
 <p>Replace with:</p>
 <pre><code>import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
+
 type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boolean; errors: string[] }&gt;
+
 interface Cli {
   validate: Validate
   readStdin: () =&gt; Promise&lt;string&gt;
@@ -70,6 +74,7 @@ interface Cli {
       if (value === undefined) throw new Error(`missing required argument: ${label}`)
     }
   }
+
   // Local to this file on purpose, not shared with spec.template.html's
   // own copy — see docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html.
   function todayDate() {
@@ -147,6 +152,7 @@ RUN="$(pwd)/experiments/v4/src/run.ts"
 VALIDATE="$(pwd)/experiments/v4/src/validate.ts"
 SCRATCH=$(mktemp -d)
 cp -r experiments/v4/docs "$SCRATCH/docs"
+
 (cd "$SCRATCH" &amp;&amp; node "$RUN" knowledge add observation --title "date prefix test" --confidence 60 --file date-prefix-test)
 ls "$SCRATCH/docs/knowledge" | grep date-prefix-test
 node "$VALIDATE" "$SCRATCH/docs"
@@ -166,6 +172,7 @@ git status --short docs/knowledge/ | grep -v '^??'</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/src/run.ts experiments/v4/docs/templates/knowledge.template.html
 git commit -m "experiment(v4): cli.parseHTML, date-prefixed filenames for knowledge's add
+
 parseHTML joins validate/readStdin as a fourth capability every
 command receives via cli — needed by spec.template.html's upcoming
 add/update to parse --body's blob apart by tag name, not used by any
@@ -188,11 +195,13 @@ html's own copy."</code></pre></plan-detail>
 <pre><code>    out.className = result.ok ? 'pass' : 'fail'
   &lt;/script&gt;
 &lt;/div&gt;
+
 &lt;h2&gt;Conformance&lt;/h2&gt;</code></pre>
 <p>Replace with:</p>
 <pre><code>    out.className = result.ok ? 'pass' : 'fail'
   &lt;/script&gt;
 &lt;/div&gt;
+
 &lt;h2&gt;Authoring commands&lt;/h2&gt;
 &lt;p&gt;
   &lt;code&gt;add&lt;/code&gt; and &lt;code&gt;update&lt;/code&gt;, declared once for this template &amp;mdash; same
@@ -218,12 +227,15 @@ html's own copy."</code></pre></plan-detail>
       if (value === undefined) throw new Error(`missing required argument: ${label}`)
     }
   }
+
   function todayDate() {
     const d = new Date()
     const pad = (n) =&gt; String(n).padStart(2, '0')
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
   }
+
   const BODY_TAGS = ['spec-problem', 'spec-design', 'spec-out-of-scope', 'spec-open-questions']
+
   // Parses --body's resolved value once and pulls out whichever of the four
   // rich-content tags are present, keyed by tag name. A tag not mentioned
   // in the blob simply isn't a key in the result — add/update both treat
@@ -238,6 +250,7 @@ html's own copy."</code></pre></plan-detail>
     }
     return sections
   }
+
   /**
    * Create a new spec-doc file.
    *
@@ -259,6 +272,7 @@ html's own copy."</code></pre></plan-detail>
     requireArgs([args.file, '--file'])
     const bodyMarkup = args.body === '-' ? await cli.readStdin() : args.body
     const sections = bodyMarkup ? extractSections(cli, bodyMarkup) : {}
+
     const date = todayDate()
     const path = `specs/${date}-${args.file}.spec.html`
     const doc = fs.create(path, `&lt;!DOCTYPE html&gt;
@@ -271,12 +285,16 @@ html's own copy."</code></pre></plan-detail>
 &lt;link rel="stylesheet" href="../templates/spec.template.css"&gt;
 &lt;/head&gt;
 &lt;body&gt;
+
 &lt;spec-doc data-conforms-to="../templates/spec.template.html#spec-doc"&gt;
 &lt;/spec-doc&gt;
+
 &lt;/body&gt;
 &lt;/html&gt;
 `)
+
     doc.querySelector('title').textContent = `Spec: ${args.title}`
+
     const root = doc.querySelector('spec-doc')
     const field = (tag, text) =&gt; {
       if (!text) return
@@ -284,6 +302,7 @@ html's own copy."</code></pre></plan-detail>
       el.textContent = text
       root.appendChild(el)
     }
+
     field('spec-title', args.title)
     field('spec-status', args.status ?? 'draft')
     field('spec-date', date)
@@ -293,9 +312,11 @@ html's own copy."</code></pre></plan-detail>
       el.innerHTML = sections[tag]
       root.appendChild(el)
     }
+
     const result = await cli.validate(root, path)
     if (!result.ok) throw new Error(result.errors.join('\n'))
   }
+
   /**
    * Update fields on an existing spec-doc file.
    *
@@ -316,6 +337,7 @@ html's own copy."</code></pre></plan-detail>
     const path = `specs/${args._[0]}`
     const doc = fs.get(path)
     const root = doc.querySelector('[data-conforms-to]')
+
     const field = (tag, text) =&gt; {
       if (text === undefined) return
       const existing = root.querySelector(tag)
@@ -330,8 +352,10 @@ html's own copy."</code></pre></plan-detail>
         root.appendChild(el)
       }
     }
+
     field('spec-title', args.title)
     field('spec-status', args.status)
+
     const bodyMarkup = args.body === '-' ? await cli.readStdin() : args.body
     if (bodyMarkup !== undefined) {
       const sections = extractSections(cli, bodyMarkup)
@@ -350,10 +374,12 @@ html's own copy."</code></pre></plan-detail>
         }
       }
     }
+
     const result = await cli.validate(root, path)
     if (!result.ok) throw new Error(result.errors.join('\n'))
   }
 &lt;/script&gt;
+
 &lt;h2&gt;Conformance&lt;/h2&gt;</code></pre></plan-detail>
     </plan-step>
     <plan-step id="task-2-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
@@ -371,6 +397,7 @@ RUN="$(pwd)/experiments/v4/src/run.ts"
 VALIDATE="$(pwd)/experiments/v4/src/validate.ts"
 SCRATCH=$(mktemp -d)
 cp -r experiments/v4/docs "$SCRATCH/docs"
+
 (cd "$SCRATCH" &amp;&amp; node "$RUN" spec add --title "scratch spec test" --file scratch-spec-test --body "&lt;spec-problem&gt;&lt;p&gt;problem text&lt;/p&gt;&lt;/spec-problem&gt;&lt;spec-design&gt;&lt;p&gt;design text&lt;/p&gt;&lt;/spec-design&gt;")
 TODAY=$(date +%Y-%m-%d)
 ls "$SCRATCH/docs/specs" | grep "$TODAY-scratch-spec-test"
@@ -413,10 +440,12 @@ ls "$SCRATCH/docs/specs" | grep incomplete-spec-test</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>FILE="$TODAY-scratch-spec-test.spec.html"
 cp "$SCRATCH/docs/specs/$FILE" /tmp/spec-before.html
+
 # Upsert spec-design, leave spec-problem untouched (not mentioned in --body)
 (cd "$SCRATCH" &amp;&amp; node "$RUN" spec update "$FILE" --body "&lt;spec-design&gt;&lt;p&gt;replaced design text&lt;/p&gt;&lt;/spec-design&gt;")
 grep -c "replaced design text" "$SCRATCH/docs/specs/$FILE"
 grep -c "problem text" "$SCRATCH/docs/specs/$FILE"
+
 # Remove spec-design (present but empty)
 (cd "$SCRATCH" &amp;&amp; node "$RUN" spec update "$FILE" --status approved --body "&lt;spec-design&gt;&lt;/spec-design&gt;" 2&gt;&amp;1)
 echo "exit: $?"</code></pre>
@@ -438,6 +467,7 @@ pnpm validate</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/docs/templates/spec.template.html
 git commit -m "experiment(v4): spec.template.html gets add and update
+
 add/update, no link (cross-references live inside rich-field markup,
 not as top-level children) and no list (deferred). No --date flag:
 add computes today's date itself, used for both the filename prefix
@@ -514,6 +544,7 @@ pnpm validate</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add CLAUDE.md
 git commit -m "docs: update CLAUDE.md for spec's new add/update commands
+
 The 'one real gap remains' passage was accurate when written -- as of
 this commit it no longer is. spec.template.html now has its own
 add/update, same as knowledge.template.html always has; the passage

@@ -32,11 +32,13 @@ git mv src/fs-helpers.ts src/utils.ts</code></pre></plan-detail>
 import { dirname, join, resolve as resolvePath } from "node:path"
 import { Window } from "happy-dom"
 import "./runtime.js"
+
 export function parseHTML(html: string): { document: Document } {
   const window = new Window()
   window.document.write(html)
   return { document: window.document as unknown as Document }
 }
+
 export function walkHtmlFiles(dir: string): string[] {
   const results: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -47,6 +49,7 @@ export function walkHtmlFiles(dir: string): string[] {
   }
   return results
 }
+
 // Given an instance's own file and its data-conforms-to value (a path
 // relative to that file, plus a #fragment naming the type), resolves to
 // "&lt;absolute template file path&gt;#&lt;fragment&gt;" — the same key both the
@@ -57,6 +60,7 @@ export function resolveTemplateRef(instanceFile: string, conformsTo: string): st
   const templateFile = resolvePath(dirname(instanceFile), relPath)
   return `${templateFile}#${fragId}`
 }
+
 // Validates one element against its own declared type, for callers (like
 // run.ts's authoring commands) that only ever need to check a single node
 // they just built or mutated — not validate.ts's whole-corpus batch pass.
@@ -70,15 +74,19 @@ export async function validateInstance(
 ): Promise&lt;{ ok: boolean; errors: string[] }&gt; {
   const conformsTo = element.getAttribute("data-conforms-to")
   if (!conformsTo) return { ok: false, errors: ["missing data-conforms-to attribute"] }
+
   const instanceFile = resolvePath(docsDir, instancePath)
   const key = resolveTemplateRef(instanceFile, conformsTo)
   const [templateFile, fragId] = key.split("#")
+
   try {
     const { document } = parseHTML(readFileSync(templateFile, "utf8"))
     const scriptSource = (document as unknown as Document)
       .querySelector(`script[data-validates="#${fragId}"]`)
       ?.textContent
+
     if (!scriptSource) return { ok: false, errors: [`no template found at ${key}`] }
+
     const check = await globalThis.mycelium.loadCheck(scriptSource)
     const result = check(element) as { ok: boolean; errors?: string[]; violations?: string[] }
     return { ok: result.ok, errors: (result.errors ?? result.violations ?? []) as string[] }
@@ -86,6 +94,7 @@ export async function validateInstance(
     return { ok: false, errors: [`validation setup failed — ${(err as Error).message}`] }
   }
 }
+
 // Drains stdin fully and returns it as a string. The only new shared
 // primitive this project needs for rich-content authoring — what a
 // command's own `-` sentinel means (if anything) is domain knowledge
@@ -99,11 +108,13 @@ export async function readStdin(): Promise&lt;string&gt; {
 <pre><code>import { readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, join, resolve as resolvePath } from "node:path"
 import { Window } from "happy-dom"
+
 export function parseHTML(html: string): { document: Document } {
   const window = new Window()
   window.document.write(html)
   return { document: window.document as unknown as Document }
 }
+
 export function walkHtmlFiles(dir: string): string[] {
   const results: string[] = []
   for (const entry of readdirSync(dir)) {
@@ -114,6 +125,7 @@ export function walkHtmlFiles(dir: string): string[] {
   }
   return results
 }
+
 // Given an instance's own file and its data-conforms-to value (a path
 // relative to that file, plus a #fragment naming the type), resolves to
 // "&lt;absolute template file path&gt;#&lt;fragment&gt;" — the same key both the
@@ -124,6 +136,7 @@ export function resolveTemplateRef(instanceFile: string, conformsTo: string): st
   const templateFile = resolvePath(dirname(instanceFile), relPath)
   return `${templateFile}#${fragId}`
 }
+
 // A data: URL dynamic import — the one trick that lets a script's source
 // text (pulled straight from a &lt;script&gt; tag, not a real file) run as a
 // real ES module with no server and no real cross-file import, which
@@ -136,10 +149,12 @@ export function resolveTemplateRef(instanceFile: string, conformsTo: string): st
 export async function loadModule(scriptSource: string): Promise&lt;Record&lt;string, unknown&gt;&gt; {
   return await import(`data:text/javascript,${encodeURIComponent(scriptSource)}`)
 }
+
 export async function loadCheck(scriptSource: string): Promise&lt;(...args: unknown[]) =&gt; unknown&gt; {
   const mod = await loadModule(scriptSource)
   return mod.check as (...args: unknown[]) =&gt; unknown
 }
+
 // Validates one element against its own declared type, for callers (like
 // run.ts's authoring commands) that only ever need to check a single node
 // they just built or mutated — not validate.ts's whole-corpus batch pass.
@@ -153,15 +168,19 @@ export async function validateInstance(
 ): Promise&lt;{ ok: boolean; errors: string[] }&gt; {
   const conformsTo = element.getAttribute("data-conforms-to")
   if (!conformsTo) return { ok: false, errors: ["missing data-conforms-to attribute"] }
+
   const instanceFile = resolvePath(docsDir, instancePath)
   const key = resolveTemplateRef(instanceFile, conformsTo)
   const [templateFile, fragId] = key.split("#")
+
   try {
     const { document } = parseHTML(readFileSync(templateFile, "utf8"))
     const scriptSource = (document as unknown as Document)
       .querySelector(`script[data-validates="#${fragId}"]`)
       ?.textContent
+
     if (!scriptSource) return { ok: false, errors: [`no template found at ${key}`] }
+
     const check = await loadCheck(scriptSource)
     const result = check(element) as { ok: boolean; errors?: string[]; violations?: string[] }
     return { ok: result.ok, errors: (result.errors ?? result.violations ?? []) as string[] }
@@ -169,6 +188,7 @@ export async function validateInstance(
     return { ok: false, errors: [`validation setup failed — ${(err as Error).message}`] }
   }
 }
+
 // Drains stdin fully and returns it as a string. The only new shared
 // primitive this project needs for rich-content authoring — what a
 // command's own `-` sentinel means (if anything) is domain knowledge
@@ -185,10 +205,13 @@ export async function readStdin(): Promise&lt;string&gt; {
       <plan-detail><p>In <code>experiments/v4/src/run.ts</code>, find:</p>
 <pre><code>import { parseHTML, walkHtmlFiles, validateInstance, readStdin } from "./fs-helpers.ts"
 import "./runtime.js"
+
 const { loadModule } = globalThis.mycelium
+
 type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boolean; errors: string[] }&gt;</code></pre>
 <p>Replace with:</p>
 <pre><code>import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
+
 type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boolean; errors: string[] }&gt;</code></pre></plan-detail>
     </plan-step>
     <plan-step id="task-1-step-4" data-conforms-to="../templates/plan.template.html#plan-step">
@@ -197,6 +220,7 @@ type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boo
       <plan-detail><p>In <code>experiments/v4/src/validate.ts</code>, find:</p>
 <pre><code>import { parseHTML, walkHtmlFiles, resolveTemplateRef } from "./fs-helpers.ts"
 import "./runtime.js"
+
 const { loadCheck } = globalThis.mycelium</code></pre>
 <p>Replace with:</p>
 <pre><code>import { parseHTML, walkHtmlFiles, resolveTemplateRef, loadCheck } from "./utils.ts"</code></pre></plan-detail>
@@ -222,6 +246,7 @@ RUN="$(pwd)/experiments/v4/src/run.ts"
 VALIDATE="$(pwd)/experiments/v4/src/validate.ts"
 SCRATCH=$(mktemp -d)
 cp -r experiments/v4/docs "$SCRATCH/docs"
+
 (cd "$SCRATCH" &amp;&amp; node "$RUN" knowledge add observation --title "utils.ts migration test" --confidence 60 --file utils-migration-test)
 (cd "$SCRATCH" &amp;&amp; node "$RUN" knowledge link utils-migration-test.observation.html build-v4.goal.html --rel supports --label "scratch test edge")
 (cd "$SCRATCH" &amp;&amp; node "$RUN" knowledge --help | head -3)
@@ -241,6 +266,7 @@ pnpm validate</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/src/utils.ts experiments/v4/src/run.ts experiments/v4/src/validate.ts
 git commit -m "experiment(v4): move loadModule/loadCheck into utils.ts, rename fs-helpers.ts
+
 fs-helpers.ts renamed to utils.ts: once it holds loadModule/loadCheck
 alongside parseHTML/walkHtmlFiles/resolveTemplateRef/validateInstance/
 readStdin, \"filesystem helpers\" undersells what's in there — none of
@@ -279,10 +305,13 @@ task replaces that one remaining consumer."</code></pre></plan-detail>
     &lt;code&gt;sample-observation&lt;/code&gt; has no edges at all, and &lt;code&gt;sample-outcome&lt;/code&gt; has only an
     outgoing edge (to &lt;code&gt;sample-action&lt;/code&gt;), nothing pointing into it.
   &lt;/p&gt;
+
   &lt;pre id="audit-output"&gt;running&amp;hellip;&lt;/pre&gt;
+
   &lt;script src="../../src/runtime.js"&gt;&lt;/script&gt;
   &lt;script type="module"&gt;
     const { loadCheck } = window.mycelium
+
     const documents = [{ path: 'sample', dom: document.getElementById('sample-instances') }]</code></pre>
 <p>Replace with:</p>
 <pre><code>&lt;div class="live-demo"&gt;
@@ -300,12 +329,15 @@ task replaces that one remaining consumer."</code></pre></plan-detail>
     &lt;code&gt;sample-observation&lt;/code&gt; has no edges at all, and &lt;code&gt;sample-outcome&lt;/code&gt; has only an
     outgoing edge (to &lt;code&gt;sample-action&lt;/code&gt;), nothing pointing into it.
   &lt;/p&gt;
+
   &lt;pre id="audit-output"&gt;running&amp;hellip;&lt;/pre&gt;
+
   &lt;script type="module"&gt;
     async function loadCheck(scriptSource) {
       const mod = await import(`data:text/javascript,${encodeURIComponent(scriptSource)}`)
       return mod.check
     }
+
     const documents = [{ path: 'sample', dom: document.getElementById('sample-instances') }]</code></pre>
 <p>(Everything after this line — the rest of the script block computing <code>orphansSource</code>/<code>danglingSource</code>/running the two audits/writing <code>#audit-output</code> — is unchanged. Only the script-loading preamble changes.)</p></plan-detail>
     </plan-step>
@@ -342,6 +374,7 @@ dangling-outcome:    violations = [sample-outcome]  PASS (matches expected)</cod
       <plan-detail><pre><code>git add experiments/v4/docs/templates/knowledge.template.html
 git rm src/runtime.js src/runtime.d.ts 2&gt;/dev/null || true   # if not already staged from Step 2
 git commit -m "experiment(v4): inline the browser loadCheck, delete runtime.js/runtime.d.ts
+
 The one browser call site left (this page's own graph-wide-audits
 live demo) gets its own five-line copy of loadCheck instead of
 loading it from a shared file — the same data: URL trick either side
@@ -378,6 +411,7 @@ its .d.ts are deleted outright, not deprecated."</code></pre></plan-detail>
       <plan-status>completed</plan-status>
       <plan-detail><p>Find:</p>
 <pre><code>## Opening the documents directly
+
 Every file under `docs/` is meant to be opened straight in a browser, no
 server required — no exceptions. That's why `src/runtime.js`, the one bit
 of code shared between the crawler and a browser live demo, has no
@@ -389,6 +423,7 @@ classic `&lt;script src&gt;` (exempt from that check, same as this project's
 needing a server.</code></pre>
 <p>Replace with:</p>
 <pre><code>## Opening the documents directly
+
 Every file under `docs/` is meant to be opened straight in a browser, no
 server required — no exceptions. A real ES module import is CORS-checked
 even for local files, and `file://` has no stable origin to satisfy that
@@ -415,8 +450,10 @@ grep -n "runtime\.js\|runtime\.d\.ts" docs/templates/knowledge.template.html</co
       <plan-detail><pre><code>pnpm mycelium knowledge add decision \
   --title "Duplicate loadModule/loadCheck rather than share it, once runtime.js's whole reason for existing was one five-line function" \
   --confidence 80 --status completed --file duplicate-not-share-loadcheck
+
 pnpm mycelium knowledge link duplicate-not-share-loadcheck.decision.html reverse-runtime-to-globalthis.decision.html \
   --rel elaborates --label "answers a narrower question than that decision did -- not how to share across Node/browser without CORS, but whether a five-line function with two call sites needs sharing machinery at all"
+
 pnpm mycelium knowledge link remove-runtime-js.goal.html duplicate-not-share-loadcheck.decision.html \
   --rel leads_to --label "the goal's core decision: write it twice instead of sharing it"</code></pre></plan-detail>
     </plan-step>
@@ -431,6 +468,7 @@ pnpm mycelium knowledge link remove-runtime-js.goal.html duplicate-not-share-loa
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>git add experiments/v4/README.md experiments/v4/docs/knowledge/duplicate-not-share-loadcheck.decision.html experiments/v4/docs/knowledge/remove-runtime-js.goal.html
 git commit -m "docs(v4): update README for the utils.ts/runtime.js change, log the new decision
+
 README's layout listing and \"Opening the documents directly\" section
 both explained the old shared-file mechanism in detail; reframed to
 describe the current one (written twice, not shared) while keeping
