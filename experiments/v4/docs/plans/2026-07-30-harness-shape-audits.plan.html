@@ -17,7 +17,7 @@
   <plan-global-constraints>plan-check commands run from experiments/v4/, so repo-root paths are ../../. Nothing here deletes knowledge nodes — pruning the graph is a separate, later pass, and task-6 repairs nodes rather than removing them. pnpm validate is green at every step except the window between task-3 (the audits land) and task-6 (the repair finishes); red inside that window is expected and is the worklist, and the pass is not done until it is green again. Deleting a hook that writes on a rate and adding one that reads at session start is not a contradiction — see fix-incentives-before-guardrails.decision.html. Deliberately out of scope: the plan-step record guardrail (a plan-check asserting a knowledge node links back to task-N), deferred because it must query the graph by shape while the tag axis and the import cut are unsettled; writing it now means writing it twice.</plan-global-constraints>
   <plan-task id="task-1" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Delete the node-manufacturing hooks</plan-title>
-    <plan-status>pending</plan-status>
+    <plan-status>completed</plan-status>
     <plan-files>.claude/hooks/require-action-node.sh, .claude/hooks/post-commit-reminder.sh, .claude/settings.json</plan-files>
     <plan-interfaces>settings.json keeps its enabledPlugins block; both hook entries are removed, leaving hooks empty or absent.</plan-interfaces>
     <plan-step id="task-1-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
@@ -47,12 +47,12 @@
   </plan-task>
   <plan-task id="task-2" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Put --detail in every documented signature</plan-title>
-    <plan-status>pending</plan-status>
+    <plan-status>completed</plan-status>
     <plan-files>CLAUDE.md</plan-files>
     <plan-interfaces>knowledge add and knowledge update signatures gain [--detail "…" | --detail -]; the update signature also gains --detail "" to clear.</plan-interfaces>
     <plan-step id="task-2-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Add --detail to the add and update signatures</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>The CLI has supported --detail on both since 4738449, including --detail - for stdin and --detail "" to clear on update. CLAUDE.md mentions detail once, in prose, as a parenthetical. An agent copies the signature, not the prose — which is the entire cause of 0-of-8 adoption in the 2026-07-27 batch.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>grep -q -- '--detail' ../../CLAUDE.md</plan-check-command>

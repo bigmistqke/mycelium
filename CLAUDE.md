@@ -19,12 +19,25 @@ where new work gets logged. Full reasoning:
 `mycelium run`'s knowledge commands exist and are tested working:
 
 ```bash
-pnpm --filter @mycelium/v4 mycelium knowledge add <type> --title "…" --confidence NN [--status S] [--prompt "…"] [--commit HASH] --file <slug>
+pnpm --filter @mycelium/v4 mycelium knowledge add <type> --title "…" --confidence NN [--status S] [--prompt "…"] [--detail "…" | --detail -] [--commit HASH] --file <slug>
 pnpm --filter @mycelium/v4 mycelium knowledge link <from-file> <to-file> --rel <rel> --label "…"
-pnpm --filter @mycelium/v4 mycelium knowledge update <file> [--title "…"] [--confidence NN] [--status S] [--prompt "…"] [--commit HASH] [--files "…"] [--branch NAME]
+pnpm --filter @mycelium/v4 mycelium knowledge update <file> [--title "…"] [--confidence NN] [--status S] [--prompt "…"] [--detail "…" | --detail - | --detail ""] [--commit HASH] [--files "…"] [--branch NAME]
 ```
 (`--filter @mycelium/v4` works from anywhere in the repo; drop it and just run
 `pnpm mycelium ...` if already inside `experiments/v4/`.)
+
+**`--detail` is where the finding goes.** The title is a title — a line you
+can scan in a list. Everything else (the evidence, the numbers, the reasoning,
+the caveats) belongs in `--detail`, which takes real HTML with no tag
+restriction. For anything longer than a line, pass `--detail -` and pipe the
+content in on stdin via a heredoc, which avoids fighting shell quoting. On
+`update`, `--detail ""` clears the field.
+
+This flag existed for days before it was written down here, and the cost was
+measurable: eight nodes written on 2026-07-27 average 415 characters of title
+against 117 for the rest of the graph, and use `detail` zero times. An agent
+copies the signature, not the prose — so if a field is missing from the line
+above, it does not get used.
 
 This replaces the Write/Read+Edit dance for every node/edge `knowledge-*`
 covers — no file content passes through the model doing the logging, same
