@@ -1,5 +1,17 @@
 {
   "enabledPlugins": {
     "superpowers@claude-plugins-official": false
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR/experiments/v4\" && node src/run.ts knowledge recover 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
   }
 }

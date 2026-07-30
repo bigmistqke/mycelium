@@ -184,15 +184,26 @@ real files:
 ### Session Start Checklist
 
 ```bash
-pnpm --filter @mycelium/v4 validate              # every node, validated for real, both audits run
-git status                                       # current state
+pnpm --filter @mycelium/v4 mycelium knowledge recover   # the graph's live threads
+pnpm --filter @mycelium/v4 validate                     # every node validated, all four audits run
+git status                                              # current state
 ```
-`pnpm validate` now answers most of what `deciduous nodes`/`deciduous edges`
-did — it validates every instance against its own template and runs both
-graph-wide audits against the real files, not sample fixtures. What it
-still doesn't do: print a clean list of nodes/edges the way `deciduous
-nodes`/`deciduous edges` did (it reports pass/fail, not an enumeration) —
-a real, narrower gap than "no crawler," not the same gap.
+`knowledge recover` replaces the old `/recover` slash command, which drove
+the frozen CLI. It prints three things, each a property of the graph rather
+than of any node: **active goals**, **decisions with no outcome** (an outcome
+reachable through outgoing edges, or one pointing back), and **contested
+claims** (either end of a `contradicts` edge). It is read-only and a
+SessionStart hook runs it automatically, so this is here as documentation
+rather than something to remember.
+
+`pnpm validate` validates every instance against its own template and runs
+the four graph-wide audits. It **exits non-zero on failure** — true only
+since 2026-07-30; before that it printed failures and exited 0, so no audit
+had ever actually gated anything.
+
+For a plain enumeration rather than a verdict, `mycelium knowledge list
+nodes` and `list edges` are what `deciduous nodes`/`deciduous edges` used to
+give you.
 
 ### What deciduous still has, that this doesn't (yet)
 
