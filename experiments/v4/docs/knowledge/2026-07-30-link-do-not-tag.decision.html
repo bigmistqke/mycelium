@@ -25,16 +25,16 @@ implementation history landing in a graph about HTML templates.</p>
   hand.</li>
   <li><strong>Multi-membership is already an edge.</strong> The tag was justified
   by v0's query-interface decision belonging both to v0 and to the v3 synthesis
-  leaning on it — but that is written down already, as <a href="./2026-07-14-graph-as-cache-of-comprehension.decision.html"><a href="./2026-07-14-graph-as-cache-of-comprehension.decision.html">#351</a></a> citing <a href="./2026-01-12-query-interface-design.decision.html"><a href="./2026-01-12-query-interface-design.decision.html">#20</a></a>. Where a
+  leaning on it — but that is written down already, as <a href="./2026-07-14-graph-as-cache-of-comprehension.decision.html">#351</a> citing <a href="./2026-01-12-query-interface-design.decision.html">#20</a>. Where a
   thing was decided is one value; what leans on it is the edge set. A tag
   conflates them and then duplicates the second one worse.</li>
-  <li><strong>The decision contradicted itself.</strong> It cites <a href="./2026-07-13-status-derived-not-declared.observation.html"><a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a></a> and <a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html"><a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">#364</a></a> —
+  <li><strong>The decision contradicted itself.</strong> It cites <a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a> and <a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">#364</a> —
   <em>don't store it, derive it from the layer below</em>, <em>because it is
   derived it can be RECOMPUTED, which means IT CANNOT ROT</em> — and then declares
   belonging as hand-maintained metadata. Liveness already uses a node with edges.
   Belonging was the only facet reaching for a new primitive. (This bullet cited
-  #325 until 2026-07-30, inheriting a wrong pointer from the node it describes;
-  the quoted sentence is <a href="./2026-07-13-status-derived-not-declared.observation.html"><a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a></a>.)</li>
+  a wrong pointer until 2026-07-30, inherited from the node it describes;
+  the quoted sentence is <a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a>.)</li>
 </ul>
 <p><strong>What replaces it, and it is not a filter.</strong> The clutter worry
 is really that 130 nodes would sit in the graph doing nothing; tags would have
@@ -42,8 +42,7 @@ hidden them without making them worth having. So the import rule becomes a
 requirement instead: <strong>a node comes in only if it can be linked to material
 that is already here.</strong> Relevance stops being a per-node judgment and
 becomes a property of the topology.</p>
-<p>Under that rule <a href="./2026-01-12-query-interface-design.decision.html"><a href="./2026-01-12-query-interface-design.decision.html">#20</a></a> arrives because <a href="./2026-07-14-graph-as-cache-of-comprehension.decision.html"><a href="./2026-07-14-graph-as-cache-of-comprehension.decision.html">#351</a></a> cites it, and #43 (package manager →
-pnpm) does not, because nothing refers to it and nothing would. Most of the v0
+<p>Under that rule <a href="./2026-01-12-query-interface-design.decision.html">#20</a> arrives because <a href="./2026-07-14-graph-as-cache-of-comprehension.decision.html">#351</a> cites it, and the package-manager decision does not, because nothing refers to it and nothing would. Most of the v0
 implementation history fails to link and therefore never arrives, so the clutter
 does not exist and nothing needs hiding.</p>
 <p><strong>This is already the standard elsewhere.</strong>

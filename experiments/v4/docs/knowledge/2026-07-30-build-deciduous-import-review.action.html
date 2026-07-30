@@ -17,31 +17,36 @@ accepting the resulting number. 400 nodes is too many to adjudicate in
 conversation, so this builds a scannable review surface: every node with a
 recommended keep/drop, a one-line reason, and a per-row override.</p>
 <p><strong>Reading all 400 produced a finding that changes the criterion.</strong>
-"Keep what git cannot tell you" is necessary but not sufficient. It keeps
-<code>#43</code>/<code>#44</code> ("Package manager choice" → "Use pnpm") — a
-rejection git genuinely does not record and that nobody will ever want. It also
-keeps <code>#2</code>–<code>#5</code> (TypeScript vs Rust vs Hybrid) and
-<code><a href="./2026-01-13-option-louvain-algorithm.option.html"><a href="./2026-01-13-option-louvain-algorithm.option.html">#116</a></a></code>–<code><a href="./2026-01-13-call-graph-community-detection-recommendation.observation.html"><a href="./2026-01-13-call-graph-community-detection-recommendation.observation.html">#123</a></a></code> (Louvain vs Infomap vs Leiden, with real
-complexity and connectivity analysis), which are foundational. Identical shape by
-the criterion, opposite value. A second filter is needed —
-<em>did the choice have consequences?</em> — and it is a judgment the criterion
-cannot make, which is precisely why per-node review is the right call here.</p>
+"Keep what git cannot tell you" is necessary but not sufficient. It keeps the
+package-manager decision and its single option, "use pnpm" — a rejection git
+genuinely does not record and that nobody will ever want. It equally keeps the
+implementation-language decision weighing TypeScript against Rust and a hybrid,
+and the community-detection comparison of Louvain, Infomap and Leiden with real
+complexity and connectivity analysis, which are foundational. Identical shape by
+the criterion, opposite value. A second filter is needed — <em>did the choice
+have consequences?</em> — and it is a judgment the criterion cannot make, which
+is precisely why per-node review is the right call here.</p>
 <p><strong>Second finding: the spec's least-certain block is backwards.</strong>
 The spec names the 87 January vision observations as the least certain material.
-Reading them, they are among the <em>most</em> valuable in the corpus: two prior-art
-surveys (<code><a href="./2026-01-24-prior-art-neuro-symbolic-synthesis.observation.html"><a href="./2026-01-24-prior-art-neuro-symbolic-synthesis.observation.html">#228</a></a></code>–<code><a href="./2026-01-24-prior-art-subtext.observation.html"><a href="./2026-01-24-prior-art-subtext.observation.html">#244</a></a></code> covering Intentional Programming, MPS,
-Unison, Alloy, TLA+, Hazel, Subtext; <code><a href="./2026-01-24-prior-art-mlir.observation.html"><a href="./2026-01-24-prior-art-mlir.observation.html">#278</a></a></code>–<code><a href="./2026-01-24-mocking-as-verification.observation.html"><a href="./2026-01-24-mocking-as-verification.observation.html">#288</a></a></code> covering
-MLIR, Nanopass, refinement types and the EE verification parallel), plus
-<code><a href="./2026-01-24-why-intentional-programming-didnt-ship.observation.html"><a href="./2026-01-24-why-intentional-programming-didnt-ship.observation.html">#245</a></a></code>/<code><a href="./2026-01-24-lessons-from-ip-failure-for-mycelium.observation.html"><a href="./2026-01-24-lessons-from-ip-failure-for-mycelium.observation.html">#246</a></a></code> on why Intentional Programming never shipped —
-which is the same question this project is currently living inside. The genuinely
-low-value block is the Jan 12–14 implementation record, not the vision material.</p>
+Reading them, they are among the <em>most</em> valuable in the corpus: two
+prior-art surveys covering Intentional Programming, JetBrains MPS, Unison, Alloy,
+TLA+, Hazel and Subtext, then MLIR, Nanopass, refinement types and the EE
+verification parallel — plus the analysis of why Intentional Programming never
+shipped, which is the same question this project is currently living inside. The
+genuinely low-value block is the January implementation record, not the vision
+material.</p>
 <p><strong>Defaults encoded in the surface.</strong> Bare implementation records
-(<code>Committed:</code>, <code>Implemented</code>, <code>Added</code>) and
-feature-request goals default to drop, since git holds them verbatim. Decisions and
-options default to keep but are flagged <em>soft</em>, because that is exactly where
-the consequence filter has to be applied by hand. The seven nodes the v4 graph
-already cites are locked keeps — the graph cannot be left unable to resolve its own
-citations.</p>
+and feature-request goals default to drop, since git holds them verbatim.
+Decisions and options default to keep but are flagged <em>soft</em>, because that
+is exactly where the consequence filter has to be applied by hand. The nodes the
+v4 graph already cites are locked keeps — the graph cannot be left unable to
+resolve its own citations.</p>
+<p><strong>Superseded 2026-07-30.</strong> The keep/drop axis this surface was
+built around was replaced by
+<a href="./2026-07-30-link-do-not-tag.decision.html">link, do not tag</a>: a node
+is imported only if something can link to it, which makes relevance a property of
+the topology rather than a per-node judgment. The surface remains useful as a
+reading view of the whole corpus.</p>
 </knowledge-detail>
   <a data-rel="depends_on" href="./2026-07-30-unify-knowledge-graph-fix-harness.goal.html">the import cut, decided per node</a>
   <a data-rel="supports" href="./2026-07-30-capture-cost-killed-rationale-systems.observation.html">the prior-art block it cites is itself the material under review</a>

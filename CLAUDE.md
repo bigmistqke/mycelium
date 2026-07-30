@@ -24,19 +24,24 @@ records which exploration a node belongs to, which is why `add` grew a
 
 ### CRITICAL: how to cite a deciduous node
 
-Two forms, and the difference is load-bearing:
+**Don't.** `#N` is a primary key in a SQLite database that was frozen on
+2026-07-23 and is no longer where anything is logged. Inside
+`mycelium.knowledge` the number means nothing: it cannot be resolved, clicked,
+or checked, and a reader has to leave the graph to find out what it points at.
 
-| Form | Means |
-|---|---|
-| `<a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a>` | **imported** — the node is in the graph, the link resolves, you can click it |
-| a bare `#311` with no link | **not imported** — a reference into the frozen SQLite log, only resolvable via the `deciduous` CLI |
+- If the node **was imported**, link it:
+  `<a href="./2026-07-13-status-derived-not-declared.observation.html">…</a>`.
+  Writing the href also forces you to open the target, which is the step that
+  catches a wrong reference — two of twenty citations pointed at the wrong node
+  before anyone checked
+  (`2026-07-30-two-of-twenty-citations-were-hollow.observation.html`).
+- If it **wasn't imported**, describe it: "an option about which language to
+  implement in", not "#5". The description is what the reader needed anyway,
+  and every place a bare number was used it already sat next to one.
 
-Never write a bare `#N` for a node that *is* in the graph. `#N` is a foreign
-key into a dead database; once a node is imported it has a real address, and a
-link is checkable where a number is not. Writing the href also forces you to
-open the target, which is the step that catches a wrong reference — two of
-twenty citations pointed at the wrong node before anyone checked
-(`2026-07-30-two-of-twenty-citations-were-hollow.observation.html`).
+The single exception is the provenance line an imported node carries,
+`Imported from deciduous #20`. That is a source citation for verifying the
+transcription against the frozen log, not a reference to navigate.
 
 **Use the CLI to log, don't hand-author.** As of this same day, all three of
 `mycelium run`'s knowledge commands exist and are tested working:

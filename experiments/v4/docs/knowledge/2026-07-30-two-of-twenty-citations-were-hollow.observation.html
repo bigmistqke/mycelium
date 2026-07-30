@@ -12,30 +12,34 @@
   <knowledge-confidence>95</knowledge-confidence>
   <knowledge-detail><p>Computing the import closure meant reading every deciduous node the v4 graph
 cites. Twenty distinct citations; <strong>two were wrong</strong>, both in
-<code>declare-belonging-derive-liveness.decision.html</code>:</p>
+<a href="./2026-07-30-declare-belonging-derive-liveness.decision.html">declare
+belonging, derive liveness</a>:</p>
 <ul>
-  <li>"What deciduous <strong>#5</strong> calls the missing retirement concept" —
-  #5 is <em>"Hybrid — Rust core with TS interface"</em>, an option about
-  implementation language. The retirement concept is <strong><a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html"><a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">#310</a></a></strong>.</li>
-  <li>"<strong>#325</strong>: Composition makes decision status DERIVED, not
-  declared" — #325 is <em>"ONE LADDER"</em>, about v2's gradient and v3's waist
-  being the same structure. The quoted sentence is verbatim
-  <strong><a href="./2026-07-13-status-derived-not-declared.observation.html"><a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a></a></strong>.</li>
+  <li>"the missing retirement concept" pointed at an option about
+  <em>which language to implement in</em>. The retirement concept is
+  <a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">the
+  note on permanently-pending decisions</a>.</li>
+  <li>"Composition makes decision status DERIVED, not declared" was attributed to
+  a note about <em>two abstraction ladders being the same structure</em>. The
+  quoted sentence is verbatim from
+  <a href="./2026-07-13-status-derived-not-declared.observation.html">the note on
+  derived status</a>.</li>
 </ul>
 <p><strong>Both claims were sound; only the pointers were wrong.</strong> That is
-what makes this the expensive kind. A dangling citation to a node that does not
-exist is caught by any link checker. A citation to a real node that does not
-support the claim reads as fine and survives every structural check —
+what makes this the expensive kind. A citation to a node that does not exist is
+caught by any link checker. A citation to a real node that does not support the
+claim reads as fine and survives every structural check —
 <a href="./2026-07-27-mutation-testing-vs-blind-rederivation-for-hollow-citations.observation.html">exactly
 the case that node argues needs mutation testing or blind re-derivation</a>. It
 was found by blind re-derivation: reading the target and asking whether it says
 what the citing node claims.</p>
 <p><strong>The error propagated.</strong> Two later nodes inherited it without
-re-checking. <code>option-retired-status-enum</code> repeated "#5 says is
-missing". <code>link-do-not-tag</code>, written hours ago, said the decision
-"cites #325 and <a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html"><a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">#364</a></a>" — describing the wrong pointer rather than the source. A
-citation copied from a citing node rather than from the source carries the
-original error forward and adds a witness for it.</p>
+re-checking. <a href="./2026-07-30-option-retired-status-enum.option.html">The
+retired-status-enum option</a> repeated the first one.
+<a href="./2026-07-30-link-do-not-tag.decision.html">Link, do not tag</a>,
+written hours later, repeated the second — describing the wrong pointer rather
+than going to the source. A citation copied from a citing node rather than from
+the source carries the original error forward and adds a witness for it.</p>
 <p><strong>Rate, with the caveat that it is one sample.</strong> 2 of 20 is 10%,
 and both sit in one node written in a single burst, so this is not evidence about
 citation accuracy in general — it is evidence that unverified citations in this

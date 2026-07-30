@@ -11,14 +11,15 @@
   <knowledge-title>Rejected: add a fifth status value, retired</knowledge-title>
   <knowledge-confidence>25</knowledge-confidence>
   <knowledge-detail><p>Cheapest change — one enum value in <code>knowledge.template.html</code>, no
-engine change, and it names exactly what deciduous <strong><a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html"><a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">#310</a></a></strong> says is
-missing. (Cited #5 until 2026-07-30; that was wrong, and #5 is an option about
-implementation language.)</p>
-<p><strong>Rejected because</strong> it is the hand-maintained metadata that <a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html"><a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">#364</a></a>
-predicts will decay, and it denormalizes a single fact (v0 was abandoned) across
-~200 nodes. It also keeps the linearity assumption the enum already carries:
-retirement is not a state a node progresses to, it is a consequence of what
-happened to its surroundings.</p>
+engine change, and it names exactly what
+<a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">the
+note on permanently-pending decisions</a> says is missing.</p>
+<p><strong>Rejected because</strong> it is the hand-maintained metadata that
+<a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">derive,
+do not curate</a> predicts will decay, and it denormalizes a single fact (v0 was
+abandoned) across ~200 nodes. It also keeps the linearity assumption the enum
+already carries: retirement is not a state a node progresses to, it is a
+consequence of what happened to its surroundings.</p>
 </knowledge-detail>
   <a data-rel="depends_on" href="./2026-07-30-declare-belonging-derive-liveness.decision.html">rejected alternative</a>
   <a data-rel="alternative_to" href="./2026-07-30-option-knowledge-subdirectories.option.html">both reject deriving liveness</a>

@@ -11,28 +11,29 @@
   <knowledge-title>Declare belonging, derive liveness</knowledge-title>
   <knowledge-confidence>80</knowledge-confidence>
   <knowledge-status>active</knowledge-status>
-  <knowledge-detail><p>A status enum assumes linear history with a single endpoint. What deciduous
-<strong><a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html"><a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">#310</a></a></strong> calls the missing retirement concept is not a property of
-each node: v0's decisions are dormant because the v0 exploration was abandoned —
-one fact denormalized across 200 nodes, and the next abandonment costs another
-200 stamps.</p>
+  <knowledge-detail><p>A status enum assumes linear history with a single endpoint. What
+<a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">the
+note on permanently-pending decisions</a> calls the missing retirement concept is
+not a property of each node: v0's decisions are dormant because the v0
+exploration was abandoned — one fact denormalized across 200 nodes, and the next
+abandonment costs another 200 stamps.</p>
 <p>Split what status conflates. <strong>Belonging</strong> (which exploration a
 node is part of) never changes and can be multi-valued.
 <strong>Liveness</strong> (whether it still holds) changes because of events
 outside the node, so it is derived from topology: one <code>v0-abandoned</code>
 node with edges to what it supersedes, and an audit computes reachability.</p>
-<p>Grounded in the project's own record — <strong><a href="./2026-07-13-status-derived-not-declared.observation.html"><a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a></a></strong>: <em>Composition
-makes decision status DERIVED, not declared… don't store it, derive it from the
-layer below. Solves metadata maintenance by eliminating the metadata.</em> And
-<a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html"><a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">#364</a></a>: <em>Because it is derived it can be RECOMPUTED, which means IT CANNOT
-ROT.</em></p>
-<p><strong>Citations corrected 2026-07-30.</strong> This node originally cited
-#5 for the retirement concept and #325 for the derived-status quote. Both were
-wrong. #5 is "Hybrid — Rust core with TS interface", an option about
-implementation language; #325 is "ONE LADDER", about v2's gradient and v3's waist
-being the same structure. The claims are sound and the correct sources are <a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html"><a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">#310</a></a>
-and <a href="./2026-07-13-status-derived-not-declared.observation.html"><a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a></a> — the quoted sentence is verbatim <a href="./2026-07-13-status-derived-not-declared.observation.html"><a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a></a> — but the pointers were not.
-Found by reading the targets while computing the import closure. See
+<p>Grounded in the project's own record —
+<a href="./2026-07-13-status-derived-not-declared.observation.html">composition
+makes decision status derived, not declared</a>: <em>don't store it, derive it
+from the layer below. Solves metadata maintenance by eliminating the
+metadata.</em> And
+<a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">derive the
+graph, do not curate it</a>: <em>because it is derived it can be RECOMPUTED,
+which means IT CANNOT ROT.</em></p>
+<p><strong>Citations corrected 2026-07-30.</strong> Both of the sources above
+were originally cited by the wrong node — one pointing at an option about
+implementation language, the other at a note on two abstraction ladders. The
+claims were sound and the pointers were not. See
 <a href="./2026-07-30-two-of-twenty-citations-were-hollow.observation.html">two of
 twenty citations were hollow</a>.</p>
 <p>The belonging half of this decision was later dropped — see
@@ -40,7 +41,7 @@ twenty citations were hollow</a>.</p>
 liveness half stands.</p>
 </knowledge-detail>
   <a data-rel="depends_on" href="./2026-07-30-unify-knowledge-graph-fix-harness.goal.html">part 3 of the goal</a>
-  <a data-rel="depends_on" href="./2026-07-13-status-derived-not-declared.observation.html">the source of the derive-do-not-declare argument (corrected from #325)</a>
-  <a data-rel="depends_on" href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">the retirement concept this decision names (corrected from #5)</a>
+  <a data-rel="depends_on" href="./2026-07-13-status-derived-not-declared.observation.html">the source of the derive-do-not-declare argument</a>
+  <a data-rel="depends_on" href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">the retirement concept this decision names</a>
 </knowledge-decision>
 </body></html>
