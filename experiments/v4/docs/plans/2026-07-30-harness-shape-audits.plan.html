@@ -112,7 +112,7 @@
     <plan-interfaces>A new `recover` command exported from knowledge.template.html's existing script[type="mycelium/command"], beside add/link/update/list/generate — discovered by src/run.ts with no engine change, and read-only: it calls fs.list("knowledge") and mutates nothing, so commit() writes no files. Invoked as `pnpm mycelium knowledge recover`.</plan-interfaces>
     <plan-step id="task-5-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Write the recover command: three live threads</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>Prints what a new session needs and nothing else. (1) Active goals — already expressible as `list nodes --type goal --status active`, currently 3. (2) Decisions with no outcome — a decision node with no path to a knowledge-outcome; this is the one thread no existing primitive answers, since it needs an edge join rather than a field filter. (3) Contested claims — any node touched by a contradicts edge, currently exactly 1 (the 52% figure), which is the whole reason that edge was worth minting. Read-only by construction: fs.list() snapshots each document and commit() skips unmutated files, so this cannot write even by accident.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>sh -c 'node src/run.ts knowledge recover | grep -q "unify-knowledge-graph-fix-harness" &amp;&amp; node src/run.ts knowledge recover | grep -q "fifty-two-percent"'</plan-check-command>
@@ -120,7 +120,7 @@
     </plan-step>
     <plan-step id="task-5-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Prove it writes nothing</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>The command reaches every node in the graph through the same tracked get() path the write commands use. A regression that mutates a document during a read would silently rewrite 148 files. This compares the tree before and after rather than asserting a clean tree — the graph legitimately carries uncommitted nodes while a pass is in flight, so "clean" would be unsatisfiable and "unchanged" is the property actually wanted.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>sh -c 'B=$(git status --porcelain docs/knowledge); node src/run.ts knowledge recover &gt; /dev/null &amp;&amp; test "$B" = "$(git status --porcelain docs/knowledge)"'</plan-check-command>

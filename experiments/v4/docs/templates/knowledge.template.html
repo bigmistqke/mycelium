@@ -834,6 +834,107 @@
     throw new Error(`unknown list kind "${kind}" — expected "nodes" or "edges"`)
   }
 
+  /**
+   * Print the graph's live threads, for reading at the start of a session.
+   *
+   *   mycelium run knowledge recover
+   *
+   * Three questions a new session needs answered, none of which `list`
+   * can express because each is a property of the graph rather than of
+   * a node:
+   *
+   *   1. Active goals — what was in flight.
+   *   2. Decisions with no outcome — what was chosen but never resolved.
+   *      A decision counts as resolved if an outcome is reachable by
+   *      following its outgoing edges, or if an outcome points back at
+   *      it directly; decision -> action -> outcome is the usual shape,
+   *      so a one-hop check would report almost every decision as open.
+   *   3. Contested claims — anything at either end of a `contradicts`
+   *      edge. The point of minting that edge was to make a reversal
+   *      visible without reading the nodes.
+   *
+   * Read-only: it calls fs.list() and mutates nothing, so commit()
+   * finds every document byte-identical to its snapshot and writes
+   * nothing. This replaces /recover, which drove the frozen deciduous
+   * CLI.
+   */
+  export function recover({ fs }) {
+    const documents = fs.list('knowledge')
+    const oneLine = (text) => text.trim().replace(/\s+/g, ' ')
+
+    const nodes = new Map()
+    for (const { path, doc } of documents) {
+      const el = doc.querySelector('[data-conforms-to]')
+      if (!el) continue
+      const type = el.tagName.toLowerCase()
+      const family = type.split('-')[0]
+      nodes.set(path, {
+        path,
+        type: type.replace(`${family}-`, ''),
+        status: oneLine(el.querySelector(`${family}-status`)?.textContent ?? ''),
+        title: oneLine(el.querySelector(`${family}-title`)?.textContent ?? ''),
+        el,
+      })
+    }
+
+    // Edges are stored as a relative href on an <a data-rel>; only the
+    // filename is needed to key back into `nodes`, and anything pointing
+    // outside knowledge/ (a spec, a template) is not part of this graph.
+    const out = new Map()
+    const incoming = new Map()
+    const contradicts = []
+    for (const [path, node] of nodes) {
+      for (const a of node.el.querySelectorAll('a[data-rel]')) {
+        const to = `knowledge/${(a.getAttribute('href') ?? '').split('/').pop()}`
+        if (!nodes.has(to)) continue
+        const rel = a.getAttribute('data-rel')
+        if (!out.has(path)) out.set(path, [])
+        out.get(path).push(to)
+        if (!incoming.has(to)) incoming.set(to, [])
+        incoming.get(to).push(path)
+        if (rel === 'contradicts') contradicts.push({ from: path, to, label: oneLine(a.textContent ?? '') })
+      }
+    }
+
+    const reachesOutcome = (start) => {
+      const seen = new Set([start])
+      const queue = [start]
+      while (queue.length) {
+        for (const next of out.get(queue.shift()) ?? []) {
+          if (seen.has(next)) continue
+          if (nodes.get(next)?.type === 'outcome') return true
+          seen.add(next)
+          queue.push(next)
+        }
+      }
+      return (incoming.get(start) ?? []).some((p) => nodes.get(p)?.type === 'outcome')
+    }
+
+    const section = (heading, items, render) => {
+      console.log(`\n${heading} (${items.length})`)
+      if (items.length === 0) console.log('  —')
+      for (const item of items) render(item)
+    }
+
+    const activeGoals = [...nodes.values()].filter((n) => n.type === 'goal' && n.status === 'active')
+    section('ACTIVE GOALS', activeGoals, (n) => console.log(`  ${n.title}\n    ${n.path}`))
+
+    const openDecisions = [...nodes.values()].filter(
+      (n) => n.type === 'decision' && n.status !== 'rejected' && !reachesOutcome(n.path),
+    )
+    section('DECISIONS WITHOUT AN OUTCOME', openDecisions, (n) =>
+      console.log(`  ${n.title}\n    ${n.path}${n.status ? `  [${n.status}]` : ''}`),
+    )
+
+    section('CONTESTED CLAIMS', contradicts, (e) => {
+      console.log(`  ${nodes.get(e.from)?.title}`)
+      console.log(`    contradicts ${nodes.get(e.to)?.title}`)
+      if (e.label) console.log(`    ${e.label}`)
+      console.log(`    ${e.from}`)
+    })
+    console.log('')
+  }
+
   function renderGraphPage(graphJson) {
     return `<!DOCTYPE html>
 <html lang="en">
