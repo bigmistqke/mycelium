@@ -22,7 +22,7 @@
     <plan-interfaces>settings.json keeps its enabledPlugins block; both hook entries are removed, leaving hooks empty or absent.</plan-interfaces>
     <plan-step id="task-1-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Remove require-action-node.sh</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>The 15-minute Edit/Write gate. Source of 47% action nodes: a long session must emit one every quarter hour to keep working. Its guidance block also prints an add signature without --detail, teaching title-cramming at the moment the agent is blocked and least likely to think.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>test ! -f ../../.claude/hooks/require-action-node.sh</plan-check-command>
@@ -30,7 +30,7 @@
     </plan-step>
     <plan-step id="task-1-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Remove post-commit-reminder.sh</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>Prompts a node per commit, which stop-per-commit-nodes.decision.html already decided against. Its text also still claims the CLI cannot update existing nodes, which update fixed, and it hardcodes experiments/v4/docs/knowledge, which breaks on any restructure.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>test ! -f ../../.claude/hooks/post-commit-reminder.sh</plan-check-command>
@@ -38,7 +38,7 @@
     </plan-step>
     <plan-step id="task-1-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Unwire both from settings.json, keeping enabledPlugins</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail>Remove the PreToolUse and PostToolUse entries. The enabledPlugins block disabling superpowers for this project must survive, and the file must stay valid JSON — a malformed settings.json silently disables every setting in it.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>sh -c '! grep -qE "require-action-node|post-commit-reminder" ../../.claude/settings.json &amp;&amp; jq -e .enabledPlugins ../../.claude/settings.json &gt; /dev/null'</plan-check-command>

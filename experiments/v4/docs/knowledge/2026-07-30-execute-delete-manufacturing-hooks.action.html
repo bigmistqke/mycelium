@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Execute task 1: delete both node-manufacturing hooks and unwire them</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Execute task 1: delete both node-manufacturing hooks and unwire them</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-detail><p>Removes <code>require-action-node.sh</code> (PreToolUse on Edit and Write,
+blocks unless a goal or action node was touched in the last 15 minutes) and
+<code>post-commit-reminder.sh</code> (PostToolUse on Bash, fires after every
+<code>git commit</code>), and strips both entries from
+<code>.claude/settings.json</code>. The <code>enabledPlugins</code> block
+survives.</p>
+<p><strong>Both are recoverable.</strong> Each is tracked in git, so the deletion
+is a revert away and nothing about the mechanism is lost to history.</p>
+<p><strong>Deviation from the plan's step order, deliberately.</strong> The plan
+lists the two deletions before the unwiring. Done in that order, the scripts are
+gone while <code>settings.json</code> still points at them, so every Edit, Write
+and Bash call in the remainder of the session invokes a missing file. The
+post-commit hook matches all Bash calls, not just commits, so that failure mode
+would be constant rather than occasional. Both deletions and the unwiring are
+therefore applied in one step. The three plan-checks assert an end state rather
+than an order, so they still verify exactly what they were written to verify.</p>
+<p><strong>What the two hooks demonstrated on the way out.</strong> Both fired
+during the session that removed them: the 15-minute gate three times, the
+post-commit reminder once. The reminder's guidance text asserts the CLI cannot
+update existing nodes, which stopped being true at 4738449, and the 15-minute
+gate's guidance prints an <code>add</code> signature with no
+<code>--detail</code> flag — the omission that task-2 fixes and the direct cause
+of eight nodes cramming their findings into titles.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-30-harness-manufactures-the-clutter.observation.html">removes the two mechanisms this node measured</a>
+  <a data-rel="depends_on" href="./2026-07-30-gate-on-shape-not-rate.decision.html">the deletion half of gating on shape</a>
+</knowledge-action>
+</body></html>
