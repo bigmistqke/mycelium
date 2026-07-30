@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Four strategies for code edits: read-only, diff-and-infer, propose-and-confirm, patch layer</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>Four strategies for code edits: read-only, diff-and-infer, propose-and-confirm, patch layer</knowledge-title>
+  <knowledge-confidence>83</knowledge-confidence>
+  <knowledge-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23.</em></p>
+<p>Options for WAT editing:</p>
+<ul>
+  <li><strong>(A) WAT read-only</strong> — all changes go through the graph.</li>
+  <li><strong>(B) Diff and infer</strong> — risky.</li>
+  <li><strong>(C) Suggestions</strong> — the user confirms proposed graph changes.</li>
+  <li><strong>(D) Separate patch layer</strong> — like <code>git rebase</code>.</li>
+</ul>
+</knowledge-detail>
+  <a data-rel="leads_to" href="./2026-01-24-roundtrip-via-intent-derivation.decision.html">the four strategies are what the roundtrip decision chooses between</a>
+</knowledge-observation>
+</body></html>
