@@ -28,11 +28,13 @@ implementation history landing in a graph about HTML templates.</p>
   leaning on it — but that is written down already, as #351 citing #20. Where a
   thing was decided is one value; what leans on it is the edge set. A tag
   conflates them and then duplicates the second one worse.</li>
-  <li><strong>The decision contradicted itself.</strong> It cites #325 and #364 —
+  <li><strong>The decision contradicted itself.</strong> It cites #311 and #364 —
   <em>don't store it, derive it from the layer below</em>, <em>because it is
-  derived it cannot rot</em> — and then declares belonging as hand-maintained
-  metadata. Liveness already uses a node with edges. Belonging was the only facet
-  reaching for a new primitive.</li>
+  derived it can be RECOMPUTED, which means IT CANNOT ROT</em> — and then declares
+  belonging as hand-maintained metadata. Liveness already uses a node with edges.
+  Belonging was the only facet reaching for a new primitive. (This bullet cited
+  #325 until 2026-07-30, inheriting a wrong pointer from the node it describes;
+  the quoted sentence is #311.)</li>
 </ul>
 <p><strong>What replaces it, and it is not a filter.</strong> The clutter worry
 is really that 130 nodes would sit in the graph doing nothing; tags would have
