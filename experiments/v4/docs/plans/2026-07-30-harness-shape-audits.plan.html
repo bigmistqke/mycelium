@@ -11,10 +11,10 @@
   <plan-title>Stop the harness manufacturing clutter; gate on shape, not rate</plan-title>
   <plan-status>active</plan-status>
   <plan-date>2026-07-30</plan-date>
-  <plan-goal>Remove the tooling that manufactures low-information nodes, and replace it with audits that check the shape of what was written. Measured target: no mechanism that produces a node on a timer, and two audits that would flag the failures already present in the graph (8 over-long titles in the 2026-07-27 batch, and the hollow subset of 65 action nodes).</plan-goal>
-  <plan-architecture>Four moves against the same cause. (1) Deletion: require-action-node.sh (15-minute Edit/Write gate, source of 47% action nodes) and post-commit-reminder.sh (per-commit prompting, contradicts stop-per-commit-nodes.decision.html) are removed and unwired from .claude/settings.json. (2) Documentation: --detail enters CLAUDE.md's add and update signatures, since the CLI has supported it since 4738449 and its absence from the copy-pasteable signature is the entire cause of 0-of-8 adoption in the newest batch. (3) Audits: title-length and hollow-action are added as data-audits scripts inside knowledge.template.html, collocated with the two audits already there and discovered by the existing crawler with no engine change. A third audit covering unchecked claims is deliberately deferred until the health criteria are settled. (4) Read path: /recover is replaced rather than merely deleted — a knowledge recover command surfaces the graph's live threads at session start, so capture pays the writer back instead of reading as pure tax. Dead slash commands driving frozen systems are removed alongside.</plan-architecture>
+  <plan-goal>Remove the tooling that manufactures low-information nodes, replace it with audits that check the shape of what was written, restore a read path so the graph pays back the effort of writing it, and repair the graph so those audits can fail the build honestly. Terminal state: no mechanism produces a node on a timer, two audits are live and failing, and the graph passes them — 47 over-long titles and 14 hollow actions, 52 distinct nodes, all repaired.</plan-goal>
+  <plan-architecture>Four moves against the same cause. (1) Deletion: require-action-node.sh (15-minute Edit/Write gate, source of 47% action nodes) and post-commit-reminder.sh (per-commit prompting, contradicts stop-per-commit-nodes.decision.html) are removed and unwired from .claude/settings.json. (2) Documentation: --detail enters CLAUDE.md's add and update signatures, since the CLI has supported it since 4738449 and its absence from the copy-pasteable signature is the entire cause of 0-of-8 adoption in the newest batch. (3) Audits: title-length and hollow-action are added as data-audits scripts inside knowledge.template.html, collocated with the two audits already there and discovered by the existing crawler with no engine change. They fail the build rather than warning, which is why task-6 repairs the graph inside this pass instead of deferring it — a gate that ships permanently red gets bypassed. A third audit, decision-without-alternative, was cut for the same reason: it flagged 17 of 21 decisions and could only go green by inventing rejected alternatives from months ago. (4) Read path: /recover is replaced rather than merely deleted — a knowledge recover command surfaces the graph's live threads at session start, so capture pays the writer back instead of reading as pure tax. Dead slash commands driving frozen systems are removed alongside.</plan-architecture>
   <plan-tech-stack>Node &gt;=24 with native TS stripping, happy-dom for parsing, the existing src/validate.ts crawler. No new dependencies.</plan-tech-stack>
-  <plan-global-constraints>plan-check commands run from experiments/v4/, so repo-root paths are ../../. Nothing here deletes knowledge nodes — pruning the graph is a separate, later pass. pnpm validate must stay green at every step, except task-3-step-3 where red is the specified outcome. Deleting a hook that writes on a rate and adding one that reads at session start is not a contradiction — see fix-incentives-before-guardrails.decision.html. Deliberately out of scope for this pass: the plan-step record guardrail (a plan-check asserting a knowledge node links back to task-N), deferred because it must query the graph by shape while the tag axis and the ~183 cut are both unsettled; writing it now means writing it twice.</plan-global-constraints>
+  <plan-global-constraints>plan-check commands run from experiments/v4/, so repo-root paths are ../../. Nothing here deletes knowledge nodes — pruning the graph is a separate, later pass, and task-6 repairs nodes rather than removing them. pnpm validate is green at every step except the window between task-3 (the audits land) and task-6 (the repair finishes); red inside that window is expected and is the worklist, and the pass is not done until it is green again. Deleting a hook that writes on a rate and adding one that reads at session start is not a contradiction — see fix-incentives-before-guardrails.decision.html. Deliberately out of scope: the plan-step record guardrail (a plan-check asserting a knowledge node links back to task-N), deferred because it must query the graph by shape while the tag axis and the import cut are unsettled; writing it now means writing it twice.</plan-global-constraints>
   <plan-task id="task-1" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Delete the node-manufacturing hooks</plan-title>
     <plan-status>pending</plan-status>
@@ -81,9 +81,9 @@
       </plan-check>
     </plan-step>
     <plan-step id="task-3-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
-      <plan-title>Confirm the audits fire on the real graph</plan-title>
+      <plan-title>Confirm the audits fire, and capture the repair worklist</plan-title>
       <plan-status>pending</plan-status>
-      <plan-detail>This step expects validate to FAIL. The audits are written before the graph is repaired, so a green run here would mean they detect nothing. Repair is a later pass, so red is the correct interim state — which also forces the deferred open question (do audits fail the build or only warn?) to be answered deliberately rather than by accident.</plan-detail>
+      <plan-detail>This step expects validate to FAIL, and that failure is the deliverable: it is the list task-6 works through. A green run here would mean the audits detect nothing. Red is a transient state inside this pass, not a shipped one — the audits fail the build, so the pass is unfinished until task-6 closes them. Expected at this point: 47 title-length violations and 14 hollow-action violations, 52 distinct nodes.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>pnpm validate</plan-check-command>
         <plan-check-success>false</plan-check-success>
@@ -132,6 +132,36 @@
       <plan-detail>A SessionStart hook running the command is what converts capture from tax into visible benefit — the next session reads what this one wrote, without being asked. This re-adds a hook to the settings.json that task-1 just emptied, and that is the intended shape, not a regression: the deleted hooks fired on a rate and wrote nodes, this one fires at a moment that genuinely exists and only reads. recover.md is deleted in this same step, so the read path is never absent. CLAUDE.md's Session Start Checklist points at the new command.</plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
         <plan-check-command>sh -c 'test ! -e ../../.claude/commands/recover.md &amp;&amp; jq -e ".hooks.SessionStart" ../../.claude/settings.json &gt; /dev/null &amp;&amp; grep -q "knowledge recover" ../../CLAUDE.md'</plan-check-command>
+      </plan-check>
+    </plan-step>
+  </plan-task>
+  <plan-task id="task-6" data-conforms-to="../templates/plan.template.html#plan-task">
+    <plan-title>Repair the 52 flagged nodes and close the gate green</plan-title>
+    <plan-status>pending</plan-status>
+    <plan-files>docs/knowledge/*.html</plan-files>
+    <plan-interfaces>Repair only — every node keeps its identity, its edges and its filename. Nothing is deleted here; pruning the graph is a separate later pass. Edits go through mycelium knowledge update, not by hand.</plan-interfaces>
+    <plan-step id="task-6-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Move over-long titles into detail</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail>47 nodes carry a title past 140 characters, spread across the whole graph rather than one batch: 11 from 07-23, 4 from 07-24, 24 from 07-25, 8 from 07-27. The repair is the same each time — the title becomes a real title, and the paragraph it was carrying moves into knowledge-detail, which is where it belonged and where the field has existed since 4738449. This is the repair that only works because the finding is still legible in the title; it is transcription, not reconstruction.</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>sh -c 'test "$(node src/run.ts knowledge list nodes | awk -F"\t" "length(\$4)&gt;140" | wc -l)" -eq 0'</plan-check-command>
+      </plan-check>
+    </plan-step>
+    <plan-step id="task-6-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Fill or justify the 14 hollow actions</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail>14 of 65 action nodes carry neither a detail nor a commit hash, so they assert that work happened without saying what it was or pointing at the diff. Where the commit exists, attach it with knowledge update --commit. Where the action spanned several commits, CLAUDE.md's own rule says omit the hash and write the detail instead. Both routes use material that exists; neither requires inventing history.</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>sh -c 'n=0; for f in docs/knowledge/*.action.html; do grep -q "&lt;knowledge-detail&gt;" "$f" || grep -q "&lt;knowledge-commit&gt;" "$f" || n=$((n+1)); done; test "$n" -eq 0'</plan-check-command>
+      </plan-check>
+    </plan-step>
+    <plan-step id="task-6-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Validate green with the audits failing the build</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail>The terminal state of the whole pass. Both audits are live and both fail the build, and the graph satisfies them — so the gate is real rather than permanently red. Until this step passes, task-3's audits are shipped in a state where the only way to get work done is to bypass them, which is the failure this plan exists to prevent. The check asserts both audits are present before asserting green, because a bare validate would pass trivially while they do not yet exist.</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>sh -c 'grep -q "data-audits=.title-length." docs/templates/knowledge.template.html &amp;&amp; grep -q "data-audits=.hollow-action." docs/templates/knowledge.template.html &amp;&amp; pnpm validate'</plan-check-command>
       </plan-check>
     </plan-step>
   </plan-task>
