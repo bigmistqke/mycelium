@@ -2,47 +2,44 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Observation: Commit, plan step, and node each own a different fact; duplication is the failure</title>
+<title>Observation: A node should carry a claim, not an incident</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
-  <knowledge-title>Commit, plan step, and node each own a different fact; duplication is the failure</knowledge-title>
+  <knowledge-title>A node should carry a claim, not an incident</knowledge-title>
   <knowledge-confidence>80</knowledge-confidence>
-  <knowledge-detail><p>Prompted by a direct challenge: task-2 got no action node on the grounds that
-it had nothing non-obvious to say, while task-1 got one. Checking the two
-artifacts side by side, <strong>all four paragraphs of task-1's node also appear
-in commit d485978</strong>. The node is fully redundant with git, so the
-distinction was wrong and task-1 should not have had one either.</p>
-<p><strong>Why it exists:</strong> it was written to pre-empt the 15-minute hook,
-minutes before that same task deleted the hook. A node produced to satisfy a
-gate rather than to record something is exactly the artifact
-<a href="./2026-07-30-harness-manufactures-the-clutter.observation.html">the
-harness was measured producing</a>.</p>
-<p><strong>The rule is about ownership, not interest.</strong> The question is
-never "was this worth saying" — it is "which container already owns it":</p>
+  <knowledge-detail><p>Three attempts at this rule in one day; the first two did not survive.</p>
+<p><strong>Attempt 1 — "what belongs in commit history should not be repeated
+here."</strong> Too strong, and wrong in four ways. Git is not read: a session
+start surfaces the graph, nothing surfaces <code>git log</code>. Commits cannot
+hold edges, so anything whose value is its relation to another claim has to be a
+node regardless. Commits are immutable, so correcting a claim a commit made
+requires restating it somewhere else deliberately. And it is unapplicable at
+write time, since the node is usually written before the commit exists.</p>
+<p><strong>Attempt 2 — "each fact has one owning container."</strong> Better, but
+it made the question <em>where does this go</em> when the real question is
+<em>should this exist</em>.</p>
+<p><strong>What survived: the test is altitude, not container.</strong></p>
 <ul>
-  <li><strong>Commit message</strong> — what this diff does and why it is shaped
-  this way. Dies with the diff, and git already keeps it.</li>
-  <li><strong>Plan step</strong> — how execution differed from what was
-  planned.</li>
-  <li><strong>Knowledge node</strong> — reasoning that outlives the diff: a
-  rejected alternative, a reversal, evidence, a rule.</li>
+  <li>A <strong>claim</strong> could have come out differently, and someone could
+  disagree with it. <em>Derive, don't declare</em> is a claim.</li>
+  <li>An <strong>incident</strong> is a record of something that happened.
+  "The task status field went stale after task 1" is an incident.</li>
 </ul>
-<p>Writing the same fact into two of them is the failure mode, and it is the one
-that produced the 47% action-node figure — not laziness, but diligence pointed at
-the wrong container.</p>
-<p><strong>Gap this exposes in the audits.</strong> Neither planned audit catches
-the redundant node. It carries a <code>detail</code>, so
-<code>hollow-action</code> passes it; its title is short, so
-<code>title-length</code> passes it. Both check <em>shape</em>; this node's defect
-is <em>redundancy with git</em>, which shape cannot see. A node whose detail
-merely restates its own commit message is invisible to the gate — so the audits
-narrow the failure modes, they do not close them, and the remaining judgment is
-still human.</p>
+<p>The incident is evidence <em>for</em> the claim; it is not itself worth a node.
+Log the claim, and let the commit message hold the incident that prompted it.</p>
+<p><strong>Why this is the shape of the volume problem.</strong> The 47%
+action-node figure was read as a discipline failure. It is at least as
+consistent with diligence aimed one level too low — people recording what
+happened, faithfully, when what was worth recording was what they now believe.
+That reframing is testable and has not been tested.</p>
+<p><strong>Limit worth stating.</strong> Neither shape audit catches this. A node
+restating an incident has a detail and a short title, so <code>title-length</code>
+and <code>hollow-action</code> both pass it. The audits narrow the failure modes;
+they do not close them, and this one stays a judgment call.</p>
 </knowledge-detail>
   <a data-rel="supports" href="./2026-07-30-harness-manufactures-the-clutter.observation.html">names the mechanism behind the 47%: right diligence, wrong container</a>
-  <a data-rel="contradicts" href="./2026-07-30-execute-delete-manufacturing-hooks.action.html">that node duplicates its own commit and should not have been written</a>
 </knowledge-observation>
 </body></html>

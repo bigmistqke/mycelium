@@ -730,6 +730,39 @@
   }
 
   /**
+   * Delete a knowledge node file.
+   *
+   *   mycelium run knowledge delete <file>
+   *
+   * REFUSES if any other node links to this one, listing the referrers,
+   * rather than deleting and leaving their hrefs pointing at nothing.
+   * Unlink them first — that forces the question of whether the claim
+   * resting on this node survives without it, which is exactly the
+   * judgment a cascade would hide.
+   *
+   * Outgoing edges need no handling: they vanish with the file.
+   */
+  export function del({ fs, args }) {
+    requireArgs([args._[0], '<file>'])
+    const target = args._[0]
+    const referrers = fs
+      .list('knowledge')
+      .filter(({ path }) => path !== `knowledge/${target}`)
+      .filter(({ doc }) =>
+        [...doc.querySelectorAll('a[data-rel]')].some((a) => (a.getAttribute('href') ?? '').endsWith(`/${target}`)),
+      )
+      .map(({ path }) => path)
+    if (referrers.length > 0) {
+      throw new Error(
+        `${target} is still linked from ${referrers.length} node(s):\n` +
+          referrers.map((p) => `  ${p}`).join('\n') +
+          `\nunlink them first`,
+      )
+    }
+    fs.delete(`knowledge/${target}`)
+  }
+
+  /**
    * Remove a data-rel edge from one node to another.
    *
    *   mycelium run knowledge unlink <from-file> <to-file> --rel <rel>
