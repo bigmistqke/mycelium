@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan: Knowledge CLI update command</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/plan.template.css">
+</head>
+<body>
+<plan-doc data-conforms-to="../templates/plan.template.html#plan-doc">
+  <plan-title>Knowledge CLI update command</plan-title>
+  <plan-date>2026-07-23</plan-date>
+  <plan-goal>Add a mycelium knowledge update &lt;file&gt; command that upserts/clears fields on an existing knowledge/*.html node, and make each node type's validator reject fields outside its own shape, so pnpm crawl catches a misplaced field regardless of what wrote it.</plan-goal>
+  <plan-architecture>Both pieces live entirely inside experiments/v4/docs/templates/knowledge.template.html — no engine changes. (1) Each of the six data-validates scripts gains one more check: any knowledge-* child of the root not in that type's allowed-field list is an error. (2) The existing type="mycelium/command" script gains a third export, update, sibling to add/link, using the same fs.get/DOM-mutation pattern link already uses.</plan-architecture>
+  <plan-tech-stack>Node &gt;=24 native TS stripping, happy-dom (DOM parsing), acorn (already added for --help extraction, untouched by this work). No test framework exists in this project — verification is pnpm crawl (the crawler's own validators/audits) plus direct CLI invocation with inspected output, matching how every prior piece of this project has been verified.</plan-tech-stack>
+  <plan-global-constraints>Full design: experiments/v4/docs/specs/2026-07-23-mycelium-update-command.spec.html — read it before starting; every task below implements one part of it. No new dependencies, and no changes to src/run.ts or src/crawl.ts (both stay protocol-only per experiments/v4/docs/specs/2026-07-23-mycelium-authoring-commands.spec.html). update does not replicate add's per-type field gating (REQUIRES_STATUS, prompt-only-on-goal): it writes whatever field is asked for, and the closed-schema check added in Task 1 is what catches a mismatch, on the next pnpm crawl rather than immediately in the CLI — do not add client-side type gating to update, since that would contradict the spec's explicit design choice. Run all pnpm commands from experiments/v4/ (or prefix with pnpm --filter @mycelium/v4 from the repo root). This project logs its own decision graph as it works (CLAUDE.md, auto-loaded for this repo) — use pnpm mycelium knowledge add/link (and, after Task 2, update) to log actions/outcomes as you go, the same way prior work in this repo did.</plan-global-constraints>
+  <plan-task id="task-1" data-conforms-to="../templates/plan.template.html#plan-task">
+    <plan-title>Closed-schema check on all six knowledge-* validators</plan-title>
+    <plan-files>Modify: experiments/v4/docs/templates/knowledge.template.html:81-100 (knowledge-goal validator), :119-136 (knowledge-decision validator), :156-169 (knowledge-option validator), :193-214 (knowledge-action validator), :236-253 (knowledge-outcome validator), :270-283 (knowledge-observation validator)</plan-files>
+    <plan-interfaces>Consumes: nothing from other tasks — this task is self-contained. Produces: nothing later tasks call directly. Later tasks (2, 3) rely on pnpm crawl reporting "unexpected &lt;tag&gt; on knowledge-&lt;type&gt;" for any field outside a type's shape — that exact error message format is what Task 2's verification step greps for.</plan-interfaces>
+    <plan-step id="task-1-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Edit the knowledge-goal validator</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>Context for all six edits in this task: each of the six validators currently ends with a required-field loop, an optional confidence-range check, and (for <code>action</code>/<code>outcome</code>) an optional-field loop, then <code>return { ok: errors.length === 0, errors }</code>. Add one more check to each, right before that <code>return</code>, that walks every direct child of the root element and flags any <code>knowledge-*</code> tag not on that type's allowed list.</p>
+<p>In <code>experiments/v4/docs/templates/knowledge.template.html</code>, find (around line 97-99):</p>
+<pre><code>    const prompt = el.querySelector('knowledge-prompt')
+    if (prompt &amp;&amp; !prompt.textContent.trim()) errors.push('&lt;knowledge-prompt&gt; present but empty — omit it instead')
+    return { ok: errors.length === 0, errors }</code></pre>
+<p>Replace with:</p>
+<pre><code>    const prompt = el.querySelector('knowledge-prompt')
+    if (prompt &amp;&amp; !prompt.textContent.trim()) errors.push('&lt;knowledge-prompt&gt; present but empty — omit it instead')
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-prompt']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') &amp;&amp; !allowed.includes(tag)) errors.push(`unexpected &lt;${tag}&gt; on knowledge-goal`)
+    }
+    return { ok: errors.length === 0, errors }</code></pre>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Edit the knowledge-decision validator</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>Find (around line 131-135):</p>
+<pre><code>    const status = el.querySelector('knowledge-status')?.textContent.trim()
+    if (status &amp;&amp; !['pending', 'active', 'completed', 'rejected'].includes(status)) {
+      errors.push(`&lt;knowledge-status&gt; must be pending|active|completed|rejected, got "${status}"`)
+    }
+    return { ok: errors.length === 0, errors }</code></pre>
+<p>This exact five-line shape appears in <code>knowledge-goal</code>, <code>knowledge-decision</code>, and <code>knowledge-action</code>'s validators — use surrounding context (the preceding <code>&lt;knowledge-prompt&gt;</code> check for goal, the following optional-field loop for action) to target the right one. For <code>knowledge-decision</code> specifically, replace its copy with:</p>
+<pre><code>    const status = el.querySelector('knowledge-status')?.textContent.trim()
+    if (status &amp;&amp; !['pending', 'active', 'completed', 'rejected'].includes(status)) {
+      errors.push(`&lt;knowledge-status&gt; must be pending|active|completed|rejected, got "${status}"`)
+    }
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') &amp;&amp; !allowed.includes(tag)) errors.push(`unexpected &lt;${tag}&gt; on knowledge-decision`)
+    }
+    return { ok: errors.length === 0, errors }</code></pre>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Edit the knowledge-option validator</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>Find (around line 164-168):</p>
+<pre><code>    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
+    if (confidence &amp;&amp; (!/^\d+$/.test(confidence) || +confidence &lt; 0 || +confidence &gt; 100)) {
+      errors.push(`&lt;knowledge-confidence&gt; must be an integer 0-100, got "${confidence}"`)
+    }
+    return { ok: errors.length === 0, errors }</code></pre>
+<p>This shape (confidence check immediately followed by <code>return</code>) also appears in <code>knowledge-observation</code>'s validator — use the preceding <code>if (!el) return...</code> and the <code>knowledge-option</code> element check above it to confirm you're in the right block. For <code>knowledge-option</code>, replace with:</p>
+<pre><code>    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
+    if (confidence &amp;&amp; (!/^\d+$/.test(confidence) || +confidence &lt; 0 || +confidence &gt; 100)) {
+      errors.push(`&lt;knowledge-confidence&gt; must be an integer 0-100, got "${confidence}"`)
+    }
+    const allowed = ['knowledge-title', 'knowledge-confidence']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') &amp;&amp; !allowed.includes(tag)) errors.push(`unexpected &lt;${tag}&gt; on knowledge-option`)
+    }
+    return { ok: errors.length === 0, errors }</code></pre>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-4" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Edit the knowledge-action validator</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>Find (around line 209-213):</p>
+<pre><code>    for (const tag of ['knowledge-commit', 'knowledge-files', 'knowledge-branch']) {
+      const node = el.querySelector(tag)
+      if (node &amp;&amp; !node.textContent.trim()) errors.push(`&lt;${tag}&gt; present but empty — omit it instead`)
+    }
+    return { ok: errors.length === 0, errors }</code></pre>
+<p>This shape (the commit/files/branch empty-check loop followed by <code>return</code>) also appears in <code>knowledge-outcome</code>'s validator — use the preceding status-enum check (present for <code>action</code>, absent for <code>outcome</code>) to confirm you're editing <code>knowledge-action</code>. Replace with:</p>
+<pre><code>    for (const tag of ['knowledge-commit', 'knowledge-files', 'knowledge-branch']) {
+      const node = el.querySelector(tag)
+      if (node &amp;&amp; !node.textContent.trim()) errors.push(`&lt;${tag}&gt; present but empty — omit it instead`)
+    }
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-status', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') &amp;&amp; !allowed.includes(tag)) errors.push(`unexpected &lt;${tag}&gt; on knowledge-action`)
+    }
+    return { ok: errors.length === 0, errors }</code></pre>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-5" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Edit the knowledge-outcome validator</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>Same commit/files/branch loop as the previous step, but in the <code>knowledge-outcome</code> validator (no preceding status-enum check — <code>knowledge-outcome</code> has no <code>knowledge-status</code> field at all). Replace with:</p>
+<pre><code>    for (const tag of ['knowledge-commit', 'knowledge-files', 'knowledge-branch']) {
+      const node = el.querySelector(tag)
+      if (node &amp;&amp; !node.textContent.trim()) errors.push(`&lt;${tag}&gt; present but empty — omit it instead`)
+    }
+    const allowed = ['knowledge-title', 'knowledge-confidence', 'knowledge-commit', 'knowledge-files', 'knowledge-branch']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') &amp;&amp; !allowed.includes(tag)) errors.push(`unexpected &lt;${tag}&gt; on knowledge-outcome`)
+    }
+    return { ok: errors.length === 0, errors }</code></pre>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-6" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Edit the knowledge-observation validator</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>Same confidence-check-then-return shape as the <code>knowledge-option</code> step, but in the <code>knowledge-observation</code> validator (last of the six <code>&lt;script data-validates&gt;</code> blocks in the file). Replace with:</p>
+<pre><code>    const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
+    if (confidence &amp;&amp; (!/^\d+$/.test(confidence) || +confidence &lt; 0 || +confidence &gt; 100)) {
+      errors.push(`&lt;knowledge-confidence&gt; must be an integer 0-100, got "${confidence}"`)
+    }
+    const allowed = ['knowledge-title', 'knowledge-confidence']
+    for (const child of el.children) {
+      const tag = child.tagName.toLowerCase()
+      if (tag.startsWith('knowledge-') &amp;&amp; !allowed.includes(tag)) errors.push(`unexpected &lt;${tag}&gt; on knowledge-observation`)
+    }
+    return { ok: errors.length === 0, errors }</code></pre>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-7" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify no regression against the real graph</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>Run from <code>experiments/v4/</code>:</p>
+<pre><code>pnpm crawl</code></pre>
+<p>Expected: the same baseline as before this change — <code>validators: 37 pass, 0 fail</code>, and the same two pre-existing audit failures (<code>orphans-except-goal</code> on <code>sample-observation</code>, <code>dangling-outcome</code> on <code>sample-outcome</code> — these are sample-fixture violations the template's own live demo deliberately wires in, unrelated to this change). If any real node now fails, a real node has a field outside its type's shape — inspect and fix that node before continuing; do not weaken the check to make it pass.</p>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-8" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify the new check actually triggers, in an isolated scratch copy</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>SCRATCH=$(mktemp -d)
+cp -r experiments/v4/docs "$SCRATCH/docs"
+cat &gt; "$SCRATCH/docs/knowledge/bad.option.html" &lt;&lt;'EOF'
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;&lt;head&gt;&lt;title&gt;Option: bad&lt;/title&gt;&lt;/head&gt;&lt;body&gt;
+&lt;knowledge-option data-conforms-to="../templates/knowledge.template.html#knowledge-option"&gt;
+&lt;knowledge-title&gt;bad&lt;/knowledge-title&gt;
+&lt;knowledge-confidence&gt;50&lt;/knowledge-confidence&gt;
+&lt;knowledge-status&gt;active&lt;/knowledge-status&gt;
+&lt;/knowledge-option&gt;
+&lt;/body&gt;&lt;/html&gt;
+EOF
+node experiments/v4/src/crawl.ts "$SCRATCH/docs" 2&gt;&amp;1 | grep "bad.option"</code></pre>
+<p>Expected output includes a FAIL line for <code>knowledge/bad.option.html</code> whose JSON body contains <code>"unexpected &lt;knowledge-status&gt; on knowledge-option"</code>. Then clean up:</p>
+<pre><code>rm -rf "$SCRATCH"</code></pre>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-9" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Commit</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>git add experiments/v4/docs/templates/knowledge.template.html
+git commit -m "experiment(v4): reject fields outside a knowledge-* type's own shape
+Each type's validator only checked that required fields were present,
+never that a node carried nothing beyond its own type's fields — a
+stray &lt;knowledge-status&gt; on a knowledge-option would have passed
+pnpm crawl silently, from a hand-edit or any future command alike.
+Union each type's required+optional tag lists into an allowed set and
+flag anything outside it."</code></pre>
+</plan-detail>
+    </plan-step>
+  </plan-task>
+  <plan-task id="task-2" data-conforms-to="../templates/plan.template.html#plan-task">
+    <plan-title>update command</plan-title>
+    <plan-files>Modify: experiments/v4/docs/templates/knowledge.template.html:596-616 (the type="mycelium/command" script — add a third export after link)</plan-files>
+    <plan-interfaces>Consumes: fs.get(path) (returns a mutable Document, already used by link at line 608) and the parseArgs/dispatch machinery in src/run.ts — neither changes in this task. Produces: the CLI surface mycelium knowledge update &lt;file&gt; [--title …] [--confidence …] [--status …] [--prompt …] [--commit …] [--files …] [--branch …], discoverable via mycelium knowledge --help (automatic, via the existing JSDoc-extraction mechanism — no extra wiring needed).</plan-interfaces>
+    <plan-step id="task-2-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Add the update export</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>In <code>experiments/v4/docs/templates/knowledge.template.html</code>, immediately after the closing <code>}</code> of <code>export function link(fs, args) { … }</code> (currently the last line before <code>&lt;/script&gt;</code>, around line 615), insert:</p>
+<pre><code>  /**
+   * Update fields on an existing knowledge-&lt;type&gt; node file.
+   *
+   *   mycelium run knowledge update &lt;file&gt; [--title "…"] [--confidence NN]
+   *     [--status pending|active|completed|rejected] [--prompt "…"]
+   *     [--commit HASH] [--files "…"] [--branch NAME]
+   *
+   * &lt;file&gt; is an existing knowledge/&lt;slug&gt;.&lt;type&gt;.html file; its type is
+   * read off its own root element, not passed again. Per flag: omitted
+   * leaves the field untouched, any other value upserts it (overwrite if
+   * the tag is already present, append if not), and an explicit empty
+   * value ("") removes the field entirely.
+   */
+  export function update(fs, args) {
+    const doc = fs.get(`knowledge/${args._[0]}`)
+    const root = doc.querySelector('[data-conforms-to]')
+    const field = (tag, text) =&gt; {
+      if (text === undefined) return
+      const existing = root.querySelector(tag)
+      if (text === '') {
+        existing?.remove()
+        return
+      }
+      if (existing) existing.textContent = text
+      else {
+        const el = doc.createElement(tag)
+        el.textContent = text
+        root.appendChild(el)
+      }
+    }
+    field('knowledge-title', args.title)
+    field('knowledge-confidence', args.confidence)
+    field('knowledge-status', args.status)
+    field('knowledge-prompt', args.prompt)
+    field('knowledge-commit', args.commit)
+    field('knowledge-files', args.files)
+    field('knowledge-branch', args.branch)
+  }</code></pre>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify --help picks it up automatically</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>cd experiments/v4 &amp;&amp; pnpm mycelium knowledge --help</code></pre>
+<p>Expected: output now lists three commands — <code>add</code>, <code>link</code>, <code>update</code> — with <code>update</code>'s doc comment printed verbatim (this is the JSDoc-extraction mechanism from the acorn work earlier this session; no changes needed to <code>src/run.ts</code> for this to work).</p>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify upsert, overwrite, and clear semantics in an isolated scratch copy</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>SCRATCH=$(mktemp -d)
+cp -r experiments/v4/docs "$SCRATCH/docs"
+cd "$SCRATCH"
+node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
+  knowledge add action --title "scratch test" --confidence 60 --file scratch-update-test
+node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
+  knowledge update scratch-update-test.action.html --status completed --commit abc1234
+grep -A1 'knowledge-status' docs/knowledge/scratch-update-test.action.html
+grep -A1 'knowledge-commit' docs/knowledge/scratch-update-test.action.html
+node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
+  knowledge update scratch-update-test.action.html --commit def5678
+grep 'knowledge-commit' docs/knowledge/scratch-update-test.action.html
+node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
+  knowledge update scratch-update-test.action.html --commit ""
+grep -c 'knowledge-commit' docs/knowledge/scratch-update-test.action.html
+cd /Users/bigmistqke/Documents/GitHub/mycelium
+rm -rf "$SCRATCH"</code></pre>
+<p>Expected: after the first <code>update</code>, the file contains <code>&lt;knowledge-status&gt;completed&lt;/knowledge-status&gt;</code> and <code>&lt;knowledge-commit&gt;abc1234&lt;/knowledge-commit&gt;</code> (appended — the seed file from <code>add</code> has neither). After the second <code>update</code>, <code>knowledge-commit</code> shows <code>def5678</code> (overwritten, not duplicated — grepping for the tag returns exactly one match). After the third <code>update</code>, the <code>grep -c</code> count is <code>0</code> (the field was removed entirely, not left empty).</p>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-4" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify the closed-schema check catches a wrong-type update, in an isolated scratch copy</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>SCRATCH=$(mktemp -d)
+cp -r experiments/v4/docs "$SCRATCH/docs"
+cd "$SCRATCH"
+node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
+  knowledge add option --title "scratch option" --confidence 50 --file scratch-option-test
+node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
+  knowledge update scratch-option-test.option.html --status active
+node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/crawl.ts docs 2&gt;&amp;1 | grep "scratch-option-test"
+cd /Users/bigmistqke/Documents/GitHub/mycelium
+rm -rf "$SCRATCH"</code></pre>
+<p>Expected: <code>update</code> succeeds unconditionally (writes the <code>&lt;knowledge-status&gt;</code> — no client-side gating, per the spec's design), but the <code>crawl</code> line for <code>knowledge/scratch-option-test.option.html</code> reports FAIL with <code>"unexpected &lt;knowledge-status&gt; on knowledge-option"</code> — confirming the two tasks compose the way the spec describes: <code>update</code> stays simple, the validator is the safety net.</p>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-5" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Dogfood it for real</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>Run <code>pnpm crawl</code> from <code>experiments/v4/</code> and confirm the same clean baseline as task-1's regression step. Then commit this task's own code change (the next step) and use the new command on the action node <code>CLAUDE.md</code>'s own logging workflow expects you to have created for this task — set its <code>--status completed --commit &lt;the short hash from the commit you just made&gt; --branch main</code> — instead of hand-editing it. This is the real-world case the spec was written to fix; use it once here as the first real usage.</p>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-6" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Commit</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>git add experiments/v4/docs/templates/knowledge.template.html
+git commit -m "experiment(v4): add mycelium knowledge update, close the field-update gap
+add only ever set fields at creation time; filling in a status or
+commit hash on an existing node — which happens after nearly every
+piece of real work — still meant a hand Read+Edit. update reads the
+file's own root tag for its type (no &lt;type&gt; arg to re-type), upserts
+whatever field is given, and removes a field on an explicit empty
+value. It doesn't replicate add's per-type field gating — the
+closed-schema check from the previous commit is what catches a
+mismatch, on the next pnpm crawl."</code></pre>
+<p>(Then use <code>pnpm mycelium knowledge update</code> — not a hand-edit — to set this action node's own <code>--status</code>/<code>--commit</code>/<code>--branch</code>, per the previous step.)</p>
+</plan-detail>
+    </plan-step>
+  </plan-task>
+  <plan-task id="task-3" data-conforms-to="../templates/plan.template.html#plan-task">
+    <plan-title>Update CLAUDE.md to reflect the closed gap</plan-title>
+    <plan-files>Modify: CLAUDE.md (repo root, project instructions) — do not touch the global user ~/.claude/CLAUDE.md.</plan-files>
+    <plan-interfaces>Consumes: nothing code-level — this task only edits documentation prose to match Tasks 1-2's shipped behavior. Produces: nothing consumed by other tasks. This is the last task.</plan-interfaces>
+    <plan-step id="task-3-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Add update to the CLI usage block</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p><code>CLAUDE.md</code> currently documents the <code>add</code>/<code>link</code>-only gap this plan closes, and separately instructs hand-editing a node's <code>&lt;knowledge-commit&gt;</code> after every commit. Both need to change now that <code>update</code> exists.</p>
+<p>Find, near the top of <code>CLAUDE.md</code>, under "<b>Use the CLI to log, don't hand-author.</b>":</p>
+<pre><code>pnpm --filter @mycelium/v4 mycelium knowledge add &lt;type&gt; --title "…" --confidence NN [--status S] [--prompt "…"] [--commit HASH] --file &lt;slug&gt;
+pnpm --filter @mycelium/v4 mycelium knowledge link &lt;from-file&gt; &lt;to-file&gt; --rel &lt;rel&gt; --label "…"</code></pre>
+<p>Replace with:</p>
+<pre><code>pnpm --filter @mycelium/v4 mycelium knowledge add &lt;type&gt; --title "…" --confidence NN [--status S] [--prompt "…"] [--commit HASH] --file &lt;slug&gt;
+pnpm --filter @mycelium/v4 mycelium knowledge link &lt;from-file&gt; &lt;to-file&gt; --rel &lt;rel&gt; --label "…"
+pnpm --filter @mycelium/v4 mycelium knowledge update &lt;file&gt; [--title "…"] [--confidence NN] [--status S] [--prompt "…"] [--commit HASH] [--files "…"] [--branch NAME]</code></pre>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-3-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Narrow the two real gaps paragraph to one</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>Find the paragraph beginning "This replaces the Write/Read+Edit dance for every node/edge <code>knowledge-*</code> covers":</p>
+<pre><code>This replaces the Write/Read+Edit dance for every node/edge `knowledge-*`
+covers — no file content passes through the model doing the logging, same
+as `deciduous add`/`deciduous link` never did. Two real gaps, not silently
+papered over: it only covers the `knowledge-*` family (`spec.template.html`
+has no `type="mycelium/command"` script yet, spec docs still need hand-authoring),
+and `add` only sets fields at creation time — updating a field on an
+already-existing node (e.g. adding `&lt;knowledge-commit&gt;` to an action node
+written before its commit existed) still means a direct edit. Fall back to
+hand-authoring only for those two cases; copying the closest existing node
+under `experiments/v4/docs/knowledge/` as a starting point is still the
+fastest correct way to do that. Full design:
+`experiments/v4/docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`.</code></pre>
+<p>Replace with:</p>
+<pre><code>This replaces the Write/Read+Edit dance for every node/edge `knowledge-*`
+covers — no file content passes through the model doing the logging, same
+as `deciduous add`/`deciduous link` never did. `add` creates a node,
+`link` connects two, `update` fills in or clears a field on one that
+already exists (e.g. adding `&lt;knowledge-commit&gt;` to an action node once
+its commit exists) — the field-update gap this section used to name here
+is closed. One real gap remains, not silently papered over: it only
+covers the `knowledge-*` family — `spec.template.html` has no
+`type="mycelium/command"` script yet, so spec docs still need
+hand-authoring. Copying the closest existing spec under
+`experiments/v4/docs/specs/` as a starting point is still the fastest
+correct way to do that. Full design:
+`experiments/v4/docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`
+(commands) and
+`experiments/v4/docs/specs/2026-07-23-mycelium-update-command.spec.html`
+(`update`, and the closed-schema validator check that backs it).</code></pre>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-3-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Replace the hand-edit instruction under Link Commits to Actions/Outcomes</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>Find the section (exact heading and surrounding prose):</p>
+<pre><code>### CRITICAL: Link Commits to Actions/Outcomes
+**After every git commit, add the hash to the relevant node — but that
+usually means editing the node you already wrote, not writing a new one.**
+git commit -m "feat: add auth"
+Edit the `knowledge-action` node this commit belongs to and set:
+&lt;knowledge-commit&gt;HEAD's short hash&lt;/knowledge-commit&gt;
+&lt;knowledge-branch&gt;main&lt;/knowledge-branch&gt;</code></pre>
+<p>Reproduce the heading and bold intro line exactly as they are; only the <code>git commit</code>/edit instructions change. Replace them with:</p>
+<pre><code>git commit -m "feat: add auth"</code></pre>
+<p>Then update the <code>knowledge-action</code> node this commit belongs to — via the CLI, not a hand edit:</p>
+<pre><code>pnpm --filter @mycelium/v4 mycelium knowledge update &lt;action-file&gt; --commit &lt;HEAD's short hash&gt; --branch main</code></pre>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-3-step-4" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify the edits</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>grep -n "mycelium knowledge update" CLAUDE.md
+grep -n "Two real gaps" CLAUDE.md</code></pre>
+<p>Expected: the first grep shows the three lines added in the first and third steps of this task; the second grep returns nothing (that phrase no longer exists, replaced in the second step).</p>
+</plan-detail>
+    </plan-step>
+    <plan-step id="task-3-step-5" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Commit</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>git add CLAUDE.md
+git commit -m "docs: point CLAUDE.md at mycelium knowledge update, close the gap it named
+CLAUDE.md documented two real gaps in the authoring CLI; one of them
+(add only sets fields at creation time) is now closed by the update
+command built in this branch. Update the CLI usage block, narrow the
+gaps paragraph to the one that remains (spec-doc authoring commands),
+and point the commit-linking instruction at the CLI instead of a
+hand-edit."</code></pre>
+</plan-detail>
+    </plan-step>
+  </plan-task>
+</plan-doc>
+</body></html>

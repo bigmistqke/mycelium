@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan: Spec Authoring Commands</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/plan.template.css">
+</head>
+<body>
+<plan-doc data-conforms-to="../templates/plan.template.html#plan-doc">
+  <plan-title>Spec Authoring Commands</plan-title>
+  <plan-date>2026-07-24</plan-date>
+  <plan-goal>Give `spec.template.html` its own `add`/`update` authoring commands, closing the last hand-authoring gap this project's `CLAUDE.md` still names. Along the way, extend the date-prefixed filename convention specs already have (`&lt;date&gt;-&lt;topic&gt;.spec.html`) to `knowledge.template.html`'s `add` too, so new knowledge nodes get it going forward.</plan-goal>
+  <plan-architecture>Three sequential tasks. Task 1 adds `cli.parseHTML` (needed by Task 2) and the date-prefix change to `knowledge.template.html`'s `add` — both small, independent of Task 2's larger work, but Task 2 depends on `cli.parseHTML` existing. Task 2 builds `spec.template.html`'s entire `&lt;script type="mycelium/command"&gt;` block from scratch: a local `requireArgs`, a local `todayDate()`, a shared `extractSections` helper, and `add`/`update`. Task 3 updates the one passage in `CLAUDE.md` that becomes factually wrong once Task 2 ships.</plan-architecture>
+  <plan-tech-stack>Node ≥24, TypeScript via native type stripping, happy-dom (already a dependency). No new dependencies. No test framework — verification is running the tool directly against scratch copies.</plan-tech-stack>
+  <plan-global-constraints>Full design: `experiments/v4/docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html` — read it before starting. No new dependencies. `spec.template.html` gets `add`/`update` only — no `link` (cross-references live inside rich-field markup, not as top-level children) and no `list` (deferred, not forgotten — do not build one). No `--date` flag anywhere, on either family. `add` computes today's local date itself via a small `todayDate()` helper, duplicated per family's own command script (never shared via `utils.ts` — a data: URL-loaded command script can't do a relative import, and each family's script is meant to be self-contained, same reasoning `requireArgs` already follows). The date-prefix change to `knowledge.template.html`'s `add` is **not retroactive** — existing `knowledge/*.html` files keep their current names untouched. Only new files `add` creates from here on get the prefix. `--body`'s four possible tags (`spec-problem`, `spec-design`, `spec-out-of-scope`, `spec-open-questions`) are parsed by tag name from one blob, not one flag per tag. A tag absent from the blob leaves that field untouched (on `update`) or simply unset (on `add`); a tag present but empty removes/omits it; a tag with real content upserts/sets it. Run all `pnpm`/`node` commands from `experiments/v4/`, except scratch-copy verification steps, which use a `(cd "$SCRATCH" &amp;&amp; node "$RUN" …)` subshell — `run.ts` always resolves `docs/` relative to the current working directory, with no directory argument, unlike `validate.ts`. This project logs its own decision graph as it works (`CLAUDE.md`, auto-loaded for this repo) — use `pnpm mycelium knowledge add/link/update` as you go.</plan-global-constraints>
+  <plan-task id="task-1" data-conforms-to="../templates/plan.template.html#plan-task">
+    <plan-title>`cli.parseHTML`, and date-prefixed filenames for `knowledge.template.html`'s `add`</plan-title>
+    <plan-files>Modify: `experiments/v4/src/run.ts`; Modify: `experiments/v4/docs/templates/knowledge.template.html` (`add` only)</plan-files>
+    <plan-interfaces>Consumes: nothing from other tasks. Produces: `cli.parseHTML(html: string): { document: Document }`, available to every command via `CommandContext`. Task 2's `spec.template.html` commands depend on this existing.</plan-interfaces>
+    <plan-step id="task-1-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Add `parseHTML` to the `Cli` interface and its construction</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>In <code>experiments/v4/src/run.ts</code>, find:</p>
+<pre><code>import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
+type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boolean; errors: string[] }&gt;
+interface Cli {
+  validate: Validate
+  readStdin: () =&gt; Promise&lt;string&gt;
+}</code></pre>
+<p>Replace with:</p>
+<pre><code>import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
+type Validate = (root: Element, instancePath: string) =&gt; Promise&lt;{ ok: boolean; errors: string[] }&gt;
+interface Cli {
+  validate: Validate
+  readStdin: () =&gt; Promise&lt;string&gt;
+  parseHTML: (html: string) =&gt; { document: Document }
+}</code></pre></plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Wire it into the `cli` object built in `main()`</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>Find:</p>
+<pre><code>  const validate: Validate = (root, instancePath) =&gt; validateInstance(docsDir, instancePath, root)
+  const cli: Cli = { validate, readStdin }</code></pre>
+<p>Replace with:</p>
+<pre><code>  const validate: Validate = (root, instancePath) =&gt; validateInstance(docsDir, instancePath, root)
+  const cli: Cli = { validate, readStdin, parseHTML }</code></pre></plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Add `todayDate()` and the date-prefix to `knowledge.template.html`'s `add`</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>In <code>experiments/v4/docs/templates/knowledge.template.html</code>, find:</p>
+<pre><code>  // Throws a clean, specific error for the handful of arguments no
+  // validator can ever catch (which file to write, which file to open,
+  // whether --rel was given at all) — everything else is left to each
+  // type's own knowledge-validates script, run via `validate` below.
+  function requireArgs(...checks) {
+    for (const [value, label] of checks) {
+      if (value === undefined) throw new Error(`missing required argument: ${label}`)
+    }
+  }</code></pre>
+<p>Replace with:</p>
+<pre><code>  // Throws a clean, specific error for the handful of arguments no
+  // validator can ever catch (which file to write, which file to open,
+  // whether --rel was given at all) — everything else is left to each
+  // type's own knowledge-validates script, run via `validate` below.
+  function requireArgs(...checks) {
+    for (const [value, label] of checks) {
+      if (value === undefined) throw new Error(`missing required argument: ${label}`)
+    }
+  }
+  // Local to this file on purpose, not shared with spec.template.html's
+  // own copy — see docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html.
+  function todayDate() {
+    const d = new Date()
+    const pad = (n) =&gt; String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  }</code></pre>
+<p>Find:</p>
+<pre><code>  export async function add({ fs, args, cli }) {
+    requireArgs([args.file, '--file'])
+    const detail = args.detail === '-' ? await cli.readStdin() : args.detail
+    const type = args._[0]
+    const path = `knowledge/${args.file}.${type}.html`</code></pre>
+<p>Replace with:</p>
+<pre><code>  export async function add({ fs, args, cli }) {
+    requireArgs([args.file, '--file'])
+    const detail = args.detail === '-' ? await cli.readStdin() : args.detail
+    const type = args._[0]
+    const path = `knowledge/${todayDate()}-${args.file}.${type}.html`</code></pre>
+<p>Also update <code>add</code>'s doc comment. Find:</p>
+<pre><code>  /**
+   * Create a new knowledge-&lt;type&gt; node file.
+   *
+   *   mycelium run knowledge add &lt;type&gt; --title "…" --confidence NN --file &lt;slug&gt;
+   *     [--status pending|active|completed|rejected] [--prompt "…"]
+   *     [--detail "…" | --detail -] [--commit HASH] [--files "…"] [--branch NAME]
+   *
+   * &lt;type&gt; is one of goal|decision|option|action|outcome|observation.
+   * --status only applies to goal/decision/action (default "pending").
+   * --prompt only applies to goal. --file is required and becomes
+   * knowledge/&lt;slug&gt;.&lt;type&gt;.html. --detail is free-form markup (real
+   * HTML, including &lt;script&gt; — no tag restriction); pass --detail - to
+   * read it from stdin instead of the command line, for anything more
+   * than a one-line value. The built node is validated against its own
+   * type's validator before being written — an unrecognized &lt;type&gt;, a
+   * missing required field, or a field the type doesn't allow is
+   * rejected and nothing is written.
+   */</code></pre>
+<p>Replace with:</p>
+<pre><code>  /**
+   * Create a new knowledge-&lt;type&gt; node file.
+   *
+   *   mycelium run knowledge add &lt;type&gt; --title "…" --confidence NN --file &lt;slug&gt;
+   *     [--status pending|active|completed|rejected] [--prompt "…"]
+   *     [--detail "…" | --detail -] [--commit HASH] [--files "…"] [--branch NAME]
+   *
+   * &lt;type&gt; is one of goal|decision|option|action|outcome|observation.
+   * --status only applies to goal/decision/action (default "pending").
+   * --prompt only applies to goal. --file is required and becomes
+   * knowledge/&lt;today's-date&gt;-&lt;slug&gt;.&lt;type&gt;.html — the date isn't a flag,
+   * it's today's actual date, matching the convention spec.template.html's
+   * own add already uses. --detail is free-form markup (real HTML,
+   * including &lt;script&gt; — no tag restriction); pass --detail - to read it
+   * from stdin instead of the command line, for anything more than a
+   * one-line value. The built node is validated against its own type's
+   * validator before being written — an unrecognized &lt;type&gt;, a missing
+   * required field, or a field the type doesn't allow is rejected and
+   * nothing is written.
+   */</code></pre></plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-4" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify `cli.parseHTML` is real, and existing commands still work</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>cd experiments/v4
+node -e "import('./src/utils.ts').then(m =&gt; console.log(typeof m.parseHTML))"</code></pre>
+<p>Expected: <code>function</code> — confirms <code>parseHTML</code> is exported from <code>utils.ts</code> (unchanged from before, just confirming the import Step 1 relies on is real).</p>
+<pre><code>pnpm mycelium knowledge list nodes | head -3</code></pre>
+<p>Expected: same kind of output as always — proves adding a key to <code>Cli</code>/<code>cli</code> doesn't break anything that doesn't use it.</p></plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-5" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify the date-prefix, in a scratch copy</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>cd /path/to/mycelium   # repo root
+RUN="$(pwd)/experiments/v4/src/run.ts"
+VALIDATE="$(pwd)/experiments/v4/src/validate.ts"
+SCRATCH=$(mktemp -d)
+cp -r experiments/v4/docs "$SCRATCH/docs"
+(cd "$SCRATCH" &amp;&amp; node "$RUN" knowledge add observation --title "date prefix test" --confidence 60 --file date-prefix-test)
+ls "$SCRATCH/docs/knowledge" | grep date-prefix-test
+node "$VALIDATE" "$SCRATCH/docs"
+rm -rf "$SCRATCH"</code></pre>
+<p>Expected: <code>wrote    knowledge/&lt;today's-date&gt;-date-prefix-test.observation.html</code>; the <code>ls | grep</code> shows a filename starting with today's actual date (e.g. <code>2026-07-24-date-prefix-test.observation.html</code>); <code>0 fail</code>.</p></plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-6" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify the real repo is unaffected — existing filenames untouched</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>cd experiments/v4
+pnpm validate
+git status --short docs/knowledge/ | grep -v '^??'</code></pre>
+<p>Expected: same count as before this task, <code>0 fail</code>; the <code>git status</code> filter shows no output (no existing file was modified — this task only changes what <code>add</code> does for *new* files).</p></plan-detail>
+    </plan-step>
+    <plan-step id="task-1-step-7" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Commit</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>git add experiments/v4/src/run.ts experiments/v4/docs/templates/knowledge.template.html
+git commit -m "experiment(v4): cli.parseHTML, date-prefixed filenames for knowledge's add
+parseHTML joins validate/readStdin as a fourth capability every
+command receives via cli — needed by spec.template.html's upcoming
+add/update to parse --body's blob apart by tag name, not used by any
+existing knowledge command yet. Separately, knowledge's add now
+prefixes new filenames with today's date (knowledge/&lt;date&gt;-&lt;slug&gt;.
+&lt;type&gt;.html), the same convention spec docs already have — not a new
+field, not retroactive, purely how add names files going forward.
+todayDate() is local to this file, not shared with spec.template.
+html's own copy."</code></pre></plan-detail>
+    </plan-step>
+  </plan-task>
+  <plan-task id="task-2" data-conforms-to="../templates/plan.template.html#plan-task">
+    <plan-title>`spec.template.html`'s `add`/`update`</plan-title>
+    <plan-files>Modify: `experiments/v4/docs/templates/spec.template.html`</plan-files>
+    <plan-interfaces>Consumes: `cli.parseHTML`/`cli.validate`/`cli.readStdin` from Task 1's `CommandContext` shape (already available to every command; Task 1 only added the `parseHTML` piece). Produces: nothing later tasks consume directly, though Task 3's `CLAUDE.md` update describes what this task builds.</plan-interfaces>
+    <plan-step id="task-2-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Insert the "Authoring commands" section</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>In <code>experiments/v4/docs/templates/spec.template.html</code>, find:</p>
+<pre><code>    out.className = result.ok ? 'pass' : 'fail'
+  &lt;/script&gt;
+&lt;/div&gt;
+&lt;h2&gt;Conformance&lt;/h2&gt;</code></pre>
+<p>Replace with:</p>
+<pre><code>    out.className = result.ok ? 'pass' : 'fail'
+  &lt;/script&gt;
+&lt;/div&gt;
+&lt;h2&gt;Authoring commands&lt;/h2&gt;
+&lt;p&gt;
+  &lt;code&gt;add&lt;/code&gt; and &lt;code&gt;update&lt;/code&gt;, declared once for this template &amp;mdash; same
+  &lt;code&gt;type="mycelium/command"&lt;/code&gt; convention
+  &lt;a href="./knowledge.template.html"&gt;knowledge.template.html&lt;/a&gt; already uses, and the same reasons: never
+  run in a browser (no live demo below, unlike the &lt;code&gt;data-validates&lt;/code&gt; script above), and each
+  command's own &lt;code&gt;/** &amp;hellip; */&lt;/code&gt; comment is its only documentation, so
+  &lt;code&gt;mycelium run spec --help&lt;/code&gt; and the usage shown here can never drift apart. No
+  &lt;code&gt;link&lt;/code&gt;: every cross-reference a spec makes already lives inside one of its rich fields' own
+  markup (a &lt;code&gt;&amp;lt;a data-rel&amp;gt;&lt;/code&gt; written directly into &lt;code&gt;--body&lt;/code&gt;'s content), so there's
+  no separate "attach an edge" operation the way &lt;code&gt;knowledge-*&lt;/code&gt; needs one. No &lt;code&gt;list&lt;/code&gt;,
+  yet: see &lt;a href="../specs/2026-07-24-mycelium-spec-authoring-commands.spec.html"&gt;the design spec&lt;/a&gt; for
+  why that's deferred, not forgotten.
+&lt;/p&gt;
+&lt;script type="mycelium/command"&gt;
+  // Local to this file on purpose, not imported from knowledge.template.html
+  // or shared via utils.ts — a data: URL-loaded command script can't do a
+  // relative import anyway (no hierarchical base to resolve against), and
+  // each family's command script is meant to be self-contained. See
+  // docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html.
+  function requireArgs(...checks) {
+    for (const [value, label] of checks) {
+      if (value === undefined) throw new Error(`missing required argument: ${label}`)
+    }
+  }
+  function todayDate() {
+    const d = new Date()
+    const pad = (n) =&gt; String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  }
+  const BODY_TAGS = ['spec-problem', 'spec-design', 'spec-out-of-scope', 'spec-open-questions']
+  // Parses --body's resolved value once and pulls out whichever of the four
+  // rich-content tags are present, keyed by tag name. A tag not mentioned
+  // in the blob simply isn't a key in the result — add/update both treat
+  // that as "nothing said about this field," never as "clear it."
+  function extractSections(cli, bodyMarkup) {
+    const { document } = cli.parseHTML(`&lt;div&gt;${bodyMarkup}&lt;/div&gt;`)
+    const wrapper = document.querySelector('div')
+    const sections = {}
+    for (const tag of BODY_TAGS) {
+      const el = wrapper.querySelector(tag)
+      if (el) sections[tag] = el.innerHTML
+    }
+    return sections
+  }
+  /**
+   * Create a new spec-doc file.
+   *
+   *   mycelium run spec add --title "…" --file &lt;topic&gt;
+   *     [--status draft|approved|implemented] [--body "…" | --body -]
+   *
+   * --file is required and becomes docs/specs/&lt;today's-date&gt;-&lt;topic&gt;.spec.html
+   * — the date isn't a flag, it's today's actual date, used for both the
+   * filename and the &lt;spec-date&gt; field so they can never drift apart.
+   * --status defaults to "draft" if omitted. --body is a blob of markup
+   * using &lt;spec-problem&gt;/&lt;spec-design&gt;/&lt;spec-out-of-scope&gt;/&lt;spec-open-questions&gt;
+   * as its own delimiters — pass --body - to read it from stdin instead of
+   * the command line, for anything more than a trivial one-line value.
+   * spec-problem and spec-design are both required by this template's own
+   * validator, so a --body that omits either one is rejected the same way
+   * a missing --title would be — nothing is written.
+   */
+  export async function add({ fs, args, cli }) {
+    requireArgs([args.file, '--file'])
+    const bodyMarkup = args.body === '-' ? await cli.readStdin() : args.body
+    const sections = bodyMarkup ? extractSections(cli, bodyMarkup) : {}
+    const date = todayDate()
+    const path = `specs/${date}-${args.file}.spec.html`
+    const doc = fs.create(path, `&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+&lt;meta charset="UTF-8"&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+&lt;title&gt;&lt;/title&gt;
+&lt;link rel="stylesheet" href="../theme.css"&gt;
+&lt;link rel="stylesheet" href="../templates/spec.template.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;spec-doc data-conforms-to="../templates/spec.template.html#spec-doc"&gt;
+&lt;/spec-doc&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+`)
+    doc.querySelector('title').textContent = `Spec: ${args.title}`
+    const root = doc.querySelector('spec-doc')
+    const field = (tag, text) =&gt; {
+      if (!text) return
+      const el = doc.createElement(tag)
+      el.textContent = text
+      root.appendChild(el)
+    }
+    field('spec-title', args.title)
+    field('spec-status', args.status ?? 'draft')
+    field('spec-date', date)
+    for (const tag of BODY_TAGS) {
+      if (!sections[tag]) continue
+      const el = doc.createElement(tag)
+      el.innerHTML = sections[tag]
+      root.appendChild(el)
+    }
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
+  }
+  /**
+   * Update fields on an existing spec-doc file.
+   *
+   *   mycelium run spec update &lt;file&gt; [--title "…"]
+   *     [--status draft|approved|implemented] [--body "…" | --body -]
+   *
+   * &lt;file&gt; is an existing docs/specs/&lt;date&gt;-&lt;topic&gt;.spec.html file.
+   * --title/--status follow the usual rule: omitted leaves the field
+   * untouched, any other value upserts it. --body applies that same rule
+   * per tag found inside it, not per flag: a tag absent from --body's
+   * content leaves that field untouched, a tag present but empty removes
+   * the field, a tag with real content upserts it (overwrite if the field
+   * already exists, append if not). spec-date is never touched by
+   * update — only add sets it, once, at creation.
+   */
+  export async function update({ fs, args, cli }) {
+    requireArgs([args._[0], '&lt;file&gt;'])
+    const path = `specs/${args._[0]}`
+    const doc = fs.get(path)
+    const root = doc.querySelector('[data-conforms-to]')
+    const field = (tag, text) =&gt; {
+      if (text === undefined) return
+      const existing = root.querySelector(tag)
+      if (text === '') {
+        existing?.remove()
+        return
+      }
+      if (existing) existing.textContent = text
+      else {
+        const el = doc.createElement(tag)
+        el.textContent = text
+        root.appendChild(el)
+      }
+    }
+    field('spec-title', args.title)
+    field('spec-status', args.status)
+    const bodyMarkup = args.body === '-' ? await cli.readStdin() : args.body
+    if (bodyMarkup !== undefined) {
+      const sections = extractSections(cli, bodyMarkup)
+      for (const tag of BODY_TAGS) {
+        if (!(tag in sections)) continue
+        const content = sections[tag]
+        const existing = root.querySelector(tag)
+        if (!content.trim()) {
+          existing?.remove()
+        } else if (existing) {
+          existing.innerHTML = content
+        } else {
+          const el = doc.createElement(tag)
+          el.innerHTML = content
+          root.appendChild(el)
+        }
+      }
+    }
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
+  }
+&lt;/script&gt;
+&lt;h2&gt;Conformance&lt;/h2&gt;</code></pre></plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify `--help` discovers both commands</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>cd experiments/v4
+pnpm mycelium spec --help</code></pre>
+<p>Expected: lists <code>add</code> and <code>update</code> (not <code>link</code>, not <code>list</code>), each with its doc comment printed — proves <code>extractCommandDocs</code>/<code>printHelp</code> (unmodified, generic machinery) correctly discovers the new script's exports.</p></plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify a full `add` with a literal `--body`, in a scratch copy</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>cd /path/to/mycelium   # repo root
+RUN="$(pwd)/experiments/v4/src/run.ts"
+VALIDATE="$(pwd)/experiments/v4/src/validate.ts"
+SCRATCH=$(mktemp -d)
+cp -r experiments/v4/docs "$SCRATCH/docs"
+(cd "$SCRATCH" &amp;&amp; node "$RUN" spec add --title "scratch spec test" --file scratch-spec-test --body "&lt;spec-problem&gt;&lt;p&gt;problem text&lt;/p&gt;&lt;/spec-problem&gt;&lt;spec-design&gt;&lt;p&gt;design text&lt;/p&gt;&lt;/spec-design&gt;")
+TODAY=$(date +%Y-%m-%d)
+ls "$SCRATCH/docs/specs" | grep "$TODAY-scratch-spec-test"
+node "$VALIDATE" "$SCRATCH/docs"</code></pre>
+<p>Expected: <code>wrote    specs/&lt;today&gt;-scratch-spec-test.spec.html</code>; the <code>ls | grep</code> finds the file (proves the date prefix matches the actual date used); <code>0 fail</code>.</p>
+<pre><code>grep -c "spec-problem\|spec-design\|spec-status&gt;draft\|spec-date&gt;$TODAY" "$SCRATCH/docs/specs/$TODAY-scratch-spec-test.spec.html"</code></pre>
+<p>Expected: <code>4</code> — confirms <code>spec-problem</code>, <code>spec-design</code>, the default <code>draft</code> status, and <code>spec-date</code> matching the same date used in the filename are all present in the written file.</p></plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-4" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify `--body -` (stdin) with real markup, in the same scratch copy</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>(cd "$SCRATCH" &amp;&amp; node "$RUN" spec add --title "stdin spec test" --file stdin-spec-test --body - &lt;&lt;'EOF'
+&lt;spec-problem&gt;
+  &lt;p&gt;Multi-paragraph problem statement.&lt;/p&gt;
+  &lt;p&gt;A second paragraph, with &lt;code&gt;inline code&lt;/code&gt;.&lt;/p&gt;
+&lt;/spec-problem&gt;
+&lt;spec-design&gt;
+  &lt;p&gt;The approach.&lt;/p&gt;
+  &lt;pre&gt;&lt;code&gt;const x = 1&lt;/code&gt;&lt;/pre&gt;
+&lt;/spec-design&gt;
+&lt;spec-out-of-scope&gt;
+  &lt;ul&gt;&lt;li&gt;Not doing this other thing.&lt;/li&gt;&lt;/ul&gt;
+&lt;/spec-out-of-scope&gt;
+EOF
+)
+grep -c "Multi-paragraph\|inline code\|const x = 1\|Not doing this other thing" "$SCRATCH/docs/specs/$TODAY-stdin-spec-test.spec.html"
+node "$(pwd)/experiments/v4/src/validate.ts" "$SCRATCH/docs" 2&gt;&amp;1 | tail -3</code></pre>
+<p>Expected: <code>wrote</code>; <code>grep -c</code> reports <code>4</code> (every fragment survived, unescaped — real <code>&lt;pre&gt;&lt;code&gt;</code> and <code>&lt;p&gt;</code> tags, not <code>&amp;lt;p&amp;gt;</code>); <code>0 fail</code>. This is the concrete proof of the whole feature's motivation: three rich sections, one command, zero shell-escaping concerns.</p></plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-5" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify `add` rejects a `--body` missing a required field, nothing written</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>(cd "$SCRATCH" &amp;&amp; node "$RUN" spec add --title "incomplete spec test" --file incomplete-spec-test --body "&lt;spec-problem&gt;&lt;p&gt;only the problem, no design&lt;/p&gt;&lt;/spec-problem&gt;" 2&gt;&amp;1)
+echo "exit: $?"
+ls "$SCRATCH/docs/specs" | grep incomplete-spec-test</code></pre>
+<p>Expected: error output contains <code>missing or empty &lt;spec-design&gt;</code>, <code>exit: 1</code>, and the final <code>ls | grep</code> prints nothing — no file was written.</p></plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-6" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify `update` upserts, removes, and leaves fields alone correctly, per tag found</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>FILE="$TODAY-scratch-spec-test.spec.html"
+cp "$SCRATCH/docs/specs/$FILE" /tmp/spec-before.html
+# Upsert spec-design, leave spec-problem untouched (not mentioned in --body)
+(cd "$SCRATCH" &amp;&amp; node "$RUN" spec update "$FILE" --body "&lt;spec-design&gt;&lt;p&gt;replaced design text&lt;/p&gt;&lt;/spec-design&gt;")
+grep -c "replaced design text" "$SCRATCH/docs/specs/$FILE"
+grep -c "problem text" "$SCRATCH/docs/specs/$FILE"
+# Remove spec-design (present but empty)
+(cd "$SCRATCH" &amp;&amp; node "$RUN" spec update "$FILE" --status approved --body "&lt;spec-design&gt;&lt;/spec-design&gt;" 2&gt;&amp;1)
+echo "exit: $?"</code></pre>
+<p>Expected: first <code>grep -c</code> reports <code>1</code> (design was replaced); second <code>grep -c</code> reports <code>1</code> (problem field, never mentioned in that <code>--body</code> call, is untouched). The second <code>update</code> call — which would remove <code>spec-design</code>, a required field — is expected to be REJECTED by <code>cli.validate()</code> (<code>missing or empty &lt;spec-design&gt;</code>), <code>exit: 1</code>, proving <code>update</code> can't be used to make a spec invalid either, same guarantee <code>add</code> has.</p>
+<pre><code>diff /tmp/spec-before.html "$SCRATCH/docs/specs/$FILE"
+rm /tmp/spec-before.html</code></pre>
+<p>Expected: real differences (the design-text replacement from the first <code>update</code> call actually landed) — this <code>diff</code> is just confirming the file was genuinely touched once, not asserting no changes.</p></plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-7" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Clean up, verify the real repo is unaffected</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>rm -rf "$SCRATCH"
+cd experiments/v4
+pnpm validate</code></pre>
+<p>Expected: same count as before this task, <code>0 fail</code>.</p></plan-detail>
+    </plan-step>
+    <plan-step id="task-2-step-8" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Commit</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>git add experiments/v4/docs/templates/spec.template.html
+git commit -m "experiment(v4): spec.template.html gets add and update
+add/update, no link (cross-references live inside rich-field markup,
+not as top-level children) and no list (deferred). No --date flag:
+add computes today's date itself, used for both the filename prefix
+and the required spec-date field, so they can't drift apart.
+spec-problem/spec-design are both required and both rich content, so
+add accepts a single --body blob (same -/stdin shape as knowledge's
+--detail) using the field names themselves as delimiters, parsed and
+distributed by tag name via the new cli.parseHTML. update applies its
+usual omitted/empty/value convention per tag found in --body rather
+than per flag. requireArgs/todayDate are local copies, not shared
+with knowledge.template.html's own."</code></pre></plan-detail>
+    </plan-step>
+  </plan-task>
+  <plan-task id="task-3" data-conforms-to="../templates/plan.template.html#plan-task">
+    <plan-title>Update `CLAUDE.md`</plan-title>
+    <plan-files>Modify: `CLAUDE.md` (repo root)</plan-files>
+    <plan-interfaces>Consumes: describes what Tasks 1-2 actually built — must land after them. Produces: nothing consumed elsewhere — this is the last task.</plan-interfaces>
+    <plan-step id="task-3-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Replace the stale "one real gap remains" passage</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><p>In the repo-root <code>CLAUDE.md</code>, find:</p>
+<pre><code>This replaces the Write/Read+Edit dance for every node/edge `knowledge-*`
+covers — no file content passes through the model doing the logging, same
+as `deciduous add`/`deciduous link` never did. `add` creates a node,
+`link` connects two, `update` fills in or clears a field on one that
+already exists (e.g. adding `&lt;knowledge-commit&gt;` to an action node once
+its commit exists) — the field-update gap this section used to name here
+is closed. One real gap remains, not silently papered over: it only
+covers the `knowledge-*` family — `spec.template.html` has no
+`type="mycelium/command"` script yet, so spec docs still need
+hand-authoring. Copying the closest existing spec under
+`experiments/v4/docs/specs/` as a starting point is still the fastest
+correct way to do that. Full design:
+`experiments/v4/docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`
+(commands) and
+`experiments/v4/docs/specs/2026-07-23-mycelium-update-command.spec.html`
+(`update`, and the closed-schema validator check that backs it).</code></pre>
+<p>Replace with:</p>
+<pre><code>This replaces the Write/Read+Edit dance for every node/edge `knowledge-*`
+covers — no file content passes through the model doing the logging, same
+as `deciduous add`/`deciduous link` never did. `add` creates a node,
+`link` connects two, `update` fills in or clears a field on one that
+already exists (e.g. adding `&lt;knowledge-commit&gt;` to an action node once
+its commit exists) — the field-update gap this section used to name here
+is closed. Spec docs get the same treatment now too, via
+`spec.template.html`'s own `add`/`update` — no `link` (a spec's
+cross-references live inside its own rich-field markup, not as separate
+edges) and no `list` yet (deferred, not forgotten):
+```bash
+pnpm --filter @mycelium/v4 mycelium spec add --title "…" --file &lt;topic&gt; [--status draft|approved|implemented] --body "…"
+pnpm --filter @mycelium/v4 mycelium spec update &lt;file&gt; [--title "…"] [--status S] [--body "…"]
+```
+No hand-authoring gap remains for either family. Full design:
+`experiments/v4/docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`
+(commands),
+`experiments/v4/docs/specs/2026-07-23-mycelium-update-command.spec.html`
+(`update`, and the closed-schema validator check that backs it), and
+`experiments/v4/docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html`
+(spec's own `add`/`update`, its single `--body` flag covering multiple
+rich fields at once, and the date-prefixed-filename convention both
+families now share).</code></pre></plan-detail>
+    </plan-step>
+    <plan-step id="task-3-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Verify</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>grep -n "spec docs still need\|hand-authoring" CLAUDE.md</code></pre>
+<p>Expected: no output — the stale claim is gone (the replacement text says "no hand-authoring gap remains," not "still need hand-authoring").</p>
+<pre><code>cd experiments/v4
+pnpm validate</code></pre>
+<p>Expected: same count as before this task, <code>0 fail</code> — <code>CLAUDE.md</code> isn't part of the graph, this just confirms nothing else broke.</p></plan-detail>
+    </plan-step>
+    <plan-step id="task-3-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Commit</plan-title>
+      <plan-status>completed</plan-status>
+      <plan-detail><pre><code>git add CLAUDE.md
+git commit -m "docs: update CLAUDE.md for spec's new add/update commands
+The 'one real gap remains' passage was accurate when written -- as of
+this commit it no longer is. spec.template.html now has its own
+add/update, same as knowledge.template.html always has; the passage
+now documents both, and points at the new spec doc for the design
+reasoning (single --body flag, date-prefix convention) instead of
+just naming the gap."</code></pre></plan-detail>
+    </plan-step>
+  </plan-task>
+</plan-doc>
+</body></html>
