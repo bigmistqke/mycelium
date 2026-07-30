@@ -25,11 +25,12 @@ else.</p>
 completed means completed; some means active; none means pending. Storing it
 separately creates two sources of truth that can disagree, and one of them is
 maintained by memory. Same for a doc over its tasks.</p>
-<p><strong>This project already knows the answer.</strong> Deciduous
-<code><a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">#310</a></code>/<code><a href="./2026-07-13-status-derived-not-declared.observation.html">#311</a></code> reached it — status should be computed from
-the layer below, not stored. <code><a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">#364</a></code> generalized it: derive the graph,
+<p><strong>This project already knows the answer.</strong>
+<a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">The permanently-pending correction</a>
+and <a href="./2026-07-13-status-derived-not-declared.observation.html">derived status, not declared</a> reached it — status should be computed from
+the layer below, not stored. <a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">Derive, do not curate</a> generalized it: derive the graph,
 do not curate it, because every hand-maintained thing here has decayed. The
-evidence is on both sides of the comparison: 361 of deciduous's 400 nodes sit at
+evidence is on both sides of the comparison: 361 of the earlier log's 400 nodes sit at
 <code>pending</code> because nobody went back, and this plan managed the same
 failure inside a single task.</p>
 <p><strong>Scope note.</strong> Fixing this means <code>plan list</code> and

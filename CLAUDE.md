@@ -9,10 +9,11 @@ As of 2026-07-23 this project's decision graph is written as HTML nodes under
 `experiments/v4/docs/templates/knowledge.template.html`. It replaces `deciduous`
 (the SQLite-backed CLI) for all new logging, project-wide, not just
 v4-related work — even though v4 itself is still nominally "the experiment,"
-there's nowhere better for this to live yet. `deciduous`'s existing ~400
-nodes (v0 through 2026-07-23) are **frozen**: still real history, still
-queryable read-only via the `deciduous` CLI, just no longer where new work
-gets logged. Full reasoning:
+there's nowhere better for this to live yet. The earlier log held ~400 nodes
+(v0 through 2026-07-23). It was frozen on that date and **deleted on
+2026-07-30**, along with its database and its JSON export — 60 nodes were
+imported here first; the rest are gone. Nothing in this repo can query it, so
+nothing here may refer to it as though it were still available. Full reasoning:
 `experiments/v4/docs/specs/2026-07-23-deciduous-template-series.spec.html`.
 
 **60 of those 400 were imported on 2026-07-30**, by one rule: a node comes in
@@ -22,26 +23,27 @@ Imported nodes keep their original date in the filename — that prefix is what
 records which exploration a node belongs to, which is why `add` grew a
 `--date` flag and why you should leave it alone when authoring.
 
-### CRITICAL: how to cite a deciduous node
+### CRITICAL: referring to the earlier decision log
 
-**Don't.** `#N` is a primary key in a SQLite database that was frozen on
-2026-07-23 and is no longer where anything is logged. Inside
-`mycelium.knowledge` the number means nothing: it cannot be resolved, clicked,
-or checked, and a reader has to leave the graph to find out what it points at.
+The earlier log was a SQLite database, frozen 2026-07-23 and now deleted. Its
+node numbers (`#349`, `#20`) meant something only inside it, and **nothing in
+this graph may refer to them**. There are zero such references left; keep it
+that way.
 
-- If the node **was imported**, link it:
-  `<a href="./2026-07-13-status-derived-not-declared.observation.html">…</a>`.
-  Writing the href also forces you to open the target, which is the step that
-  catches a wrong reference — two of twenty citations pointed at the wrong node
-  before anyone checked
+- The 60 nodes that were **imported** are ordinary nodes here. Link them by
+  path, and label the link with what it says: `<a href="./2026-07-13-status-derived-not-declared.observation.html">derived status, not declared</a>`.
+  Writing the href forces you to open the target, which is the step that catches
+  a wrong reference — two of twenty citations pointed at the wrong node before
+  anyone checked
   (`2026-07-30-two-of-twenty-citations-were-hollow.observation.html`).
-- If it **wasn't imported**, describe it: "an option about which language to
-  implement in", not "#5". The description is what the reader needed anyway,
-  and every place a bare number was used it already sat next to one.
+- Everything else in that log is **gone**, so describe it rather than cite it:
+  "an option about which language to implement in". The description is what a
+  reader needed anyway.
 
-The single exception is the provenance line an imported node carries,
-`Imported from deciduous #20`. That is a source citation for verifying the
-transcription against the frozen log, not a reference to navigate.
+More generally: **a node may only refer to things that exist in this
+repository.** Not a number in a deleted database, not an external tool, and not
+something recoverable from git history — git is not a place a reader of the
+graph can follow a link to.
 
 **Use the CLI to log, don't hand-author.** As of this same day, all three of
 `mycelium run`'s knowledge commands exist and are tested working:
@@ -229,14 +231,13 @@ the four graph-wide audits. It **exits non-zero on failure** — true only
 since 2026-07-30; before that it printed failures and exited 0, so no audit
 had ever actually gated anything.
 
-For a plain enumeration rather than a verdict, `mycelium knowledge list
-nodes` and `list edges` are what `deciduous nodes`/`deciduous edges` used to
-give you.
+For a plain enumeration rather than a verdict, use `mycelium knowledge list
+nodes` and `list edges`.
 
-### What deciduous still has, that this doesn't (yet)
+### Capability gaps
 
-No equivalent exists yet for: `deciduous sync`/`docs/graph-data.json`/GitHub
-Pages publishing, `.deciduous/config.toml` branch grouping, or
-`deciduous diff export/apply` multi-user sync. These aren't silently
-dropped — they're real capability gaps versus the old system, waiting on
-the crawler. Don't invent workarounds for them; note the gap and move on.
+Three things the earlier system did that this one does not: publishing the
+graph as a browsable site, grouping nodes by git branch, and exchanging
+patches between people working in parallel. These aren't silently dropped —
+they're real gaps, waiting on the crawler. Don't invent workarounds; note the
+gap and move on.
