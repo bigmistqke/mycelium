@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Commit, plan step, and node each own a different fact; duplication is the failure</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>Commit, plan step, and node each own a different fact; duplication is the failure</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-detail><p>Prompted by a direct challenge: task-2 got no action node on the grounds that
+it had nothing non-obvious to say, while task-1 got one. Checking the two
+artifacts side by side, <strong>all four paragraphs of task-1's node also appear
+in commit d485978</strong>. The node is fully redundant with git, so the
+distinction was wrong and task-1 should not have had one either.</p>
+<p><strong>Why it exists:</strong> it was written to pre-empt the 15-minute hook,
+minutes before that same task deleted the hook. A node produced to satisfy a
+gate rather than to record something is exactly the artifact
+<a href="./2026-07-30-harness-manufactures-the-clutter.observation.html">the
+harness was measured producing</a>.</p>
+<p><strong>The rule is about ownership, not interest.</strong> The question is
+never "was this worth saying" — it is "which container already owns it":</p>
+<ul>
+  <li><strong>Commit message</strong> — what this diff does and why it is shaped
+  this way. Dies with the diff, and git already keeps it.</li>
+  <li><strong>Plan step</strong> — how execution differed from what was
+  planned.</li>
+  <li><strong>Knowledge node</strong> — reasoning that outlives the diff: a
+  rejected alternative, a reversal, evidence, a rule.</li>
+</ul>
+<p>Writing the same fact into two of them is the failure mode, and it is the one
+that produced the 47% action-node figure — not laziness, but diligence pointed at
+the wrong container.</p>
+<p><strong>Gap this exposes in the audits.</strong> Neither planned audit catches
+the redundant node. It carries a <code>detail</code>, so
+<code>hollow-action</code> passes it; its title is short, so
+<code>title-length</code> passes it. Both check <em>shape</em>; this node's defect
+is <em>redundancy with git</em>, which shape cannot see. A node whose detail
+merely restates its own commit message is invisible to the gate — so the audits
+narrow the failure modes, they do not close them, and the remaining judgment is
+still human.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-07-30-harness-manufactures-the-clutter.observation.html">names the mechanism behind the 47%: right diligence, wrong container</a>
+  <a data-rel="contradicts" href="./2026-07-30-execute-delete-manufacturing-hooks.action.html">that node duplicates its own commit and should not have been written</a>
+</knowledge-observation>
+</body></html>
