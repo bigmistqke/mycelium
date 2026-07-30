@@ -1068,10 +1068,14 @@
   }
 
   const detail = document.getElementById('detail')
-  function showDetail(kind, title) {
+  // href is the node's own id, which is its path relative to docs/ — the same
+  // root this page is served from. That is what makes the rendered graph a way
+  // into the documents rather than a picture of them.
+  function showDetail(kind, title, href) {
     detail.innerHTML = '<button id="detail-close" aria-label="Close">×<\/button>'
       + '<div class="detail-kind">' + escapeHtml(kind) + '<\/div>'
       + '<div class="detail-title">' + escapeHtml(title) + '<\/div>'
+      + (href ? '<div class="detail-open"><a href="' + escapeHtml(href) + '">open this node &rarr;<\/a><\/div>' : '')
     detail.classList.add('open')
     document.getElementById('detail-close').addEventListener('click', () => detail.classList.remove('open'))
   }
@@ -1121,7 +1125,7 @@
 
   cy.on('tap', 'node', (evt) => {
     const d = evt.target.data()
-    showDetail(d.status ? d.type + ' · ' + d.status : d.type, d.fullLabel)
+    showDetail(d.status ? d.type + ' · ' + d.status : d.type, d.fullLabel, d.id)
   })
   cy.on('tap', 'edge', (evt) => {
     const d = evt.target.data()
@@ -1177,7 +1181,17 @@
       console.log(`note: ${edges.length - validEdges.length} edge(s) to non-knowledge files omitted from the graph`)
     }
 
-    const payload = JSON.stringify({ nodes, edges: validEdges }).replace(/</g, '\\u003c')
+    // extractGraph needed absolute paths to resolve cross-file edges, but an
+    // absolute path is the wrong thing to ship: it bakes one machine's home
+    // directory into the page and every link in it is dead anywhere else.
+    // Rewrite both ends back to paths relative to docs/, which is the root a
+    // published site is served from, so a node id doubles as its own href.
+    const docsRoot = resolvePath('./docs')
+    const rel = (p) => (p.startsWith(docsRoot + '/') ? p.slice(docsRoot.length + 1) : p)
+    const relNodes = nodes.map((n) => ({ ...n, id: rel(n.id) }))
+    const relEdges = validEdges.map((e) => ({ ...e, from: rel(e.from), to: rel(e.to) }))
+
+    const payload = JSON.stringify({ nodes: relNodes, edges: relEdges }).replace(/</g, '\\u003c')
     const outPath = args.out ?? join(tmpdir(), `mycelium-knowledge-graph-${Date.now()}.html`)
     fs.create(outPath, renderGraphPage(payload))
     console.log(`open: file://${resolvePath('./docs', outPath)}`)

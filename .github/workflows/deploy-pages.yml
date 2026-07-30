@@ -1,0 +1,67 @@
+name: Publish the knowledge graph
+
+# The docs tree is already a website: every node, spec, plan and template is a
+# standalone HTML document linking to its neighbours by relative path. Nothing
+# needs building. The one generated file is the index — a rendered view of the
+# graph whose nodes link back into the documents.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'experiments/v4/docs/**'
+      - 'experiments/v4/src/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+# Deploys through the Pages service rather than by pushing to a branch, so
+# there is no second copy of the site living in git history.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let a newer push supersede one already queued,
+# but don't cancel a deploy that has already started.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Publishing a graph that fails its own audits would put claims on the
+      # web that the project already knows are malformed. This is the same
+      # command used locally and it exits non-zero on any failure.
+      - name: Validate the graph
+        working-directory: experiments/v4
+        run: pnpm validate
+
+      - name: Build the index
+        working-directory: experiments/v4
+        run: node src/run.ts knowledge generate graph --out index.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: experiments/v4/docs
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -266,7 +266,11 @@
 
   async function addDoc({ fs, args, cli }) {
     requireArgs([args.title, "--title"], [args.file, "--file"], [args.goal, "--goal"], [args.architecture, "--architecture"])
-    const date = todayDate()
+    // --date defaults to today and should be left alone when authoring. It
+    // exists for converting plans written earlier in another format, so the
+    // filename keeps the date the work actually happened on.
+    const date = args.date ?? todayDate()
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`--date must be YYYY-MM-DD, got "${date}"`)
     const path = `plans/${date}-${args.file}.plan.html`
     const doc = fs.create(path, `<!DOCTYPE html>
 <html lang="en">
@@ -626,7 +630,7 @@
    * Create a new plan-doc/plan-task/plan-step.
    *
    *   mycelium run plan add doc --title "…" --file <topic> --goal "…"
-   *     --architecture "…" [--status rejected]
+   *     --architecture "…" [--status rejected] [--date YYYY-MM-DD]
    *     [--tech-stack "…"] [--global-constraints "…"]
    *   mycelium run plan add task <file> --title "…" --files "…"
    *     [--interfaces "…"] [--status rejected]
