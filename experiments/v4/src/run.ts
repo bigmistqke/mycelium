@@ -266,7 +266,21 @@ function printHelp(id: string, templateLabel: string, mod: Record<string, unknow
   }
 }
 
+// Node reports a closed downstream pipe as an 'error' event on stdout rather
+// than killing the process with SIGPIPE the way a C program would, so any
+// command printing more lines than `head` or `less` asks for dies with an
+// unhandled EPIPE instead of stopping quietly. Commands that stream (list,
+// and anything else printing per-node output) are exactly the ones people
+// pipe. Only EPIPE is swallowed; every other stdout error still throws.
+function exitQuietlyOnClosedPipe() {
+  process.stdout.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EPIPE") process.exit(0)
+    throw err
+  })
+}
+
 async function main() {
+  exitQuietlyOnClosedPipe()
   const [id, command, ...rest] = process.argv.slice(2)
   if (!id) {
     console.error("usage: mycelium run <id> <command> [args…]\n       mycelium run <id> --help")
