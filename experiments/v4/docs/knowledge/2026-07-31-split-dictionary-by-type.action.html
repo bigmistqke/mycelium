@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Split the dictionary into terms and rules directories</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Split the dictionary into terms and rules directories</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>
+  Forty-nine files in one directory interleave alphabetically, so neither list can be read:
+  <code>attributes</code>, <code>attrs</code>, <code>audit</code>, then a rule, then more words.
+  Thirty-five terms and fourteen rules now sit in <code>dictionary/terms/</code> and
+  <code>dictionary/rules/</code>.
+</p>
+<p>
+  A split by type, not by subject. A term goes with terms and a rule with rules, so there is no
+  judgment to make on each entry. Splitting by subject would put one on every entry, which is the
+  cost <a href="./2026-07-30-link-do-not-tag.decision.html">link, do not tag</a> refused for topic
+  tags, and is why an earlier suggestion of per-domain directories was argued against here.
+</p>
+<p>
+  The type suffix stays on the filename even though the directory now repeats it, and it stops
+  being redundant: every command taking an existing entry derives the directory from the suffix, so
+  a caller still writes <code>harness.term.html</code> and never a path. A name without a
+  recognised suffix is rejected by name.
+</p>
+<p>
+  Cheap because of what the entries already link to. Every cross-reference in the dictionary is
+  term to term, so those relative hrefs survived the move untouched; exactly one link pointed in
+  from outside. What did break was depth: forty-nine files carried
+  <code>../templates/</code> in their conformance declaration and stylesheet links, and each needed
+  one more level. The seed markup in <code>add</code> needed the same repair, which the corpus could
+  not have caught, since a file that does not exist yet validates clean.
+</p>
+</knowledge-detail>
+  <knowledge-files>experiments/v4/docs/dictionary/, experiments/v4/docs/templates/dictionary.template.html</knowledge-files>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-07-31-dictionary-family-for-voice-and-terms.goal.html">the family this reorganises</a>
+</knowledge-action>
+</body></html>

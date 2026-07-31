@@ -14,9 +14,9 @@
   <div><b>Node types:</b> <code>dictionary-term</code>, <code>dictionary-rule</code></div>
   <div><b>File naming:</b> this file is <code>dictionary.template.html</code>, named after the
     <code>dictionary-*</code> family rather than either type in it. Instances are
-    <code>&lt;slug&gt;.term.html</code> and <code>&lt;slug&gt;.rule.html</code> under
-    <code>../dictionary/</code>, with <b>no date prefix</b> &mdash; see below, this is the one
-    place this family departs from its siblings</div>
+    <code>../dictionary/terms/&lt;slug&gt;.term.html</code> and
+    <code>../dictionary/rules/&lt;slug&gt;.rule.html</code>, with <b>no date prefix</b> &mdash; see
+    below, this is the one place this family departs from its siblings</div>
   <div><b>Purpose:</b> hold this project's writing rules and its terms of art as documents, so that
     the language every other family is written in is itself part of the corpus</div>
   <div><b>Sibling of:</b> <code>knowledge.template.html</code> (six types),
@@ -70,8 +70,21 @@
   A dictionary entry is not an event and does not belong to an exploration. The word
   <code>harness</code> is not from July; it is the word this project uses, and dating it would
   assert something false about it. Entries are also looked up by their word, which a date prefix
-  puts behind a lookup step. So <code>dictionary/harness.term.html</code>, and <code>add</code> has
-  no <code>--date</code> flag and prepends nothing.
+  puts behind a lookup step. So <code>dictionary/terms/harness.term.html</code>, and
+  <code>add</code> has no <code>--date</code> flag and prepends nothing.
+</p>
+<p>
+  Terms and rules sit in separate directories because thirty-five one-line words and fourteen
+  rules interleave alphabetically otherwise, and neither list can be read. This is a split by
+  type, not by subject: a term goes with terms and a rule with rules, so there is no judgment to
+  make on each entry. A split by subject would be one, which is the cost
+  <a data-rel="depends_on" href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do
+  not tag</a> refused for topic tags.
+</p>
+<p>
+  The type suffix stays on the filename even though the directory repeats it, and it earns its
+  place: every command that takes an existing entry derives the directory from the suffix, so a
+  caller writes <code>harness.term.html</code> and never a path.
 </p>
 
 <h2>Shape</h2>
@@ -172,7 +185,7 @@
       <dictionary-part-of-speech>noun</dictionary-part-of-speech>
       <dictionary-status>rejected</dictionary-status>
       <dictionary-meaning>Not used here; the word for what shapes an agent's behaviour is harness.</dictionary-meaning>
-      <a data-rel="alternative_to" href="../dictionary/harness.term.html">harness</a>
+      <a data-rel="alternative_to" href="../dictionary/terms/harness.term.html">harness</a>
     </dictionary-term>
 
     <dictionary-rule data-conforms-to="../templates/dictionary.template.html#dictionary-rule">
@@ -340,6 +353,16 @@
     }
   }
 
+  // Where an entry lives, derived from its own name. The .term.html and
+  // .rule.html suffix already says which type a file is, so the directory
+  // follows from it and a caller never has to type one. That is also what
+  // keeps the suffix from being redundant now that the directory repeats it.
+  function pathFor(file) {
+    const match = /\.(term|rule)\.html$/.exec(file)
+    if (!match) throw new Error(`<file> must end in .term.html or .rule.html, got "${file}"`)
+    return `dictionary/${match[1]}s/${file}`
+  }
+
   function requireArgs(...checks) {
     for (const [value, label] of checks) {
       if (value === undefined) throw new Error(`missing required argument: ${label}`)
@@ -356,7 +379,7 @@
    *   mycelium run dictionary add rule --title "…" --file <slug>
    *     --checkable yes|no --pass "…" --fail "…" [--detail "…" | --detail -]
    *
-   * Writes dictionary/<slug>.term.html or dictionary/<slug>.rule.html.
+   * Writes dictionary/terms/<slug>.term.html or dictionary/rules/<slug>.rule.html.
    * There is NO date prefix and no --date flag, unlike knowledge add and
    * spec add: a dictionary entry is not an event and does not belong to an
    * exploration, and entries are looked up by their word. So --file is the
@@ -406,19 +429,19 @@
     rejectForeignFields(type, values)
     await resolveStdin(values, cli)
 
-    const path = `dictionary/${args.file}.${type}.html`
+    const path = `dictionary/${type}s/${args.file}.${type}.html`
     const doc = fs.create(path, `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title></title>
-<link rel="stylesheet" href="../theme.css">
-<link rel="stylesheet" href="../templates/dictionary.template.css">
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../../templates/dictionary.template.css">
 </head>
 <body>
 
-<dictionary-${type} data-conforms-to="../templates/dictionary.template.html#dictionary-${type}">
+<dictionary-${type} data-conforms-to="../../templates/dictionary.template.html#dictionary-${type}">
 </dictionary-${type}>
 
 </body>
@@ -463,7 +486,7 @@
    */
   export async function update({ fs, args, cli }) {
     requireArgs([args._[0], '<file>'])
-    const path = `dictionary/${args._[0]}`
+    const path = pathFor(args._[0])
     const doc = fs.get(path)
     const root = doc.querySelector('[data-conforms-to]')
     const type = root.tagName.toLowerCase().replace('dictionary-', '')
@@ -516,8 +539,8 @@
    */
   export function link({ fs, args }) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
-    fs.get(`dictionary/${args._[1]}`)
-    const doc = fs.get(`dictionary/${args._[0]}`)
+    fs.get(pathFor(args._[1]))
+    const doc = fs.get(pathFor(args._[0]))
     const root = doc.querySelector('[data-conforms-to]')
     const label = args.label ?? ''
     const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${args.href}"]`)
@@ -542,7 +565,7 @@
    */
   export function unlink({ fs, args }) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
-    const doc = fs.get(`dictionary/${args._[0]}`)
+    const doc = fs.get(pathFor(args._[0]))
     const root = doc.querySelector('[data-conforms-to]')
     const a = root.querySelector(`a[data-rel="${args.rel}"][href="${args.href}"]`)
     if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
