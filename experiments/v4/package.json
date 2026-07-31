@@ -13,6 +13,9 @@
   },
   "dependencies": {
     "acorn": "^8.17.0",
-    "happy-dom": "^20.11.0"
+    "happy-dom": "^20.11.0",
+    "retext": "^9.0.0",
+    "retext-passive": "^5.0.0",
+    "retext-stringify": "^4.0.0"
   }
 }

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule: Do not use the passive voice.</title>
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../../templates/language.template.css">
+</head>
+<body>
+<language-rule data-conforms-to="../../templates/language.template.html#language-rule">
+  <language-title>Do not use the passive voice.</language-title>
+  <language-pass><p>The roster reads the command scripts.</p></language-pass>
+  <language-fail><p>The command scripts are read by the roster.</p></language-fail>
+  <language-detail><p>Detected by retext-passive rather than a pattern, because a pattern cannot tell "is written" from "is required". This is the first rule here to import a library, which is why rules stopped loading through a data URL: that has no base to resolve a package name against.</p></language-detail>
+  <script>import { retext } from "retext"
+import retextPassive from "retext-passive"
+
+const processor = retext().use(retextPassive)
+
+export function check(text) {
+  const file = processor.processSync(text)
+  return file.messages.map((m) => ({
+    excerpt: m.actual ?? '',
+    message: `passive voice: ${m.actual}`,
+  }))
+}
+</script>
+</language-rule>
+</body></html>
