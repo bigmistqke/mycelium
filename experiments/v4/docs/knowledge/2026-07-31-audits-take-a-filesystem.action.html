@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Hand audits a filesystem instead of parsed documents, and wire one rule end to end</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Hand audits a filesystem instead of parsed documents, and wire one rule end to end</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-detail><p>
+  A tracer rather than the whole design. Audits receive a read-only filesystem rooted one level
+  above <code>docs/</code>, so <code>src/</code> is reachable and a language rule can eventually
+  read code comments. The root stops there rather than at the repository root, because this project
+  is heading toward being only v4, and monorepo support is a later question.
+</p>
+<p>
+  The three existing audits keep their bodies and gain one line each to build the document list they
+  used to be handed. They cannot import a shared helper for it: each audit also runs in the browser
+  demo through a <code>data:</code> URL import, which has no base to resolve a relative import
+  against. That constraint is already recorded in the template as the reason
+  <code>extractGraph</code> is duplicated rather than shared.
+</p>
+<p>
+  One rule gets a real check: rejected words, chosen because the corpus was cleaned this morning and
+  it has nothing to catch. So the gate is green from the first run and no migration is needed to
+  turn it on. Every later rule is one commit plus its own cleanup, cheapest first.
+</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-31-language-rules-check-strings.observation.html">the reframe this implements</a>
+  <knowledge-commit>beb7433</knowledge-commit>
+  <knowledge-files>experiments/v4/src/validate.ts, experiments/v4/src/utils.ts, experiments/v4/docs/templates/knowledge.template.html, experiments/v4/docs/templates/dictionary.template.html</knowledge-files>
+</knowledge-action>
+</body></html>
