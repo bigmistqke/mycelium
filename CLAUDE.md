@@ -49,12 +49,28 @@ graph can follow a link to.
 `mycelium run`'s knowledge commands exist and are tested working:
 
 ```bash
-pnpm --filter @mycelium/v4 mycelium knowledge add <type> --title "…" --confidence NN [--status S] [--prompt "…"] [--detail "…" | --detail -] [--commit HASH] [--date YYYY-MM-DD] --file <slug>
+pnpm --filter @mycelium/v4 mycelium knowledge add <type> --title "…" --confidence NN [--status S] [--prompt "…"] [--detail "…" | --detail -] [--commit HASH] [--date YYYY-MM-DD] --file <undated-slug>
 pnpm --filter @mycelium/v4 mycelium knowledge link <from-file> <to-file> --rel <rel> --label "…"
 pnpm --filter @mycelium/v4 mycelium knowledge update <file> [--title "…"] [--confidence NN] [--status S] [--prompt "…"] [--detail "…" | --detail - | --detail ""] [--commit HASH] [--files "…"] [--branch NAME]
 ```
 (`--filter @mycelium/v4` works from anywhere in the repo; drop it and just run
 `pnpm mycelium ...` if already inside `experiments/v4/`.)
+
+**`--file` takes a bare slug with no date on it.** `add` prepends the date
+itself and writes `knowledge/<date>-<slug>.<type>.html`, so the date appears
+in the filename whether or not you typed one. Pass `--file
+prior-art-controlled-natural-languages`, not `--file
+2026-07-31-prior-art-controlled-natural-languages`. The dated form is now
+rejected with an error naming the slug to pass instead — but it used to
+produce `2026-07-31-2026-07-31-prior-art-….observation.html` silently, since
+such a node validates fine and shows its only symptom in the filename. That
+mistake has been made. The surrounding prose talks about date-prefixed
+filenames constantly, so a slug that already carries a date looks like it is
+following the convention rather than breaking it. Note the argument names in
+the signature above: `<undated-slug>` for `add`, whose value you are
+choosing, against `<file>` for `link` and `update`, which take the full
+existing filename including its date and its `.<type>.html` suffix. The same
+split, and the same guard, applies to `spec add` below.
 
 **`--detail` is where the finding goes.** The title is a title — a line you
 can scan in a list. Everything else (the evidence, the numbers, the reasoning,
@@ -81,9 +97,13 @@ cross-references live inside its own rich-field markup, not as separate
 edges) and no `list` yet (deferred, not forgotten):
 
 ```bash
-pnpm --filter @mycelium/v4 mycelium spec add --title "…" --file <topic> [--status draft|approved|implemented] --body "…"
+pnpm --filter @mycelium/v4 mycelium spec add --title "…" --file <undated-topic> [--status draft|approved|implemented] --body "…"
 pnpm --filter @mycelium/v4 mycelium spec update <file> [--title "…"] [--status S] [--body "…"]
 ```
+`spec add`'s `--file` is undated for the same reason `knowledge add`'s is, with
+one difference: there is no `--date` flag here at all. The date is always
+today's, and it fills both the filename and the `<spec-date>` field from one
+value so the two can never drift apart.
 No hand-authoring gap remains for either family. Full design:
 `experiments/v4/docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`
 (commands),

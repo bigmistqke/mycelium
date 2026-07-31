@@ -607,7 +607,7 @@
   /**
    * Create a new knowledge-<type> node file.
    *
-   *   mycelium run knowledge add <type> --title "…" --confidence NN --file <slug>
+   *   mycelium run knowledge add <type> --title "…" --confidence NN --file <undated-slug>
    *     [--status pending|active|completed|rejected] [--prompt "…"]
    *     [--detail "…" | --detail -] [--commit HASH] [--files "…"] [--branch NAME]
    *     [--date YYYY-MM-DD]
@@ -616,7 +616,16 @@
    * --status only applies to goal/decision/action (default "pending").
    * --prompt only applies to goal. --file is required and becomes
    * knowledge/<date>-<slug>.<type>.html, matching the convention
-   * spec.template.html's own add already uses. --detail is free-form
+   * spec.template.html's own add already uses.
+   *
+   * --file is the SLUG ONLY, with no date on it: this function supplies
+   * the date and prepends it. `--file how-and-why` yields
+   * knowledge/2026-07-31-how-and-why.observation.html. A slug that already
+   * carries a date is rejected outright, because the alternative is a
+   * silent 2026-07-31-2026-07-31-how-and-why that validates cleanly and
+   * shows its only symptom in the filename. Contrast link/update below,
+   * whose file argument is a whole existing filename, date and
+   * .<type>.html suffix included. --detail is free-form
    * markup (real HTML, including <script> — no tag restriction); pass
    * --detail - to read it from stdin instead of the command line, for
    * anything more than a one-line value. The built node is validated
@@ -635,6 +644,20 @@
    */
   export async function add({ fs, args, cli }) {
     requireArgs([args.file, '--file'])
+    // A slug that already carries a date would otherwise sail through and
+    // get a second one prepended, giving 2026-07-31-2026-07-31-foo. That
+    // node validates and gets written — the doubled prefix shows up only in
+    // the filename — so nothing downstream would ever catch it. The mistake
+    // is easy to make because date-prefixed filenames are the convention
+    // everywhere else here, including the <file> arguments link and update
+    // take, so a dated slug looks like it is obeying the convention.
+    const dated = /^(\d{4}-\d{2}-\d{2})-(.+)$/.exec(args.file)
+    if (dated) {
+      throw new Error(
+        `--file takes a slug with no date on it; add prepends the date itself. ` +
+        `Pass --file ${dated[2]}, plus --date ${dated[1]} if you meant to backdate.`
+      )
+    }
     const detail = args.detail === '-' ? await cli.readStdin() : args.detail
     const type = args._[0]
     const date = args.date ?? todayDate()
