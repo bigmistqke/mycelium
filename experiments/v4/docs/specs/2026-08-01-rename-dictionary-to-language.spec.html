@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Rename the dictionary family to language</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Rename the dictionary family to language</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-01</spec-date>
+  <spec-problem>
+<p>
+  The family called <code>dictionary</code> holds 35 terms, 1 rule and 13 guides. Two thirds of it
+  is not a dictionary.
+</p>
+<p>
+  The name shapes how the thing is read. A dictionary is a word list, so the rules and guides read
+  as an appendix bolted to one. They are the opposite: the rules are the only part that enforces
+  anything, and the terms are the part a machine has never checked. Calling the whole family after
+  its least active third puts the emphasis in the wrong place.
+</p>
+<p>
+  ASD-STE100, the standard this borrows its shape from, is a language specification. Its dictionary
+  is Part 2. The writing rules are Part 1, and the two together are what makes it a language rather
+  than a glossary. That is the same split this family already has, under a name that only covers
+  half of it.
+</p>
+<p>
+  The project has been calling it the language spec in conversation for a day, while the file is
+  named for the dictionary. That gap is the thing being closed.
+</p>
+</spec-problem>
+  <spec-design>
+<p>
+  One family, renamed. Three types, unchanged in content:
+  <code>language-term</code>, <code>language-rule</code>, <code>language-guide</code>.
+</p>
+<h3>What changes</h3>
+<table>
+  <tbody><tr><th>from</th><th>to</th></tr>
+  <tr><td><code>templates/dictionary.template.html</code></td><td><code>templates/language.template.html</code></td></tr>
+  <tr><td><code>templates/dictionary.template.css</code></td><td><code>templates/language.template.css</code></td></tr>
+  <tr><td><code>docs/dictionary/{terms,rules,guides}/</code></td><td><code>docs/language/{terms,rules,guides}/</code></td></tr>
+  <tr><td><code>dictionary-term</code>, <code>-rule</code>, <code>-guide</code></td><td><code>language-term</code>, <code>-rule</code>, <code>-guide</code></td></tr>
+  <tr><td><code>dictionary-title</code> and every other field</td><td><code>language-*</code></td></tr>
+  <tr><td><code>mycelium run dictionary …</code></td><td><code>mycelium run language …</code></td></tr>
+  <tr><td><code>prose-follows-the-dictionary</code></td><td><code>prose-follows-the-language</code></td></tr>
+</tbody></table>
+<p>
+  Instance filenames do not change. They carry the type, not the family:
+  <code>harness.term.html</code> stays <code>harness.term.html</code>. That is what already lets a
+  command derive an entry's directory from its own name, and the rename does not touch it.
+</p>
+<h3>One family, not two</h3>
+<p>
+  The alternative was to split: keep <code>dictionary</code> for terms and give rules and guides a
+  family of their own. They share only <code>title</code> and <code>detail</code>, and they already
+  sit in separate directories, so the seam is real.
+</p>
+<p>
+  Rejected. The two halves are one thing in use. A rule that says to write <code>harness</code>
+  rather than <code>tooling</code> is meaningless without the terms it names, and the terms exist to
+  be enforced by the rules. Splitting them would put a family boundary through the middle of a single
+  argument, and this project has one cross-family import in it, deliberately, because a boundary is
+  expensive to cross.
+</p>
+<h3>The references are the work</h3>
+<p>
+  The retagging is mechanical. The references are not.
+</p>
+<ul>
+  <li><strong>19 hrefs point into the family.</strong> These must be repointed. A node may only refer
+    to things that exist in this repository, so a link to a file that no longer exists is not a
+    stale mention, it is a broken one.</li>
+  <li><strong>23 knowledge nodes mention the dictionary in prose.</strong> This is the judgment.</li>
+  <li><strong>2 specs</strong> name the family, including one whose own title is about it.</li>
+</ul>
+<p>
+  For the prose, the rule is the use and mention distinction that has come up twice already today.
+  A node saying <q>the dictionary family</q> names a thing that still exists under a new name, so it
+  is renamed. A node saying <q>a dictionary that only defines approved words prevents nothing</q>
+  uses the ordinary word and is left alone.
+</p>
+<p>
+  A node's own title is renamed on the same rule. Renaming does not falsify the record: the work
+  happened to a family that still exists, and a record pointing at a name nothing answers to is
+  worth less than one that resolves.
+</p>
+<h3>Order</h3>
+<ol>
+  <li>Move and retag the 49 instances. Nothing outside points at them yet in the new location, so
+    this fails loudly and in one place.</li>
+  <li>Rename the template and its stylesheet, and retag every type and field inside.</li>
+  <li>Repoint the 19 hrefs.</li>
+  <li>Rename the audit.</li>
+  <li>Prose, in the two specs and the 23 nodes, by the use and mention rule above.</li>
+</ol>
+<p>
+  Each step leaves <code>validate</code> failing until the next, which is the point: the corpus is
+  the test, and a rename that passes at every intermediate step is one where something is not being
+  checked.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>
+  <strong>Any change to the types.</strong> Same three, same fields, same rules about which carries a
+  check. This renames and moves; it decides nothing about content.
+</p>
+<p>
+  <strong>An alias for the old command name.</strong> There is one caller, and it is a person typing
+  it. A second name for one thing is the drift this project keeps finding.
+</p>
+<p>
+  <strong>Splitting into two families.</strong> Rejected in the design section.
+</p>
+<p>
+  <strong>Whether <code>dictionary</code> earns a term entry of its own.</strong> It is a word this
+  project uses with a specific meaning, so it probably does, but that is an entry rather than part of
+  a rename.
+</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<ol>
+  <li>
+    <strong>Does the family prefix on fields carry its weight?</strong> Every field becomes
+    <code>language-title</code>, <code>language-meaning</code> and so on, which is long and repeats a
+    word the directory already says. The convention exists so a field belongs to a family rather than
+    to one type, and it has never been questioned. This rename touches every field in the family and
+    is the cheapest moment to ask.
+  </li>
+  <li>
+    <strong>What happens to the specification named for the dictionary?</strong>
+    <code>2026-07-31-dictionary-template-html.spec.html</code> names the family in its filename, and
+    a spec filename carries its date and topic. Renaming the file changes an address; leaving it
+    means a spec named for something that no longer exists.
+  </li>
+  <li>
+    <strong>Is a term still a term?</strong> Under a language family the word is fine. But
+    <code>language-term</code> and <code>language-rule</code> read as though a rule is not made of
+    terms, when a rule about a word is exactly that.
+  </li>
+</ol>
+</spec-open-questions>
+</spec-doc>
+</body></html>
