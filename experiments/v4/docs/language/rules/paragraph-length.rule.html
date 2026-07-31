@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule: Keep a paragraph under five sentences.</title>
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../../templates/language.template.css">
+</head>
+<body>
+<language-rule data-conforms-to="../../templates/language.template.html#language-rule">
+  <language-title>Keep a paragraph under five sentences.</language-title>
+  <language-pass><p>The roster is generated. It cannot drift.</p></language-pass>
+  <language-fail><p>One. Two. Three. Four. Five.</p></language-fail>
+  <language-detail><p>Markup, not text, so this reads paragraphs rather than a string. Four is close to what the corpus already does: the median paragraph is one sentence, and only thirty-four run past four.</p></language-detail>
+  <script>const LIMIT = 4
+
+// Paragraphs, so this needs the markup rather than the string.
+export function check(text, node) {
+  if (!node) return []
+  const violations = []
+  for (const p of Array.from(node.querySelectorAll?.('p') ?? [])) {
+    const sentences = (p.textContent ?? '')
+      .split(/(?<=[.!?])\s+(?=[A-Z“"'(])/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (sentences.length > LIMIT) {
+      violations.push({
+        excerpt: sentences[0].slice(0, 40),
+        message: `paragraph runs to ${sentences.length} sentences: "${sentences[0].slice(0, 40)}…"`,
+      })
+    }
+  }
+  return violations
+}
+</script>
+</language-rule>
+</body></html>
