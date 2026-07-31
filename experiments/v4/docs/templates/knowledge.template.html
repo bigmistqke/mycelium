@@ -324,7 +324,7 @@
   CLAUDE.md: "Root goal nodes are the ONLY valid orphans." Every node whose type isn't
   <code>knowledge-goal</code> must appear in at least one edge, incoming or outgoing.
 </p>
-<script type="module" data-audits="orphans-except-goal" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
+<script type="module" data-audits="orphans-except-goal" data-expects="sample-observation" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
   const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
 
   function extractGraph(documents) {
@@ -364,7 +364,7 @@
   checklist means. So this checks specifically for an <em>incoming</em> edge, the way this project's own
   <code>action &rarr;leads_to&rarr; outcome</code> links have worked all night.
 </p>
-<script type="module" data-audits="dangling-outcome" data-touches="knowledge-outcome">
+<script type="module" data-audits="dangling-outcome" data-expects="sample-outcome" data-touches="knowledge-outcome">
   const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
 
   function extractGraph(documents) {
@@ -450,7 +450,7 @@
   one is a property of the pair, which a per-field <code>required</code> attribute can't express and this
   audit can.
 </p>
-<script type="module" data-audits="hollow-action" data-touches="knowledge-action">
+<script type="module" data-audits="hollow-action" data-expects="sample-hollow-action" data-touches="knowledge-action">
   function extractActions(documents) {
     const actions = []
     for (const { path, dom } of documents) {
@@ -484,13 +484,25 @@
     cross-file import would be CORS-checked with no stable origin to satisfy it over <code>file://</code>,
     and still works with a plain double-click either way. Their <code>documents</code> argument
     here is just <code>[{ path: 'sample', dom: sample-instances }]</code>, a one-file stand-in for a real
-    crawl. The samples were wired so extraction still produces one real violation per audit:
+    crawl. The samples are wired so extraction produces exactly one violation per audit:
     <code>sample-observation</code> has no edges at all, <code>sample-outcome</code> has only an
-    outgoing edge (to <code>sample-action</code>), nothing pointing into it, and
-    <code>sample-hollow-action</code> carries neither a detail nor a commit <em>and</em> a title past the
-    limit, so it is the one violation of both shape audits. It carries an outgoing
-    <code>depends_on</code> edge purely so it doesn't also show up in <code>orphans-except-goal</code> and
-    change what that demo asserts.
+    outgoing edge (to <code>sample-action</code>) with nothing pointing into it, and
+    <code>sample-hollow-action</code> carries neither a detail nor a commit. That last one also has an
+    outgoing <code>depends_on</code> edge purely so it doesn't show up in
+    <code>orphans-except-goal</code> as well and change what that demo asserts.
+  </p>
+  <p>
+    Each audit names its own violation in <code>data-expects</code>, and that is what makes these
+    samples safe to leave in the corpus the real run sees. <code>mycelium validate</code> hands every
+    audit every document, this file included, and compares what an audit finds against what it
+    declares. A violation nobody declared fails the run. A declared one that stops appearing also
+    fails it, which is the useful half: give <code>sample-hollow-action</code> a detail and the build
+    tells you this demo has stopped demonstrating anything, rather than quietly passing.
+  </p>
+  <p>
+    The demo below reads <code>data-expects</code> off the audits rather than keeping its own list, so
+    the browser and the build check the same declaration. Two copies could disagree, and the one that
+    would go on saying PASS is this one.
   </p>
 
   <pre id="audit-output">running&hellip;</pre>
@@ -502,18 +514,18 @@
     }
 
     const documents = [{ path: 'sample', dom: document.getElementById('sample-instances') }]
-    const expected = {
-      'orphans-except-goal': ['sample-observation'],
-      'dangling-outcome': ['sample-outcome'],
-      'hollow-action': ['sample-hollow-action'],
-    }
 
+    // Each audit's own data-expects is what it should find, so this demo and
+    // `mycelium validate` are checking one declaration rather than two copies
+    // of it. A list written here as well could disagree with the build, and
+    // the demo would keep saying PASS while the build failed.
     const lines = []
     let allCorrect = true
-    for (const [name, want] of Object.entries(expected)) {
-      const source = document.querySelector(`script[data-audits="${name}"]`).textContent
-      const result = await (await loadCheck(source))(documents)
-      const correct = JSON.stringify(result.violations.sort()) === JSON.stringify(want)
+    for (const script of document.querySelectorAll('script[data-audits]')) {
+      const name = script.getAttribute('data-audits')
+      const want = (script.getAttribute('data-expects') ?? '').trim().split(/\s+/).filter(Boolean)
+      const result = await (await loadCheck(script.textContent))(documents)
+      const correct = JSON.stringify(result.violations.toSorted()) === JSON.stringify(want.toSorted())
       allCorrect = allCorrect && correct
       lines.push(`${(name + ':').padEnd(21)}violations = [${result.violations.join(', ')}]  ${correct ? 'PASS (matches expected)' : 'FAIL (expected [' + want.join(', ') + '])'}`)
     }

@@ -4,7 +4,7 @@
 
 import { readFileSync } from "node:fs"
 import { styleText } from "node:util"
-import { resolve as resolvePath, sep } from "node:path"
+import { resolve as resolvePath } from "node:path"
 import { register } from "node:module"
 import { parseHTML, walkHtmlFiles, resolveTemplateRef, loadCheck, loadGenericValidator } from "./utils.ts"
 
@@ -25,6 +25,13 @@ interface TemplateInfo {
 interface AuditInfo {
   name: string
   touches: string | null
+  // The violations this audit is supposed to find: the ids of instances that
+  // exist precisely so it has something to catch. A template's worked example
+  // is built to fail the audit it illustrates, and declaring that here is what
+  // lets the audit run over the whole corpus rather than having documentation
+  // hidden from it. Absent means "find nothing", which covers every audit
+  // with no fixture.
+  expects: string[]
   file: string
   scriptElement: Element
 }
@@ -60,6 +67,7 @@ function discoverTemplatesAndAudits(documents: ParsedDoc[]) {
       audits.push({
         name: script.getAttribute("data-audits")!,
         touches: script.getAttribute("data-touches"),
+        expects: (script.getAttribute("data-expects") ?? "").trim().split(/\s+/).filter(Boolean),
         file: path,
         scriptElement: script,
       })
@@ -90,13 +98,14 @@ async function main() {
   const documents = parseAll(dir)
   const { templates, audits } = discoverTemplatesAndAudits(documents)
   const instances = discoverInstances(documents)
-  // Audits answer whole-graph questions ("is every outcome linked to?"); the
-  // template's own live-demo sample instances aren't real graph data, just a
-  // documentation fixture, so they'd corrupt that answer if left in. Per-
-  // instance validation (below) is unaffected — it validates one element in
-  // isolation, so a sample instance in the mix is harmless there.
-  const templatesDir = resolvePath(dir, "templates") + sep
-  const auditDocuments = documents.filter((d) => !d.path.startsWith(templatesDir))
+  // Audits see every document, templates included. A template's worked
+  // examples are built to fail the audit they illustrate, and each audit
+  // declares those in data-expects, so a deliberate violation is an
+  // assertion rather than a failure.
+  //
+  // Filtering templates/ out instead would name a location to mean "fixture",
+  // and it costs more than the imprecision: an audit declared in one template
+  // file could then never see anything declared in another.
   let genericCheck: ((templateEl: Element, instanceEl: Element) => CheckResult) | null = null
   try {
     genericCheck = await loadGenericValidator(dir)
@@ -153,10 +162,23 @@ async function main() {
     const label = `${audit.name}  (${relative(dir, audit.file)}${audit.touches ? `, touches: ${audit.touches}` : ""})`
     try {
       const check = await loadCheck(audit.file, audit.scriptElement)
-      const result = (await check(auditDocuments)) as CheckResult
-      if (!result.ok) {
+      const result = (await check(documents)) as CheckResult
+      // The comparison is the verdict, so an audit's own `ok` is not
+      // consulted: it reports what it found and the engine decides whether
+      // that is acceptable. The two ways to be wrong are worth telling
+      // apart. A violation nobody declared is the audit doing its job. A
+      // declared one that failed to appear means the example built to
+      // demonstrate this audit has stopped demonstrating anything.
+      const found = (result.violations ?? result.errors ?? []) as string[]
+      const unexpected = found.filter((v) => !audit.expects.includes(v))
+      const missing = audit.expects.filter((e) => !found.includes(e))
+      if (unexpected.length > 0 || missing.length > 0) {
         fail++
-        failures.push(`FAIL  ${label}\n${formatItems(result)}`)
+        const lines = [
+          ...unexpected.map((v) => `      ${v}`),
+          ...missing.map((e) => `      declared in data-expects but not found: ${e}`),
+        ]
+        failures.push(`FAIL  ${label}\n${lines.join("\n")}`)
       }
     } catch (err) {
       fail++
