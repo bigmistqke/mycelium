@@ -73,7 +73,7 @@
   <code>detail</code>.</p>
 <template id="knowledge-goal">
   <knowledge-goal>
-    <knowledge-title required></knowledge-title>
+    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-status required enum="pending active completed rejected"></knowledge-status>
     <knowledge-prompt></knowledge-prompt>
@@ -92,7 +92,7 @@
   <code>status</code>, optional <code>detail</code>.</p>
 <template id="knowledge-decision">
   <knowledge-decision>
-    <knowledge-title required></knowledge-title>
+    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-status required enum="pending active completed rejected"></knowledge-status>
     <knowledge-detail></knowledge-detail>
@@ -111,7 +111,7 @@
   <code>title</code>, <code>confidence</code>, optional <code>detail</code>.</p>
 <template id="knowledge-option">
   <knowledge-option>
-    <knowledge-title required></knowledge-title>
+    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-detail></knowledge-detail>
   </knowledge-option>
@@ -128,7 +128,7 @@
   it's tied to real work.</p>
 <template id="knowledge-action">
   <knowledge-action>
-    <knowledge-title required></knowledge-title>
+    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-status required enum="pending active completed rejected"></knowledge-status>
     <knowledge-detail></knowledge-detail>
@@ -151,7 +151,7 @@
   <code>detail</code>, optional <code>commit</code>/<code>files</code>/<code>branch</code>.</p>
 <template id="knowledge-outcome">
   <knowledge-outcome>
-    <knowledge-title required></knowledge-title>
+    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-detail></knowledge-detail>
     <knowledge-commit></knowledge-commit>
@@ -170,7 +170,7 @@
   <code>confidence</code>, optional <code>detail</code>.</p>
 <template id="knowledge-observation">
   <knowledge-observation>
-    <knowledge-title required></knowledge-title>
+    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-detail></knowledge-detail>
   </knowledge-observation>
@@ -226,9 +226,8 @@
     </knowledge-action>
     <knowledge-action id="sample-hollow-action" data-conforms-to="./knowledge.template.html#knowledge-action">
       <knowledge-title>
-        Sample action carrying a title long enough to run past the hundred-and-forty character limit,
-        written across several source lines so the demo also proves the audit measures the collapsed
-        text rather than any single line of it
+        Sample action with no detail and no commit, written across several source
+        lines so it also shows a title being measured as collapsed text
       </knowledge-title>
       <knowledge-confidence>60</knowledge-confidence>
       <knowledge-status>completed</knowledge-status>
@@ -303,12 +302,12 @@
   host it without redeclaring the other's types. None of the audits below is that.
 </p>
 <p>
-  Two of them ask about edges (<code>orphans-except-goal</code>, <code>dangling-outcome</code>) and two ask
-  about the <em>shape of a single node's own fields</em> (<code>title-length</code>,
-  <code>hollow-action</code>). The second pair still belongs here rather than in each type's
-  <code>data-validates</code> script: a per-instance validator answers "is this markup well-formed," which
-  an over-long title and an empty action both are. What they violate is a convention about how the graph is
-  written &mdash; a whole-corpus property, checked the same way and reported in the same list.
+  Two of them ask about edges (<code>orphans-except-goal</code>, <code>dangling-outcome</code>) and one asks
+  about the <em>shape of a single node's own fields</em> (<code>hollow-action</code>). There used to be a
+  second of that kind, <code>title-length</code>, and it is now a <code>pattern</code> on the field itself:
+  a check belongs in the schema once the schema can say it. <code>hollow-action</code> stays because
+  "at least one of these two fields" is not something the vocabulary can express, and the alternative was
+  adding a word to the engine for one type's benefit.
 </p>
 <p>
   The convention: <code>data-validates="#id"</code> marks a script checking one instance against one
@@ -396,7 +395,7 @@
   }
 </script>
 
-<h3>title-length</h3>
+<h3>Title length is declared, not audited</h3>
 <p>
   A <code>knowledge-title</code> past 140 characters is a paragraph filed in the wrong field: the finding
   is still legible, but it can't be scanned in a list, and whatever nuance it carries is invisible to
@@ -404,41 +403,39 @@
   been since the field existed.
 </p>
 <p>
-  <strong>140 is a judgment, not a boundary found in the data.</strong> Measured over the whole graph on
-  2026-07-30, the count falls smoothly &mdash; 61 nodes over 100 characters, 47 over 140, 17 over 300,
-  median 84, p90 302. There is no knee to calibrate against, so no threshold here can be justified by the
-  distribution; 140 is picked as "about two lines of a title" and should be argued with on those terms
-  rather than defended as empirical. The offenders are spread across the whole history, not one bad batch.
+  This used to be an audit called <code>title-length</code>, walking the whole corpus. It is now
+  <code>pattern="^.{1,140}$"</code> on each type's own <code>knowledge-title</code> above. The rule
+  did not change; where it is written did. A maximum length is a property of one field on one node,
+  and the schema vocabulary could already say it, so saying it in code was writing by hand what the
+  template could declare. See
+  <a data-rel="elaborates" href="../knowledge/2026-07-31-schema-when-vocabulary-allows.decision.html">the
+  decision</a>, which also explains why <code>hollow-action</code> below did not move: it needs a word
+  the vocabulary does not have, and adding one to serve a single type is growing the engine rather
+  than using it.
 </p>
 <p>
-  Titles are read from the parsed DOM and whitespace-collapsed before measuring, so a title wrapped across
-  several source lines is measured as it reads rather than per line &mdash; 14 of the 47 wrap, and a
-  line-oriented regex silently misses every one of them.
+  <strong>140 is a judgment, not a boundary found in the data.</strong> Measured over the whole graph on
+  2026-07-30, the count fell smoothly &mdash; 61 nodes over 100 characters, 47 over 140, 17 over 300,
+  median 84, p90 302. There is no knee to calibrate against, so no threshold here can be justified by the
+  distribution; 140 is picked as "about two lines of a title" and should be argued with on those terms
+  rather than defended as empirical. Those 47 have since been rewritten; the longest title in the corpus
+  is now 135.
 </p>
-<script type="module" data-audits="title-length" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
-  const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
-  const LIMIT = 140
-
-  function extractTitles(documents) {
-    const titles = []
-    for (const { path, dom } of documents) {
-      for (const tag of TYPES) {
-        for (const el of dom.querySelectorAll(tag)) {
-          const title = el.querySelector('knowledge-title')?.textContent ?? ''
-          titles.push({ id: el.id || path, title: title.trim().replace(/\s+/g, ' ') })
-        }
-      }
-    }
-    return titles
-  }
-
-  export function check(documents) {
-    const violations = extractTitles(documents)
-      .filter(n => n.title.length > LIMIT)
-      .map(n => n.id)
-    return { ok: violations.length === 0, violations }
-  }
-</script>
+<p>
+  A regex can only express this because the generic validator collapses whitespace before testing.
+  14 of those 47 titles wrapped across source lines, and against raw text a length regex counts the
+  indentation and the newlines as content. The longest title measured 139 that way against its real
+  135, four characters from a limit it was nowhere near. Collapsing is what makes a declared length
+  mean the same thing as the audit's measured one.
+</p>
+<p>
+  Two costs, since neither is visible from the attribute. The limit is now written once per type
+  rather than once in total, so changing it is six edits and nothing checks that the six agree. And
+  audits skip <code>templates/</code> while per-instance validation does not, so the sample instance
+  below can no longer carry a deliberately over-long title to demonstrate the rule &mdash; it would
+  fail its own template. It keeps the wrapping, which still shows collapsed measurement, and drops
+  the length.
+</p>
 
 <h3>hollow-action</h3>
 <p>
@@ -508,7 +505,6 @@
     const expected = {
       'orphans-except-goal': ['sample-observation'],
       'dangling-outcome': ['sample-outcome'],
-      'title-length': ['sample-hollow-action'],
       'hollow-action': ['sample-hollow-action'],
     }
 
@@ -530,8 +526,8 @@
 <h2>Graph extraction, shared via a real cross-script import</h2>
 <p>
   <code>extractGraph(documents)</code> below is deliberately <em>not</em> what the two graph-consuming audits
-  above call (<code>orphans-except-goal</code> and <code>dangling-outcome</code> — <code>title-length</code>
-  and <code>hollow-action</code> read fields rather than edges, so they never need a graph at all) —
+  above call (<code>orphans-except-goal</code> and <code>dangling-outcome</code> —
+  <code>hollow-action</code> reads fields rather than edges, so it never needs a graph at all) —
   they keep their own inline copy on purpose, since each audit's <code>&lt;script data-audits&gt;</code> also
   runs as a browser live-demo via a <code>data:</code> URL import, and a <code>data:</code> URL module has no
   hierarchical base to resolve a cross-script <code>import</code> against (the same reasoning
