@@ -257,7 +257,7 @@ has asked for the full per-instance listing back."</code></pre></plan-detail>
   </plan-task>
   <plan-task id="task-3" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Rename `crawl`/`crawl.ts` → `validate`/`validate.ts`</plan-title>
-    <plan-files>Rename: `experiments/v4/src/crawl.ts` → `experiments/v4/src/validate.ts`; Modify: `experiments/v4/package.json`; Modify: `experiments/v4/README.md`; Modify: `experiments/v4/src/run.ts` (one comment line); Modify: `experiments/v4/docs/templates/knowledge.template.html` (one line, in prose, not code); Modify: `CLAUDE.md` (repo root)</plan-files>
+    <plan-files>Rename: `experiments/v4/src/crawl.ts` → `experiments/v4/src/validate.ts`; Modify: `experiments/v4/package.json`; Modify: `experiments/v4/README.md`; Modify: `experiments/v4/src/run.ts` (one comment line); Modify: `experiments/v4/docs/templates/knowledge.template.html` (one line, in prose, not code); Modify: `CLAUDE.md` (repository root)</plan-files>
     <plan-interfaces>Consumes: nothing from other tasks. Produces: nothing consumed elsewhere — this is the last task.</plan-interfaces>
     <plan-step id="task-3-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Rename the file</plan-title>
@@ -316,7 +316,7 @@ pnpm validate [dir]   # defaults to ./docs
     <plan-step id="task-3-step-6" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Update `CLAUDE.md`</plan-title>
       <plan-status>completed</plan-status>
-      <plan-detail><p>Four edits, all in the repo-root <code>CLAUDE.md</code> (not the global <code>~/.claude/CLAUDE.md</code>):</p>
+      <plan-detail><p>Four edits, all in the repository-root <code>CLAUDE.md</code> (not the global <code>~/.claude/CLAUDE.md</code>):</p>
 <p>Find:</p>
 <pre><code>**Root `knowledge-goal` nodes are the ONLY valid orphans** — exactly what
 `orphans-except-goal` (one of `knowledge.template.html`'s two collocated
@@ -364,7 +364,7 @@ pnpm validate</code></pre>
 <pre><code>pnpm crawl 2&gt;&amp;1</code></pre>
 <p>Expected: an error from pnpm that no <code>crawl</code> script exists (e.g. <code>Missing script: "crawl"</code>) — confirms this is a real rename, not an alias, matching the spec's explicit choice.</p>
 <pre><code>grep -rn "pnpm crawl\|crawl\.ts" CLAUDE.md README.md src/run.ts docs/templates/knowledge.template.html</code></pre>
-<p>(Run from <code>experiments/v4/</code> for the relative paths to resolve, or adjust accordingly.) Expected: no matches in any of these five files — every living reference was updated. (This grep will *not* — and should not — come up empty repo-wide; <code>docs/specs/*.html</code>, <code>docs/knowledge/*.html</code>, and the two prior <code>docs/superpowers/plans/*.md</code> files still legitimately mention <code>crawl</code>/<code>crawl.ts</code>, untouched, per this plan's Global Constraints.)</p></plan-detail>
+<p>(Run from <code>experiments/v4/</code> for the relative paths to resolve, or adjust accordingly.) Expected: no matches in any of these five files — every living reference was updated. (This grep will *not* — and should not — come up empty repository-wide; <code>docs/specs/*.html</code>, <code>docs/knowledge/*.html</code>, and the two prior <code>docs/superpowers/plans/*.md</code> files still legitimately mention <code>crawl</code>/<code>crawl.ts</code>, untouched, per this plan's Global Constraints.)</p></plan-detail>
     </plan-step>
     <plan-step id="task-3-step-8" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Commit</plan-title>

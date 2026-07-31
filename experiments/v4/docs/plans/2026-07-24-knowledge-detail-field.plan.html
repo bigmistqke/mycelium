@@ -239,7 +239,7 @@ rm -rf "$SCRATCH"</code></pre>
 </plan-detail>
     </plan-step>
     <plan-step id="task-1-step-7" data-conforms-to="../templates/plan.template.html#plan-step">
-      <plan-title>Verify the real repo is unaffected</plan-title>
+      <plan-title>Verify the real repository is unaffected</plan-title>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>cd experiments/v4
 pnpm validate</code></pre>
@@ -265,7 +265,7 @@ any specific flag's value means -- that stays with the command."</code></pre>
   </plan-task>
   <plan-task id="task-2" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>knowledge-detail schema — all six types, templates, validators, docs</plan-title>
-    <plan-files>Modify: experiments/v4/docs/templates/knowledge.template.html (all six template/data-validates pairs, plus the six "Fields:" prose lines). Modify: CLAUDE.md (repo root, one line in the field-table summary).</plan-files>
+    <plan-files>Modify: experiments/v4/docs/templates/knowledge.template.html (all six template/data-validates pairs, plus the six "Fields:" prose lines). Modify: CLAUDE.md (repository root, one line in the field-table summary).</plan-files>
     <plan-interfaces>Consumes: nothing from other tasks. Produces: knowledge-detail becomes a real, validate-recognized, optional field on all six types. Task 3's add/update wiring and Task 4's list marker both depend on this landing first — a node with &lt;knowledge-detail&gt; content would fail validation as an "unexpected" tag until this task is done.</plan-interfaces>
     <plan-step id="task-2-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>knowledge-goal</plan-title>
@@ -590,7 +590,7 @@ any specific flag's value means -- that stays with the command."</code></pre>
     <plan-step id="task-2-step-7" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Update CLAUDE.md's field-table summary</plan-title>
       <plan-status>completed</plan-status>
-      <plan-detail><p>In the repo-root <code>CLAUDE.md</code>, find:</p>
+      <plan-detail><p>In the repository-root <code>CLAUDE.md</code>, find:</p>
 <pre><code>every type has `title` and `confidence`; `status` (`pending`/`active`/`completed`/`rejected`) is on
 `goal`/`decision`/`action` only; `commit`/`files`/`branch` are optional on `action`/`outcome` only; `prompt` is optional,
 `goal` only.</code></pre>
@@ -870,7 +870,7 @@ node "$(pwd)/experiments/v4/src/validate.ts" "$SCRATCH/docs" 2&gt;&amp;1 | tail 
 </plan-detail>
     </plan-step>
     <plan-step id="task-3-step-7" data-conforms-to="../templates/plan.template.html#plan-step">
-      <plan-title>Clean up, verify the real repo still passes</plan-title>
+      <plan-title>Clean up, verify the real repository still passes</plan-title>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>rm -rf "$SCRATCH"
 cd experiments/v4
@@ -1003,7 +1003,7 @@ EOF
 </plan-detail>
     </plan-step>
     <plan-step id="task-4-step-4" data-conforms-to="../templates/plan.template.html#plan-step">
-      <plan-title>Clean up, verify the real repo's list nodes output is well-formed</plan-title>
+      <plan-title>Clean up, verify the real repository's list nodes output is well-formed</plan-title>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>rm -rf "$SCRATCH"
 cd experiments/v4

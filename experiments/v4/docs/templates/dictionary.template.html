@@ -560,9 +560,21 @@
    * it is machine-checkable and the rule itself for a rule. A rejected term
    * also prints the entry it points at, since a rejection with no
    * replacement is the thing most worth spotting in a list.
+   *
+   * --status is a term field and --checkable is a rule field, so either one
+   * excludes every entry of the other type. `list --status rejected` prints
+   * rejected terms and no rules at all.
    */
   export function list({ fs, args }) {
     const oneLine = (text) => text.trim().replace(/\s+/g, ' ')
+
+    // A filter naming a field the entry's type does not have excludes that
+    // entry, rather than passing over it. --status is a term field, so
+    // `list --status rejected` must not print all fourteen rules alongside
+    // the six rejected terms — which it did, silently, because each type's
+    // filter was checked only inside that type's own branch. A filter that
+    // does not apply reads as a filter that found everything.
+    const FILTER_FIELD = { status: 'dictionary-status', checkable: 'dictionary-checkable' }
 
     for (const { path, doc } of fs.list('dictionary')) {
       const el = doc.querySelector('[data-conforms-to]')
@@ -572,6 +584,11 @@
 
       const field = (tag) => oneLine(el.querySelector(tag)?.textContent ?? '')
       const title = field('dictionary-title')
+
+      const inapplicable = Object.keys(FILTER_FIELD).some(
+        (flag) => args[flag] !== undefined && !FIELD_ORDER[type].includes(FILTER_FIELD[flag]),
+      )
+      if (inapplicable) continue
 
       if (type === 'term') {
         const status = field('dictionary-status')

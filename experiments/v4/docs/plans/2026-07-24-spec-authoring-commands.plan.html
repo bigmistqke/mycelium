@@ -160,7 +160,7 @@ rm -rf "$SCRATCH"</code></pre>
 <p>Expected: <code>wrote    knowledge/&lt;today's-date&gt;-date-prefix-test.observation.html</code>; the <code>ls | grep</code> shows a filename starting with today's actual date (e.g. <code>2026-07-24-date-prefix-test.observation.html</code>); <code>0 fail</code>.</p></plan-detail>
     </plan-step>
     <plan-step id="task-1-step-6" data-conforms-to="../templates/plan.template.html#plan-step">
-      <plan-title>Verify the real repo is unaffected — existing filenames untouched</plan-title>
+      <plan-title>Verify the real repository is unaffected — existing filenames untouched</plan-title>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>cd experiments/v4
 pnpm validate
@@ -455,7 +455,7 @@ rm /tmp/spec-before.html</code></pre>
 <p>Expected: real differences (the design-text replacement from the first <code>update</code> call actually landed) — this <code>diff</code> is just confirming the file was genuinely touched once, not asserting no changes.</p></plan-detail>
     </plan-step>
     <plan-step id="task-2-step-7" data-conforms-to="../templates/plan.template.html#plan-step">
-      <plan-title>Clean up, verify the real repo is unaffected</plan-title>
+      <plan-title>Clean up, verify the real repository is unaffected</plan-title>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>rm -rf "$SCRATCH"
 cd experiments/v4
@@ -483,12 +483,12 @@ with knowledge.template.html's own."</code></pre></plan-detail>
   </plan-task>
   <plan-task id="task-3" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Update `CLAUDE.md`</plan-title>
-    <plan-files>Modify: `CLAUDE.md` (repo root)</plan-files>
+    <plan-files>Modify: `CLAUDE.md` (repository root)</plan-files>
     <plan-interfaces>Consumes: describes what Tasks 1-2 actually built — must land after them. Produces: nothing consumed elsewhere — this is the last task.</plan-interfaces>
     <plan-step id="task-3-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Replace the stale "one real gap remains" passage</plan-title>
       <plan-status>completed</plan-status>
-      <plan-detail><p>In the repo-root <code>CLAUDE.md</code>, find:</p>
+      <plan-detail><p>In the repository-root <code>CLAUDE.md</code>, find:</p>
 <pre><code>This replaces the Write/Read+Edit dance for every node/edge `knowledge-*`
 covers — no file content passes through the model doing the logging, same
 as `deciduous add`/`deciduous link` never did. `add` creates a node,

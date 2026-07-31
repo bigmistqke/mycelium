@@ -354,7 +354,7 @@ pnpm mycelium knowledge --help</code></pre>
     <plan-step id="task-3-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Verify `list nodes` against the real graph</plan-title>
       <plan-status>completed</plan-status>
-      <plan-detail><p><code>list</code> never mutates anything (it only calls <code>fs.list()</code>, which only calls <code>get()</code>, never <code>create()</code>/<code>delete()</code>), and Task 2's safety fix means <code>commit()</code> won't rewrite anything it read — so this is safe to run directly against the real repo, no scratch copy needed.</p>
+      <plan-detail><p><code>list</code> never mutates anything (it only calls <code>fs.list()</code>, which only calls <code>get()</code>, never <code>create()</code>/<code>delete()</code>), and Task 2's safety fix means <code>commit()</code> won't rewrite anything it read — so this is safe to run directly against the real repository, no scratch copy needed.</p>
 <pre><code>pnpm mycelium knowledge list nodes | grep "finalize-knowledge-cli"
 pnpm mycelium knowledge list nodes | grep "implement-listing-command"
 git status --short experiments/v4/docs/knowledge/</code></pre>
@@ -386,7 +386,7 @@ edges. list nodes/list edges read the real graph via fs.list
 (knowledge/), safe to run against the live repo now that commit()
 skips unchanged files. Type is read off each node's own root tag
 rather than a hardcoded list of the six known types."</code></pre>
-<p>Then use <code>pnpm mycelium knowledge update</code> (not a hand-edit) to close out whatever action node this task's own logging created, per this repo's workflow.</p></plan-detail>
+<p>Then use <code>pnpm mycelium knowledge update</code> (not a hand-edit) to close out whatever action node this task's own logging created, per this repository's workflow.</p></plan-detail>
     </plan-step>
   </plan-task>
 </plan-doc>

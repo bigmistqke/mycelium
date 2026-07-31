@@ -21,7 +21,7 @@
     <plan-step id="task-1-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Write a failing reproducer script</plan-title>
       <plan-status>completed</plan-status>
-      <plan-detail><p>This bug has no existing regression test to build on (no test framework exists in this repo), so write a throwaway Node script that exercises the exact failure mode: a required field on a parent that is genuinely absent, but present on a nested same-named child — today's deep <code>querySelector</code> incorrectly matches the child's field and reports the parent as valid.</p>
+      <plan-detail><p>This bug has no existing regression test to build on (no test framework exists in this repository), so write a throwaway Node script that exercises the exact failure mode: a required field on a parent that is genuinely absent, but present on a nested same-named child — today's deep <code>querySelector</code> incorrectly matches the child's field and reports the parent as valid.</p>
 <p>Create <code>&lt;scratchpad&gt;/nested-field-scoping-repro.mjs</code>:</p>
 <pre><code>import { register } from "node:module"
 import { pathToFileURL } from "node:url"
@@ -340,7 +340,7 @@ only, verified via pnpm validate against four sample instances."</code></pre>
     <plan-step id="task-3-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Create the docs/plans/ directory</plan-title>
       <plan-status>completed</plan-status>
-      <plan-detail><p>Run <code>mkdir -p experiments/v4/docs/plans</code> from the repo root, or <code>mkdir -p docs/plans</code> from <code>experiments/v4/</code>.</p>
+      <plan-detail><p>Run <code>mkdir -p experiments/v4/docs/plans</code> from the repository root, or <code>mkdir -p docs/plans</code> from <code>experiments/v4/</code>.</p>
 <p><code>fs.create()</code>/<code>fs.commit()</code> write via plain <code>writeFileSync</code>, which does not create missing parent directories — every other family's own directory (<code>docs/knowledge/</code>, <code>docs/specs/</code>) already exists on disk for the same reason.</p>
 </plan-detail>
     </plan-step>

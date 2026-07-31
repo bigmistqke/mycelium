@@ -21,7 +21,7 @@
 <p>
   The move was a single wholesale directory rename — everything inside it links relative to its own
   siblings, never more than one level up, so nothing internal broke; only <code>CLAUDE.md</code> and the two
-  hooks, which reference these paths from the repo root, needed updating. Three assumptions verified with
+  hooks, which reference these paths from the repository root, needed updating. Three assumptions verified with
   real spikes before writing any real code: Node 24 strips <code>.ts</code> syntax natively (no build step),
   a <code>data:text/javascript</code> dynamic <code>import()</code> executes extracted script text
   correctly, and <code>linkedom</code> parses a real node file and reads <code>data-conforms-to</code> and

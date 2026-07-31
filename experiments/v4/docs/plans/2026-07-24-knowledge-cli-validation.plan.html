@@ -547,7 +547,7 @@ cp -r experiments/v4/docs "$SCRATCH/docs"
 (cd "$SCRATCH" &amp;&amp; node "$RUN" knowledge add observation --title "scratch test" --confidence 60 --file scratch-test)</code></pre>
 <p>Expected: <code>wrote    knowledge/scratch-test.observation.html</code>.</p>
 <pre><code>node "$VALIDATE" "$SCRATCH/docs"</code></pre>
-<p>Expected: <code>62 checked, 0 fail</code> (one more than the real repo's 61, from the new valid observation).</p>
+<p>Expected: <code>62 checked, 0 fail</code> (one more than the real repository's 61, from the new valid observation).</p>
 </plan-detail>
     </plan-step>
     <plan-step id="task-3-step-5" data-conforms-to="../templates/plan.template.html#plan-step">
@@ -588,7 +588,7 @@ rm /tmp/build-v4-before.html</code></pre>
 </plan-detail>
     </plan-step>
     <plan-step id="task-3-step-9" data-conforms-to="../templates/plan.template.html#plan-step">
-      <plan-title>Clean up the scratch copy, verify the real repo still passes</plan-title>
+      <plan-title>Clean up the scratch copy, verify the real repository still passes</plan-title>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>rm -rf "$SCRATCH"
 cd experiments/v4
@@ -811,7 +811,7 @@ echo "exit: $?"</code></pre>
 </plan-detail>
     </plan-step>
     <plan-step id="task-4-step-7" data-conforms-to="../templates/plan.template.html#plan-step">
-      <plan-title>Clean up, verify the real repo still passes, verify --help output still works</plan-title>
+      <plan-title>Clean up, verify the real repository still passes, verify --help output still works</plan-title>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>rm -rf "$SCRATCH"
 cd experiments/v4
