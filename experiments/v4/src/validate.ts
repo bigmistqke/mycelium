@@ -2,7 +2,7 @@
 // data-conforms-to, data-validates, and data-audits — nothing about what
 // any project builds on top of them. See docs/specs/2026-07-23-mycelium-crawler.spec.html.
 
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { styleText } from "node:util"
 import { dirname, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
@@ -64,7 +64,12 @@ function createAuditFs(root: string, cache: Map<string, Document>): AuditFs {
   return {
     root,
     list(dir = ".", options = {}) {
-      return walkFiles(resolvePath(root, dir))
+      // A directory that does not exist holds no files, which is an answer
+      // rather than an error. An audit asking about a family that has no
+      // entries yet should get an empty list, not a thrown call.
+      const full = resolvePath(root, dir)
+      if (!existsSync(full)) return []
+      return walkFiles(full)
         .filter((file) => !options.ext || file.endsWith(options.ext))
         .map((file) => relative(root, file))
     },
