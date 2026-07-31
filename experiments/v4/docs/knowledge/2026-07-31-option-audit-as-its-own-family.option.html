@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option: Rejected: audit.template.html as its own family</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-option data-conforms-to="../templates/knowledge.template.html#knowledge-option">
+  <knowledge-title>Rejected: audit.template.html as its own family</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-detail><p>
+  Give audits a family file of their own, the way knowledge, spec, plan and dictionary each have
+  one. Argued for on the grounds that family resolution is by filename, so
+  <code>audit.template.html</code> would yield <code>mycelium run audit list</code> for free, in the
+  shape every other family already has.
+</p>
+<p>
+  Rejected. That command is not needed: the roster is the visibility fix, and the roster reads
+  audits directly. And a family whose instances live scattered inside other template files is
+  unlike every family here, all of which keep their instances in a directory of their own. The
+  separate file was solving a naming problem that a better reading of the naming rule dissolves.
+</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-31-audit-belongs-to-template-vocabulary.decision.html">the decision that rejected it</a>
+</knowledge-option>
+</body></html>
