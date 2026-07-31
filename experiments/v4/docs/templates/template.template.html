@@ -52,6 +52,46 @@
   &lt;/knowledge-goal&gt;
 &lt;/template&gt;</code></pre>
 
+<h2>Every link resolves</h2>
+<p>
+  A reference is only worth writing if it can be followed. A dead link is worse than no link: it
+  claims a relationship, survives every check, and only fails when a reader tries to use it.
+</p>
+<p>
+  This is the rule <code>CLAUDE.md</code> already states, that a node may only refer to things which
+  exist in this repository, with something behind it for the first time. Nothing enforced it, and a
+  reference into a deleted database sat in one document for two days while the instructions said
+  there were none.
+</p>
+<script type="mycelium/audit" data-audits="every-link-resolves">
+  /**
+   * Every link in the corpus points at a file that exists.
+   *
+   * Anchors only, not text that happens to describe an href, which is why
+   * this reads the parsed document rather than the source. Links inside a
+   * code block are illustrations and are skipped, as are absolute ones: this
+   * checks what the repository promises about itself, not what the web does.
+   */
+  import { existsSync } from "node:fs"
+  import { dirname, resolve } from "node:path"
+
+  export function check(fs) {
+    const violations = []
+    for (const path of fs.list('docs', { ext: '.html' })) {
+      const full = resolve(fs.root, path)
+      for (const a of Array.from(fs.parse(path).querySelectorAll('a[href]'))) {
+        if (a.closest('pre, code')) continue
+        const href = (a.getAttribute('href') ?? '').split('#')[0]
+        if (!href || /^[a-z]+:/i.test(href)) continue
+        if (!existsSync(resolve(dirname(full), href))) {
+          violations.push(`${path}: link to ${href} does not resolve`)
+        }
+      }
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
 <h2>Nothing outside the type</h2>
 <p>
   A document whose purpose is to <em>be</em> an instance keeps everything inside its conforming

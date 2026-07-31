@@ -103,16 +103,16 @@
   <language-term>
     <language-title required></language-title>
     <language-part-of-speech required enum="noun verb adjective adverb phrase"></language-part-of-speech>
-    <language-status required enum="approved rejected"></language-status>
     <language-meaning required></language-meaning>
+    <language-avoid></language-avoid>
     <language-detail></language-detail>
   </language-term>
 </template>
 <pre><code>&lt;language-term&gt;
   &lt;language-title&gt;harness&lt;/language-title&gt;
   &lt;language-part-of-speech&gt;noun&lt;/language-part-of-speech&gt;
-  &lt;language-status&gt;approved&lt;/language-status&gt;
   &lt;language-meaning&gt;&hellip; one sentence &hellip;&lt;/language-meaning&gt;
+  &lt;language-avoid&gt;utilize, leverage&lt;/language-avoid&gt;
   &lt;language-detail&gt;&hellip; optional, free-form &hellip;&lt;/language-detail&gt;
   &lt;a data-rel="alternative_to" href="./harness.term.html"&gt;use this instead&lt;/a&gt;
 &lt;/language-term&gt;</code></pre>
@@ -216,7 +216,6 @@
     <language-term data-conforms-to="../templates/language.template.html#language-term">
       <language-title>scaffolding</language-title>
       <language-part-of-speech>noun</language-part-of-speech>
-      <language-status>rejected</language-status>
       <language-meaning>Not used here; the word for what shapes an agent's behaviour is harness.</language-meaning>
       <a data-rel="alternative_to" href="../language/terms/harness.term.html">harness</a>
     </language-term>
@@ -257,11 +256,10 @@
   <script type="module">
     const FIELDS = {
       'language-term': {
-        required: ['language-title', 'language-part-of-speech', 'language-status', 'language-meaning'],
-        optional: ['language-detail'],
+        required: ['language-title', 'language-part-of-speech', 'language-meaning'],
+        optional: ['language-avoid', 'language-detail'],
         enums: {
           'language-part-of-speech': ['noun', 'verb', 'adjective', 'adverb', 'phrase'],
-          'language-status': ['approved', 'rejected'],
         },
       },
       'language-rule': {
@@ -339,7 +337,7 @@
   // instance being laid out the same way is what makes forty of them
   // skimmable.
   const FIELD_ORDER = {
-    term: ['language-title', 'language-part-of-speech', 'language-status', 'language-meaning', 'language-detail'],
+    term: ['language-title', 'language-part-of-speech', 'language-meaning', 'language-avoid', 'language-detail'],
     rule: ['language-title', 'language-pass', 'language-fail', 'language-detail', 'script'],
     guide: ['language-title', 'language-pass', 'language-fail', 'language-detail'],
   }
@@ -354,7 +352,7 @@
   const FLAG_FOR = {
     'language-title': '--title',
     'language-part-of-speech': '--part-of-speech',
-    'language-status': '--status',
+    'language-avoid': '--avoid',
     'language-meaning': '--meaning',
     'language-pass': '--pass',
     'language-fail': '--fail',
@@ -372,7 +370,7 @@
     return {
       'language-title': args.title,
       'language-part-of-speech': args['part-of-speech'],
-      'language-status': args.status,
+      'language-avoid': args.avoid,
       'language-meaning': args.meaning,
       'language-pass': args.pass,
       'language-fail': args.fail,
@@ -699,14 +697,6 @@
   export function list({ fs, args }) {
     const oneLine = (text) => text.trim().replace(/\s+/g, ' ')
 
-    // A filter naming a field the entry's type does not have excludes that
-    // entry, rather than passing over it. --status is a term field, so
-    // `list --status rejected` must not print all fourteen rules alongside
-    // the six rejected terms — which it did, silently, because each type's
-    // filter was checked only inside that type's own branch. A filter that
-    // does not apply reads as a filter that found everything.
-    const FILTER_FIELD = { status: 'language-status' }
-
     for (const { path, doc } of fs.list('language')) {
       const el = doc.querySelector('[data-conforms-to]')
       if (!el) continue
@@ -716,17 +706,9 @@
       const field = (tag) => oneLine(el.querySelector(tag)?.textContent ?? '')
       const title = field('language-title')
 
-      const inapplicable = Object.keys(FILTER_FIELD).some(
-        (flag) => args[flag] !== undefined && !FIELD_ORDER[type].includes(FILTER_FIELD[flag]),
-      )
-      if (inapplicable) continue
-
       if (type === 'term') {
-        const status = field('language-status')
-        if (args.status !== undefined && status !== args.status) continue
-        const replacement = el.querySelector('a[data-rel="alternative_to"]')?.getAttribute('href') ?? ''
-        const arrow = status === 'rejected' ? `  -> ${replacement || '(no replacement)'}` : ''
-        console.log(`${path}\tterm\t${status}\t${title}\t${field('language-meaning')}${arrow}`)
+        const avoid = field('language-avoid')
+        console.log(`${path}\tterm\t${title}\t${field('language-meaning')}${avoid ? `  (avoid: ${avoid})` : ''}`)
         continue
       }
 
