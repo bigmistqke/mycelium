@@ -207,13 +207,17 @@
 </p>
 </spec-out-of-scope>
   <spec-open-questions>
+<p>
+  Question 1 was answered while building the family, by precedent rather than by argument: a
+  term carries a required one-sentence <code>dictionary-meaning</code> and an optional
+  free-form <code>dictionary-detail</code>, the same split <code>knowledge-title</code> and
+  <code>knowledge-detail</code> already make. Question 4 has been sharpened by seeding the
+  first forty-eight entries, which is recorded below rather than as a new question.
+</p>
 <ol>
   <li>
-    Is a term's meaning one sentence, or free-form markup like <code>knowledge-detail</code>?
-    One sentence matches ASD-STE100 and keeps entries scannable;
-    <a href="../knowledge/2026-07-30-container-per-fact.observation.html">a node should carry
-    a claim, not an incident</a> argues for the tighter form, but a term of art here often
-    needs its boundary drawn against a neighbouring one.
+    <strong>Answered.</strong> A term's meaning is one sentence, with free-form detail beside
+    it. See <a href="../templates/dictionary.template.html">the template</a>.
   </li>
   <li>
     Do the derived use-edges live in a rebuildable index, or get written back into the
@@ -230,15 +234,33 @@
     reader of the graph cannot follow.
   </li>
   <li>
-    Which text does the audit read? Field content only, or the whole document body? Code
-    inside <code>&lt;pre&gt;</code> and quoted external material must be excluded either way,
-    and quoted material is the harder case, since a quotation legitimately carries someone
-    else's voice.
+    Which text does the audit read? Seeding produced three concrete cases and they do not
+    resolve the same way, so a single rule will not cover them.
+    <ul>
+      <li>
+        <code>dictionary-fail</code> holds an example that must break the rule it illustrates.
+        Every one of them is a violation by construction. Exclude the field.
+      </li>
+      <li>
+        A term may name another term, including a rejected one:
+        <code>make-sure</code>'s meaning says it replaces <code>ensure</code>. That is mention
+        rather than use, and a dictionary that could not name a word would be unable to do its
+        job.
+      </li>
+      <li>
+        The definition of <code>harness</code> was written using <code>tooling</code>, the word
+        <code>harness</code> exists to replace. A real violation, caught by running the check
+        against the dictionary itself, which is the argument against excluding this family
+        wholesale to make the first two cases go away.
+      </li>
+    </ul>
+    Code inside <code>&lt;pre&gt;</code> and quoted external material need the same treatment,
+    and quoted material is harder: a quotation legitimately carries someone else's voice.
   </li>
   <li>
-    Do the six <code>data-rel</code> labels migrate in the first pass or a later one? Moving
-    them proves the family can hold real vocabulary; deferring them keeps this spec from
-    changing <code>knowledge.template.html</code> at the same time.
+    Do the six <code>data-rel</code> labels migrate in a later pass? Moving them proves the
+    family can hold real vocabulary; deferring them keeps that change separate from
+    <code>knowledge.template.html</code>.
   </li>
 </ol>
 </spec-open-questions>
