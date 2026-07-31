@@ -748,9 +748,14 @@
   brought to the rule. Deciding which text is prose belongs here, to the thing that knows what a
   document is, rather than to each rule.
 </p>
-<template-audit data-conforms-to="../templates/template.template.html#template-audit">
-  <template-title>Prose in the corpus obeys every rule that carries a check.</template-title>
-  <script type="mycelium/audit" data-audits="prose-follows-the-language" data-touches="language-rule">
+<script type="mycelium/audit" data-audits="prose-follows-the-language" data-touches="language-rule">
+  /**
+   * Prose in the corpus obeys every rule that carries a check.
+   *
+   * Loads each rule, runs it against its own passing and failing example first,
+   * then over the text of every document with code, recorded prompts and
+   * failing examples excluded.
+   */
   // Text no rule may be applied to. A code block is code. Plan boilerplate
   // quotes the environment a plan runs in. A rule's own failing example
   // contains, by construction, exactly what that rule forbids. And a
@@ -849,7 +854,6 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
-</template-audit>
 
 <h2>Conformance</h2>
 <p>

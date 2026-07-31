@@ -324,9 +324,14 @@
   CLAUDE.md: "Root goal nodes are the ONLY valid orphans." Every node whose type isn't
   <code>knowledge-goal</code> must appear in at least one edge, incoming or outgoing.
 </p>
-<template-audit data-conforms-to="../templates/template.template.html#template-audit">
-  <template-title>Every node but a root goal is reached by an edge or reaches one.</template-title>
-  <script type="mycelium/audit" data-audits="orphans-except-goal" data-expects="sample-observation" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
+<script type="mycelium/audit" data-audits="orphans-except-goal" data-expects="sample-observation" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
+  /**
+   * Every node but a root goal is reached by an edge or reaches one.
+   *
+   * A node nothing points at and which points at nothing is out of the graph
+   * whatever it says. Root goals are the exception because nothing precedes
+   * them.
+   */
   const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
 
   function extractGraph(documents) {
@@ -365,7 +370,6 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
-</template-audit>
 
 <h3>dangling-outcome</h3>
 <p>
@@ -375,9 +379,12 @@
   checklist means. So this checks specifically for an <em>incoming</em> edge, the way this project's own
   <code>action &rarr;leads_to&rarr; outcome</code> links have worked all night.
 </p>
-<template-audit data-conforms-to="../templates/template.template.html#template-audit">
-  <template-title>An outcome is linked back to whatever caused it.</template-title>
-  <script type="mycelium/audit" data-audits="dangling-outcome" data-expects="sample-outcome" data-touches="knowledge-outcome">
+<script type="mycelium/audit" data-audits="dangling-outcome" data-expects="sample-outcome" data-touches="knowledge-outcome">
+  /**
+   * An outcome is linked back to whatever caused it.
+   *
+   * An outcome with no cause records that something happened and loses why.
+   */
   const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
 
   function extractGraph(documents) {
@@ -415,7 +422,6 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
-</template-audit>
 
 <h3>Title length is declared, not audited</h3>
 <p>
@@ -472,9 +478,13 @@
   one is a property of the pair, which a per-field <code>required</code> attribute can't express and this
   audit can.
 </p>
-<template-audit data-conforms-to="../templates/template.template.html#template-audit">
-  <template-title>An action carries a detail or a commit, so it records what it did.</template-title>
-  <script type="mycelium/audit" data-audits="hollow-action" data-expects="sample-hollow-action" data-touches="knowledge-action">
+<script type="mycelium/audit" data-audits="hollow-action" data-expects="sample-hollow-action" data-touches="knowledge-action">
+  /**
+   * An action carries a detail or a commit, so it records what it did.
+   *
+   * An action with neither is a note that work occurred and no note of what
+   * the work was.
+   */
   function extractActions(documents) {
     const actions = []
     for (const { path, dom } of documents) {
@@ -504,7 +514,6 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
-</template-audit>
 
 <div class="live-demo">
   <h4>This section actually runs</h4>

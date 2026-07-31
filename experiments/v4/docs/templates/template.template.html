@@ -52,47 +52,6 @@
   &lt;/knowledge-goal&gt;
 &lt;/template&gt;</code></pre>
 
-<h2>What an audit is</h2>
-<p>
-  An audit is a check over the corpus, written as a script and run by
-  <code>mycelium validate</code>. It belongs to the system rather than to any project, which is why
-  its type is declared here: every project using this has audits, and only this project has a
-  <code>knowledge-goal</code>.
-</p>
-<p>
-  The prefix names the vocabulary a tag comes from, so <code>template-audit</code> is the audit tag
-  from the template vocabulary, not an audit of a template. It earns that prefix because it is only
-  ever used inside another template, never as a document of its own.
-</p>
-<template id="template-audit">
-  <template-audit>
-    <template-title required></template-title>
-    <template-detail></template-detail>
-    <script required></script>
-  </template-audit>
-</template>
-<pre><code>&lt;template-audit data-conforms-to="./template.template.html#template-audit"&gt;
-  &lt;template-title&gt;&hellip; what this audit holds true, in one line &hellip;&lt;/template-title&gt;
-  &lt;template-detail&gt;&hellip; optional, free-form &hellip;&lt;/template-detail&gt;
-  &lt;script data-audits="name" data-touches="…" data-expects="…"&gt;
-    export function check(fs) { &hellip; }
-  &lt;/script&gt;
-&lt;/template-audit&gt;</code></pre>
-<p>
-  The script is required, so an audit that holds nothing cannot be written. What the schema cannot
-  say is that the script carries <code>data-audits</code>, because the vocabulary has no attribute
-  checks: it constrains children and their text and nothing else. A
-  <code>&lt;template-audit&gt;</code> whose script lacks that attribute would validate and never run.
-  See <a data-rel="depends_on" href="../knowledge/2026-07-31-defer-attribute-constraints.decision.html">the
-  deferral</a>, which carries the condition for closing it.
-</p>
-<p>
-  <code>data-audits</code>, <code>data-touches</code> and <code>data-expects</code> stay on the
-  script, where the engine already reads them. A second home for the same value is the drift this
-  project keeps finding, so the element adds only what had nowhere to live: a title, and room to
-  explain itself.
-</p>
-
 <h2>Nothing outside the type</h2>
 <p>
   A document whose purpose is to <em>be</em> an instance keeps everything inside its conforming
@@ -105,9 +64,14 @@
   templates, and the worked example inside it is incidental to that. So the audit skips any document
   declaring a <code>&lt;template&gt;</code>, which separates the two without naming a directory.
 </p>
-<template-audit data-conforms-to="./template.template.html#template-audit">
-  <template-title>A document that is an instance keeps its content inside its declared type.</template-title>
-  <script type="mycelium/audit" data-audits="nothing-outside-the-type">
+<script type="mycelium/audit" data-audits="nothing-outside-the-type">
+  /**
+   * A document that is an instance keeps its content inside its declared type.
+   *
+   * Content beside the conforming element is unreachable: no field holds it and
+   * no query finds it. A document that declares a type is documentation about
+   * that type, so its prose is the point and it is skipped.
+   */
   export function check(fs) {
     const violations = []
     for (const path of fs.list('docs', { ext: '.html' })) {
@@ -132,7 +96,6 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
-</template-audit>
 
 <h2>The generic validator</h2>
 <p>

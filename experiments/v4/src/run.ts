@@ -372,6 +372,53 @@ function printRoster(docsDir: string, stream: (line: string) => void) {
   }
 }
 
+// The leading doc comment of a script that is one module rather than a set of
+// exports. An audit is a single check, so its description sits at the top of
+// the file instead of above an export, and readCommands would not find it.
+function leadingComment(source: string): string {
+  const comments: { type: string; value: string; start: number; end: number }[] = []
+  try {
+    parse(source, { ecmaVersion: "latest", sourceType: "module", onComment: comments })
+  } catch {
+    return ""
+  }
+  const first = comments.filter((c) => c.type === "Block").sort((a, b) => a.start - b.start)[0]
+  return first ? firstSentence(formatComment(first.value)) : ""
+}
+
+// Every audit declared anywhere under docs/, with what it holds true. Audits
+// are the other half of what this tool does, and listing only commands is how
+// one of them stayed invisible long enough for a writing rule duplicating it
+// to be written by hand.
+function printAudits(docsDir: string, stream: (line: string) => void) {
+  const found: { name: string; touches: string; summary: string; file: string }[] = []
+  for (const file of walkHtmlFiles(docsDir)) {
+    const { document } = parseHTML(readFileSync(file, "utf8"))
+    for (const script of Array.from(document.querySelectorAll("script[data-audits]"))) {
+      found.push({
+        name: script.getAttribute("data-audits")!,
+        touches: script.getAttribute("data-touches") ?? "",
+        summary: leadingComment(script.textContent ?? ""),
+        file: relativePath(docsDir, file),
+      })
+    }
+  }
+  if (found.length === 0) return
+  stream("audits  (run by `mycelium validate`; any failure exits non-zero)")
+  const width = Math.max(...found.map((a) => a.name.length))
+  for (const audit of found.sort((a, b) => a.name.localeCompare(b.name))) {
+    stream(`  ${audit.name.padEnd(width + 2)}${audit.summary}`.trimEnd())
+    // Collapsed to a shared prefix when every touched type has one, so six
+    // knowledge types read as one line. Pure string structure, so this stays
+    // ignorant of what any family calls itself.
+    const parts = audit.touches.trim().split(/\s+/).filter(Boolean)
+    const prefixes = new Set(parts.map((t) => t.split("-")[0]))
+    const touches = parts.length > 1 && prefixes.size === 1 ? `${[...prefixes][0]}-*` : audit.touches
+    if (touches) stream(`  ${" ".repeat(width + 2)}touches ${touches}`)
+  }
+  stream("")
+}
+
 function printHelp(id: string, templateLabel: string, mod: Record<string, unknown>, source: string, stream: (line: string) => void) {
   const docs = extractCommandDocs(source)
   const names = Object.keys(mod).filter((k) => typeof mod[k] === "function")
@@ -413,6 +460,7 @@ async function main() {
 
   if (!id || id === "--help" || id === "-h") {
     printRoster(docsDir, id ? out : err)
+    printAudits(docsDir, id ? out : err)
     process.exit(id ? 0 : 1)
   }
 
