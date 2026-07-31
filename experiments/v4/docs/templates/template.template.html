@@ -52,6 +52,44 @@
   &lt;/knowledge-goal&gt;
 &lt;/template&gt;</code></pre>
 
+<h2>Nothing outside the type</h2>
+<p>
+  A document whose purpose is to <em>be</em> an instance keeps everything inside its conforming
+  element. Content sitting beside it in <code>&lt;body&gt;</code> is invisible: no field holds it,
+  no query reaches it, and the schema cannot say anything about it, because the schema describes a
+  type's children and this is not one of them.
+</p>
+<p>
+  A document that <em>defines</em> a type is the opposite. This file is mostly prose about
+  templates, and the worked example inside it is incidental to that. So the audit skips any document
+  declaring a <code>&lt;template&gt;</code>, which separates the two without naming a directory.
+</p>
+<script type="module" data-audits="nothing-outside-the-type">
+  export function check(fs) {
+    const violations = []
+    for (const path of fs.list('docs', { ext: '.html' })) {
+      const doc = fs.parse(path)
+      // A document that declares a type is documentation about that type, and
+      // its prose is the point rather than stray content.
+      if (doc.querySelector('template[id]')) continue
+      const root = doc.querySelector('[data-conforms-to]')
+      if (!root) continue
+
+      for (const child of Array.from(doc.querySelector('body')?.childNodes ?? [])) {
+        if (child.nodeType === 3) {
+          if ((child.textContent ?? '').trim()) violations.push(`${path}: loose text beside <${root.tagName.toLowerCase()}>`)
+          continue
+        }
+        const tag = child.tagName?.toLowerCase()
+        if (!tag || tag === 'script' || tag === 'style') continue
+        if (child.hasAttribute('data-conforms-to')) continue
+        violations.push(`${path}: <${tag}> sits outside <${root.tagName.toLowerCase()}>`)
+      }
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
 <h2>The generic validator</h2>
 <p>
   Given a type's <code>&lt;template&gt;</code> element and a real instance element, reads the vocabulary

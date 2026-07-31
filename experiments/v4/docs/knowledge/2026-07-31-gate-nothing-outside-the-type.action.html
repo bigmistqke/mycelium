@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Gate on content sitting outside a declared type, and clear the ten specs that had it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Gate on content sitting outside a declared type, and clear the ten specs that had it</knowledge-title>
+  <knowledge-confidence>88</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>
+  Ten early specs carried a closing note in a <code>&lt;footer&gt;</code> beside the
+  <code>&lt;spec-doc&gt;</code> rather than inside it. No field held it, no query reached it, and the
+  schema could say nothing about it, since the schema describes a type's children and this was not
+  one of them. Precisely what
+  <a href="./2026-07-30-overflow-prose-predates-detail-field.observation.html">overflow prose,
+  outside every field</a> describes.
+</p>
+<p>
+  Eight said <q>Next:</q> and listed the immediate steps, written when the spec was. All are
+  historical now, and one described filtering audit input by the templates directory, which was
+  removed earlier today. Two recorded completion. All ten were snapshots of a moment, which is what
+  <code>work-in-the-now</code> forbids, and the two carrying real evidence are held in the graph
+  already, in the outcome nodes for the crawler and the template series. Deleted rather than moved.
+</p>
+<p>
+  This is an audit rather than a rule in the dictionary. A rule takes text; this asks about a
+  document's shape, so it needs the DOM. It was on the list of rules to port and did not belong
+  there.
+</p>
+<p>
+  The discriminator turned out to matter more than the check. Template files are mostly prose about
+  a type, with a worked example incidental to it, so almost everything in them sits outside a
+  conforming element quite correctly. Naming the templates directory would have repeated the
+  mistake that
+  <a href="./2026-07-31-audits-declare-expected-violations.decision.html">declaring expected
+  violations</a> just undid. A document that declares a <code>&lt;template&gt;</code> defines a
+  type; one that does not is trying to be an instance. That separates the two with no directory
+  named, and <code>DESIGN.html</code> falls on the correct side of it without being a special case.
+</p>
+</knowledge-detail>
+  <knowledge-files>experiments/v4/docs/templates/template.template.html, experiments/v4/docs/specs/</knowledge-files>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-07-30-overflow-prose-predates-detail-field.observation.html">the finding this gates against</a>
+</knowledge-action>
+</body></html>
