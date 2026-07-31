@@ -64,7 +64,7 @@
     </p>
     <p>
       Instead, <code>add</code> and <code>update</code> build or mutate the node exactly as they do today,
-      then run the type's own real validator against the result before anything is written &mdash; the same
+      then run the type's own real validator against the result before writing anything &mdash; the same
       code <code>pnpm validate</code> already runs, just moved earlier. <code>validate.ts</code>'s
       <code>main()</code> already contains this exact operation (resolve <code>data-conforms-to</code>,
       find the matching <code>data-validates</code> script, load it, run <code>check()</code>), just inlined
@@ -137,8 +137,8 @@ fs.commit()</code></pre>
         presence can be checked, not the value. This directly fixes the <code>data-rel="undefined"</code>
         bug from <code>&lt;spec-problem&gt;</code>.</li>
       <li><b><code>update</code></b>: the target <code>&lt;file&gt;</code> positional only.</li>
-      <li><b><code>list</code></b>: its existing <code>&lt;kind&gt;</code> check (must be
-        <code>nodes</code>/<code>edges</code>) is kept as-is in shape, just switched from
+      <li><b><code>list</code></b>: keeps its existing <code>&lt;kind&gt;</code> check (must be
+        <code>nodes</code>/<code>edges</code>) as-is in shape, just switching from
         <code>console.error(&hellip;); return</code> to a thrown <code>Error</code>, so it fails the same
         way every other command now does.</li>
     </ul>

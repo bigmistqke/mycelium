@@ -165,7 +165,10 @@
       <code>document.querySelectorAll('spec-problem')</code> finds every field of that kind across the
       corpus; <code>document.querySelectorAll('[data-rel]')</code> finds every asserted relationship
       regardless of what's on the other end. A field promises uniformity the schema enforces; a link asserts
-      one relationship without promising every other document has (or lacks) the same one. This is also
+      one relationship without promising every other document has (or lacks) the same one.
+    </p>
+    <p>
+      This is also
       what the original framing in <code>DESIGN.html</code> already asked for &mdash; "co-locating
       knowledge, documentation, experiments, tests, implementation code (or not)" &mdash; and it only works
       if structure stays optional per-connection, not mandatory per-type. Content outside a template's
@@ -287,7 +290,7 @@
     <ul>
       <li><b>No <code>mycelium run</code>.</b> Deferred by <code>DESIGN.html</code>'s own roadmap.</li>
       <li><b>No crawler/index.</b> Same deferral; nothing here fetches across documents.</li>
-      <li><b>No live validation of the real instance docs.</b> The audits are proven against
+      <li><b>No live validation of the real instance docs.</b> The audits prove out against
         <code>knowledge.template.html</code>'s own sample markup, not the real <code>knowledge/</code>
         files, which don't exist yet. The five dogfood nodes below, once written, are correct by
         hand-inspection, not mechanically checked against the audits. That mechanical check &mdash; the

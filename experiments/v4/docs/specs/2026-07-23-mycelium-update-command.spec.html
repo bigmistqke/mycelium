@@ -20,8 +20,8 @@
       commands</a> as shipped: <code>add</code> only sets fields at creation time. Updating a field on an
       already-existing node &mdash; the exact case of adding <code>&lt;knowledge-commit&gt;</code> to an
       action node once its commit exists, which happens after nearly every piece of real work &mdash; still
-      means a hand Read+Edit, the same file-content-through-the-model cost <code>add</code>/<code>link</code>
-      were built to remove for creation and linking.
+      means a hand Read+Edit, the same file-content-through-the-model cost that building
+      <code>add</code>/<code>link</code> removed for creation and linking.
     </p>
     <p>
       A second, previously unnoticed gap surfaced while designing the fix: every type's
@@ -63,8 +63,8 @@
     <p>
       <code>&lt;file&gt;</code> is an existing <code>knowledge/*.html</code> file, the same convention
       <code>link</code>'s <code>&lt;from-file&gt;</code>/<code>&lt;to-file&gt;</code> already use. Unlike
-      <code>add</code>, there's no <code>&lt;type&gt;</code> positional: the type is read straight off the
-      file's own root element (<code>doc.querySelector('[data-conforms-to]').tagName</code>), since the file
+      <code>add</code>, there's no <code>&lt;type&gt;</code> positional: <code>update</code> reads the type
+      straight off the file's own root element (<code>doc.querySelector('[data-conforms-to]').tagName</code>), since the file
       already declares it and re-stating it on the command line would just be one more place a typo could
       cause a real mismatch.
     </p>
@@ -81,8 +81,8 @@
       <li>flag given an explicit empty value (<code>args.commit === ""</code>) &mdash; remove that field
         element entirely. The documented case this exists for:
         <code>write-template-series.action.html</code> omits <code>knowledge-commit</code> on purpose because
-        one commit didn't map cleanly to one node; <code>update</code> needs a way to walk a field back if it
-        turns out it was set by mistake, not just a way to add one.</li>
+        one commit didn't map cleanly to one node; <code>update</code> needs a way to walk a field back if the
+        caller set it by mistake, not just a way to add one.</li>
     </ul>
     <p>
       <code>update</code> does not replicate <code>add</code>'s per-type field gating

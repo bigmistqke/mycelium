@@ -25,8 +25,8 @@
       <li>The per-instance PASS lines are never interesting once the mechanism is trusted &mdash; a routine
         sanity check only needs to know "did anything fail," not which 50 things didn't.</li>
       <li>The two audit failures aren't real problems at all: they're <code>knowledge.template.html</code>'s
-        own live-demo self-test fixtures, deliberately wired to violate the two audits so the audit logic can
-        be shown catching something real. But <code>crawl.ts</code> feeds <em>every</em> <code>.html</code>
+        own live-demo self-test fixtures, deliberately wired to violate the two audits so the fixture can
+        show the audit logic catching something real. But <code>crawl.ts</code> feeds <em>every</em> <code>.html</code>
         file under <code>docs/</code> &mdash; including the template's own sample instances &mdash; into the
         same <code>check(documents)</code> call as the real graph, so the fixture's deliberate violation and
         a genuine graph problem would look identical in the output. Every run reads as "failing" even when
@@ -118,7 +118,7 @@ const result = (await check(auditDocuments)) as CheckResult</code></pre>
       <li><b>Leave alone:</b> every <code>crawl.ts</code>/<code>pnpm crawl</code> reference inside the existing
         frozen spec docs (four of them), the two prior implementation plans, and every
         <code>knowledge/*.html</code> action/outcome/decision node. These describe what was literally true
-        when they were written, the same convention CLAUDE.md's own "add only sets fields at creation time"
+        when someone wrote them, the same convention CLAUDE.md's own "add only sets fields at creation time"
         gap-narrowing left every one of its own past specs unedited.</li>
     </ul>
   </spec-design>
