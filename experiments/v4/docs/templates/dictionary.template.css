@@ -1,0 +1,76 @@
+/* The dictionary-* field vocabulary. Every tag is hyphenated so it can
+   never collide with a current or future standard HTML element, and so it
+   could later be registered as a real custom element if that's ever
+   useful. Selectors stay scoped under their own root type so this file's
+   rules can never leak onto another template's same-named field tags. */
+dictionary-term, dictionary-rule {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  background: var(--code-bg);
+  margin: 1.25rem 0;
+}
+
+dictionary-term > dictionary-title,
+dictionary-rule > dictionary-title {
+  display: block;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 0.35rem;
+}
+
+/* A term's headword is the word itself, so it reads as a dictionary entry
+   rather than as a sentence. A rule's title is a sentence and stays in the
+   body face. */
+dictionary-term > dictionary-title { font-family: var(--mono, ui-monospace, monospace); }
+
+dictionary-term > dictionary-part-of-speech,
+dictionary-term > dictionary-status,
+dictionary-rule > dictionary-checkable {
+  display: inline-block;
+  margin-right: 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+dictionary-term > dictionary-part-of-speech { font-style: italic; }
+dictionary-term > dictionary-status::before { content: "status: "; }
+dictionary-rule > dictionary-checkable::before { content: "machine-checkable: "; }
+
+dictionary-term > dictionary-meaning {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 1.05rem;
+}
+
+dictionary-term > dictionary-detail,
+dictionary-rule > dictionary-detail,
+dictionary-rule > dictionary-pass,
+dictionary-rule > dictionary-fail {
+  display: block;
+  margin-top: 1.5rem;
+}
+
+dictionary-rule > dictionary-pass::before,
+dictionary-rule > dictionary-fail::before,
+dictionary-term > dictionary-detail::before,
+dictionary-rule > dictionary-detail::before {
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  color: var(--accent);
+}
+dictionary-rule > dictionary-pass::before { content: "passes"; }
+dictionary-rule > dictionary-fail::before { content: "fails"; }
+dictionary-term > dictionary-detail::before,
+dictionary-rule > dictionary-detail::before { content: "detail"; }
+
+/* The two examples are the load-bearing part of a rule, so they are set
+   apart from the prose around them rather than reading as more of it. */
+dictionary-rule > dictionary-pass,
+dictionary-rule > dictionary-fail {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+}
