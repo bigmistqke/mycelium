@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Reject closed-world approval: list rejected words with replacements, leave the rest open</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Reject closed-world approval: list rejected words with replacements, leave the rest open</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>
+  ASD-STE100 is closed-world. A word not in the approved dictionary may not be used. That
+  is right for its readers: non-native speakers following aircraft maintenance procedures,
+  where a wrong reading is a safety event. It is the wrong trade here.
+</p>
+<p>
+  Closed-world only ever bought one thing, and it was determinism: a fixed lexicon is what
+  lets a parser resolve text to a single reading. That was the resolver ambition, and
+  <a href="./2026-07-31-prior-art-controlled-natural-languages.observation.html">the
+  controlled-English survey</a> already found it tractable only in narrow domains with a
+  purpose-built dictionary. This work keeps the dictionary and drops the resolver, so the
+  thing closed-world was paying for is no longer wanted.
+</p>
+<p>
+  It also carries the failure that survey names: habitability. A closed lexicon over
+  general English produces text that looks like English and quietly is not, so writers
+  misread sentences they wrote themselves. Open-world with a rejection list is still fully
+  checkable — "does this text contain a banned word" is a lexical test like any other — it
+  just declines to guarantee a single reading, which nothing here needs.
+</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-31-dictionary-family-for-voice-and-terms.goal.html">the goal this decision serves</a>
+  <a data-rel="supports" href="./2026-07-31-prior-art-controlled-natural-languages.observation.html">acts on its finding that the dictionary is the whole mechanism</a>
+</knowledge-decision>
+</body></html>
