@@ -19,8 +19,8 @@ decisions, 52% commit compliance.</p>
 <p>So the main graph becomes a <strong>materialized view</strong> over scratch
 branches. A bounded <code>claude -p</code> reads a completed task's branch and
 emits summary nodes; the harness writes them.</p>
-<p><strong>Because it is derived it can be recomputed, which means it cannot
-rot.</strong> Change your notion of "essential" and regenerate. Fix the compactor
+<p>Because it is derived it can be recomputed, which means it cannot
+rot. Change your notion of "essential" and regenerate. Fix the compactor
 and re-run. This is the first design in that session that makes the knowledge
 graph unable to decay.</p>
 </knowledge-detail>

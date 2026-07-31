@@ -12,7 +12,7 @@
   <knowledge-confidence>85</knowledge-confidence>
   <knowledge-status>completed</knowledge-status>
   <knowledge-detail><p><em>Imported from the project&rsquo;s earlier decision log, frozen 2026-07-23. Two related corrections in one pass.</em></p>
-<p><strong>1. Stylesheets.</strong> Every v4 document duplicated an identical
+<p>1. Stylesheets. Every v4 document duplicated an identical
 inline style block. Split into <code>theme.css</code> (shared base, linked by
 every document) plus <code>spec.template.css</code> (the <code>spec-*</code>
 family's own rendering rules, sibling to <code>spec.template.html</code>, later
@@ -20,7 +20,7 @@ mirrored by <code>knowledge.template.css</code>).</p>
 <p>This does not weaken DESIGN.html's self-containment argument, which is about
 <em>data</em> never living elsewhere, not about zero external resources —
 DESIGN.html already loads an external mermaid script.</p>
-<p><strong>2. Field versus link,</strong> a principle left implicit after the
+<p>2. Field versus link, a principle left implicit after the
 header-versus-sections correction. A template field earns its place when the same
 question should be askable <em>across every instance of a type</em> without
 opening each one by hand. A one-off reference stays a plain <code>data-rel</code>

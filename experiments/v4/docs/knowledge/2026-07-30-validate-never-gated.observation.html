@@ -16,23 +16,23 @@ returned exit code <strong>0</strong> regardless. There was no
 file. Found while running task-3-step-3, which expects a failing validate: the
 check reported <em>"command succeeded, expected failure"</em> while the same run
 printed <code>221 checked, 2 fail</code>.</p>
-<p><strong>This refutes a claim the project had written down.</strong> CLAUDE.md
+<p>This refutes a claim the project had written down. CLAUDE.md
 states that <code>orphans-except-goal</code> is checked "for real" and is "an
 automated gate now, not just a judgment call." It was never a gate. Every audit
 written here has been advisory, including the two that predate today, for their
 entire existence.</p>
-<p><strong>A check that reports without signalling is indistinguishable from no
-check</strong> to anything downstream — CI, a pre-commit hook, a plan-check, or a
+<p>A check that reports without signalling is indistinguishable from no
+check to anything downstream — CI, a pre-commit hook, a plan-check, or a
 script. It is visible only to a human who happens to read the output, which is
 exactly the discipline-not-protocol failure this project's founding result was
 about. The audits were the protocol, and the protocol had no teeth.</p>
-<p><strong>It would have silently invalidated the current plan.</strong> The
+<p>It would have silently invalidated the current plan. The
 decision to make audits fail the build assumed failing was possible.
 <code>task-6-step-3</code> — the terminal check of the whole pass, asserting the
 graph is green with both audits live — would have passed while 52 nodes still
 violated them. The plan would have reported success on the strength of a command
 that cannot fail.</p>
-<p><strong>Generalisation worth keeping:</strong> a gate has two halves, the
+<p>Generalisation worth keeping: a gate has two halves, the
 detection and the signal, and the second is the one nobody tests because the
 first is the interesting part to write. Any check should be verified by making it
 fail on purpose at least once. Neither audit here had ever been observed

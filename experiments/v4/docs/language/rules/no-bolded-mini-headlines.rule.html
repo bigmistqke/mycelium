@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule: Do not open a paragraph with a bolded mini-headline.</title>
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../../templates/language.template.css">
+</head>
+<body>
+<language-rule data-conforms-to="../../templates/language.template.html#language-rule">
+  <language-title>Do not open a paragraph with a bolded mini-headline.</language-title>
+  <language-pass><p>The roster is read off the command scripts, so it cannot drift.</p></language-pass>
+  <language-fail><p><strong>The fix.</strong> The roster is read off the command scripts.</p></language-fail>
+  <language-detail><p>A bolded opener is a heading wearing a paragraph. It promises structure the document does not have, and a reader skimming the bold text gets an outline nobody wrote. Say the thing in a sentence.</p></language-detail>
+  <script>// Markup, not text, so this reads the document rather than the string. A
+// paragraph whose first element child is bold and starts the paragraph is
+// the mini-headline shape. Bold later in a paragraph is emphasis and fine.
+export function check(text, doc) {
+  if (!doc) return []
+  const violations = []
+  for (const p of Array.from(doc.querySelectorAll('p'))) {
+    const first = p.firstElementChild
+    if (!first || p.firstChild !== first) continue
+    if (!['strong', 'b'].includes(first.tagName.toLowerCase())) continue
+    violations.push({
+      excerpt: (first.textContent ?? '').trim().slice(0, 40),
+      message: `paragraph opens with a bolded headline: "${(first.textContent ?? '').trim().slice(0, 40)}"`,
+    })
+  }
+  return violations
+}
+</script>
+</language-rule>
+</body></html>

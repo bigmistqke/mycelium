@@ -11,17 +11,17 @@
   <knowledge-title>A node should carry a claim, not an incident</knowledge-title>
   <knowledge-confidence>80</knowledge-confidence>
   <knowledge-detail><p>Three attempts at this rule in one day; the first two did not survive.</p>
-<p><strong>Attempt 1 — "what belongs in commit history should not be repeated
-here."</strong> Too strong, and wrong in four ways. Git is not read: a session
+<p>Attempt 1 — "what belongs in commit history should not be repeated
+here." Too strong, and wrong in four ways. Git is not read: a session
 start surfaces the graph, nothing surfaces <code>git log</code>. Commits cannot
 hold edges, so anything whose value is its relation to another claim has to be a
 node regardless. Commits are immutable, so correcting a claim a commit made
 requires restating it somewhere else deliberately. And it is unapplicable at
 write time, since the node is usually written before the commit exists.</p>
-<p><strong>Attempt 2 — "each fact has one owning container."</strong> Better, but
+<p>Attempt 2 — "each fact has one owning container." Better, but
 it made the question <em>where does this go</em> when the real question is
 <em>should this exist</em>.</p>
-<p><strong>What survived: the test is altitude, not container.</strong></p>
+<p>What survived: the test is altitude, not container.</p>
 <ul>
   <li>A <strong>claim</strong> could have come out differently, and someone could
   disagree with it. <em>Derive, don't declare</em> is a claim.</li>
@@ -30,12 +30,12 @@ it made the question <em>where does this go</em> when the real question is
 </ul>
 <p>The incident is evidence <em>for</em> the claim; it is not itself worth a node.
 Log the claim, and let the commit message hold the incident that prompted it.</p>
-<p><strong>Why this is the shape of the volume problem.</strong> The 47%
+<p>Why this is the shape of the volume problem. The 47%
 action-node figure was read as a discipline failure. It is at least as
 consistent with diligence aimed one level too low — people recording what
 happened, faithfully, when what was worth recording was what they now believe.
 That reframing is testable and has not been tested.</p>
-<p><strong>Limit worth stating.</strong> Neither shape audit catches this. A node
+<p>Limit worth stating. Neither shape audit catches this. A node
 restating an incident has a detail and a short title, so <code>title-length</code>
 and <code>hollow-action</code> both pass it. The audits narrow the failure modes;
 they do not close them, and this one stays a judgment call.</p>

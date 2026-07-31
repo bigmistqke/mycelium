@@ -12,12 +12,12 @@
   <knowledge-confidence>88</knowledge-confidence>
   <knowledge-status>completed</knowledge-status>
   <knowledge-detail><p><em>Imported from the project&rsquo;s earlier decision log, frozen 2026-07-23.</em></p>
-<p><strong>Two forcing reasons.</strong> Unhyphenated custom tags had already
+<p>Two forcing reasons. Unhyphenated custom tags had already
 collided with real HTML elements twice — <code>title</code>, worked around with
 CSS, and <code>option</code>, one of the six planned node types. The Custom
 Elements API also rejects unhyphenated names outright, which would foreclose real
 interactive behaviour later without a breaking rename.</p>
-<p><strong>The prefix adds information rather than branding:</strong>
+<p>The prefix adds information rather than branding:
 <code>spec-*</code> for design-document types, <code>graph-*</code> for the six
 node types (later renamed <code>knowledge-*</code>).</p>
 <ul>
@@ -25,7 +25,7 @@ node types (later renamed <code>knowledge-*</code>).</p>
   <li>Fields carry only the family prefix (<code>spec-title</code>), since a
   field belongs to the family rather than to one type within it.</li>
 </ul>
-<p><strong>Consequence for files:</strong> template files are named after the
+<p>Consequence for files: template files are named after the
 family, not any single type, so one file can bundle several related template
 entries addressed by fragment. This reverses an in-progress plan to split the six
 node types into six separate files — the prefix makes them safe to collocate, so

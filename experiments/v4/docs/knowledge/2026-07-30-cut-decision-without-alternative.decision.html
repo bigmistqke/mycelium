@@ -14,23 +14,23 @@
   <knowledge-detail><p>Removed from the design. It flagged <strong>17 of 21</strong> decisions, which
 is a real gap — the graph records choices without recording the choosing. It is
 cut anyway, because of what it collides with.</p>
-<p><strong>The collision.</strong> The audits were just decided to fail the build
+<p>The collision. The audits were just decided to fail the build
 rather than warn. Failing only works if every check can be satisfied honestly.
 This one cannot: it asks what alternative was rejected months ago, and that was
 frequently never written down. The two available routes to green are inventing
 alternatives or suppressing the audit. The first puts fiction in the graph, which
 is worse than the acknowledged gap. The second is exactly the decay the fail-hard
 decision was meant to prevent.</p>
-<p><strong>The rule it establishes.</strong> A failing gate may only contain
+<p>The rule it establishes. A failing gate may only contain
 checks that can be satisfied honestly. An audit nobody can pass without
 fabricating teaches that audits get bypassed — and that lesson generalizes to the
 audits that <em>are</em> sound, so the cost lands well beyond the one check.</p>
-<p><strong>What this does not do.</strong> It does not deny the gap. Zero
+<p>What this does not do. It does not deny the gap. Zero
 <code>option</code> nodes and, until today, zero <code>contradicts</code> edges
 remain the sharpest evidence that the vocabulary was not being used. That is
 addressed where it belongs — in teaching the vocabulary — rather than by a gate
 that punishes history for not having been written differently.</p>
-<p><strong>Consequence for the repair pass:</strong> scope drops from 63 distinct
+<p>Consequence for the repair pass: scope drops from 63 distinct
 nodes to <strong>52</strong>, and both remaining audits repair from material that
 already exists — <code>title-length</code> by moving the title into
 <code>detail</code>, <code>hollow-action</code> by adding a commit or a detail.</p>

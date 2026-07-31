@@ -25,7 +25,7 @@ belonging, derive liveness</a>:</p>
   <a href="./2026-07-13-status-derived-not-declared.observation.html">the note on
   derived status</a>.</li>
 </ul>
-<p><strong>Both claims were sound; only the pointers were wrong.</strong> That is
+<p>Both claims were sound; only the pointers were wrong. That is
 what makes this the expensive kind. A citation to a node that does not exist is
 caught by any link checker. A citation to a real node that does not support the
 claim reads as fine and survives every structural check —
@@ -33,21 +33,21 @@ claim reads as fine and survives every structural check —
 the case that node argues needs mutation testing or blind re-derivation</a>. It
 was found by blind re-derivation: reading the target and asking whether it says
 what the citing node claims.</p>
-<p><strong>The error propagated.</strong> Two later nodes inherited it without
+<p>The error propagated. Two later nodes inherited it without
 re-checking. <a href="./2026-07-30-option-retired-status-enum.option.html">The
 retired-status-enum option</a> repeated the first one.
 <a href="./2026-07-30-link-do-not-tag.decision.html">Link, do not tag</a>,
 written hours later, repeated the second — describing the wrong pointer rather
 than going to the source. A citation copied from a citing node rather than from
 the source carries the original error forward and adds a witness for it.</p>
-<p><strong>Rate, with the caveat that it is one sample.</strong> 2 of 20 is 10%,
+<p>Rate, with the caveat that it is one sample. 2 of 20 is 10%,
 and both sit in one node written in a single burst, so this is not evidence about
 citation accuracy in general — it is evidence that unverified citations in this
 graph are wrong at a rate above zero, which was previously unmeasured and assumed
 to be zero. The same discipline that produced
 <a href="./2026-07-30-fifty-two-percent-figure-is-unreplicated.observation.html">the
 52% caveat</a> applies here: do not promote this number.</p>
-<p><strong>What it argues for.</strong> The import is the first thing that ever
+<p>What it argues for. The import is the first thing that ever
 forced every citation to be resolved, and it found these immediately. That is a
 reason to finish it rather than a reason to be careful about it: a citation
 pointing into a corpus the graph cannot reach is a claim nobody can check.</p>

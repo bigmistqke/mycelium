@@ -162,7 +162,7 @@
   the thought went unused.
 </p>
 <p>
-  <strong>A rule carries a check; a guide does not.</strong> That is the entire difference between
+  A rule carries a check; a guide does not. That is the entire difference between
   the two types, and it is why they are two types rather than one with a field saying which.
   <code>language-rule</code> declares <code>&lt;script required&gt;</code>, so a rule with no
   check fails its own template and cannot be written. Nothing can claim to be enforced and not be.
@@ -670,6 +670,8 @@
       // name, because a data: URL has no base to resolve one against.
       const mod = await import(`data:text/javascript,${encodeURIComponent(script.textContent)}`)
       if (typeof mod.check !== 'function') continue
+      // No second argument: text on stdin has no document behind it, so a
+      // rule about markup finds nothing here, which is correct.
       for (const found of mod.check(text)) {
         violations.push(`${path}: ${found.message ?? found.excerpt}`)
       }
@@ -812,18 +814,35 @@
     // decide its own examples is caught before it ever reaches the corpus.
     for (const rule of rules) {
       const el = fs.parse(rule.path).querySelector('language-rule')
-      const passes = el.querySelector('language-pass')?.textContent ?? ''
-      const fails = el.querySelector('language-fail')?.textContent ?? ''
-      if (rule.check(passes).length > 0) violations.push(`${rule.path}: flags its own passing example`)
-      if (rule.check(fails).length === 0) violations.push(`${rule.path}: does not flag its own failing example`)
+      const pass = el.querySelector('language-pass')
+      const fail = el.querySelector('language-fail')
+      // Each example is passed as text and as the element holding it, the
+      // same pair the corpus pass supplies. A rule about markup would find
+      // nothing in a bare string and would report that it cannot decide its
+      // own examples, which says more about the harness than the rule.
+      if (rule.check(pass?.textContent ?? '', pass).length > 0) violations.push(`${rule.path}: flags its own passing example`)
+      if (rule.check(fail?.textContent ?? '', fail).length === 0) violations.push(`${rule.path}: does not flag its own failing example`)
     }
 
     for (const path of fs.list('docs', { ext: '.html' })) {
-      const body = fs.parse(path).querySelector('body')
+      const doc = fs.parse(path)
+      const body = doc.querySelector('body')
       if (!body) continue
+      // A rule reading markup queries this copy, not the real document, so it
+      // cannot reach a code block, a recorded user message, or a rule's own
+      // failing example. Deciding what is off limits stays here, with the
+      // thing that knows what a document is, rather than being repeated in
+      // every rule that happens to look at elements.
+      const visible = body.cloneNode(true)
+      for (const el of Array.from(visible.querySelectorAll([...PROTECTED].join(',')))) el.remove()
       const text = prose(body)
       for (const rule of rules) {
-        for (const found of rule.check(text)) violations.push(`${path}: ${found.message}`)
+        // A rule gets the text, and the document it came from when there is
+        // one. Most rules only read the text. A rule about markup — a bolded
+        // paragraph opener, say — cannot see anything in a string, and would
+        // otherwise have to leave the family and become an audit, which would
+        // put one rule in two homes.
+        for (const found of rule.check(text, visible)) violations.push(`${path}: ${found.message}`)
       }
     }
 

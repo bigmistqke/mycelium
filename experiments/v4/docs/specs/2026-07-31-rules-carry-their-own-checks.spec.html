@@ -83,7 +83,7 @@
   <li>A <code>commit-msg</code> hook, once the rules are worth blocking on.</li>
 </ol>
 <p>
-  <strong>Nothing calls it from inside another family.</strong> Wiring it into
+  Nothing calls it from inside another family. Wiring it into
   <code>knowledge add</code> would be the first cross-family import in the system;
   <a href="../knowledge/2026-07-31-lint-stays-out-of-other-families.decision.html">the decision
   against it</a> has the test that settles it and the reason the cost is only immediacy. The
@@ -156,27 +156,27 @@
 </spec-design>
   <spec-out-of-scope>
 <p>
-  <strong>Porting all fourteen rules.</strong> This specifies the mechanism. Which rules get checks,
+  Porting all fourteen rules. This specifies the mechanism. Which rules get checks,
   and in what order, follows from the counts above.
 </p>
 <p>
-  <strong>The migration pass over the existing corpus.</strong> 464 em-dash asides will not be fixed
+  The migration pass over the existing corpus. 464 em-dash asides will not be fixed
   by the commit that makes them detectable, and most of them were written by the same author writing
   this.
 </p>
 <p>
-  <strong>Wiring lint into another family's commands.</strong> Ruled out rather than deferred; see
+  Wiring lint into another family's commands. Ruled out rather than deferred; see
   the design section.
 </p>
 <p>
-  <strong>A protocol-level lint script type.</strong> Deferred with a stated condition, not built.
+  A protocol-level lint script type. Deferred with a stated condition, not built.
 </p>
 <p>
-  <strong>Adopting an external style guide wholesale.</strong> A single rule importing a single
+  Adopting an external style guide wholesale. A single rule importing a single
   library is not that.
 </p>
 <p>
-  <strong>Deriving term-use edges.</strong> Still open from
+  Deriving term-use edges. Still open from
   <a href="./2026-07-31-language-template-html.spec.html">the language family spec</a> and
   untouched here.
 </p>
