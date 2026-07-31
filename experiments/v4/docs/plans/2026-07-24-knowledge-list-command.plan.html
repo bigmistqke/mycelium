@@ -10,7 +10,7 @@
 <plan-doc data-conforms-to="../templates/plan.template.html#plan-doc">
   <plan-title>Knowledge CLI list Command</plan-title>
   <plan-date>2026-07-24</plan-date>
-  <plan-goal>Add `mycelium knowledge list nodes`/`list edges` — an enumeration of the real knowledge graph, closing the CLAUDE.md-named gap that `pnpm crawl` only reports pass/fail, never a clean list. Getting there safely requires two prerequisite fixes: deduplicating `parseHTML`/`walkHtmlFiles` (currently copy-pasted in both `crawl.ts` and `run.ts`) into a shared module, and making `Filesystem.commit()` skip writing files that were read but never actually mutated — without that fix, a read-only `list` command would rewrite the entire graph to disk on every invocation.</plan-goal>
+  <plan-goal>Add `mycelium knowledge list nodes`/`list edges` — an enumeration of the real knowledge graph, closing the CLAUDE.md-named gap that `pnpm crawl` only reports pass/fail, never a clean list. Getting there safely requires two prerequisite fixes: deduplicating `parseHTML`/`walkHtmlFiles` (currently copy-pasted in both `crawl.ts` and `run.ts`) into a shared module. It also requires making `Filesystem.commit()` skip writing files it only reads but never actually mutates — without that fix, a read-only `list` command would rewrite the entire graph to disk on every invocation.</plan-goal>
   <plan-architecture>(1) `src/fs-helpers.ts` — new shared module for `parseHTML`/`walkHtmlFiles`, imported by both `crawl.ts` and `run.ts`. (2) `run.ts`'s `Filesystem` class: `get()`/`create()` snapshot each document's serialized HTML at read time; `commit()` compares against that snapshot and skips the write if unchanged; a new `list(dir)` method walks a directory and returns every parsed document. (3) `knowledge.template.html`'s existing `type="mycelium/command"` script gains a fourth export, `list`, using `fs.list('knowledge')`.</plan-architecture>
   <plan-tech-stack>Node ≥24 native TS stripping (same as the rest of `src/`), happy-dom. No new dependencies. No test framework — verification is `pnpm crawl` plus direct CLI invocation with inspected output, same as every prior task in this project.</plan-tech-stack>
   <plan-global-constraints>Full design: `experiments/v4/docs/specs/2026-07-24-mycelium-list-command.spec.html` — read it before starting. Relative imports between local `.ts` files must use the explicit `.ts` extension (e.g. `import { parseHTML } from "./fs-helpers.ts"`) — Node's native type-stripping resolves imports by their literal written path, unlike a bundler's extension-optional resolution. `crawl.ts` and `run.ts` must keep working exactly as before for everything that isn't `list` — this is a refactor-then-extend, not a rewrite. `pnpm crawl`'s validator/audit output must be byte-for-byte the same shape after Task 1 as before it. `list` is scoped to `docs/knowledge/*.html` only (via `fs.list('knowledge')`) — not template sample instances, not `spec-doc` files. This one directory assumption is deliberately knowledge-specific and lives in the `list` command itself, not in `Filesystem.list(dir)`, which takes an arbitrary directory and knows nothing about what's in it. `list nodes` reads a node's type directly off its root element's own tag name (`el.tagName.toLowerCase()`) — do not hardcode a list of the six known types (unlike the two audits' `TYPES` array); a future seventh type should show up in `list` with no code change. Run all `pnpm` commands from `experiments/v4/` (or prefix with `pnpm --filter @mycelium/v4` from the repo root). This project logs its own decision graph as it works (`CLAUDE.md`, auto-loaded for this repo) — use `pnpm mycelium knowledge add/link/update` to log actions as you go, the same way prior work in this repo did. `update` now exists — use it, not a hand-edit, to close out any action node this plan creates.</plan-global-constraints>
@@ -143,7 +143,7 @@ const { loadModule } = globalThis.mycelium</code></pre>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>cd experiments/v4
 pnpm crawl</code></pre>
-<p>Expected: identical shape to before this change — <code>validators: 45 pass, 0 fail</code>, same two known sample-fixture audit failures. (If the exact pass count has drifted since this plan was written because other work landed in between, that's fine — what matters is <code>0 fail</code> and no new audit violations beyond the two known ones.)</p>
+<p>Expected: identical shape to before this change — <code>validators: 45 pass, 0 fail</code>, same two known sample-fixture audit failures. (If the exact pass count has drifted since someone wrote this plan because other work landed in between, that's fine — what matters is <code>0 fail</code> and no new audit violations beyond the two known ones.)</p>
 <pre><code>pnpm mycelium knowledge --help</code></pre>
 <p>Expected: still lists <code>add</code>, <code>link</code>, <code>update</code> with their doc comments — proves <code>run.ts</code> still parses and dispatches correctly after the import changes.</p></plan-detail>
     </plan-step>
@@ -162,7 +162,7 @@ both files. No behavior change."</code></pre></plan-detail>
   <plan-task id="task-2" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>`Filesystem` safety fix + `list(dir)`</plan-title>
     <plan-files>Modify: `experiments/v4/src/run.ts` (the `Filesystem` class — depends on Task 1's import of `walkHtmlFiles`)</plan-files>
-    <plan-interfaces>Consumes: `walkHtmlFiles(dir: string): string[]` and `parseHTML(html: string): { document: Document }`, both from Task 1's `./fs-helpers.ts` import (already in scope after Task 1 — no new import needed in this task). Produces: `Filesystem.list(dir: string): { path: string; doc: Document }[]`. Task 3's `list` command calls `fs.list('knowledge')` and expects exactly this shape — `path` relative to the `docs/` root (e.g. `"knowledge/some-node.action.html"`, matching the same relative-path convention `commit()`'s own log lines already use), `doc` a mutable `Document` (though `list`, the command, never mutates it).</plan-interfaces>
+    <plan-interfaces>Consumes: `walkHtmlFiles(dir: string): string[]` and `parseHTML(html: string): { document: Document }`, both from Task 1's `./fs-helpers.ts` import (already in scope after Task 1 — no new import needed in this task). Produces: `Filesystem.list(dir: string): { path: string; doc: Document }[]`. Task 3's `list` command calls `fs.list('knowledge')` and expects exactly this shape. The `path` field is relative to the `docs/` root (e.g. `"knowledge/some-node.action.html"`, matching the same relative-path convention `commit()`'s own log lines already use), and `doc` is a mutable `Document` (though `list`, the command, never mutates it).</plan-interfaces>
     <plan-step id="task-2-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Replace the `Filesystem` class</plan-title>
       <plan-status>completed</plan-status>
@@ -261,14 +261,14 @@ test -f docs/knowledge/safety-fix-test.action.html &amp;&amp; echo "PASS: create
 # update with a real change: must still write
 node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
   knowledge update safety-fix-test.action.html --status completed 2&gt;&amp;1 | grep "wrote.*safety-fix-test"</code></pre>
-<p>Expected: both commands print a <code>wrote    knowledge/safety-fix-test.action.html</code> line — real mutations are still written.</p></plan-detail>
+<p>Expected: both commands print a <code>wrote    knowledge/safety-fix-test.action.html</code> line — <code>commit()</code> still writes real mutations.</p></plan-detail>
     </plan-step>
     <plan-step id="task-2-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Verify a no-op `update` no longer causes a spurious rewrite, same scratch copy</plan-title>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>node /Users/bigmistqke/Documents/GitHub/mycelium/experiments/v4/src/run.ts \
   knowledge update safety-fix-test.action.html 2&gt;&amp;1</code></pre>
-<p>(No flags at all — every <code>field()</code> call inside <code>update</code> sees <code>undefined</code> and returns immediately, so nothing is mutated; the file is only ever read via <code>fs.get()</code>.)</p>
+<p>(No flags at all — every <code>field()</code> call inside <code>update</code> sees <code>undefined</code> and returns immediately, so nothing is mutated; <code>fs.get()</code> only ever reads the file.)</p>
 <p>Expected: <b>no</b> <code>wrote</code> line printed for <code>safety-fix-test.action.html</code> at all — before this task's fix, <code>commit()</code> would have unconditionally rewritten it anyway. This is the concrete proof the safety fix works.</p>
 <pre><code>cd /Users/bigmistqke/Documents/GitHub/mycelium
 rm -rf "$SCRATCH"</code></pre></plan-detail>
@@ -278,7 +278,7 @@ rm -rf "$SCRATCH"</code></pre></plan-detail>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>cd experiments/v4
 pnpm crawl</code></pre>
-<p>Expected: <code>validators: 45 pass, 0 fail</code> (or higher if more nodes were added since this plan was written), same two known audit failures, nothing new.</p></plan-detail>
+<p>Expected: <code>validators: 45 pass, 0 fail</code> (or higher if the graph gained nodes after someone wrote this plan), same two known audit failures, nothing new.</p></plan-detail>
     </plan-step>
     <plan-step id="task-2-step-5" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Commit</plan-title>

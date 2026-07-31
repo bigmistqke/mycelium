@@ -281,7 +281,7 @@ rm -rf "$SCRATCH"</code></pre>
     <plan-step id="task-2-step-5" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Dogfood it for real</plan-title>
       <plan-status>completed</plan-status>
-      <plan-detail><p>Run <code>pnpm crawl</code> from <code>experiments/v4/</code> and confirm the same clean baseline as task-1's regression step. Then commit this task's own code change (the next step) and use the new command on the action node <code>CLAUDE.md</code>'s own logging workflow expects you to have created for this task — set its <code>--status completed --commit &lt;the short hash from the commit you just made&gt; --branch main</code> — instead of hand-editing it. This is the real-world case the spec was written to fix; use it once here as the first real usage.</p>
+      <plan-detail><p>Run <code>pnpm crawl</code> from <code>experiments/v4/</code> and confirm the same clean baseline as task-1's regression step. Then commit this task's own code change (the next step) and use the new command on the action node <code>CLAUDE.md</code>'s own logging workflow expects you to have created for this task — set its <code>--status completed --commit &lt;the short hash from the commit you just made&gt; --branch main</code> — instead of hand-editing it. This is the real-world case the spec exists to fix; use it once here as the first real usage.</p>
 </plan-detail>
     </plan-step>
     <plan-step id="task-2-step-6" data-conforms-to="../templates/plan.template.html#plan-step">
