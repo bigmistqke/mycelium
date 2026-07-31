@@ -746,7 +746,9 @@
   brought to the rule. Deciding which text is prose belongs here, to the thing that knows what a
   document is, rather than to each rule.
 </p>
-<script type="module" data-audits="prose-follows-the-language" data-touches="language-rule">
+<template-audit data-conforms-to="../templates/template.template.html#template-audit">
+  <template-title>Prose in the corpus obeys every rule that carries a check.</template-title>
+  <script type="module" data-audits="prose-follows-the-language" data-touches="language-rule">
   // Text no rule may be applied to. A code block is code. Plan boilerplate
   // quotes the environment a plan runs in. A rule's own failing example
   // contains, by construction, exactly what that rule forbids. And a
@@ -828,6 +830,7 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
+</template-audit>
 
 <h2>Conformance</h2>
 <p>

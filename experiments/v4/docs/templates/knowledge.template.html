@@ -324,7 +324,9 @@
   CLAUDE.md: "Root goal nodes are the ONLY valid orphans." Every node whose type isn't
   <code>knowledge-goal</code> must appear in at least one edge, incoming or outgoing.
 </p>
-<script type="module" data-audits="orphans-except-goal" data-expects="sample-observation" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
+<template-audit data-conforms-to="../templates/template.template.html#template-audit">
+  <template-title>Every node but a root goal is reached by an edge or reaches one.</template-title>
+  <script type="module" data-audits="orphans-except-goal" data-expects="sample-observation" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
   const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
 
   function extractGraph(documents) {
@@ -363,6 +365,7 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
+</template-audit>
 
 <h3>dangling-outcome</h3>
 <p>
@@ -372,7 +375,9 @@
   checklist means. So this checks specifically for an <em>incoming</em> edge, the way this project's own
   <code>action &rarr;leads_to&rarr; outcome</code> links have worked all night.
 </p>
-<script type="module" data-audits="dangling-outcome" data-expects="sample-outcome" data-touches="knowledge-outcome">
+<template-audit data-conforms-to="../templates/template.template.html#template-audit">
+  <template-title>An outcome is linked back to whatever caused it.</template-title>
+  <script type="module" data-audits="dangling-outcome" data-expects="sample-outcome" data-touches="knowledge-outcome">
   const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
 
   function extractGraph(documents) {
@@ -410,6 +415,7 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
+</template-audit>
 
 <h3>Title length is declared, not audited</h3>
 <p>
@@ -466,7 +472,9 @@
   one is a property of the pair, which a per-field <code>required</code> attribute can't express and this
   audit can.
 </p>
-<script type="module" data-audits="hollow-action" data-expects="sample-hollow-action" data-touches="knowledge-action">
+<template-audit data-conforms-to="../templates/template.template.html#template-audit">
+  <template-title>An action carries a detail or a commit, so it records what it did.</template-title>
+  <script type="module" data-audits="hollow-action" data-expects="sample-hollow-action" data-touches="knowledge-action">
   function extractActions(documents) {
     const actions = []
     for (const { path, dom } of documents) {
@@ -496,6 +504,7 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
+</template-audit>
 
 <div class="live-demo">
   <h4>This section actually runs</h4>
