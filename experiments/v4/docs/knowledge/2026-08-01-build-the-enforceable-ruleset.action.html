@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Build the six-rule enforceable set, and accept a red build</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Build the six-rule enforceable set, and accept a red build</knowledge-title>
+  <knowledge-confidence>88</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>
+  Six rules now gate the build. Three were clean on the day they went in: a word another term
+  replaces, a bolded paragraph opener, and a reference nobody can follow. Three are not: passive
+  voice at 162, a sentence over forty words at 45, and a paragraph over four sentences at 31.
+</p>
+<p>
+  The user chose to land the last three red rather than hold them until the prose caught up. A rule
+  that exists stops the count growing. A rule that waits for a clean corpus never arrives.
+</p>
+<p>
+  Four commits, one for the loader and one for each rule: <code>c6b9b87</code>,
+  <code>e1e9b87</code>, <code>6c1aa06</code>, <code>52835a5</code>.
+</p>
+<p>
+  Every rule decides its own passing and failing example before it runs on anything else. That
+  self-test caught two design faults today, both mine, and both times the fault was a contract I had
+  written rather than the rule.
+</p>
+</knowledge-detail>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-08-01-rules-load-through-the-engine.decision.html">the change that let a rule import a library</a>
+</knowledge-action>
+</body></html>

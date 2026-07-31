@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Rules load through the engine, so a rule may import a library</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Rules load through the engine, so a rule may import a library</knowledge-title>
+  <knowledge-confidence>88</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>
+  A rule used to load from a data URL built out of its own source. That works for a rule that is one
+  self-contained pattern. It fails for any rule that needs help, because a data URL carries no base
+  to resolve a package name against. Node rejects the request outright.
+</p>
+<p>
+  I asserted this limit before testing it, and the user asked whether I was sure. I was right about
+  the limit and wrong about the cost. A probe showed that a script inside a document resolves a
+  package by name through the engine's own loader, and that the same script can import the runtime
+  by relative path. The change is a few lines in two places, not the refactor I described.
+</p>
+<p>
+  Rules now load the way every other script here loads. The passive-voice rule proved it by
+  importing a library on its first run.
+</p>
+<p>
+  One thing goes. A rule loaded this way runs under the runtime only. The other scripts in these
+  templates also run in a browser through the same data URL trick, and a rule no longer can. No page
+  demonstrates a rule today, so nothing breaks yet, and the browser path closes.
+</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-01-estimates-of-prose-violations-were-wrong.observation.html">the rule whose library import forced this</a>
+</knowledge-decision>
+</body></html>
