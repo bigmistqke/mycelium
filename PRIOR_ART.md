@@ -399,6 +399,38 @@ Program representation IS execution.
 
 ---
 
+## 17. Controlled Natural Languages (CNL)
+
+Restricted subsets of English with a closed dictionary and a restricted grammar, so that prose becomes machine-processable.
+
+**The spectrum:** CNLs trade naturalness for precision, and the trade is monotonic. At one end are *readability* standards, which constrain style so humans read more reliably. At the other are *logic-mapping* languages, which constrain grammar until each sentence has exactly one formal reading. Both are "controlled English," and confusing them is the main hazard: only the second end resolves to anything a machine can act on.
+
+**Readability end — ASD-STE100 (Simplified Technical English):**
+- Closed dictionary of approved words; each approved word has one meaning and one part of speech
+- Caps on sentence length; active voice; one instruction per sentence
+- Originated 1986 as the AECMA Simplified English Guide, at the request of European airlines, to make aircraft maintenance manuals readable by non-native speakers
+- Conformance checkers verify dictionary membership, part of speech, and sentence shape — **not meaning**. "Remove the buffer" passes cleanly while leaving the referent open.
+
+**Logic-mapping end:**
+- **Attempto Controlled English (ACE)** — a subset of English that translates unambiguously into Discourse Representation Structures, a syntactic variant of first-order logic, and onward into FOL, OWL 2, SWRL, RuleML, and TPTP. TPTP output means off-the-shelf theorem provers apply. The toolchain is the point: **APE** (parser), **RACE** (reasoner — consistency checks and query answering over ACE texts), **AceRules** (forward-chaining rules, multiple semantics), **AceWiki** (semantic wiki where the semantics live in the article text, not in annotations), **ACE View** (create/view/edit OWL 2 ontologies and SWRL rulesets in ACE), and an **OWL verbalizer** running the other way, OWL → ACE.
+- **SBVR (OMG)** — Structured English for business vocabulary and rules, with logical foundations in the specification and machine-readable interchange (XMI, XML Schema). Rules written in it drive rules engines.
+- **Gellish** — controlled English targeting ontologies.
+- **CPL (Boeing)** — Computer-Processable Language, restricted English for encoding procedures and world knowledge.
+
+**The known failure mode — habitability:** text that looks like English but means something else. Because the surface stays familiar, writers cannot see where the language ends, and systematically misread sentences they wrote themselves. The checker returns green, the human reads one thing, the resolver derives another. A deliberately alien syntax does better here, because it forces the rules to be learned rather than guessed. The Attempto answer is round-tripping: the OWL verbalizer and the ACE Editor exist so a writer can see the derived reading rendered back as English, rather than getting a bare pass/fail.
+
+**Where it has actually worked:** narrow domains with a domain-specific dictionary — aviation procedures, business rules, ontology authoring. The dictionary is the whole mechanism, and dictionaries do not generalise. No CNL resolves to general-purpose code; ACE resolves to *logic*, and logic to implementation is program synthesis, tractable only when the domain is already narrow.
+
+**References:**
+- [Tobias Kuhn, "A Survey and Classification of Controlled Natural Languages", Computational Linguistics 40(1):121–170, 2014](https://doi.org/10.1162/COLI_a_00168) — classifies ~100 CNLs along the naturalness/precision axis; the standard reference
+- [Attempto Controlled English](http://attempto.ifi.uzh.ch/site/description/description.html)
+- [ASD-STE100](https://www.asd-ste100.org/)
+- [OMG SBVR](https://www.omg.org/spec/SBVR/)
+
+**Relevance to mycelium:** This is the missing half of the dual-mode representation in VISION.md. The narrative layer is currently uncontrolled prose and the structural layer is the graph; a CNL is the thing that would let the narrative layer itself be checked. Mycelium already contains a small one without naming it — the six `data-rel` labels are a closed dictionary with fixed semantics and a minting procedure, and `validate` is already a closed-schema conformance checker. The unresolved design question is scope: controlling the fields that carry traversal load (titles, edge labels) is cheap and additive, while controlling reasoning prose collapses the narrative layer into the structural one and buys the habitability problem in exchange.
+
+---
+
 ## Key Patterns Across Prior Art
 
 | Pattern | Systems | Relevance |
@@ -414,6 +446,7 @@ Program representation IS execution.
 | Live execution | Hazel, Subtext, Eve | Always running |
 | Holistic | Dark, MPS | Language + editor + runtime |
 | Neuro + symbolic | Program synthesis | LLMs + graphs |
+| Controlled language | ACE, SBVR, STE | Checkable prose, narrative layer |
 
 ---
 

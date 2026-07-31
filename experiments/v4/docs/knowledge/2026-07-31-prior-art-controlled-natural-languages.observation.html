@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Controlled English splits into a readability end and a logic end, and only the logic end resolves</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>Controlled English splits into a readability end and a logic end, and only the logic end resolves</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-detail><p>Prompted by the question of whether writing to a strict language protocol (ASD-STE100 was the example) plus a project dictionary would make prose machine-checkable, and possibly resolvable — intent to implementation.</p>
+<p><strong>Checkable and resolvable are different properties, and the two ends of the controlled-natural-language spectrum buy different ones.</strong> The trade between naturalness and precision is monotonic; nothing sits at both ends.</p>
+<ul>
+  <li><strong>Readability end (ASD-STE100).</strong> Closed dictionary of approved words, one meaning and one part of speech per word, sentence-length caps, active voice. Built in 1986 for aircraft maintenance manuals read by non-native speakers. Its conformance checkers verify dictionary membership, part of speech and sentence shape — never meaning. <q>Remove the buffer</q> passes clean with the referent still open. This end gives lexical determinism and no semantics.</li>
+  <li><strong>Logic end (ACE, SBVR, Gellish, CPL).</strong> Attempto Controlled English translates unambiguously into Discourse Representation Structures — a syntactic variant of first-order logic — and onward into FOL, OWL 2, SWRL, RuleML and TPTP. It has a real toolchain behind it: APE the parser, RACE the reasoner (consistency checking and query answering), AceRules for forward chaining, ACE View for editing OWL 2 ontologies, and an OWL verbalizer going the other way. SBVR's Structured English drives rules engines. These are the actual intent-to-implementation precedents.</li>
+</ul>
+<p><strong>The failure mode is habitability:</strong> text that looks like English but means something else. The familiar surface hides where the language ends, so writers misread sentences they wrote themselves. The checker returns green, the human reads one thing, the resolver derives another. An alien syntax does better, because it forces the rules to be learned rather than guessed. Any tooling here has to show the derived reading back, not just a pass/fail — which is exactly what ACE's verbalizer and editor exist to do.</p>
+<p><strong>The limit:</strong> ACE resolves to logic, not to code. Logic to implementation is program synthesis, tractable only where the domain is already narrow. Every working CNL deployment is narrow-domain with a domain-specific dictionary — aviation procedures, business rules, ontology authoring. The dictionary is the whole mechanism, and dictionaries do not generalise. So the test worth running is not <q>write the docs in a controlled language</q> but <q>take one narrow slice, write its dictionary, see whether a resolver falls out.</q></p>
+<p><strong>This project already has a small controlled language and has not named it as one.</strong> The six <code>data-rel</code> labels are a closed dictionary with fixed semantics and a documented minting procedure for extensions, and <code>validate</code> is already a closed-schema conformance checker. The open design question is scope: controlling the fields that carry traversal load (titles, edge labels) is cheap and additive, while controlling reasoning prose collapses the narrative layer into the structural one and buys the habitability problem in exchange.</p>
+<p>Written up as entry 17 of <code>PRIOR_ART.md</code>, which had sixteen entries and no coverage of this line at all — Intentional Programming and MDA were there, the CNL literature was not. Standard reference is Tobias Kuhn, <q>A Survey and Classification of Controlled Natural Languages</q>, Computational Linguistics 40(1):121–170, 2014.</p>
+</knowledge-detail>
+  <a data-rel="contradicts" href="./2026-01-24-dual-mode-words-and-graphs.observation.html">words are ambiguous by default, not inherently — a restricted grammar makes them resolvable, paid for in naturalness</a>
+  <a data-rel="supports" href="./2026-01-24-words-as-soft-constraint-language.observation.html">names the mechanism that would make the narrative layer hard rather than soft: a closed dictionary and a restricted grammar</a>
+  <a data-rel="alternative_to" href="./2026-01-12-option-natural-language-queries.option.html">keeps the natural-language surface this option wanted, but with a checker in the loop instead of an LLM — reproducible and scriptable, which is what sank it</a>
+</knowledge-observation>
+</body></html>
