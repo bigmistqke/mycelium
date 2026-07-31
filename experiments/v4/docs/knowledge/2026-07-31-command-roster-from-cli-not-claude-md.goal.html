@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Make the CLI's command roster discoverable instead of hand-copied into CLAUDE.md</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal">
+  <knowledge-title>Make the CLI's command roster discoverable instead of hand-copied into CLAUDE.md</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-prompt>My first attempt at linking the action node had action --leads_to--&gt; observation, which is backwards in time — the observation's logging surfaced the bug. There's no CLI command to remove an edge, so I deleted the node and rebuilt it, then put the leads_to on the observation pointing forward to the action.
+
+  That missing capability is worth noting: knowledge link can add an edge but nothing can remove or redirect one, so a mis-aimed edge means rebuilding the node or hand-editing a file the instructions say not to hand-edit. Given this project already has a node about citations pointing at the wrong target, an unlink is probably the next real gap in that command family. -&gt; let's implement an unlink?
+
+[follow-up, when told unlink already exists] or we tell it to run mycelium knowledge --help?</knowledge-prompt>
+  <knowledge-detail><p>
+  The request was to implement <code>unlink</code>. It already existed, committed the
+  previous day in <code>214439e</code> alongside a <code>del</code> that strips incoming
+  edges. Verified working end to end: the edge is removed, a wrong <code>--rel</code>
+  fails with a named error and writes nothing, and <code>unlink</code> followed by
+  <code>link</code> redirects an edge in one step — the exact operation that was done
+  instead by deleting and rebuilding the node.
+</p>
+<p>
+  So the goal is not the command. It is that <code>CLAUDE.md</code> lists three commands
+  (<code>add</code>, <code>link</code>, <code>update</code>) where the CLI exports eight
+  (<code>add</code>, <code>del</code>, <code>generate</code>, <code>link</code>,
+  <code>list</code>, <code>recover</code>, <code>unlink</code>, <code>update</code>).
+  <code>list</code> and <code>recover</code> at least appear in the surrounding prose;
+  <code>unlink</code> and <code>del</code> appear nowhere in that file at all. An agent
+  reading it concludes the capability is missing and reports it as the next gap to fill.
+</p>
+</knowledge-detail>
+</knowledge-goal>
+</body></html>
