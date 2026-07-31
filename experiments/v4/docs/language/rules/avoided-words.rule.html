@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule: Do not write a word that another term replaces.</title>
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../../templates/language.template.css">
+</head>
+<body>
+<language-rule data-conforms-to="../../templates/language.template.html#language-rule">
+  <language-title>Do not write a word that another term replaces.</language-title>
+  <language-pass><p>The validator reads the attributes on the template.</p></language-pass>
+  <language-fail><p>The validator reads the attrs on the template.</p></language-fail>
+  <language-detail><p>The words live in the terms that replace them, not here. Adding a word to a term is what turns it on, so this rule and the vocabulary have no way to disagree.</p></language-detail>
+  <script>// Reads the vocabulary rather than carrying a list. The third argument is the
+// language this rule belongs to, so nothing here needs updating when a term
+// gains or loses a word it replaces.
+export function check(text, node, language) {
+  const violations = []
+  for (const [word, instead] of language?.replaces ?? []) {
+    for (const m of text.matchAll(new RegExp(`\\b${word}\\b`, 'gi'))) {
+      violations.push({ excerpt: m[0], message: `${m[0]}: write ${instead} instead` })
+    }
+  }
+  return violations
+}
+</script>
+</language-rule>
+</body></html>

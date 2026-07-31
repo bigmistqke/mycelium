@@ -660,23 +660,18 @@
 
     const violations = []
 
-    // The same check the corpus pass runs, from the same data: a word listed in
-    // a term's avoid field is one nobody should write, here or in a commit
-    // message. No rule document holds it, so there is nothing to keep in step.
-    const avoid = new Map()
+    // The vocabulary, handed to every rule as its third argument, the same as
+    // the corpus pass does. A rule about words has to know the words.
+    const replaces = new Map()
     for (const { doc } of fs.list('language/terms')) {
       const el = doc.querySelector('language-term')
       if (!el) continue
       const instead = el.querySelector('language-title')?.textContent?.trim()
       for (const word of (el.querySelector('language-avoid')?.textContent ?? '').split(',').map((w) => w.trim()).filter(Boolean)) {
-        avoid.set(word.toLowerCase(), instead)
+        replaces.set(word.toLowerCase(), instead)
       }
     }
-    for (const [word, instead] of avoid) {
-      for (const m of text.matchAll(new RegExp(`\\b${word}\\b`, 'gi'))) {
-        violations.push(`${m[0]}: write ${instead} instead`)
-      }
-    }
+    const language = { replaces }
 
     for (const { path, doc } of fs.list('language/rules')) {
       const script = doc.querySelector('language-rule > script')
@@ -689,7 +684,7 @@
       if (typeof mod.check !== 'function') continue
       // No second argument: text on stdin has no document behind it, so a
       // rule about markup finds nothing here, which is correct.
-      for (const found of mod.check(text)) {
+      for (const found of mod.check(text, undefined, language)) {
         violations.push(`${path}: ${found.message ?? found.excerpt}`)
       }
     }
@@ -830,19 +825,13 @@
     return map
   }
 
-  function avoidedWords(text, map) {
-    const found = []
-    for (const [word, instead] of map) {
-      for (const m of text.matchAll(new RegExp(`\\b${word}\\b`, 'gi'))) {
-        found.push(`${m[0]}: write ${instead} instead`)
-      }
-    }
-    return found
-  }
-
   export async function check(fs) {
     const rules = await loadRules(fs)
-    const avoid = replacements(fs, fs.list('docs/language/terms', { ext: '.term.html' }))
+    // The vocabulary, handed to every rule as its third argument. A rule about
+    // words needs to know the words, and that is not reaching into the corpus:
+    // it is reading the language the rule belongs to. Rules that only look at
+    // text ignore it.
+    const language = { replaces: replacements(fs, fs.list('docs/language/terms', { ext: '.term.html' })) }
     const violations = []
 
     // The half the schema cannot state. A rule declares <script required>, so
@@ -867,8 +856,8 @@
       // same pair the corpus pass supplies. A rule about markup would find
       // nothing in a bare string and would report that it cannot decide its
       // own examples, which says more about the harness than the rule.
-      if (rule.check(pass?.textContent ?? '', pass).length > 0) violations.push(`${rule.path}: flags its own passing example`)
-      if (rule.check(fail?.textContent ?? '', fail).length === 0) violations.push(`${rule.path}: does not flag its own failing example`)
+      if (rule.check(pass?.textContent ?? '', pass, language).length > 0) violations.push(`${rule.path}: flags its own passing example`)
+      if (rule.check(fail?.textContent ?? '', fail, language).length === 0) violations.push(`${rule.path}: does not flag its own failing example`)
     }
 
     for (const path of fs.list('docs', { ext: '.html' })) {
@@ -883,14 +872,13 @@
       const visible = body.cloneNode(true)
       for (const el of Array.from(visible.querySelectorAll([...PROTECTED].join(',')))) el.remove()
       const text = prose(body)
-      for (const found of avoidedWords(text, avoid)) violations.push(`${path}: ${found}`)
       for (const rule of rules) {
         // A rule gets the text, and the document it came from when there is
         // one. Most rules only read the text. A rule about markup — a bolded
         // paragraph opener, say — cannot see anything in a string, and would
         // otherwise have to leave the family and become an audit, which would
         // put one rule in two homes.
-        for (const found of rule.check(text, visible)) violations.push(`${path}: ${found.message}`)
+        for (const found of rule.check(text, visible, language)) violations.push(`${path}: ${found.message}`)
       }
     }
 

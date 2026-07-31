@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A rule that needs the vocabulary is still a rule; the contract was too narrow</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>A rule that needs the vocabulary is still a rule; the contract was too narrow</knowledge-title>
+  <knowledge-confidence>88</knowledge-confidence>
+  <knowledge-detail><p>
+  Checking for a word another term replaces was written into the audit and into <code>lint</code>
+  rather than as a rule, on the reasoning that a rule is handed the text it checks and this needs the
+  whole family. That is a fact about the contract, not a reason the check is not a rule.
+</p>
+<p>
+  The cost was invisibility. It did not appear in <code>list --type rule</code>, carried no passing
+  and failing example, and was never self-tested. That is the same failure spent all day fixing for
+  audits: a check nobody can see gets duplicated or forgotten.
+</p>
+<p>
+  A rule now receives a third argument, the language it belongs to. That is not arbitrary context and
+  not reaching into the corpus. A rule about words has to know the words, and the words are its own
+  vocabulary.
+</p>
+<p>
+  Nothing is duplicated by making it a rule. The words live in the terms that replace them, so
+  adding one to a term is what turns the check on, and the rule holds no list of its own. Both
+  callers build the vocabulary from the same place and hand it over.
+</p>
+<p>
+  The general shape, and the second time today: a contract that cannot express something is a
+  reason to widen the contract, not to move the thing somewhere it fits worse. The first time was a
+  rule about markup, which could see nothing in a string and nearly became an audit for the same bad
+  reason.
+</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-01-fold-not-approved-into-terms.action.html">corrects how that change wired the check</a>
+</knowledge-observation>
+</body></html>
