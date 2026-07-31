@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A language rule checks a string; an audit checks a corpus</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>A language rule checks a string; an audit checks a corpus</knowledge-title>
+  <knowledge-confidence>88</knowledge-confidence>
+  <knowledge-detail><p>
+  Language rules kept fitting badly into the audit model, and the reason is that they are asking a
+  different kind of question. An audit answers something about a set of documents: is every outcome
+  linked to, is anything an orphan. A language rule answers something about a string.
+</p>
+<p>
+  <a href="../specs/2026-07-31-rules-carry-their-own-checks.spec.html">The rules spec</a> has a
+  dictionary rule carrying <code>&lt;script data-audits&gt;</code> and exporting
+  <code>check(documents)</code>, which makes a rule an audit. That is what the spec gets wrong, and
+  it is why the question of how to reach comments in <code>src/</code> and messages in git looked
+  hard. Under the audit model the checker has to reach out and find text wherever it lives.
+</p>
+<p>
+  Invert it and the problem dissolves. A rule exports <code>check(text)</code>, and the text is
+  brought to it. A commit message arrives on stdin. Corpus prose arrives from an audit that extracts
+  it. Nothing has to reach outside <code>docs/</code>, because nothing is reaching at all.
+</p>
+<p>
+  The self-test improves too. <code>dictionary-pass</code> and <code>dictionary-fail</code> are
+  strings and a rule's check takes a string, so running a rule against its own two examples is
+  direct. The audit version needed a fixture document to stand in for a corpus, which is the
+  awkwardness that
+  <a href="./2026-07-31-audits-declare-expected-violations.decision.html">declaring expected
+  violations</a> had to solve for real audits and which a language rule now avoids entirely.
+</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-07-31-schema-when-vocabulary-allows.decision.html">the same question one layer up: which mechanism can express this check</a>
+</knowledge-observation>
+</body></html>

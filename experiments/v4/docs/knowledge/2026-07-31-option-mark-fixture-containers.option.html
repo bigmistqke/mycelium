@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option: Rejected: mark fixture containers and filter those instead</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-option data-conforms-to="../templates/knowledge.template.html#knowledge-option">
+  <knowledge-title>Rejected: mark fixture containers and filter those instead</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-detail><p>
+  Put a marker attribute on the four <code>sample-instance</code> containers the templates already
+  have, and filter marked subtrees out of what audits receive rather than filtering a directory.
+  More precise than naming a location, and cheap: four attributes.
+</p>
+<p>
+  Rejected because it still hides. The fixtures stay invisible, so an example that quietly stops
+  being a violation is never noticed, and the demo goes on claiming to demonstrate something it does
+  not. Declaring what an audit expects turns the same fixtures into assertions and gets the
+  precision as a side effect.
+</p>
+<p>
+  It also needs the engine to strip subtrees between per-instance validation and the audit pass, so
+  fixtures stay validated while being hidden from audits. Two passes over a mutated document tree,
+  against one comparison.
+</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-31-audits-declare-expected-violations.decision.html">the decision that rejected it</a>
+</knowledge-option>
+</body></html>
