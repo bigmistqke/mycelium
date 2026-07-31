@@ -326,7 +326,7 @@
 </p>
 <template-audit data-conforms-to="../templates/template.template.html#template-audit">
   <template-title>Every node but a root goal is reached by an edge or reaches one.</template-title>
-  <script type="module" data-audits="orphans-except-goal" data-expects="sample-observation" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
+  <script type="mycelium/audit" data-audits="orphans-except-goal" data-expects="sample-observation" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
   const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
 
   function extractGraph(documents) {
@@ -377,7 +377,7 @@
 </p>
 <template-audit data-conforms-to="../templates/template.template.html#template-audit">
   <template-title>An outcome is linked back to whatever caused it.</template-title>
-  <script type="module" data-audits="dangling-outcome" data-expects="sample-outcome" data-touches="knowledge-outcome">
+  <script type="mycelium/audit" data-audits="dangling-outcome" data-expects="sample-outcome" data-touches="knowledge-outcome">
   const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
 
   function extractGraph(documents) {
@@ -474,7 +474,7 @@
 </p>
 <template-audit data-conforms-to="../templates/template.template.html#template-audit">
   <template-title>An action carries a detail or a commit, so it records what it did.</template-title>
-  <script type="module" data-audits="hollow-action" data-expects="sample-hollow-action" data-touches="knowledge-action">
+  <script type="mycelium/audit" data-audits="hollow-action" data-expects="sample-hollow-action" data-touches="knowledge-action">
   function extractActions(documents) {
     const actions = []
     for (const { path, dom } of documents) {

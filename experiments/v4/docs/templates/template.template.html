@@ -107,7 +107,7 @@
 </p>
 <template-audit data-conforms-to="./template.template.html#template-audit">
   <template-title>A document that is an instance keeps its content inside its declared type.</template-title>
-  <script type="module" data-audits="nothing-outside-the-type">
+  <script type="mycelium/audit" data-audits="nothing-outside-the-type">
   export function check(fs) {
     const violations = []
     for (const path of fs.list('docs', { ext: '.html' })) {
