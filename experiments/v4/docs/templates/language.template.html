@@ -637,6 +637,50 @@
   }
 
   /**
+   * Check text against every rule that carries a check.
+   *
+   *   mycelium run language lint -
+   *
+   * Reads the text on standard input and reports every rule it breaks, one
+   * line each, then exits non-zero. Prints nothing and exits zero when the
+   * text is clean.
+   *
+   * This exists for text that is not in a file. Prose inside the corpus is
+   * already checked by the prose-follows-the-language audit on every
+   * `mycelium validate` run, and an audit can reach any file it likes. A
+   * commit message cannot be reached at all: it does not exist until the
+   * commit does. So it is piped here instead.
+   *
+   * Only rules run, not guides. A guide carries no check by definition, so
+   * there is nothing for it to contribute.
+   */
+  export async function lint({ fs, args, cli }) {
+    if (args._[0] !== '-') {
+      throw new Error('usage: language lint -   (reads the text to check on standard input)')
+    }
+    const text = await cli.readStdin()
+
+    const violations = []
+    for (const { path, doc } of fs.list('language/rules')) {
+      const script = doc.querySelector('language-rule > script')
+      if (!script) continue
+      // Loaded through a data: URL, the same way the audit loads them and the
+      // browser demos in the other templates do. No path arithmetic, and the
+      // same limit: a rule loaded this way cannot import a library by bare
+      // name, because a data: URL has no base to resolve one against.
+      const mod = await import(`data:text/javascript,${encodeURIComponent(script.textContent)}`)
+      if (typeof mod.check !== 'function') continue
+      for (const found of mod.check(text)) {
+        violations.push(`${path}: ${found.message ?? found.excerpt}`)
+      }
+    }
+
+    if (violations.length === 0) return
+    for (const violation of violations) console.error(violation)
+    throw new Error(`${violations.length} violation(s)`)
+  }
+
+  /**
    * List the language.
    *
    *   mycelium run language list [--type term|rule|guide] [--status S]
