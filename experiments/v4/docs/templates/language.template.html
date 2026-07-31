@@ -330,6 +330,8 @@
   session that added the command roster</a> ran into directly.
 </p>
 <script type="mycelium/command">
+  import { loadModule } from "../../src/utils.ts"
+  import { resolve as resolvePath } from "node:path"
   const TYPES = ['term', 'rule', 'guide']
 
   // Fields in the order they should appear in a written document, per type.
@@ -680,7 +682,7 @@
       // browser demos in the other templates do. No path arithmetic, and the
       // same limit: a rule loaded this way cannot import a library by bare
       // name, because a data: URL has no base to resolve one against.
-      const mod = await import(`data:text/javascript,${encodeURIComponent(script.textContent)}`)
+      const mod = await loadModule(resolvePath('docs', path), script)
       if (typeof mod.check !== 'function') continue
       // No second argument: text on stdin has no document behind it, so a
       // rule about markup finds nothing here, which is correct.
@@ -756,6 +758,8 @@
   document is, rather than to each rule.
 </p>
 <script type="mycelium/audit" data-audits="prose-follows-the-language" data-touches="language-rule">
+  import { loadModule } from "../../src/utils.ts"
+  import { resolve as resolvePath } from "node:path"
   /**
    * Prose in the corpus obeys every rule that carries a check.
    *
@@ -779,6 +783,12 @@
     'knowledge-prompt', 'plan-global-constraints', 'language-fail',
   ])
 
+  // A block element ends with a newline, so two paragraphs do not run together
+  // into one sentence. Without it the text reads "…scripts.The roster…", which
+  // no sentence split can break, and a rule counting words per sentence
+  // measures whole paragraphs.
+  const BLOCK = new Set(['p', 'li', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'td', 'th', 'dt', 'dd', 'figcaption'])
+
   function prose(node) {
     let out = ''
     for (const child of Array.from(node.childNodes)) {
@@ -786,6 +796,7 @@
       const tag = child.tagName?.toLowerCase()
       if (!tag || PROTECTED.has(tag)) continue
       out += prose(child)
+      if (BLOCK.has(tag)) out += '\n'
     }
     return out
   }
@@ -800,7 +811,11 @@
     for (const path of fs.list('docs/language', { ext: '.rule.html' })) {
       const script = fs.parse(path).querySelector('language-rule > script')
       if (!script) continue
-      const mod = await import(`data:text/javascript,${encodeURIComponent(script.textContent)}`)
+      // Loaded through the engine's own loader rather than a data: URL. A
+      // data: URL has no base to resolve anything against, so a rule wanting a
+      // library could not have one. A real file URL is what lets a rule import
+      // by bare name.
+      const mod = await loadModule(resolvePath(fs.root, path), script)
       if (typeof mod.check === 'function') rules.push({ path, check: mod.check })
     }
     return rules
