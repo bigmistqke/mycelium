@@ -45,16 +45,34 @@ repository.** Not a number in a deleted database, not an external tool, and not
 something recoverable from git history — git is not a place a reader of the
 graph can follow a link to.
 
-**Use the CLI to log, don't hand-author.** As of this same day, all three of
-`mycelium run`'s knowledge commands exist and are tested working:
+**Use the CLI to log, don't hand-author.** The commands below exist and are
+tested working:
 
 ```bash
 pnpm --filter @mycelium/v4 mycelium knowledge add <type> --title "…" --confidence NN [--status S] [--prompt "…"] [--detail "…" | --detail -] [--commit HASH] [--date YYYY-MM-DD] --file <undated-slug>
 pnpm --filter @mycelium/v4 mycelium knowledge link <from-file> <to-file> --rel <rel> --label "…"
+pnpm --filter @mycelium/v4 mycelium knowledge unlink <from-file> <to-file> --rel <rel>
 pnpm --filter @mycelium/v4 mycelium knowledge update <file> [--title "…"] [--confidence NN] [--status S] [--prompt "…"] [--detail "…" | --detail - | --detail ""] [--commit HASH] [--files "…"] [--branch NAME]
+pnpm --filter @mycelium/v4 mycelium knowledge del <file>
 ```
 (`--filter @mycelium/v4` works from anywhere in the repo; drop it and just run
 `pnpm mycelium ...` if already inside `experiments/v4/`.)
+
+**This block is a convenience, not the roster.** `mycelium run --help` prints
+every family and every command it exports, read off the command scripts
+themselves, and a SessionStart hook runs it so it is already in context —
+scroll up rather than trusting this file to be current. `mycelium <family>
+--help` then prints one family's full flags and caveats, straight from each
+command's own doc comment. Prefer both over what is written here: this block
+is maintained by hand and has been wrong. It listed three commands the day
+`unlink` and `del` already existed, and an agent reading it concluded an
+`unlink` was the next gap to build and reported that as a finding. If you
+find a command in `--help` that is missing here, add it.
+
+`unlink` is what a mis-aimed edge needs. `link` upserts on (rel, href), so it
+can correct a label but never a direction or a wrong `--rel` — those leave a
+second, wrong edge alongside the right one. `unlink` then `link` redirects in
+two commands; do not delete and rebuild the node.
 
 **`--file` takes a bare slug with no date on it.** `add` prepends the date
 itself and writes `knowledge/<date>-<slug>.<type>.html`, so the date appears
@@ -68,7 +86,7 @@ mistake has been made. The surrounding prose talks about date-prefixed
 filenames constantly, so a slug that already carries a date looks like it is
 following the convention rather than breaking it. Note the argument names in
 the signature above: `<undated-slug>` for `add`, whose value you are
-choosing, against `<file>` for `link` and `update`, which take the full
+choosing, against `<file>` for every other command, which takes the full
 existing filename including its date and its `.<type>.html` suffix. The same
 split, and the same guard, applies to `spec add` below.
 
@@ -91,7 +109,11 @@ as `deciduous add`/`deciduous link` never did. `add` creates a node,
 `link` connects two, `update` fills in or clears a field on one that
 already exists (e.g. adding `<knowledge-commit>` to an action node once
 its commit exists) — the field-update gap this section used to name here
-is closed. Spec docs get the same treatment now too, via
+is closed. `unlink` and `del` are the two undo operations, and both are
+about not leaving a wrong claim standing: `unlink` removes one edge,
+`del` removes a node **and** every edge pointing at it, printing each one
+it drops, because an incoming edge is something upstream resting on the
+node you just took away. Spec docs get the same treatment now too, via
 `spec.template.html`'s own `add`/`update` — no `link` (a spec's
 cross-references live inside its own rich-field markup, not as separate
 edges) and no `list` yet (deferred, not forgotten):

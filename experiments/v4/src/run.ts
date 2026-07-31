@@ -5,7 +5,7 @@
 // docs/specs/2026-07-23-mycelium-authoring-commands.spec.html.
 
 import { mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
-import { dirname, relative as relativePath, resolve as resolvePath } from "node:path"
+import { basename, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
 import { parse } from "acorn"
 import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
@@ -273,15 +273,114 @@ function extractCommandDocs(source: string): Map<string, string> {
   return docs
 }
 
-function printHelp(id: string, templateLabel: string, mod: Record<string, unknown>, source: string) {
+// The opening sentence of a doc comment, as one line. Not its first LINE:
+// these comments are hand-wrapped at roughly 72 columns, so a first line is
+// as likely to end mid-clause as at a sentence boundary, and a roster made
+// of half-sentences reads like it is broken. Joins the leading paragraph
+// back into one line and cuts at the first sentence-ending period, falling
+// back to a hard truncation for a comment that opens with no period at all.
+const SUMMARY_MAX = 76
+
+function firstSentence(doc: string): string {
+  const lines: string[] = []
+  for (const line of doc.split("\n")) {
+    if (!line.trim()) break
+    lines.push(line.trim())
+  }
+  const paragraph = lines.join(" ")
+  // Sentence-ending, not any period: "docs/" and "knowledge-<type>" contain
+  // dots that are not sentence boundaries, so a period only counts when
+  // followed by a space or the end of the paragraph.
+  const end = /\.(\s|$)/.exec(paragraph)
+  const sentence = end ? paragraph.slice(0, end.index + 1) : paragraph
+  return sentence.length > SUMMARY_MAX ? sentence.slice(0, SUMMARY_MAX - 1).trimEnd() + "…" : sentence
+}
+
+// Every command a source EXPORTS, with the opening sentence of its doc comment.
+// Deliberately not built on extractCommandDocs above: that one indexes
+// non-exported top-level declarations too, which is harmless for printHelp
+// because printHelp takes its NAMES from the loaded module's real exports
+// and only asks the docs map for text. The roster never loads a module —
+// it reads source only, so that it can describe every family without
+// executing any of them — so it has to reject non-exports itself or it
+// would advertise a file's private helpers as commands.
+function readCommands(source: string): { name: string; summary: string }[] {
+  const comments: { type: string; value: string; start: number; end: number }[] = []
+  const ast = parse(source, { ecmaVersion: "latest", sourceType: "module", onComment: comments })
+  const commands: { name: string; summary: string }[] = []
+
+  for (const node of (ast as any).body) {
+    if (node.type !== "ExportNamedDeclaration" || !node.declaration) continue
+    const names = exportedFunctionNames(node)
+    if (names.length === 0) continue
+    const doc = comments
+      .filter((c) => c.type === "Block" && c.end <= node.start && /^\s*$/.test(source.slice(c.end, node.start)))
+      .sort((a, b) => b.end - a.end)[0]
+    for (const name of names) commands.push({ name, summary: doc ? firstSentence(formatComment(doc.value)) : "" })
+  }
+  return commands
+}
+
+// One line per command across every family, so no command can be invisible
+// to someone who never thought to ask for the family it lives in. The point
+// is the NAMES: a reader who knows `unlink` exists can get its flags from
+// `<id> --help`, but a reader who doesn't concludes the capability is
+// missing — which is what happened when a hand-maintained list in CLAUDE.md
+// fell three commands behind what the CLI exports. Nothing here is
+// maintained by hand; it is read off the same command scripts the engine
+// runs.
+//
+// A file is a command host only if its name ends in one of
+// TEMPLATE_FILE_SUFFIXES, the same rule findTemplateFile uses to resolve an
+// <id>. That matters beyond consistency: specs and plans QUOTE command
+// scripts in escaped code blocks, so a scan that went looking for the
+// <script> tag alone would find a dozen frozen copies of older versions of
+// these same commands and list them as real.
+function printRoster(docsDir: string, stream: (line: string) => void) {
+  stream("usage: mycelium run <id> <command> [args…]")
+  stream("       mycelium run <id> --help          every flag and caveat for one family")
+  stream("")
+
+  const hosts = walkHtmlFiles(docsDir)
+    .filter((file) => TEMPLATE_FILE_SUFFIXES.some((suffix) => file.endsWith(`.${suffix}`)))
+    .sort()
+
+  for (const file of hosts) {
+    const { document } = parseHTML(readFileSync(file, "utf8"))
+    const script = document.querySelector('script[type="mycelium/command"]')
+    if (!script) continue
+
+    // A host whose script acorn can't parse is a real problem, but it is
+    // not this function's problem — the roster's job is to be a complete
+    // index of the families that DO work, so a broken one is named and
+    // stepped over rather than taking every other family down with it.
+    let commands: { name: string; summary: string }[]
+    try {
+      commands = readCommands(script.textContent ?? "")
+    } catch (err) {
+      stream(`${basename(file)}  (unreadable: ${(err as Error).message})`)
+      stream("")
+      continue
+    }
+    if (commands.length === 0) continue
+
+    const id = basename(file).replace(/\.(template|command)\.html$/, "")
+    stream(`${id}  (${relativePath(docsDir, file)})`)
+    const width = Math.max(...commands.map((c) => c.name.length))
+    for (const { name, summary } of commands) stream(`  ${name.padEnd(width + 2)}${summary}`.trimEnd())
+    stream("")
+  }
+}
+
+function printHelp(id: string, templateLabel: string, mod: Record<string, unknown>, source: string, stream: (line: string) => void) {
   const docs = extractCommandDocs(source)
   const names = Object.keys(mod).filter((k) => typeof mod[k] === "function")
-  console.error(`commands for "${id}" (${templateLabel}):\n`)
+  stream(`commands for "${id}" (${templateLabel}):\n`)
   for (const name of names) {
-    console.error(`  ${name}`)
+    stream(`  ${name}`)
     const doc = docs.get(name)
-    console.error(doc ? doc.split("\n").map((l) => `    ${l}`.trimEnd()).join("\n") : "    (no JSDoc comment)")
-    console.error("")
+    stream(doc ? doc.split("\n").map((l) => `    ${l}`.trimEnd()).join("\n") : "    (no JSDoc comment)")
+    stream("")
   }
 }
 
@@ -301,12 +400,22 @@ function exitQuietlyOnClosedPipe() {
 async function main() {
   exitQuietlyOnClosedPipe()
   const [id, command, ...rest] = process.argv.slice(2)
-  if (!id) {
-    console.error("usage: mycelium run <id> <command> [args…]\n       mycelium run <id> --help")
-    process.exit(1)
+  const docsDir = resolvePath("./docs")
+
+  // Help that was asked for goes to stdout and exits 0; help printed because
+  // the invocation was wrong goes to stderr and exits non-zero. The usual
+  // convention, but load-bearing here rather than cosmetic: the roster is
+  // read by a SessionStart hook, and a hook that discards stderr (as this
+  // project's does, to keep node's noise out of the transcript) would
+  // discard the whole roster with it.
+  const out = (line: string) => console.log(line)
+  const err = (line: string) => console.error(line)
+
+  if (!id || id === "--help" || id === "-h") {
+    printRoster(docsDir, id ? out : err)
+    process.exit(id ? 0 : 1)
   }
 
-  const docsDir = resolvePath("./docs")
   const templateFile = findTemplateFile(docsDir, id)
   if (!templateFile) {
     console.error(`no command host found for "${id}" (looked for ${id}.template.html or ${id}.command.html)`)
@@ -325,14 +434,14 @@ async function main() {
   const mod = await loadModule(templateFile, script)
 
   if (!command || command === "--help" || command === "-h") {
-    printHelp(id, templateLabel, mod, source)
+    printHelp(id, templateLabel, mod, source, command ? out : err)
     process.exit(command ? 0 : 1)
   }
 
   const run = mod[command] as ((ctx: CommandContext) => void | Promise<void>) | undefined
   if (typeof run !== "function") {
     console.error(`${templateLabel} has no "${command}" command\n`)
-    printHelp(id, templateLabel, mod, source)
+    printHelp(id, templateLabel, mod, source, err)
     process.exit(1)
   }
 
