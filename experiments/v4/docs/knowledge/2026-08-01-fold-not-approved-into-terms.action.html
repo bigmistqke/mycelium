@@ -23,16 +23,23 @@
   say something the structure already said.
 </p>
 <p>
-  What this gives up is the lookup ASD-STE100 is built around. Its dictionary is one alphabetical
-  list holding both kinds, so you look up the word you wrote rather than the word you should have
-  written. Here there is no longer a file named for a word you should not use, and the checker's
-  message has to carry that instead. Chosen deliberately after weighing it; browsing a directory of
-  only approved words was worth more than the reverse lookup.
+  <strong>Correction.</strong> The commit for this said the merge gives up the reverse lookup that
+  ASD-STE100 is built around, where you look up the word you wrote rather than the word you should
+  have written. That was wrong, and wrong in a way this project keeps arguing against elsewhere:
+  storage form is not queryability. A field is as queryable as a filename, given something to query
+  it with.
 </p>
 <p>
-  Two links broke while doing it, both inside the entries being merged: <code>use</code> named
-  <code>utilize</code> and <code>leverage</code> in its own meaning, and both files had just been
-  deleted. Nothing caught it, which is what prompted the link audit committed alongside.
+  So the lookup exists as a query. <code>language list --avoid utilize</code> answers <q>use</q>, and
+  the same data drives a check in both the corpus pass and <code>lint</code>, so writing
+  <code>utilize</code> in a commit message is reported as <q>write use instead</q>. Nothing declares
+  that check and no rule document holds it: adding a word to a term's avoid field is what turns it
+  on, so the list and the check cannot disagree.
+</p>
+<p>
+  It could not have been a rule. A rule is handed the text it checks, and this needs the whole
+  family to know what replaces what. Written as a rule, its own failing example sees no terms and
+  the self-test caught it immediately.
 </p>
 </knowledge-detail>
   <knowledge-files>experiments/v4/docs/language/terms/, experiments/v4/docs/templates/language.template.html</knowledge-files>

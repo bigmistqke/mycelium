@@ -659,6 +659,25 @@
     const text = await cli.readStdin()
 
     const violations = []
+
+    // The same check the corpus pass runs, from the same data: a word listed in
+    // a term's avoid field is one nobody should write, here or in a commit
+    // message. No rule document holds it, so there is nothing to keep in step.
+    const avoid = new Map()
+    for (const { doc } of fs.list('language/terms')) {
+      const el = doc.querySelector('language-term')
+      if (!el) continue
+      const instead = el.querySelector('language-title')?.textContent?.trim()
+      for (const word of (el.querySelector('language-avoid')?.textContent ?? '').split(',').map((w) => w.trim()).filter(Boolean)) {
+        avoid.set(word.toLowerCase(), instead)
+      }
+    }
+    for (const [word, instead] of avoid) {
+      for (const m of text.matchAll(new RegExp(`\\b${word}\\b`, 'gi'))) {
+        violations.push(`${m[0]}: write ${instead} instead`)
+      }
+    }
+
     for (const { path, doc } of fs.list('language/rules')) {
       const script = doc.querySelector('language-rule > script')
       if (!script) continue
@@ -708,9 +727,20 @@
 
       if (type === 'term') {
         const avoid = field('language-avoid')
+        // --avoid <word> is the reverse lookup: ask what to write instead of a
+        // word you should not use. Folding those words into the term that
+        // replaces them removed the file named for each one, and this is what
+        // replaces that: a query rather than a filename.
+        if (args.avoid !== undefined) {
+          const avoided = avoid.split(',').map((w) => w.trim().toLowerCase()).filter(Boolean)
+          if (!avoided.includes(args.avoid.toLowerCase())) continue
+          console.log(`${args.avoid}\t->\t${title}\t${field('language-meaning')}`)
+          continue
+        }
         console.log(`${path}\tterm\t${title}\t${field('language-meaning')}${avoid ? `  (avoid: ${avoid})` : ''}`)
         continue
       }
+      if (args.avoid !== undefined) continue
 
       console.log(`${path}\t${type}\t${title}`)
     }
@@ -750,7 +780,7 @@
   // the rule would misquote the thing being reported on.
   const PROTECTED = new Set([
     'pre', 'code', 'script', 'style',
-    'q', 'blockquote',
+    'q', 'blockquote', 'language-avoid',
     'knowledge-prompt', 'plan-global-constraints', 'language-fail',
   ])
 
@@ -781,8 +811,38 @@
     return rules
   }
 
+  // The words a term replaces are the check. Nothing declares this rule and no
+  // rule document holds it: adding a word to a term's avoid field is what turns
+  // it on, so the list and the check cannot disagree. A rule script could not do
+  // it, because a rule is handed the text it checks and this needs the family.
+  function replacements(fs, listing) {
+    const map = new Map()
+    for (const path of listing) {
+      const term = fs.parse ? fs.parse(path) : path.doc
+      const el = (term.querySelector ? term : term.doc).querySelector('language-term')
+      if (!el) continue
+      const instead = el.querySelector('language-title')?.textContent?.trim()
+      const avoid = el.querySelector('language-avoid')?.textContent ?? ''
+      for (const word of avoid.split(',').map((w) => w.trim()).filter(Boolean)) {
+        map.set(word.toLowerCase(), instead)
+      }
+    }
+    return map
+  }
+
+  function avoidedWords(text, map) {
+    const found = []
+    for (const [word, instead] of map) {
+      for (const m of text.matchAll(new RegExp(`\\b${word}\\b`, 'gi'))) {
+        found.push(`${m[0]}: write ${instead} instead`)
+      }
+    }
+    return found
+  }
+
   export async function check(fs) {
     const rules = await loadRules(fs)
+    const avoid = replacements(fs, fs.list('docs/language/terms', { ext: '.term.html' }))
     const violations = []
 
     // The half the schema cannot state. A rule declares <script required>, so
@@ -823,6 +883,7 @@
       const visible = body.cloneNode(true)
       for (const el of Array.from(visible.querySelectorAll([...PROTECTED].join(',')))) el.remove()
       const text = prose(body)
+      for (const found of avoidedWords(text, avoid)) violations.push(`${path}: ${found}`)
       for (const rule of rules) {
         // A rule gets the text, and the document it came from when there is
         // one. Most rules only read the text. A rule about markup — a bolded
