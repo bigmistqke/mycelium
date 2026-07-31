@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Fold not-approved words into the term that replaces them</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Fold not-approved words into the term that replaces them</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>
+  Six words had their own entries saying only <q>Not used here</q> and pointing at a replacement.
+  None was a definition. Each cost a document, an edge, and a required
+  <code>language-meaning</code> field it had nothing to put in.
+</p>
+<p>
+  They are now a comma-separated <code>language-avoid</code> field on the word that replaces them, so
+  <code>use</code> carries <q>utilize, leverage</q>. <code>language-status</code> is deleted with
+  them: a term is approved by existing, which is the third declared field today that turned out to
+  say something the structure already said.
+</p>
+<p>
+  What this gives up is the lookup ASD-STE100 is built around. Its dictionary is one alphabetical
+  list holding both kinds, so you look up the word you wrote rather than the word you should have
+  written. Here there is no longer a file named for a word you should not use, and the checker's
+  message has to carry that instead. Chosen deliberately after weighing it; browsing a directory of
+  only approved words was worth more than the reverse lookup.
+</p>
+<p>
+  Two links broke while doing it, both inside the entries being merged: <code>use</code> named
+  <code>utilize</code> and <code>leverage</code> in its own meaning, and both files had just been
+  deleted. Nothing caught it, which is what prompted the link audit committed alongside.
+</p>
+</knowledge-detail>
+  <knowledge-files>experiments/v4/docs/language/terms/, experiments/v4/docs/templates/language.template.html</knowledge-files>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-08-01-rename-dictionary-to-language.action.html">the family this reshapes</a>
+</knowledge-action>
+</body></html>
