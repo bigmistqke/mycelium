@@ -12,5 +12,20 @@
   <dictionary-checkable>yes</dictionary-checkable>
   <dictionary-pass>See the decision that imported nodes must link to current material.</dictionary-pass>
   <dictionary-fail>See #349, and the rejected option C from the earlier discussion.</dictionary-fail>
+  <script type="module">
+    // A reference into the frozen decision log: a bare "#349" in prose, where
+    // the number was a key into a database that no longer exists. It cannot be
+    // followed, cannot be checked, and describes nothing to a reader who never
+    // saw that database.
+    //
+    // Bare ones only. A number inside an href is an anchor and resolves, which
+    // is the form a reference here is supposed to take.
+    export function check(text) {
+      return [...text.matchAll(/(?<![\w"'=\/])#\d+/g)].map((m) => ({
+        excerpt: m[0],
+        message: `bare reference ${m[0]}: cite by path, or describe what it said`,
+      }))
+    }
+  </script>
 </dictionary-rule>
 </body></html>

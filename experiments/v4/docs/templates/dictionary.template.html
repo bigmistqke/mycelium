@@ -625,7 +625,16 @@
   // contains, by construction, exactly what that rule forbids. And a
   // knowledge-prompt is a record of what somebody typed: editing one to
   // satisfy a style rule would make the record false.
-  const PROTECTED = new Set(['pre', 'code', 'script', 'style', 'knowledge-prompt', 'plan-global-constraints', 'dictionary-fail'])
+  //
+  // A quotation is the same case as a prompt, one step removed. Naming a
+  // violation is how you describe one, so a node reporting that a document
+  // says "#349" has to be able to write that. Rewriting the quote to satisfy
+  // the rule would misquote the thing being reported on.
+  const PROTECTED = new Set([
+    'pre', 'code', 'script', 'style',
+    'q', 'blockquote',
+    'knowledge-prompt', 'plan-global-constraints', 'dictionary-fail',
+  ])
 
   function prose(node) {
     let out = ''

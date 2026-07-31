@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Migrate the hygiene spec off the deleted log's node numbers, and turn the first rule on</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Migrate the hygiene spec off the deleted log's node numbers, and turn the first rule on</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>
+  Thirty-nine references rewritten as descriptions rather than re-pointed at files. Mapping a
+  number to an imported node would mean guessing which one, and
+  <a href="./2026-07-30-two-of-twenty-citations-were-hollow.observation.html">two of twenty
+  citations pointed at the wrong node</a> the last time anyone did that by hand. CLAUDE.md asks for
+  a description anyway, on the grounds that it is what a reader needed.
+</p>
+<p>
+  Most were redundant rather than load-bearing. The prose around a number usually already said what
+  the node said, so the repair was deletion: <q>the case that justified tags is written down as
+  #351 citing #20</q> becomes the cache-of-comprehension decision citing the query-interface
+  decision, which is what the sentence meant.
+</p>
+<p>
+  Enabling the rule then flagged the observation written an hour earlier reporting this very
+  problem, because describing a violation means naming one. Quotations are now excluded, alongside
+  code, plan boilerplate, verbatim prompts and a rule's own failing example. That case is the one
+  the rules spec called the hard one, and it turned up within a minute of the rule being live.
+</p>
+<p>
+  Verified by injection rather than by a green run: a bare reference added to
+  <code>DESIGN.html</code> was reported and failed the run, and removing it restored the pass. The
+  first attempt at that test injected nothing and I read the empty output as a pass, which is the
+  same shape of mistake as a filter that silently matches nothing.
+</p>
+</knowledge-detail>
+  <knowledge-files>experiments/v4/docs/specs/2026-07-30-knowledge-graph-hygiene.spec.html, experiments/v4/docs/dictionary/no-outside-references.rule.html, experiments/v4/docs/templates/dictionary.template.html</knowledge-files>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-07-31-bare-node-numbers-still-in-the-corpus.observation.html">the finding this clears</a>
+</knowledge-action>
+</body></html>
