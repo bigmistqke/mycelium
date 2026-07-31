@@ -345,7 +345,15 @@
     return { nodes, edges }
   }
 
-  export function check(documents) {
+  export function check(fs) {
+    // An audit is handed a filesystem, not a document list, so this line is
+    // what a check that wants documents does for itself. Written out rather
+    // than imported from a helper: this same script also runs in the demo
+    // below through a data: URL, which has no base to resolve a relative
+    // import against.
+    const documents = fs.list('docs', { ext: '.html' })
+      .map((path) => ({ path: `${fs.root}/${path}`, dom: fs.parse(path) }))
+
     const { nodes, edges } = extractGraph(documents)
     const connected = new Set()
     for (const e of edges) { connected.add(e.from); connected.add(e.to) }
@@ -385,7 +393,15 @@
     return { nodes, edges }
   }
 
-  export function check(documents) {
+  export function check(fs) {
+    // An audit is handed a filesystem, not a document list, so this line is
+    // what a check that wants documents does for itself. Written out rather
+    // than imported from a helper: this same script also runs in the demo
+    // below through a data: URL, which has no base to resolve a relative
+    // import against.
+    const documents = fs.list('docs', { ext: '.html' })
+      .map((path) => ({ path: `${fs.root}/${path}`, dom: fs.parse(path) }))
+
     const { nodes, edges } = extractGraph(documents)
     const resolved = new Set(edges.map(e => e.to))
     const violations = nodes
@@ -465,7 +481,15 @@
     return actions
   }
 
-  export function check(documents) {
+  export function check(fs) {
+    // An audit is handed a filesystem, not a document list, so this line is
+    // what a check that wants documents does for itself. Written out rather
+    // than imported from a helper: this same script also runs in the demo
+    // below through a data: URL, which has no base to resolve a relative
+    // import against.
+    const documents = fs.list('docs', { ext: '.html' })
+      .map((path) => ({ path: `${fs.root}/${path}`, dom: fs.parse(path) }))
+
     const violations = extractActions(documents)
       .filter(a => !a.detail && !a.commit)
       .map(a => a.id)
@@ -513,7 +537,15 @@
       return mod.check
     }
 
-    const documents = [{ path: 'sample', dom: document.getElementById('sample-instances') }]
+    // A stub of the filesystem `mycelium validate` hands an audit, standing in
+    // for a real crawl with a single document: the sample container above.
+    // Each audit turns this into its own document list, so the stub only has
+    // to answer the two calls that line makes.
+    const fs = {
+      root: '',
+      list: () => ['sample'],
+      parse: () => document.getElementById('sample-instances'),
+    }
 
     // Each audit's own data-expects is what it should find, so this demo and
     // `mycelium validate` are checking one declaration rather than two copies
@@ -524,7 +556,7 @@
     for (const script of document.querySelectorAll('script[data-audits]')) {
       const name = script.getAttribute('data-audits')
       const want = (script.getAttribute('data-expects') ?? '').trim().split(/\s+/).filter(Boolean)
-      const result = await (await loadCheck(script.textContent))(documents)
+      const result = await (await loadCheck(script.textContent))(fs)
       const correct = JSON.stringify(result.violations.toSorted()) === JSON.stringify(want.toSorted())
       allCorrect = allCorrect && correct
       lines.push(`${(name + ':').padEnd(21)}violations = [${result.violations.join(', ')}]  ${correct ? 'PASS (matches expected)' : 'FAIL (expected [' + want.join(', ') + '])'}`)

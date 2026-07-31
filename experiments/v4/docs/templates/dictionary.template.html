@@ -606,6 +606,82 @@
   }
 </script>
 
+<h2>The audit that runs the rules</h2>
+<p>
+  Every rule carrying a <code>&lt;script&gt;</code> is run against the prose of every document.
+  A rule that carries no script is guidance: it is stated and not enforced, and whether a rule is
+  enforced is read off whether the script is there rather than declared in a field that can
+  disagree with it.
+</p>
+<p>
+  A rule's check takes text. That is what lets the same rule apply to a commit message, a comment
+  in a source file, and a field in a document, without any of them being reached for: the text is
+  brought to the rule. Deciding which text is prose belongs here, to the thing that knows what a
+  document is, rather than to each rule.
+</p>
+<script type="module" data-audits="prose-follows-the-dictionary" data-touches="dictionary-rule">
+  // Text no rule may be applied to. A code block is code. Plan boilerplate
+  // quotes the environment a plan runs in. A rule's own failing example
+  // contains, by construction, exactly what that rule forbids. And a
+  // knowledge-prompt is a record of what somebody typed: editing one to
+  // satisfy a style rule would make the record false.
+  const PROTECTED = new Set(['pre', 'code', 'script', 'style', 'knowledge-prompt', 'plan-global-constraints', 'dictionary-fail'])
+
+  function prose(node) {
+    let out = ''
+    for (const child of Array.from(node.childNodes)) {
+      if (child.nodeType === 3) { out += child.textContent ?? ''; continue }
+      const tag = child.tagName?.toLowerCase()
+      if (!tag || PROTECTED.has(tag)) continue
+      out += prose(child)
+    }
+    return out
+  }
+
+  // Rule scripts load through a data: URL rather than the module hook the
+  // engine uses, so this needs no path arithmetic and works the same way the
+  // browser demos in the other templates already do. The cost is that a rule
+  // loaded this way cannot import a library by bare name: a data: URL has no
+  // base to resolve one against.
+  async function loadRules(fs) {
+    const rules = []
+    for (const path of fs.list('docs/dictionary', { ext: '.rule.html' })) {
+      const script = fs.parse(path).querySelector('dictionary-rule > script')
+      if (!script) continue
+      const mod = await import(`data:text/javascript,${encodeURIComponent(script.textContent)}`)
+      if (typeof mod.check === 'function') rules.push({ path, check: mod.check })
+    }
+    return rules
+  }
+
+  export async function check(fs) {
+    const rules = await loadRules(fs)
+    const violations = []
+
+    // A rule is run against its own two examples first. The passing one must
+    // come back clean and the failing one must not, so a check that cannot
+    // decide its own examples is caught before it ever reaches the corpus.
+    for (const rule of rules) {
+      const el = fs.parse(rule.path).querySelector('dictionary-rule')
+      const passes = el.querySelector('dictionary-pass')?.textContent ?? ''
+      const fails = el.querySelector('dictionary-fail')?.textContent ?? ''
+      if (rule.check(passes).length > 0) violations.push(`${rule.path}: flags its own passing example`)
+      if (rule.check(fails).length === 0) violations.push(`${rule.path}: does not flag its own failing example`)
+    }
+
+    for (const path of fs.list('docs', { ext: '.html' })) {
+      const body = fs.parse(path).querySelector('body')
+      if (!body) continue
+      const text = prose(body)
+      for (const rule of rules) {
+        for (const found of rule.check(text)) violations.push(`${path}: ${found.message}`)
+      }
+    }
+
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
 <h2>Conformance</h2>
 <p>
   Conformance is declared as a <code>data-conforms-to</code> attribute on the element making the

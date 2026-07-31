@@ -9,15 +9,23 @@ export function parseHTML(html: string): { document: Document } {
   return { document: window.document as unknown as Document }
 }
 
-export function walkHtmlFiles(dir: string): string[] {
+// Every file under dir, recursively. node_modules is skipped: rooting an
+// audit's filesystem above docs/ puts it in reach, and walking it would cost
+// more than the rest of the tree by orders of magnitude.
+export function walkFiles(dir: string): string[] {
   const results: string[] = []
   for (const entry of readdirSync(dir)) {
+    if (entry === "node_modules" || entry.startsWith(".")) continue
     const full = join(dir, entry)
     const stat = statSync(full)
-    if (stat.isDirectory()) results.push(...walkHtmlFiles(full))
-    else if (entry.endsWith(".html")) results.push(full)
+    if (stat.isDirectory()) results.push(...walkFiles(full))
+    else results.push(full)
   }
   return results
+}
+
+export function walkHtmlFiles(dir: string): string[] {
+  return walkFiles(dir).filter((file) => file.endsWith(".html"))
 }
 
 // Given an instance's own file and its data-conforms-to value (a path

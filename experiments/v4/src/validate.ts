@@ -4,9 +4,9 @@
 
 import { readFileSync } from "node:fs"
 import { styleText } from "node:util"
-import { resolve as resolvePath } from "node:path"
+import { dirname, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
-import { parseHTML, walkHtmlFiles, resolveTemplateRef, loadCheck, loadGenericValidator } from "./utils.ts"
+import { parseHTML, walkFiles, walkHtmlFiles, resolveTemplateRef, loadCheck, loadGenericValidator } from "./utils.ts"
 
 register("./script-hooks.ts", import.meta.url)
 
@@ -39,6 +39,52 @@ interface AuditInfo {
 interface CheckResult {
   ok: boolean
   [key: string]: unknown
+}
+
+// What an audit is handed. Read-only, and rooted one level above the docs
+// directory so src/ is reachable: a rule about language applies to a comment
+// in a source file as much as to prose in a document, and an audit that can
+// only see HTML can never say so.
+//
+// Handing over a filesystem rather than a list of parsed documents is the
+// whole point. Parsed documents are the engine deciding what a project's
+// content is, which is not the engine's business; conformance is defined in
+// HTML, so the engine parses HTML for that, and stops there. What an audit
+// examines is its own affair. It could always have imported node:fs and read
+// whatever it liked — this makes the intended path the convenient one instead
+// of the awkward one.
+export interface AuditFs {
+  root: string
+  list(dir?: string, options?: { ext?: string }): string[]
+  read(path: string): string
+  parse(path: string): Document
+}
+
+function createAuditFs(root: string, cache: Map<string, Document>): AuditFs {
+  return {
+    root,
+    list(dir = ".", options = {}) {
+      return walkFiles(resolvePath(root, dir))
+        .filter((file) => !options.ext || file.endsWith(options.ext))
+        .map((file) => relative(root, file))
+    },
+    read(path) {
+      return readFileSync(resolvePath(root, path), "utf8")
+    },
+    // Shares the cache with the parse the instance pass already did, so an
+    // audit reading every document costs nothing extra, and three audits
+    // reading every document cost nothing extra three times.
+    parse(path) {
+      const full = resolvePath(root, path)
+      let doc = cache.get(full)
+      if (!doc) {
+        const { document } = parseHTML(readFileSync(full, "utf8"))
+        doc = document as unknown as Document
+        cache.set(full, doc)
+      }
+      return doc
+    },
+  }
 }
 
 function parseAll(dir: string): ParsedDoc[] {
@@ -96,6 +142,8 @@ function discoverInstances(documents: ParsedDoc[]): Instance[] {
 async function main() {
   const dir = resolvePath(process.argv[2] ?? "./docs")
   const documents = parseAll(dir)
+  const parseCache = new Map(documents.map((d) => [d.path, d.dom]))
+  const auditFs = createAuditFs(dirname(dir), parseCache)
   const { templates, audits } = discoverTemplatesAndAudits(documents)
   const instances = discoverInstances(documents)
   // Audits see every document, templates included. A template's worked
@@ -162,7 +210,7 @@ async function main() {
     const label = `${audit.name}  (${relative(dir, audit.file)}${audit.touches ? `, touches: ${audit.touches}` : ""})`
     try {
       const check = await loadCheck(audit.file, audit.scriptElement)
-      const result = (await check(documents)) as CheckResult
+      const result = (await check(auditFs)) as CheckResult
       // The comparison is the verdict, so an audit's own `ok` is not
       // consulted: it reports what it found and the engine decides whether
       // that is acceptable. The two ways to be wrong are worth telling
