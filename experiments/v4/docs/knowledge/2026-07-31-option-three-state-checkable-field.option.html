@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option: Rejected: keep a declared field, widened to gate|flag|none</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-option data-conforms-to="../templates/knowledge.template.html#knowledge-option">
+  <knowledge-title>Rejected: keep a declared field, widened to gate|flag|none</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-detail><p>
+  Widen <code>dictionary-checkable</code> from <code>yes|no</code> to three values, separating a
+  rule that gates from one that only flags candidates for a person to look at from one that is
+  documentation. Proposed after the boolean was found to be too narrow for
+  <code>say-harness-when-you-mean-harness</code>.
+</p>
+<p>
+  Rejected because it keeps the shape that failed. The value would still be written by hand,
+  still be a claim about a capability rather than the capability, and still be able to disagree
+  with reality — a rule declaring <code>gate</code> with no check behind it is exactly today's
+  situation with more words. The three states are real, but they are properties of what a check
+  returns, so they belong to the check.
+</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-31-derive-enforceability-from-check.decision.html">the decision that rejected it</a>
+</knowledge-option>
+</body></html>

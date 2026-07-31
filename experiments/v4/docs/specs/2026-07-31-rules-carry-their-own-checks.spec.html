@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A rule carries its own check, and its examples are that check's tests</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A rule carries its own check, and its examples are that check's tests</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-07-31</spec-date>
+  <spec-problem>
+<p>
+  The dictionary family holds fourteen rules. Eight of them declare
+  <code>dictionary-checkable</code> as <code>yes</code>. No check exists for any of them.
+  Nothing reads a rule, nothing enforces one, and a rule marked <code>yes</code> produces
+  exactly the same result as a rule marked <code>no</code>.
+</p>
+<p>
+  That is not a gap waiting to be filled by the obvious next commit. It is the same shape as
+  <a href="../knowledge/2026-07-30-validate-never-gated.observation.html">validate reported
+  failures and exited zero</a>: a mechanism that reads as enforcement while enforcing nothing.
+  The field states an intention in the grammar of a capability.
+</p>
+<p>
+  The declared value was also wrong within two hours of being written.
+  <code>say-harness-when-you-mean-harness</code> was marked <code>no</code>, when the truth is
+  that a machine cannot decide it but can flag every candidate. The repair proposed at the time
+  was a third value, <code>gate|flag|none</code>, which keeps the shape that failed: still
+  written by hand, still a claim about a capability rather than the capability, still able to
+  disagree with what exists.
+</p>
+<h3>What the ruleset should be</h3>
+<p>
+  Limited, and ours. An external style guide has more rules than this project will ever write by
+  hand, but importing three hundred of them produces a hand-maintained copy of somebody else's
+  list, which is precisely the failure
+  <a href="../knowledge/2026-07-31-hand-copied-command-list-reads-as-absence.observation.html">a
+  hand-copied command list is read as the whole tool</a> records. A small ruleset authored here
+  has no upstream and therefore cannot drift from one.
+</p>
+<p>
+  That argument does not extend to <em>implementations</em>. If a published library already
+  detects passive voice, writing a worse detector by hand is not ownership, it is duplication.
+  So the design has to let a rule reach a library without making every rule depend on one.
+</p>
+</spec-problem>
+  <spec-design>
+<p>
+  Delete <code>dictionary-checkable</code>. A <code>dictionary-rule</code> may instead carry a
+  <code>&lt;script data-audits="&lt;rule-slug&gt;"&gt;</code> that exports
+  <code>check(documents)</code>. A rule with a script is enforced. A rule without one is
+  guidance. Enforceability stops being described and becomes observable, so it cannot be wrong.
+</p>
+<h3>The mechanism already exists, and was measured before this was designed</h3>
+<p>
+  <code>validate.ts</code> collects <code>script[data-audits]</code> from every document under
+  <code>docs/</code>, excludes only the <code>templates/</code> directory, loads each through the
+  virtual-module hook described in
+  <a href="./2026-07-25-virtual-module-script-imports.spec.html">virtual module script
+  imports</a>, and calls <code>check(documents)</code> with the corpus. A falsy <code>ok</code>
+  fails the run.
+</p>
+<p>
+  A probe document placed in <code>dictionary/</code> confirmed all of it: the script was
+  discovered, received 364 documents, and failed the run with exit code 1. A second probe
+  imported <code>acorn</code> by bare specifier from inside that script and it resolved. So no
+  new runner is needed, and reaching a library is a decision each rule makes for itself rather
+  than one the project makes once.
+</p>
+<p>
+  This is the family's own primitive doing the work. A rule is a document, its enforcement is a
+  script inside that document, and the thing that runs it is the same validator that already
+  runs every other audit.
+</p>
+<h3>The two examples become the check's tests</h3>
+<p>
+  <code>dictionary-pass</code> and <code>dictionary-fail</code> are already required on every
+  rule, and they were required for a human reason: a rule stated abstractly is read differently
+  by every reader. They are also exactly what a check should be tested against.
+</p>
+<p>
+  So one audit, written once and living beside the template, runs every rule's check against that
+  rule's own two examples. A check that does not flag its own failing example is broken. A check
+  that flags its own passing example is broken. Neither can reach the corpus without being caught,
+  and no separate test fixtures have to be invented or kept in step with the prose.
+</p>
+<p>
+  This also gives the pass and fail fields a second job that makes them harder to write carelessly,
+  which is worth having: an example that was decoration now has to be a case the check can actually
+  decide.
+</p>
+<h3>Protected text is a shared concern, not each check's problem</h3>
+<p>
+  No check may read a code block, the boilerplate quoting a plan's environment, a rule's own
+  failing example, or a <code>knowledge-prompt</code>. That last is a record of what somebody
+  typed, and editing one to satisfy a style rule would make the record false. Cleaning the corpus
+  established this: of 59 occurrences found, 27 were in protected contexts and 2 of those were
+  inside recorded user messages.
+</p>
+<p>
+  The selector for that is written and tested. It belongs in <code>templates/shared.ts</code>,
+  imported by every check, rather than reimplemented per rule. A rule that gets it wrong would
+  otherwise report a violation against text nobody may change.
+</p>
+<h3>The rules to port, and what they cost</h3>
+<p>
+  Measured against the current corpus, prose only, protected contexts excluded:
+</p>
+<table>
+  <tbody><tr><th>rule</th><th>flags today</th><th>of</th></tr>
+  <tr><td>title length over 120 characters</td><td>4</td><td>681 titles</td></tr>
+  <tr><td>no text outside a declared field</td><td>10</td><td>360 documents</td></tr>
+  <tr><td>rejected words</td><td>0</td><td>after the cleanup pass</td></tr>
+  <tr><td>bolded paragraph openers</td><td>115</td><td>1200 paragraphs</td></tr>
+  <tr><td>em-dash asides</td><td>464</td><td>2011 sentences</td></tr>
+</tbody></table>
+<p>
+  Sentence length is the one number this spec does not fix. A cap of 25 words, which is what
+  ASD-STE100 uses, flags 519 sentences, a quarter of the corpus. At 40 words it flags 168 and at
+  50 it flags 68. The standard's number was chosen for aircraft maintenance procedures read by
+  non-native speakers, and this corpus is expository prose about software. The number is a
+  judgment about how much rewriting is worth it, and it is left open below.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>
+  <strong>Porting all fourteen rules.</strong> This specifies the mechanism. Which rules get
+  checks, and in what order, follows from the counts above.
+</p>
+<p>
+  <strong>The migration pass over the existing corpus.</strong> 464 em-dash asides will not be
+  fixed by the commit that makes them detectable, and most of them were written today by the
+  same author writing this.
+</p>
+<p>
+  <strong>Adopting an external style guide wholesale.</strong> Rejected in the problem section.
+  A single rule importing a single library is not that.
+</p>
+<p>
+  <strong>Deriving term-use edges.</strong> Still open from
+  <a href="./2026-07-31-dictionary-template-html.spec.html">the dictionary family spec</a> and
+  untouched here.
+</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<ol>
+  <li>
+    <strong>Severity.</strong> The runner is binary: a check either fails the run or is silent.
+    Flagging candidates for a person to look at, which is what
+    <code>say-harness-when-you-mean-harness</code> needs, has no place to go. Either a check
+    prints its own advisories and returns <code>ok</code>, which needs no change and hides
+    advisories from any summary, or the runner grows a third outcome. The first is honest and
+    cheap; the second is right if advisories turn out to be common.
+  </li>
+  <li>
+    <strong>What a check receives.</strong> Raw documents, as the runner passes them today, means
+    every check repeats the work of selecting prose. Pre-extracted prose means changing the runner
+    for one family's benefit. A shared helper imported by each check is the middle option and
+    costs an import line per rule.
+  </li>
+  <li>
+    <strong>The sentence cap.</strong> 40 words flags 168 sentences, 50 flags 68. Not a technical
+    question.
+  </li>
+  <li>
+    <strong>Whether a rule without a check needs any marking at all.</strong> Absence is already
+    the signal, and adding a field to say so would reintroduce what this spec deletes. But a
+    reader scanning a list cannot see absence, so <code>list</code> may need to show it even
+    though the document does not store it.
+  </li>
+  <li>
+    <strong>Rules whose check needs configuration.</strong> A length cap has a number in it. If
+    the number lives in the script, changing it is a code edit to a document; if it lives in a
+    field, the field can disagree with the script. The same problem this spec solves for
+    enforceability, one level down.
+  </li>
+</ol>
+</spec-open-questions>
+</spec-doc>
+</body></html>

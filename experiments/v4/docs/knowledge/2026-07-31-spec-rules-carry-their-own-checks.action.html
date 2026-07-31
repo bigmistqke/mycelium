@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Spec how a rule carries its own check</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Spec how a rule carries its own check</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>
+  Two probes ran before the design was written rather than after. A document in
+  <code>dictionary/</code> carrying a <code>data-audits</code> script was discovered by the
+  existing validator, received all 364 corpus documents, and failed the run with a non-zero exit.
+  A second probe imported <code>acorn</code> by bare specifier from inside that script and it
+  resolved. Both probes were deleted; the corpus is unchanged.
+</p>
+<p>
+  So the design needs no runner, no new field beyond a script, and no project-wide decision about
+  external libraries — a rule that wants one imports it, and a rule that does not, does not.
+</p>
+<p>
+  The part worth keeping is that <code>dictionary-pass</code> and <code>dictionary-fail</code>
+  turn into the check's own tests. They were already required for a human reason. One audit runs
+  every rule's check against its own two examples, so a check that fails to flag its own failing
+  example never reaches the corpus, and no separate fixtures have to be kept in step with the
+  prose.
+</p>
+<p>
+  Five questions left open, of which two are not technical: how much rewriting a sentence cap is
+  worth, and whether advisories are common enough to justify a third outcome in the runner.
+</p>
+</knowledge-detail>
+  <knowledge-files>experiments/v4/docs/specs/2026-07-31-rules-carry-their-own-checks.spec.html</knowledge-files>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-07-31-derive-enforceability-from-check.decision.html">the decision this specifies</a>
+  <a data-rel="depends_on" href="./2026-07-31-dictionary-family-for-voice-and-terms.goal.html">the goal this continues</a>
+</knowledge-action>
+</body></html>
