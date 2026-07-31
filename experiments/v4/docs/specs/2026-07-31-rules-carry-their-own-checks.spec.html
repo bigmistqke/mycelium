@@ -13,8 +13,8 @@
   <spec-date>2026-07-31</spec-date>
   <spec-problem>
 <p>
-  The dictionary family holds fourteen rules. Eight of them declare
-  <code>dictionary-checkable</code> as <code>yes</code>. No check exists for any of them.
+  The language family holds fourteen rules. Eight of them declare
+  <code>language-checkable</code> as <code>yes</code>. No check exists for any of them.
   Nothing reads a rule, nothing enforces one, and a rule marked <code>yes</code> produces
   exactly the same result as a rule marked <code>no</code>.
 </p>
@@ -49,7 +49,7 @@
 </spec-problem>
   <spec-design>
 <p>
-  Delete <code>dictionary-checkable</code>. A <code>dictionary-rule</code> may instead carry a
+  Delete <code>language-checkable</code>. A <code>language-rule</code> may instead carry a
   <code>&lt;script&gt;</code> exporting <code>check(text)</code>. A rule with a script is enforced.
   A rule without one is guidance. Enforceability stops being described and becomes observable, so
   it cannot be wrong.
@@ -71,13 +71,13 @@
 </p>
 <h3>One function, three callers, none of them a family</h3>
 <p>
-  <code>dictionary.template.html</code> exports the function that runs every rule against a string,
+  <code>language.template.html</code> exports the function that runs every rule against a string,
   the way <code>knowledge.template.html</code> already exports <code>extractGraph</code> by id for
-  its own <code>generate</code> command to import. <code>mycelium run dictionary lint</code> is a
+  its own <code>generate</code> command to import. <code>mycelium run language lint</code> is a
   thin wrapper over it.
 </p>
 <ol>
-  <li><code>dictionary lint -</code> reads stdin. Commit messages, drafts, anything.</li>
+  <li><code>language lint -</code> reads stdin. Commit messages, drafts, anything.</li>
   <li>An audit extracts corpus prose and calls the same function, so the graph is checked by the
     same rules as everything else.</li>
   <li>A <code>commit-msg</code> hook, once the rules are worth blocking on.</li>
@@ -98,7 +98,7 @@
 </p>
 <h3>The two examples are the check's tests, directly</h3>
 <p>
-  <code>dictionary-pass</code> and <code>dictionary-fail</code> are required on every rule, for a
+  <code>language-pass</code> and <code>language-fail</code> are required on every rule, for a
   human reason: a rule stated abstractly is read differently by every reader. They are also strings,
   and a check takes a string, so running a rule against its own examples needs no fixture and no
   simulated corpus.
@@ -177,7 +177,7 @@
 </p>
 <p>
   <strong>Deriving term-use edges.</strong> Still open from
-  <a href="./2026-07-31-dictionary-template-html.spec.html">the dictionary family spec</a> and
+  <a href="./2026-07-31-language-template-html.spec.html">the language family spec</a> and
   untouched here.
 </p>
 </spec-out-of-scope>

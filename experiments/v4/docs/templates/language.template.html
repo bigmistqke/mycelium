@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template: language-term and language-rule</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="./language.template.css">
+</head>
+<body>
+
+<h1>Template: language-term, language-rule</h1>
+<div class="meta">
+  <div><b>Node types:</b> <code>language-term</code>, <code>language-rule</code></div>
+  <div><b>File naming:</b> this file is <code>language.template.html</code>, named after the
+    <code>language-*</code> family rather than either type in it. Instances are
+    <code>../language/terms/&lt;slug&gt;.term.html</code> and
+    <code>../language/rules/&lt;slug&gt;.rule.html</code>, with <b>no date prefix</b> &mdash; see
+    below, this is the one place this family departs from its siblings</div>
+  <div><b>Purpose:</b> hold this project's writing rules and its terms of art as documents, so that
+    the language every other family is written in is itself part of the corpus</div>
+  <div><b>Sibling of:</b> <code>knowledge.template.html</code> (six types),
+    <code>spec.template.html</code> (one), <code>plan.template.html</code> (three)</div>
+  <div><b>Specified by:</b> <a data-rel="specifies" href="../specs/2026-07-31-language-template-html.spec.html">the
+    language family spec</a></div>
+  <div><b>Styling:</b> <code>./language.template.css</code>, plus the shared
+    <code>../theme.css</code> every document links</div>
+</div>
+
+<h2>Why this template exists</h2>
+<p>
+  Every family here fixes the shape of a document and checks it. Nothing fixes the sentences. The
+  rules for those exist, but they live where the repository cannot see them &mdash; a
+  commit-message skill, a personal memory note, prose scattered through <code>CLAUDE.md</code>, and
+  the corpus itself by example &mdash; and rules in that state are not followed. The
+  <a data-rel="specifies" href="../specs/2026-07-31-language-template-html.spec.html">spec</a>
+  has the evidence and the measurements; this file is the shape that follows from it.
+</p>
+<p>
+  The model is ASD-STE100, which is two parts: writing rules, and a dictionary of words with one
+  meaning each. Technical vocabulary is explicitly left for each project to supply. Those two parts
+  are the two types below.
+</p>
+
+<h2>Two types, because a rule and a word are not the same object</h2>
+<p>
+  A <code>language-rule</code> is a rule about writing, and its load-bearing content is a pair of
+  examples. A rule stated abstractly is read differently by every reader; the example that passes
+  and the example that fails are what pin it down, which is why both are required rather than
+  optional colour.
+</p>
+<p>
+  A <code>language-term</code> is a word, with one meaning. The field that does the real work is
+  <code>language-status</code>: a dictionary that only defines the words you should use documents
+  the vocabulary without preventing anything. What stops drift is recording that
+  <code>scaffolding</code> is <em>rejected</em> and points at <code>harness</code>. That is
+  ASD-STE100's actual mechanism &mdash; its dictionary is approved and not-approved pairs, not a
+  list of entries &mdash; and it is the half a glossary usually leaves out and then fails to
+  prevent anything.
+</p>
+
+<h2>No date prefix, unlike every other family here</h2>
+<p>
+  <code>knowledge/</code> and <code>specs/</code> both prefix a filename with its date, and that
+  prefix carries real meaning: it records which exploration a node belongs to, which is the argument
+  <a data-rel="depends_on" href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do not
+  tag</a> leans on to show a separate topic vocabulary is unnecessary.
+</p>
+<p>
+  An entry here is not an event and does not belong to an exploration. The word
+  <code>harness</code> is not from July; it is the word this project uses, and dating it would
+  assert something false about it. Entries are also looked up by their word, which a date prefix
+  puts behind a lookup step. So <code>language/terms/harness.term.html</code>, and
+  <code>add</code> has no <code>--date</code> flag and prepends nothing.
+</p>
+<p>
+  Terms and rules sit in separate directories because thirty-five one-line words and fourteen
+  rules interleave alphabetically otherwise, and neither list can be read. This is a split by
+  type, not by subject: a term goes with terms and a rule with rules, so there is no judgment to
+  make on each entry. A split by subject would be one, which is the cost
+  <a data-rel="depends_on" href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do
+  not tag</a> refused for topic tags.
+</p>
+<p>
+  The type suffix stays on the filename even though the directory repeats it, and it earns its
+  place: every command that takes an existing entry derives the directory from the suffix, so a
+  caller writes <code>harness.term.html</code> and never a path.
+</p>
+
+<h2>Shape</h2>
+<p>
+  Both types share <code>language-title</code> and an optional free-form
+  <code>language-detail</code>, the way every <code>knowledge-*</code> type shares
+  <code>knowledge-title</code> and <code>knowledge-detail</code>. Fields carry the family prefix
+  and not the type name, so <code>language-title</code> rather than
+  <code>language-term-title</code> &mdash; fields belong to the family.
+</p>
+<p>
+  For a term, the title is the word itself. For a rule, the title is the rule stated in one line.
+</p>
+
+<template id="language-term">
+  <language-term>
+    <language-title required></language-title>
+    <language-part-of-speech required enum="noun verb adjective adverb phrase"></language-part-of-speech>
+    <language-status required enum="approved rejected"></language-status>
+    <language-meaning required></language-meaning>
+    <language-detail></language-detail>
+  </language-term>
+</template>
+<pre><code>&lt;language-term&gt;
+  &lt;language-title&gt;harness&lt;/language-title&gt;
+  &lt;language-part-of-speech&gt;noun&lt;/language-part-of-speech&gt;
+  &lt;language-status&gt;approved&lt;/language-status&gt;
+  &lt;language-meaning&gt;&hellip; one sentence &hellip;&lt;/language-meaning&gt;
+  &lt;language-detail&gt;&hellip; optional, free-form &hellip;&lt;/language-detail&gt;
+  &lt;a data-rel="alternative_to" href="./harness.term.html"&gt;use this instead&lt;/a&gt;
+&lt;/language-term&gt;</code></pre>
+
+<template id="language-rule">
+  <language-rule>
+    <language-title required></language-title>
+    <language-pass required></language-pass>
+    <language-fail required></language-fail>
+    <language-detail></language-detail>
+    <script required></script>
+  </language-rule>
+</template>
+
+<template id="language-guide">
+  <language-guide>
+    <language-title required></language-title>
+    <language-pass required></language-pass>
+    <language-fail required></language-fail>
+    <language-detail></language-detail>
+  </language-guide>
+</template>
+<pre><code>&lt;language-rule&gt;
+  &lt;language-title&gt;&hellip; the rule, in one line &hellip;&lt;/language-title&gt;
+  &lt;language-pass&gt;&hellip; an example that passes &hellip;&lt;/language-pass&gt;
+  &lt;language-fail&gt;&hellip; an example that fails &hellip;&lt;/language-fail&gt;
+  &lt;language-detail&gt;&hellip; optional, free-form &hellip;&lt;/language-detail&gt;
+  &lt;script&gt;export function check(text) { &hellip; }&lt;/script&gt;
+&lt;/language-rule&gt;
+
+&lt;language-guide&gt;   &lt;!-- same fields, no script --&gt;
+  &lt;language-title&gt;&hellip; the guidance, in one line &hellip;&lt;/language-title&gt;
+  &lt;language-pass&gt;&hellip;&lt;/language-pass&gt;
+  &lt;language-fail&gt;&hellip;&lt;/language-fail&gt;
+&lt;/language-guide&gt;</code></pre>
+
+<h2>What each field is for</h2>
+<p>
+  <code>language-meaning</code> is one sentence, and <code>language-detail</code> is free-form.
+  This is the same split <code>knowledge-title</code> and <code>knowledge-detail</code> already
+  make, applied here for the same reason: a term needs a line you can scan in a list of forty, and
+  separately it often needs its boundary drawn against a neighbouring term, which does not fit on
+  that line. Putting both in one field produces what
+  <a data-rel="depends_on" href="../knowledge/2026-07-30-container-per-fact.observation.html">a node
+  should carry a claim, not an incident</a> warns against, and what actually happened on
+  2026-07-27, when eight nodes averaged 415 characters of title because the field for the rest of
+  the thought went unused.
+</p>
+<p>
+  <strong>A rule carries a check; a guide does not.</strong> That is the entire difference between
+  the two types, and it is why they are two types rather than one with a field saying which.
+  <code>language-rule</code> declares <code>&lt;script required&gt;</code>, so a rule with no
+  check fails its own template and cannot be written. Nothing can claim to be enforced and not be.
+</p>
+<p>
+  A field would have let it. An earlier version of this template had
+  <code>language-checkable</code>, and within two hours it was wrong on one entry: a rule marked
+  as undecidable when the truth was that a machine cannot settle it but can flag every candidate.
+  Eight entries declared themselves checkable while no check existed anywhere. See
+  <a data-rel="depends_on" href="../knowledge/2026-07-31-derive-enforceability-from-check.decision.html">derive
+  enforceability from the check</a>.
+</p>
+<p>
+  A guide is not a lesser rule. "Lead with the fact, not the setup for the fact" is a claim about
+  what a writer was trying to do, and no pattern decides it. Writing it down as a guide is what
+  keeps the audit from being blamed for missing it.
+</p>
+<p>
+  The guard runs one way only. The schema can require a script on a rule; it cannot forbid one on a
+  guide, because the closed-field check inspects <code>language-*</code> children and a
+  <code>&lt;script&gt;</code> is not one. A guide carrying a check would validate, and the audit
+  below catches that instead.
+</p>
+<p>
+  A rejected term points at its replacement with an ordinary
+  <code>&lt;a data-rel="alternative_to"&gt;</code>. That is not enforced here. The schema can require
+  a field, but "a rejected term must link to an approved one" is a property of a pair of documents,
+  which makes it an audit rather than a validator &mdash; and audits are the next pass, not this
+  one.
+</p>
+
+<h2>Validator</h2>
+<p>
+  Validation is handled by the generic validator in <code>template.template.html</code>, using the
+  schema attributes on the two <code>&lt;template&gt;</code> elements above. No hand-written
+  <code>data-validates</code> script: every rule either type needs (required fields, two enums, and
+  the closed field list that rejects a rule's field appearing on a term) is already expressible in
+  that vocabulary, which is the arrangement
+  <a data-rel="depends_on" href="../knowledge/2026-07-25-schema-first-then-optional-validator-function.decision.html">schema
+  first, validator function optional</a> settled.
+</p>
+
+<div class="live-demo">
+  <h4>This section actually runs</h4>
+  <p>
+    One instance of each type, checked in the browser by the same rules the template declares. The
+    term omits <code>language-detail</code>, which is valid; the rule includes it.
+  </p>
+
+  <div id="sample-instance">
+    <language-term data-conforms-to="../templates/language.template.html#language-term">
+      <language-title>scaffolding</language-title>
+      <language-part-of-speech>noun</language-part-of-speech>
+      <language-status>rejected</language-status>
+      <language-meaning>Not used here; the word for what shapes an agent's behaviour is harness.</language-meaning>
+      <a data-rel="alternative_to" href="../language/terms/harness.term.html">harness</a>
+    </language-term>
+
+    <language-rule data-conforms-to="../templates/language.template.html#language-rule">
+      <language-title>Spell every term out; do not abbreviate.</language-title>
+      <language-pass>The generic validator reads the schema attributes on the template.</language-pass>
+      <language-fail>The generic validator reads the schema attrs on the tmpl.</language-fail>
+      <language-detail>
+        <p>Taken from the commit-message rules, where it exists because a commit has to be
+          readable by someone who was not present when it was written.</p>
+      </language-detail>
+      <script>
+        const SHORT = ['attrs', 'tmpl', 'repo', 'info']
+        export function check(text) {
+          return SHORT
+            .filter((word) => new RegExp(`\\b${word}\\b`, 'i').test(text))
+            .map((word) => ({ excerpt: word, message: `write ${word} out in full` }))
+        }
+      </script>
+    </language-rule>
+
+    <language-guide data-conforms-to="../templates/language.template.html#language-guide">
+      <language-title>Lead with the fact, not the setup for the fact.</language-title>
+      <language-pass>Thirteen of fourteen terms appear in all three families.</language-pass>
+      <language-fail>Before getting to the numbers, it is worth setting out how the
+        measurement was done and why it matters.</language-fail>
+      <language-detail>
+        <p>A guide carries no check, which is the whole difference between the two types.
+          Whether a person has led with the fact is a question about what they were trying
+          to do, and no pattern decides it.</p>
+      </language-detail>
+    </language-guide>
+  </div>
+
+  <pre id="validator-output">running&hellip;</pre>
+
+  <script type="module">
+    const FIELDS = {
+      'language-term': {
+        required: ['language-title', 'language-part-of-speech', 'language-status', 'language-meaning'],
+        optional: ['language-detail'],
+        enums: {
+          'language-part-of-speech': ['noun', 'verb', 'adjective', 'adverb', 'phrase'],
+          'language-status': ['approved', 'rejected'],
+        },
+      },
+      'language-rule': {
+        required: ['language-title', 'language-pass', 'language-fail'],
+        optional: ['language-detail'],
+        enums: {},
+      },
+      'language-guide': {
+        required: ['language-title', 'language-pass', 'language-fail'],
+        optional: ['language-detail'],
+        enums: {},
+      },
+    }
+
+    function check(el) {
+      const type = el.tagName.toLowerCase()
+      const schema = FIELDS[type]
+      if (!schema) return { ok: false, errors: [`unknown type <${type}>`] }
+      const errors = []
+      for (const tag of schema.required) {
+        const node = el.querySelector(tag)
+        if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
+      }
+      for (const tag of schema.optional) {
+        const node = el.querySelector(tag)
+        if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
+      }
+      for (const [tag, allowed] of Object.entries(schema.enums)) {
+        const value = el.querySelector(tag)?.textContent.trim()
+        if (value && !allowed.includes(value)) errors.push(`<${tag}> must be ${allowed.join('|')}, got "${value}"`)
+      }
+      // The closed half of the schema: a field belonging to the other type
+      // is an error here, not ignored content.
+      const known = new Set([...schema.required, ...schema.optional])
+      for (const child of el.children) {
+        const tag = child.tagName.toLowerCase()
+        if (tag.startsWith('language-') && !known.has(tag)) errors.push(`<${tag}> is not a field of <${type}>`)
+      }
+      return { ok: errors.length === 0, errors }
+    }
+
+    const out = document.getElementById('validator-output')
+    const results = Array.from(document.getElementById('sample-instance').children)
+      .filter((el) => el.hasAttribute('data-conforms-to'))
+      .map((el) => ({ type: el.tagName.toLowerCase(), ...check(el) }))
+    const bad = results.filter((r) => !r.ok)
+    out.textContent = bad.length === 0
+      ? `PASS: ${results.map((r) => r.type).join(' and ')} both conform`
+      : bad.map((r) => `FAIL ${r.type}: ${r.errors.join('; ')}`).join('\n')
+    out.className = bad.length === 0 ? 'pass' : 'fail'
+  </script>
+</div>
+
+<h2>Authoring commands</h2>
+<p>
+  The same <code>type="mycelium/command"</code> convention
+  <a href="./knowledge.template.html">knowledge.template.html</a> and
+  <a href="./spec.template.html">spec.template.html</a> already use, and each command's own
+  <code>/** &hellip; */</code> comment is its only documentation, so
+  <code>mycelium run language --help</code> and the usage shown here can never drift apart.
+</p>
+<p>
+  <code>link</code> and <code>unlink</code> are both here from the start, unlike in
+  <code>spec.template.html</code>, because this family has a real edge to draw: a rejected term
+  points at its replacement. A family that can create an edge and not remove one leaves a wrong
+  edge standing until someone hand-edits a file, which
+  <a data-rel="depends_on" href="../knowledge/2026-07-31-hand-copied-command-list-reads-as-absence.observation.html">the
+  session that added the command roster</a> ran into directly.
+</p>
+<script type="mycelium/command">
+  const TYPES = ['term', 'rule', 'guide']
+
+  // Fields in the order they should appear in a written document, per type.
+  // The validator does not care about order; a reader does, and every
+  // instance being laid out the same way is what makes forty of them
+  // skimmable.
+  const FIELD_ORDER = {
+    term: ['language-title', 'language-part-of-speech', 'language-status', 'language-meaning', 'language-detail'],
+    rule: ['language-title', 'language-pass', 'language-fail', 'language-detail', 'script'],
+    guide: ['language-title', 'language-pass', 'language-fail', 'language-detail'],
+  }
+
+  // Fields whose value is free-form markup rather than plain text. Kept as
+  // a list rather than a check on the tag name so that adding a rich field
+  // later is one entry here, not a new branch in three places.
+  const RICH_FIELDS = new Set(['language-meaning', 'language-detail', 'language-pass', 'language-fail'])
+
+  // The flag each field is spelled as on the command line, so an error can
+  // name what was actually typed rather than the tag it would have become.
+  const FLAG_FOR = {
+    'language-title': '--title',
+    'language-part-of-speech': '--part-of-speech',
+    'language-status': '--status',
+    'language-meaning': '--meaning',
+    'language-pass': '--pass',
+    'language-fail': '--fail',
+    'language-detail': '--detail',
+    // Not a language-* field, but it moves through the same machinery: it
+    // is required on a rule, forbidden on the other two, and reading it from
+    // stdin is the normal case because a check is longer than a flag.
+    'script': '--check',
+  }
+
+  // Collects every field flag into one object, keyed by the tag it becomes.
+  // add and update both need exactly this and would otherwise each carry
+  // their own copy, which is how the two drift apart.
+  function fieldValues(args) {
+    return {
+      'language-title': args.title,
+      'language-part-of-speech': args['part-of-speech'],
+      'language-status': args.status,
+      'language-meaning': args.meaning,
+      'language-pass': args.pass,
+      'language-fail': args.fail,
+      'language-detail': args.detail,
+      'script': args.check,
+    }
+  }
+
+  // Resolves the one flag passed as "-" against stdin. Only one may be,
+  // since there is a single stdin: a second would read empty, and an empty
+  // required field fails with a message about the field rather than about
+  // the mistake that caused it.
+  async function resolveStdin(values, cli) {
+    const fromStdin = Object.keys(values).filter((tag) => values[tag] === '-')
+    if (fromStdin.length > 1) {
+      const flags = fromStdin.map((tag) => FLAG_FOR[tag]).join(', ')
+      throw new Error(`only one flag can read from stdin; got ${fromStdin.length}: ${flags}`)
+    }
+    if (fromStdin.length === 1) values[fromStdin[0]] = await cli.readStdin()
+  }
+
+  // A flag belonging to the other type is an error, never a no-op. add
+  // writes only the fields its own type declares, so without this check
+  // `add term --pass "…"` would drop --pass on the floor and report
+  // success — the field would simply not be in the file, with nothing said
+  // about it. update has no such gap: it writes whatever it is given and
+  // lets the closed-schema validator reject it, which produces an error
+  // either way. This makes add fail the same way, and earlier, naming the
+  // flag that was typed.
+  function rejectForeignFields(type, values) {
+    const allowed = new Set(FIELD_ORDER[type])
+    for (const tag of Object.keys(values)) {
+      if (values[tag] === undefined || allowed.has(tag)) continue
+      const other = TYPES.find((t) => t !== type && FIELD_ORDER[t].includes(tag))
+      throw new Error(
+        `${FLAG_FOR[tag]} is not a field of language-${type}` +
+        (other ? `; it belongs to language-${other}.` : '.')
+      )
+    }
+  }
+
+  // Where an entry lives, derived from its own name. The .term.html and
+  // .rule.html suffix already says which type a file is, so the directory
+  // follows from it and a caller never has to type one. That is also what
+  // keeps the suffix from being redundant now that the directory repeats it.
+  function pathFor(file) {
+    const match = /\.(term|rule|guide)\.html$/.exec(file)
+    if (!match) throw new Error(`<file> must end in .term.html, .rule.html or .guide.html, got "${file}"`)
+    return `language/${match[1]}s/${file}`
+  }
+
+  function requireArgs(...checks) {
+    for (const [value, label] of checks) {
+      if (value === undefined) throw new Error(`missing required argument: ${label}`)
+    }
+  }
+
+  /**
+   * Create a new language-term, language-rule or language-guide file.
+   *
+   *   mycelium run language add term --title "…" --file <slug>
+   *     --part-of-speech noun|verb|adjective|adverb|phrase
+   *     --status approved|rejected --meaning "…" [--detail "…" | --detail -]
+   *
+   *   mycelium run language add rule --title "…" --file <slug>
+   *     --pass "…" --fail "…" --check - [--detail "…"]
+   *
+   *   mycelium run language add guide --title "…" --file <slug>
+   *     --pass "…" --fail "…" [--detail "…" | --detail -]
+   *
+   * Writes language/terms/<slug>.term.html or language/rules/<slug>.rule.html.
+   * There is NO date prefix and no --date flag, unlike knowledge add and
+   * spec add: an entry here is not an event and does not belong to an
+   * exploration, and entries are looked up by their word. So --file is the
+   * whole name, and a slug carrying a date is rejected — not because it
+   * would acquire a second one, but because it would assert that the word
+   * dates from that day.
+   *
+   * For a term, --title is the word itself and --meaning is one sentence.
+   * For a rule, --title is the rule in one line and --pass/--fail are the
+   * two examples that pin it down; both are required, because a rule
+   * without them is read differently by every reader.
+   *
+   * --pass, --fail and --detail are free-form markup. Pass any of them as
+   * "-" to read that one from stdin, for anything longer than a line.
+   * Only one flag may use "-" per invocation, since there is only one
+   * stdin; asking for two is an error rather than a silent empty field.
+   *
+   * A flag belonging to the other type (--pass on a term, --meaning on a
+   * rule) is rejected by name. It would otherwise be dropped in silence,
+   * since add writes only the fields its own type declares, and the entry
+   * would be created looking correct with the flag's content nowhere.
+   *
+   * A rejected term should point at its replacement, which is a separate
+   * step: mycelium run language link <slug>.term.html <other>.term.html
+   * --rel alternative_to.
+   *
+   * The built node is validated against its own type before anything is
+   * written, so a missing required field, a value outside an enum, or a
+   * field belonging to the other type is rejected and no file appears.
+   */
+  export async function add({ fs, args, cli }) {
+    const type = args._[0]
+    if (!TYPES.includes(type)) {
+      throw new Error(`<type> must be one of ${TYPES.join('|')}, got "${type ?? '(nothing)'}"`)
+    }
+    requireArgs([args.file, '--file'])
+
+    const dated = /^(\d{4}-\d{2}-\d{2})-(.+)$/.exec(args.file)
+    if (dated) {
+      throw new Error(
+        `--file takes a plain slug; language entries carry no date, unlike knowledge and spec ` +
+        `files. Pass --file ${dated[2]}.`
+      )
+    }
+
+    const values = fieldValues(args)
+    rejectForeignFields(type, values)
+    await resolveStdin(values, cli)
+
+    const path = `language/${type}s/${args.file}.${type}.html`
+    const doc = fs.create(path, `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title></title>
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../../templates/language.template.css">
+</head>
+<body>
+
+<language-${type} data-conforms-to="../../templates/language.template.html#language-${type}">
+</language-${type}>
+
+</body>
+</html>
+`)
+
+    const label = { term: 'Term', rule: 'Rule', guide: 'Guide' }[type]
+    doc.querySelector('title').textContent = `${label}: ${args.title}`
+
+    const root = doc.querySelector(`language-${type}`)
+    for (const tag of FIELD_ORDER[type]) {
+      const value = values[tag]
+      if (value === undefined || value === '') continue
+      const el = doc.createElement(tag)
+      if (RICH_FIELDS.has(tag)) el.innerHTML = value
+      else el.textContent = value
+      root.appendChild(el)
+    }
+
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
+  }
+
+  /**
+   * Update fields on an existing language entry.
+   *
+   *   mycelium run language update <file> [--title "…"]
+   *     [--part-of-speech P] [--status approved|rejected] [--meaning "…"]
+   *     [--pass "…"] [--fail "…"] [--check - | --check ""]
+   *     [--detail "…" | --detail - | --detail ""]
+   *
+   * <file> is a whole existing filename including its .term.html or
+   * .rule.html suffix — contrast add, whose --file is a slug you choose.
+   * The type is read off the document's own root element, not passed again,
+   * so a flag belonging to the other type is rejected by name before
+   * anything is read or written, the same as in add.
+   *
+   * Per flag: omitted leaves the field untouched, a value upserts it
+   * (overwrite if present, append if not), and an explicit empty value ("")
+   * removes it. Removing a required field fails validation and the file on
+   * disk is left untouched.
+   */
+  export async function update({ fs, args, cli }) {
+    requireArgs([args._[0], '<file>'])
+    const path = pathFor(args._[0])
+    const doc = fs.get(path)
+    const root = doc.querySelector('[data-conforms-to]')
+    const type = root.tagName.toLowerCase().replace('language-', '')
+
+    const values = fieldValues(args)
+    rejectForeignFields(type, values)
+    await resolveStdin(values, cli)
+
+    // add builds the head <title> as "Term: …"/"Rule: …"; update has to keep
+    // it in step or renaming an entry silently desyncs the two.
+    if (args.title) {
+      const headTitle = doc.querySelector('title')
+      if (headTitle) headTitle.textContent = `${{ term: 'Term', rule: 'Rule', guide: 'Guide' }[type]}: ${args.title}`
+    }
+
+    for (const tag of Object.keys(values)) {
+      const value = values[tag]
+      if (value === undefined) continue
+      const existing = root.querySelector(tag)
+      if (value === '') {
+        existing?.remove()
+        continue
+      }
+      if (existing) {
+        if (RICH_FIELDS.has(tag)) existing.innerHTML = value
+        else existing.textContent = value
+        continue
+      }
+      const el = doc.createElement(tag)
+      if (RICH_FIELDS.has(tag)) el.innerHTML = value
+      else el.textContent = value
+      root.appendChild(el)
+    }
+
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
+  }
+
+  /**
+   * Add a data-rel edge from one entry to another.
+   *
+   *   mycelium run language link <from-file> <to-file> --rel <rel> [--label "…"]
+   *
+   * The edge this family exists to draw is a rejected term pointing at the
+   * word to use instead: --rel alternative_to. The vocabulary is open, the
+   * same as everywhere else here.
+   *
+   * Upserts on (rel, href): re-linking the same pair with the same rel
+   * rewrites that edge's label rather than appending a second copy.
+   */
+  export function link({ fs, args }) {
+    requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
+    fs.get(pathFor(args._[1]))
+    const doc = fs.get(pathFor(args._[0]))
+    const root = doc.querySelector('[data-conforms-to]')
+    const label = args.label ?? ''
+    const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${args.href}"]`)
+    if (existing) {
+      existing.textContent = label
+      return
+    }
+    const a = doc.createElement('a')
+    a.setAttribute('data-rel', args.rel)
+    a.setAttribute('href', args.href)
+    a.textContent = label
+    root.appendChild(a)
+  }
+
+  /**
+   * Remove a data-rel edge from one entry to another.
+   *
+   *   mycelium run language unlink <from-file> <to-file> --rel <rel>
+   *
+   * The inverse of link. Throws if no such edge exists, rather than
+   * silently doing nothing.
+   */
+  export function unlink({ fs, args }) {
+    requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
+    const doc = fs.get(pathFor(args._[0]))
+    const root = doc.querySelector('[data-conforms-to]')
+    const a = root.querySelector(`a[data-rel="${args.rel}"][href="${args.href}"]`)
+    if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
+    a.remove()
+  }
+
+  /**
+   * List the language.
+   *
+   *   mycelium run language list [--type term|rule|guide] [--status S]
+   *
+   * One line per entry: file, type, and the fields that distinguish entries
+   * of that type from each other — status and meaning for a term, whether
+   * and the rule or guidance itself for the other two. A rejected term
+   * also prints the entry it points at, since a rejection with no
+   * replacement is the thing most worth spotting in a list.
+   *
+   * --status is a term field, so passing it excludes every rule and guide.
+   * `list --status rejected` prints rejected terms and nothing else.
+   */
+  export function list({ fs, args }) {
+    const oneLine = (text) => text.trim().replace(/\s+/g, ' ')
+
+    // A filter naming a field the entry's type does not have excludes that
+    // entry, rather than passing over it. --status is a term field, so
+    // `list --status rejected` must not print all fourteen rules alongside
+    // the six rejected terms — which it did, silently, because each type's
+    // filter was checked only inside that type's own branch. A filter that
+    // does not apply reads as a filter that found everything.
+    const FILTER_FIELD = { status: 'language-status' }
+
+    for (const { path, doc } of fs.list('language')) {
+      const el = doc.querySelector('[data-conforms-to]')
+      if (!el) continue
+      const type = el.tagName.toLowerCase().replace('language-', '')
+      if (args.type !== undefined && type !== args.type) continue
+
+      const field = (tag) => oneLine(el.querySelector(tag)?.textContent ?? '')
+      const title = field('language-title')
+
+      const inapplicable = Object.keys(FILTER_FIELD).some(
+        (flag) => args[flag] !== undefined && !FIELD_ORDER[type].includes(FILTER_FIELD[flag]),
+      )
+      if (inapplicable) continue
+
+      if (type === 'term') {
+        const status = field('language-status')
+        if (args.status !== undefined && status !== args.status) continue
+        const replacement = el.querySelector('a[data-rel="alternative_to"]')?.getAttribute('href') ?? ''
+        const arrow = status === 'rejected' ? `  -> ${replacement || '(no replacement)'}` : ''
+        console.log(`${path}\tterm\t${status}\t${title}\t${field('language-meaning')}${arrow}`)
+        continue
+      }
+
+      console.log(`${path}\t${type}\t${title}`)
+    }
+  }
+</script>
+
+<h2>The audit that runs the rules</h2>
+<p>
+  Every rule carrying a <code>&lt;script&gt;</code> is run against the prose of every document.
+  A rule that carries no script is guidance: it is stated and not enforced, and whether a rule is
+  enforced is read off whether the script is there rather than declared in a field that can
+  disagree with it.
+</p>
+<p>
+  A rule's check takes text. That is what lets the same rule apply to a commit message, a comment
+  in a source file, and a field in a document, without any of them being reached for: the text is
+  brought to the rule. Deciding which text is prose belongs here, to the thing that knows what a
+  document is, rather than to each rule.
+</p>
+<script type="module" data-audits="prose-follows-the-language" data-touches="language-rule">
+  // Text no rule may be applied to. A code block is code. Plan boilerplate
+  // quotes the environment a plan runs in. A rule's own failing example
+  // contains, by construction, exactly what that rule forbids. And a
+  // knowledge-prompt is a record of what somebody typed: editing one to
+  // satisfy a style rule would make the record false.
+  //
+  // A quotation is the same case as a prompt, one step removed. Naming a
+  // violation is how you describe one, so a node reporting that a document
+  // says "#349" has to be able to write that. Rewriting the quote to satisfy
+  // the rule would misquote the thing being reported on.
+  const PROTECTED = new Set([
+    'pre', 'code', 'script', 'style',
+    'q', 'blockquote',
+    'knowledge-prompt', 'plan-global-constraints', 'language-fail',
+  ])
+
+  function prose(node) {
+    let out = ''
+    for (const child of Array.from(node.childNodes)) {
+      if (child.nodeType === 3) { out += child.textContent ?? ''; continue }
+      const tag = child.tagName?.toLowerCase()
+      if (!tag || PROTECTED.has(tag)) continue
+      out += prose(child)
+    }
+    return out
+  }
+
+  // Rule scripts load through a data: URL rather than the module hook the
+  // engine uses, so this needs no path arithmetic and works the same way the
+  // browser demos in the other templates already do. The cost is that a rule
+  // loaded this way cannot import a library by bare name: a data: URL has no
+  // base to resolve one against.
+  async function loadRules(fs) {
+    const rules = []
+    for (const path of fs.list('docs/language', { ext: '.rule.html' })) {
+      const script = fs.parse(path).querySelector('language-rule > script')
+      if (!script) continue
+      const mod = await import(`data:text/javascript,${encodeURIComponent(script.textContent)}`)
+      if (typeof mod.check === 'function') rules.push({ path, check: mod.check })
+    }
+    return rules
+  }
+
+  export async function check(fs) {
+    const rules = await loadRules(fs)
+    const violations = []
+
+    // The half the schema cannot state. A rule declares <script required>, so
+    // a rule without a check cannot be written. Nothing forbids a script on a
+    // guide, because the closed-field rule only inspects language-* children
+    // and a <script> is not one. A guide carrying a check would be enforcing
+    // something while filed as guidance, so it is caught here instead.
+    for (const path of fs.list('docs/language/guides', { ext: '.guide.html' })) {
+      if (fs.parse(path).querySelector('language-guide > script')) {
+        violations.push(`${path}: a guide carries a check, so it should be a rule`)
+      }
+    }
+
+    // A rule is run against its own two examples first. The passing one must
+    // come back clean and the failing one must not, so a check that cannot
+    // decide its own examples is caught before it ever reaches the corpus.
+    for (const rule of rules) {
+      const el = fs.parse(rule.path).querySelector('language-rule')
+      const passes = el.querySelector('language-pass')?.textContent ?? ''
+      const fails = el.querySelector('language-fail')?.textContent ?? ''
+      if (rule.check(passes).length > 0) violations.push(`${rule.path}: flags its own passing example`)
+      if (rule.check(fails).length === 0) violations.push(`${rule.path}: does not flag its own failing example`)
+    }
+
+    for (const path of fs.list('docs', { ext: '.html' })) {
+      const body = fs.parse(path).querySelector('body')
+      if (!body) continue
+      const text = prose(body)
+      for (const rule of rules) {
+        for (const found of rule.check(text)) violations.push(`${path}: ${found.message}`)
+      }
+    }
+
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<h2>Conformance</h2>
+<p>
+  Conformance is declared as a <code>data-conforms-to</code> attribute on the element making the
+  claim, the same as every other family here, and it names one of the two fragments above:
+</p>
+<pre><code>&lt;language-term data-conforms-to="../templates/language.template.html#language-term"&gt;
+  &hellip;
+&lt;/language-term&gt;</code></pre>
+
+<h2>What this pass does not do</h2>
+<p>
+  There is no audit yet. Nothing reads these entries and checks a document against them, nothing
+  derives the edges from a document to the terms it uses, and nothing fails a build. The spec keeps
+  four questions open that all have to be answered before an audit can exist: whether the derived
+  uses live in a rebuildable index or in the documents, whether the audit gates or reports, which
+  text it reads, and whether the six <code>data-rel</code> labels move into this family. This file
+  is the shape entries take, so that there are entries to answer those questions with.
+</p>
+
+</body>
+</html>

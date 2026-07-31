@@ -1,0 +1,76 @@
+/* The language-* field vocabulary. Every tag is hyphenated so it can
+   never collide with a current or future standard HTML element, and so it
+   could later be registered as a real custom element if that's ever
+   useful. Selectors stay scoped under their own root type so this file's
+   rules can never leak onto another template's same-named field tags. */
+language-term, language-rule {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  background: var(--code-bg);
+  margin: 1.25rem 0;
+}
+
+language-term > language-title,
+language-rule > language-title {
+  display: block;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 0.35rem;
+}
+
+/* A term's headword is the word itself, so it reads as a dictionary entry
+   rather than as a sentence. A rule's title is a sentence and stays in the
+   body face. */
+language-term > language-title { font-family: var(--mono, ui-monospace, monospace); }
+
+language-term > language-part-of-speech,
+language-term > language-status,
+language-rule > language-checkable {
+  display: inline-block;
+  margin-right: 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+language-term > language-part-of-speech { font-style: italic; }
+language-term > language-status::before { content: "status: "; }
+language-rule > language-checkable::before { content: "machine-checkable: "; }
+
+language-term > language-meaning {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 1.05rem;
+}
+
+language-term > language-detail,
+language-rule > language-detail,
+language-rule > language-pass,
+language-rule > language-fail {
+  display: block;
+  margin-top: 1.5rem;
+}
+
+language-rule > language-pass::before,
+language-rule > language-fail::before,
+language-term > language-detail::before,
+language-rule > language-detail::before {
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  color: var(--accent);
+}
+language-rule > language-pass::before { content: "passes"; }
+language-rule > language-fail::before { content: "fails"; }
+language-term > language-detail::before,
+language-rule > language-detail::before { content: "detail"; }
+
+/* The two examples are the load-bearing part of a rule, so they are set
+   apart from the prose around them rather than reading as more of it. */
+language-rule > language-pass,
+language-rule > language-fail {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+}

@@ -2,20 +2,20 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Action: Split the dictionary into terms and rules directories</title>
+<title>Action: Split the language family into terms and rules directories</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
-  <knowledge-title>Split the dictionary into terms and rules directories</knowledge-title>
+  <knowledge-title>Split the language family into terms and rules directories</knowledge-title>
   <knowledge-confidence>85</knowledge-confidence>
   <knowledge-status>completed</knowledge-status>
   <knowledge-detail><p>
   Forty-nine files in one directory interleave alphabetically, so neither list can be read:
   <code>attributes</code>, <code>attrs</code>, <code>audit</code>, then a rule, then more words.
-  Thirty-five terms and fourteen rules now sit in <code>dictionary/terms/</code> and
-  <code>dictionary/rules/</code>.
+  Thirty-five terms and fourteen rules now sit in <code>language/terms/</code> and
+  <code>language/rules/</code>.
 </p>
 <p>
   A split by type, not by subject. A term goes with terms and a rule with rules, so there is no
@@ -38,7 +38,7 @@
   not have caught, since a file that does not exist yet validates clean.
 </p>
 </knowledge-detail>
-  <knowledge-files>experiments/v4/docs/dictionary/, experiments/v4/docs/templates/dictionary.template.html</knowledge-files>
+  <knowledge-files>experiments/v4/docs/language/, experiments/v4/docs/templates/language.template.html</knowledge-files>
   <knowledge-branch>main</knowledge-branch>
   <a data-rel="depends_on" href="./2026-07-31-dictionary-family-for-voice-and-terms.goal.html">the family this reorganises</a>
 </knowledge-action>

@@ -2,13 +2,13 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Spec: Rename the dictionary family to language</title>
+<title>Spec: Rename the language family to language</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/spec.template.css">
 </head>
 <body>
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
-  <spec-title>Rename the dictionary family to language</spec-title>
+  <spec-title>Rename the language family to language</spec-title>
   <spec-status>draft</spec-status>
   <spec-date>2026-08-01</spec-date>
   <spec-problem>
@@ -41,13 +41,13 @@
 <h3>What changes</h3>
 <table>
   <tbody><tr><th>from</th><th>to</th></tr>
-  <tr><td><code>templates/dictionary.template.html</code></td><td><code>templates/language.template.html</code></td></tr>
+  <tr><td><code>templates/language.template.html</code></td><td><code>templates/language.template.html</code></td></tr>
   <tr><td><code>templates/dictionary.template.css</code></td><td><code>templates/language.template.css</code></td></tr>
-  <tr><td><code>docs/dictionary/{terms,rules,guides}/</code></td><td><code>docs/language/{terms,rules,guides}/</code></td></tr>
-  <tr><td><code>dictionary-term</code>, <code>-rule</code>, <code>-guide</code></td><td><code>language-term</code>, <code>-rule</code>, <code>-guide</code></td></tr>
-  <tr><td><code>dictionary-title</code> and every other field</td><td><code>language-*</code></td></tr>
-  <tr><td><code>mycelium run dictionary …</code></td><td><code>mycelium run language …</code></td></tr>
-  <tr><td><code>prose-follows-the-dictionary</code></td><td><code>prose-follows-the-language</code></td></tr>
+  <tr><td><code>docs/language/{terms,rules,guides}/</code></td><td><code>docs/language/{terms,rules,guides}/</code></td></tr>
+  <tr><td><code>language-term</code>, <code>-rule</code>, <code>-guide</code></td><td><code>language-term</code>, <code>-rule</code>, <code>-guide</code></td></tr>
+  <tr><td><code>language-title</code> and every other field</td><td><code>language-*</code></td></tr>
+  <tr><td><code>mycelium run language …</code></td><td><code>mycelium run language …</code></td></tr>
+  <tr><td><code>prose-follows-the-language</code></td><td><code>prose-follows-the-language</code></td></tr>
 </tbody></table>
 <p>
   Instance filenames do not change. They carry the type, not the family:
@@ -80,7 +80,7 @@
 </ul>
 <p>
   For the prose, the rule is the use and mention distinction that has come up twice already today.
-  A node saying <q>the dictionary family</q> names a thing that still exists under a new name, so it
+  A node saying <q>the language family</q> names a thing that still exists under a new name, so it
   is renamed. A node saying <q>a dictionary that only defines approved words prevents nothing</q>
   uses the ordinary word and is left alone.
 </p>
@@ -133,7 +133,7 @@
   </li>
   <li>
     <strong>What happens to the specification named for the dictionary?</strong>
-    <code>2026-07-31-dictionary-template-html.spec.html</code> names the family in its filename, and
+    <code>2026-07-31-language-template-html.spec.html</code> names the family in its filename, and
     a spec filename carries its date and topic. Renaming the file changes an address; leaving it
     means a spec named for something that no longer exists.
   </li>

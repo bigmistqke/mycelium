@@ -12,7 +12,7 @@
   <knowledge-confidence>90</knowledge-confidence>
   <knowledge-status>completed</knowledge-status>
   <knowledge-detail><p>
-  <code>dictionary-checkable</code> is a declared field, and it claims something the corpus does
+  <code>language-checkable</code> is a declared field, and it claims something the corpus does
   not have. Fourteen rules exist. Eight declare themselves machine-checkable. Zero checks exist.
   A rule marked <code>yes</code> and a rule marked <code>no</code> currently produce exactly the
   same result, which is nothing, so the field records an intention and reads as a capability.
@@ -32,7 +32,7 @@
   do not tag</a> leans on: a derived value can be recomputed, so it cannot rot.
 </p>
 <p>
-  Verified before deciding, not after. A probe document placed in <code>dictionary/</code> with a
+  Verified before deciding, not after. A probe document placed in <code>language/</code> with a
   <code>data-audits</code> script was discovered by the existing validator, received all 364
   corpus documents, and failed the run with a non-zero exit. A second probe resolved a bare npm
   specifier from inside that script. So the mechanism needs no new runner, and reaching a library

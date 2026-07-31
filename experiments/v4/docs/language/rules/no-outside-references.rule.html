@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule: Refer only to things a reader of this repository can open.</title>
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../../templates/language.template.css">
+</head>
+<body>
+<language-rule data-conforms-to="../../templates/language.template.html#language-rule">
+  <language-title>Refer only to things a reader of this repository can open.</language-title>
+  <language-pass>See the decision that imported nodes must link to current material.</language-pass>
+  <language-fail>See #349, and the rejected option C from the earlier discussion.</language-fail>
+  <script type="module">
+    // A reference into the frozen decision log: a bare "#349" in prose, where
+    // the number was a key into a database that no longer exists. It cannot be
+    // followed, cannot be checked, and describes nothing to a reader who never
+    // saw that database.
+    //
+    // Bare ones only. A number inside an href is an anchor and resolves, which
+    // is the form a reference here is supposed to take.
+    export function check(text) {
+      return [...text.matchAll(/(?<![\w"'=\/])#\d+/g)].map((m) => ({
+        excerpt: m[0],
+        message: `bare reference ${m[0]}: cite by path, or describe what it said`,
+      }))
+    }
+  </script>
+</language-rule>
+</body></html>

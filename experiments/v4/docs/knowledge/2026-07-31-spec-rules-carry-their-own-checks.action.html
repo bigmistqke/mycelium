@@ -23,7 +23,7 @@
   external libraries — a rule that wants one imports it, and a rule that does not, does not.
 </p>
 <p>
-  The part worth keeping is that <code>dictionary-pass</code> and <code>dictionary-fail</code>
+  The part worth keeping is that <code>language-pass</code> and <code>language-fail</code>
   turn into the check's own tests. They were already required for a human reason. One audit runs
   every rule's check against its own two examples, so a check that fails to flag its own failing
   example never reaches the corpus, and no separate fixtures have to be kept in step with the
