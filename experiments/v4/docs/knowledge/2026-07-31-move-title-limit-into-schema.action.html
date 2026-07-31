@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Collapse whitespace in the generic validator, then move the title limit into the schema</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Collapse whitespace in the generic validator, then move the title limit into the schema</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>
+  Two commits. <code>24fca48</code> makes the generic validator read a field's value with whitespace
+  collapsed rather than merely trimmed, which was a bug on its own: a value written across indented
+  source lines carried its newlines and leading spaces into everything that read it. The longest
+  title in the corpus measured 139 that way against its real 135, four characters from a limit it
+  was nowhere near. <code>4e55fef</code> then replaces the <code>title-length</code> audit with
+  <code>pattern="^.{1,140}$"</code> on each type's own title field.
+</p>
+<p>
+  The order was forced. The audit's own prose argued that a line-oriented regex silently misses every
+  wrapped title, and 14 of the 47 titles it once caught wrapped. That objection is correct against
+  raw text and answered by the collapse, so the fix had to land first for the rule to be expressible
+  at all.
+</p>
+<p>
+  Verified at the boundary rather than by reading: 140 characters accepted, 141 rejected, nothing
+  written on the rejection. Four audits are now three.
+</p>
+<p>
+  Two costs found while doing it, both recorded in the template rather than left to be discovered.
+  The limit was written once and is now written six times, with nothing checking the six agree. And
+  audits skip <code>templates/</code> while per-instance validation does not, so the sample node
+  carrying a deliberately over-long title to demonstrate the rule would have failed its own
+  template. That fixture had to be shortened, which means the migration is not behaviour-neutral
+  for the templates directory even though it is for the corpus.
+</p>
+</knowledge-detail>
+  <knowledge-commit>4e55fef</knowledge-commit>
+  <knowledge-files>experiments/v4/docs/templates/template.template.html, experiments/v4/docs/templates/knowledge.template.html</knowledge-files>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-07-31-schema-when-vocabulary-allows.decision.html">the decision this carries out</a>
+</knowledge-action>
+</body></html>
