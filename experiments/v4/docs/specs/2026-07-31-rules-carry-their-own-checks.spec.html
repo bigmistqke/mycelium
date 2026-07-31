@@ -50,60 +50,84 @@
   <spec-design>
 <p>
   Delete <code>dictionary-checkable</code>. A <code>dictionary-rule</code> may instead carry a
-  <code>&lt;script data-audits="&lt;rule-slug&gt;"&gt;</code> that exports
-  <code>check(documents)</code>. A rule with a script is enforced. A rule without one is
-  guidance. Enforceability stops being described and becomes observable, so it cannot be wrong.
+  <code>&lt;script&gt;</code> exporting <code>check(text)</code>. A rule with a script is enforced.
+  A rule without one is guidance. Enforceability stops being described and becomes observable, so
+  it cannot be wrong.
 </p>
-<h3>The mechanism already exists, and was measured before this was designed</h3>
+<h3>A check takes text, not documents</h3>
 <p>
-  <code>validate.ts</code> collects <code>script[data-audits]</code> from every document under
-  <code>docs/</code>, excludes only the <code>templates/</code> directory, loads each through the
+  A rule and an audit ask different kinds of question, and
+  <a href="../knowledge/2026-07-31-language-rules-check-strings.observation.html">the distinction</a>
+  decides the whole shape. An audit asks something about a set of documents: is every outcome linked
+  to, is anything an orphan. A rule about writing asks something about a string.
+</p>
+<p>
+  Giving a rule <code>check(documents)</code> and a <code>data-audits</code> marker makes it an
+  audit, and that is what makes reaching comments in <code>src/</code> and messages in git look
+  hard: the checker has to go and find text wherever it lives. Inverted, the problem is not there.
+  Text is brought to the rule. A commit message arrives on stdin, corpus prose arrives from an
+  audit that extracts it, and nothing has to reach outside <code>docs/</code> because nothing is
+  reaching at all.
+</p>
+<h3>One function, three callers, none of them a family</h3>
+<p>
+  <code>dictionary.template.html</code> exports the function that runs every rule against a string,
+  the way <code>knowledge.template.html</code> already exports <code>extractGraph</code> by id for
+  its own <code>generate</code> command to import. <code>mycelium run dictionary lint</code> is a
+  thin wrapper over it.
+</p>
+<ol>
+  <li><code>dictionary lint -</code> reads stdin. Commit messages, drafts, anything.</li>
+  <li>An audit extracts corpus prose and calls the same function, so the graph is checked by the
+    same rules as everything else.</li>
+  <li>A <code>commit-msg</code> hook, once the rules are worth blocking on.</li>
+</ol>
+<p>
+  <strong>Nothing calls it from inside another family.</strong> Wiring it into
+  <code>knowledge add</code> would be the first cross-family import in the system;
+  <a href="../knowledge/2026-07-31-lint-stays-out-of-other-families.decision.html">the decision
+  against it</a> has the test that settles it and the reason the cost is only immediacy. The
+  coupling belongs in a skill or a hook, which already compose commands.
+</p>
+<p>
+  A general <code>mycelium lint</code> with a script type the engine recognises would let any family
+  contribute rules.
+  <a href="../knowledge/2026-07-31-option-mycelium-lint-script-type.option.html">Deferred with a
+  condition</a>: a second family wanting to contribute, because a protocol with one participant
+  coordinates nothing.
+</p>
+<h3>The two examples are the check's tests, directly</h3>
+<p>
+  <code>dictionary-pass</code> and <code>dictionary-fail</code> are required on every rule, for a
+  human reason: a rule stated abstractly is read differently by every reader. They are also strings,
+  and a check takes a string, so running a rule against its own examples needs no fixture and no
+  simulated corpus.
+</p>
+<p>
+  <code>lint</code> verifies every rule against its own two examples as part of its own run. A check
+  that does not flag its failing example is broken. A check that flags its passing example is
+  broken. Neither can reach the corpus without being caught.
+</p>
+<h3>Protected text belongs to the caller</h3>
+<p>
+  No rule may be applied to a code block, the boilerplate quoting a plan's environment, a rule's own
+  failing example, or a <code>knowledge-prompt</code>. That last is a record of what somebody typed,
+  and editing one to satisfy a style rule would make the record false. Cleaning the corpus
+  established this: of 59 occurrences found, 27 sat in protected contexts and 2 of those were inside
+  recorded user messages.
+</p>
+<p>
+  Because a check takes a string, this is not a rule's problem at all. The caller that knows what a
+  document is does the extraction; a commit message needs none. That keeps the logic in one place
+  per caller instead of one place per rule.
+</p>
+<h3>Reaching a library stays a per-rule choice</h3>
+<p>
+  A probe confirmed that a script inside a document resolves a bare npm specifier, through the
   virtual-module hook described in
-  <a href="./2026-07-25-virtual-module-script-imports.spec.html">virtual module script
-  imports</a>, and calls <code>check(documents)</code> with the corpus. A falsy <code>ok</code>
-  fails the run.
-</p>
-<p>
-  A probe document placed in <code>dictionary/</code> confirmed all of it: the script was
-  discovered, received 364 documents, and failed the run with exit code 1. A second probe
-  imported <code>acorn</code> by bare specifier from inside that script and it resolved. So no
-  new runner is needed, and reaching a library is a decision each rule makes for itself rather
-  than one the project makes once.
-</p>
-<p>
-  This is the family's own primitive doing the work. A rule is a document, its enforcement is a
-  script inside that document, and the thing that runs it is the same validator that already
-  runs every other audit.
-</p>
-<h3>The two examples become the check's tests</h3>
-<p>
-  <code>dictionary-pass</code> and <code>dictionary-fail</code> are already required on every
-  rule, and they were required for a human reason: a rule stated abstractly is read differently
-  by every reader. They are also exactly what a check should be tested against.
-</p>
-<p>
-  So one audit, written once and living beside the template, runs every rule's check against that
-  rule's own two examples. A check that does not flag its own failing example is broken. A check
-  that flags its own passing example is broken. Neither can reach the corpus without being caught,
-  and no separate test fixtures have to be invented or kept in step with the prose.
-</p>
-<p>
-  This also gives the pass and fail fields a second job that makes them harder to write carelessly,
-  which is worth having: an example that was decoration now has to be a case the check can actually
-  decide.
-</p>
-<h3>Protected text is a shared concern, not each check's problem</h3>
-<p>
-  No check may read a code block, the boilerplate quoting a plan's environment, a rule's own
-  failing example, or a <code>knowledge-prompt</code>. That last is a record of what somebody
-  typed, and editing one to satisfy a style rule would make the record false. Cleaning the corpus
-  established this: of 59 occurrences found, 27 were in protected contexts and 2 of those were
-  inside recorded user messages.
-</p>
-<p>
-  The selector for that is written and tested. It belongs in <code>templates/shared.ts</code>,
-  imported by every check, rather than reimplemented per rule. A rule that gets it wrong would
-  otherwise report a violation against text nobody may change.
+  <a href="./2026-07-25-virtual-module-script-imports.spec.html">virtual module script imports</a>.
+  So a rule wanting <code>retext-passive</code> imports it, and a rule we implement ourselves
+  imports nothing. Same file shape, and the project never has to adopt a linter wholesale.
 </p>
 <h3>The rules to port, and what they cost</h3>
 <p>
@@ -111,33 +135,45 @@
 </p>
 <table>
   <tbody><tr><th>rule</th><th>flags today</th><th>of</th></tr>
-  <tr><td>title length over 120 characters</td><td>4</td><td>681 titles</td></tr>
   <tr><td>no text outside a declared field</td><td>10</td><td>360 documents</td></tr>
   <tr><td>rejected words</td><td>0</td><td>after the cleanup pass</td></tr>
   <tr><td>bolded paragraph openers</td><td>115</td><td>1200 paragraphs</td></tr>
   <tr><td>em-dash asides</td><td>464</td><td>2011 sentences</td></tr>
 </tbody></table>
 <p>
+  Title length is absent because it is no longer a candidate. It is
+  <a href="../knowledge/2026-07-31-move-title-limit-into-schema.action.html">a
+  <code>pattern</code> on the field</a>, which is where a check goes when the schema can already
+  express it.
+</p>
+<p>
   Sentence length is the one number this spec does not fix. A cap of 25 words, which is what
-  ASD-STE100 uses, flags 519 sentences, a quarter of the corpus. At 40 words it flags 168 and at
-  50 it flags 68. The standard's number was chosen for aircraft maintenance procedures read by
-  non-native speakers, and this corpus is expository prose about software. The number is a
-  judgment about how much rewriting is worth it, and it is left open below.
+  ASD-STE100 uses, flags 519 sentences, a quarter of the corpus. At 40 words it flags 168 and at 50
+  it flags 68. The standard's number was chosen for aircraft maintenance procedures read by
+  non-native speakers, and this corpus is expository prose about software. The number is a judgment
+  about how much rewriting is worth it, and it is left open below.
 </p>
 </spec-design>
   <spec-out-of-scope>
 <p>
-  <strong>Porting all fourteen rules.</strong> This specifies the mechanism. Which rules get
-  checks, and in what order, follows from the counts above.
+  <strong>Porting all fourteen rules.</strong> This specifies the mechanism. Which rules get checks,
+  and in what order, follows from the counts above.
 </p>
 <p>
-  <strong>The migration pass over the existing corpus.</strong> 464 em-dash asides will not be
-  fixed by the commit that makes them detectable, and most of them were written today by the
-  same author writing this.
+  <strong>The migration pass over the existing corpus.</strong> 464 em-dash asides will not be fixed
+  by the commit that makes them detectable, and most of them were written by the same author writing
+  this.
 </p>
 <p>
-  <strong>Adopting an external style guide wholesale.</strong> Rejected in the problem section.
-  A single rule importing a single library is not that.
+  <strong>Wiring lint into another family's commands.</strong> Ruled out rather than deferred; see
+  the design section.
+</p>
+<p>
+  <strong>A protocol-level lint script type.</strong> Deferred with a stated condition, not built.
+</p>
+<p>
+  <strong>Adopting an external style guide wholesale.</strong> A single rule importing a single
+  library is not that.
 </p>
 <p>
   <strong>Deriving term-use edges.</strong> Still open from
@@ -146,36 +182,42 @@
 </p>
 </spec-out-of-scope>
   <spec-open-questions>
+<p>
+  Two questions this spec previously left open are now answered. A check receives text, not
+  documents. And a rule's own examples test it directly, with no fixture.
+</p>
 <ol>
   <li>
-    <strong>Severity.</strong> The runner is binary: a check either fails the run or is silent.
-    Flagging candidates for a person to look at, which is what
-    <code>say-harness-when-you-mean-harness</code> needs, has no place to go. Either a check
-    prints its own advisories and returns <code>ok</code>, which needs no change and hides
-    advisories from any summary, or the runner grows a third outcome. The first is honest and
-    cheap; the second is right if advisories turn out to be common.
+    <strong>What a violation is.</strong> A message alone is enough to report. An offset and an
+    excerpt let a caller point at the place, which matters for a long detail field and matters less
+    for a commit message. The cheaper shape is hard to widen later without touching every rule.
   </li>
   <li>
-    <strong>What a check receives.</strong> Raw documents, as the runner passes them today, means
-    every check repeats the work of selecting prose. Pre-extracted prose means changing the runner
-    for one family's benefit. A shared helper imported by each check is the middle option and
-    costs an import line per rule.
+    <strong>Whether <code>lint</code> exits non-zero.</strong> A linter that only reports is ignored;
+    one that blocks on 464 known violations is turned off. Related to the next question, and
+    probably answered together.
+  </li>
+  <li>
+    <strong>Whether corpus linting joins <code>validate</code> immediately.</strong> Gating across
+    277 existing documents fails on the first run.
+    <a href="../knowledge/2026-07-30-gate-on-shape-not-rate.decision.html">Gate on node shape, not
+    on logging rate</a> is the nearest precedent and suggests gating only what is newly written, but
+    "newly written" needs a definition that does not depend on git, which a reader of the graph
+    cannot follow.
   </li>
   <li>
     <strong>The sentence cap.</strong> 40 words flags 168 sentences, 50 flags 68. Not a technical
     question.
   </li>
   <li>
-    <strong>Whether a rule without a check needs any marking at all.</strong> Absence is already
-    the signal, and adding a field to say so would reintroduce what this spec deletes. But a
-    reader scanning a list cannot see absence, so <code>list</code> may need to show it even
-    though the document does not store it.
+    <strong>Whether a rule without a check needs any marking.</strong> Absence is already the signal,
+    and adding a field to say so reintroduces what this spec deletes. But a reader scanning a list
+    cannot see absence, so <code>list</code> may need to show it even though no document stores it.
   </li>
   <li>
-    <strong>Rules whose check needs configuration.</strong> A length cap has a number in it. If
-    the number lives in the script, changing it is a code edit to a document; if it lives in a
-    field, the field can disagree with the script. The same problem this spec solves for
-    enforceability, one level down.
+    <strong>Rules whose check needs configuration.</strong> A length cap has a number in it. In the
+    script, changing it edits code inside a document. In a field, the field can disagree with the
+    script. The same problem this spec solves for enforceability, one level down.
   </li>
 </ol>
 </spec-open-questions>
