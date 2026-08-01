@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Load a rule through the module hook and give every rule script a type</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Load a rule through the module hook and give every rule script a type</knowledge-title>
+  <knowledge-confidence>95</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Both callers go through <code>importRule</code> in
+<code>docs/templates/load-rule.ts</code> and pass an absolute path, because they
+are rooted differently: the lint command holds a filesystem rooted at
+<code>docs/</code>, the prose audit one rooted a level above it.
+<code>Filesystem</code> gained a reader for its root, which was the only thing
+actually missing.</p>
+<p>Two of the three rule files carried a bare untyped script, which a browser
+executes on page load. They say <code>type="mycelium/rule"</code> now, and
+<code>add</code> and <code>update</code> set it when they create one, so a new
+rule cannot go back to being untyped.</p>
+<p>Checked by what it caught, not by what it did not: lint reports three
+violations across two rule files, the audit fails a planted violation and passes
+once it is removed, and a rule made through <code>add</code> is picked up and
+run.</p>
+</knowledge-detail>
+  <knowledge-commit>8a4040f</knowledge-commit>
+  <knowledge-files>experiments/v4/docs/templates/load-rule.ts, experiments/v4/docs/templates/language.template.html, experiments/v4/src/run.ts, experiments/v4/docs/language/rules</knowledge-files>
+  <knowledge-branch>v4-html-language-support</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-08-01-html-editor-language-support.goal.html">a step of this goal</a>
+</knowledge-action>
+</body></html>

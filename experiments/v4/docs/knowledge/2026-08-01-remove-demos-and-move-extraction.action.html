@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Remove the in-page demos and move graph extraction into a file</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Remove the in-page demos and move graph extraction into a file</knowledge-title>
+  <knowledge-confidence>95</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Six demo blocks and their output elements are gone, and the boxes that held
+them now say worked example rather than claiming to run. The sample instances
+stay, because they are not illustrations: <code>validate.ts</code> finds them by
+their <code>data-conforms-to</code> like any other instance, so a template still
+fails when its own examples stop conforming.</p>
+<p><code>extractGraph</code> moved to <code>docs/templates/extract-graph.ts</code>
+and all three callers import it, which ended the two twenty-line copies the two
+edge-reading audits carried.</p>
+<p>Browser-facing script in the corpus fell from 320 lines to 101, and the one
+module script left is the generic validator that <code>src/utils.ts</code>
+imports.</p>
+</knowledge-detail>
+  <knowledge-commit>bc9a2dd</knowledge-commit>
+  <knowledge-files>experiments/v4/docs/templates, experiments/v4/docs/DESIGN.html, experiments/v4/docs/templates/extract-graph.ts, experiments/v4/docs/theme.css</knowledge-files>
+  <knowledge-branch>v4-html-language-support</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-08-01-html-editor-language-support.goal.html">a step of this goal</a>
+  <a data-rel="depends_on" href="./2026-08-01-remove-in-page-demos.decision.html">implements the decision</a>
+  <a data-rel="depends_on" href="./2026-08-01-shared-snippet-is-a-file.decision.html">implements the decision</a>
+</knowledge-action>
+</body></html>
