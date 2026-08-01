@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Branch language lint by file extension, with a markdown-to-fragment path for the two markup rules</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Branch language lint by file extension, with a markdown-to-fragment path for the two markup rules</knowledge-title>
+  <knowledge-confidence>88</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Factored the audit's own text extraction (a <q>PROTECTED</q> tag set, a <q>BLOCK</q> tag set, and
+the recursive <code>prose()</code> walk) out of <code>prose-follows-the-language</code>'s script and
+into a new <code>docs/templates/language-prose.ts</code>, so the audit and <code>lint</code> hold
+documents to the exact same idea of checkable prose instead of two copies that could drift.</p>
+<p><code>language lint</code> now takes either <code>-</code> (unchanged: stdin text, no document,
+so a rule about markup finds nothing, correctly) or a file path. A <code>.html</code> path is parsed
+into a real document and stripped of protected elements, matching what the corpus audit does.
+Anything else is treated as markdown and run through a new, deliberately minimal
+<code>markdownToHtmlFragment</code>: a <code>&lt;p&gt;</code> per paragraph so paragraph-length can
+count sentences, a heading and each list item on its own line so they do not run into a neighbor,
+backtick spans become <code>&lt;code&gt;</code> so they are excluded the same way a real
+<code>&lt;code&gt;</code> tag is, and <code>**bold**</code>/<code>__bold__</code> becomes
+<code>&lt;strong&gt;</code> so a mini-headline opener is a real element the same rule already looks
+for. Not a markdown renderer — links, tables, and nested lists stay literal text.</p>
+<p>Verified against README.md itself: five real sentence-length violations surfaced that stdin-piped
+linting could never have found, since paragraph-length and no-bolded-mini-headlines both silently
+no-op with no document behind the text, on any input. A deliberately bad fixture (a bolded opener, a
+five-sentence paragraph) confirmed both markup rules fire correctly on markdown, not just HTML.
+<code>pnpm mycelium language lint docs/templates/knowledge.template.html</code> still exits clean,
+matching what <code>pnpm validate</code> already says about that file. <code>pnpm validate</code>
+stays at 782 checked, 0 fail; <code>pnpm typecheck</code> stays clean.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-01-lint-branches-by-extension.goal.html">fulfills this goal</a>
+</knowledge-action>
+</body></html>

@@ -278,6 +278,8 @@
   import type { CommandContext } from "../../src/api.ts"
   import { loadModule } from "../../src/utils.ts"
   import { resolve as resolvePath } from "node:path"
+  import { readFileSync } from "node:fs"
+  import { stripProtected, extractProse, markdownToHtmlFragment } from "./language-prose.ts"
   const TYPES = ['term', 'rule', 'guide']
 
   // Fields in the order they should appear in a written document, per type.
@@ -594,25 +596,52 @@
    * Check text against every rule that carries a check.
    *
    *   mycelium run language lint -
+   *   mycelium run language lint <file>
    *
-   * Reads the text on standard input and reports every rule it breaks, one
-   * line each, then exits non-zero. Prints nothing and exits zero when the
-   * text is clean.
+   * `-` reads the text to check on standard input; this is the only mode
+   * with no document behind it (a commit message, say, which does not exist
+   * as a file until the commit does), so a rule about markup finds nothing
+   * to look at, which is correct — only a rule reading plain text can fire.
    *
-   * This exists for text that is not in a file. Prose inside the corpus is
-   * already checked by the prose-follows-the-language audit on every
-   * `mycelium validate` run, and an audit can reach any file it likes. A
-   * commit message cannot be reached at all: it does not exist until the
-   * commit does. So it is piped here instead.
+   * `<file>` reads that file from disk, resolved from the current working
+   * directory. A `.html` file is parsed into a real document and stripped
+   * of every protected element, the same as the prose-follows-the-language
+   * audit does for a real corpus document, so every rule — including one
+   * that reads markup — runs exactly as it would once the file joins
+   * docs/. Any other extension is treated as markdown: converted to just
+   * enough HTML for a rule about markup to have something real to read (a
+   * `<p>` per paragraph, `<code>` for a backtick span, `<strong>` for
+   * `**bold**`), not rendered. This is what makes checking a README or a
+   * spec still being drafted possible before it is corpus HTML, or ever
+   * becomes it.
+   *
+   * Either way, reports every rule the text breaks, one line each, then
+   * exits non-zero. Prints nothing and exits zero when the text is clean.
    *
    * Only rules run, not guides. A guide carries no check by definition, so
    * there is nothing for it to contribute.
    */
   export async function lint({ fs, args, cli }: CommandContext) {
-    if (args._[0] !== '-') {
-      throw new Error('usage: language lint -   (reads the text to check on standard input)')
+    const target = args._[0]
+    if (!target) {
+      throw new Error('usage: language lint -   or   language lint <file>')
     }
-    const text = await cli.readStdin()
+
+    let text: string
+    let node: any
+
+    if (target === '-') {
+      text = await cli.readStdin()
+    } else {
+      const raw = readFileSync(resolvePath(process.cwd(), target), 'utf8')
+      // A .html file is already a full document; markdown is only a
+      // fragment, so it needs a body to sit inside before it can be parsed.
+      const { document } = target.endsWith('.html')
+        ? cli.parseHTML(raw)
+        : cli.parseHTML(`<body>${markdownToHtmlFragment(raw)}</body>`)
+      node = stripProtected(document.querySelector('body'))
+      text = extractProse(node)
+    }
 
     const violations = []
 
@@ -637,9 +666,10 @@
       // to this filesystem's root, which is what resolvePath needs here.
       const mod = await loadModule(resolvePath(fs.root, path), script)
       if (typeof mod.check !== 'function') continue
-      // No second argument: text on stdin has no document behind it, so a
-      // rule about markup finds nothing here, which is correct.
-      for (const found of mod.check(text, undefined, language)) {
+      // node is undefined for stdin — a rule about markup finds nothing
+      // there, which is correct — and a real (stripped) document for a
+      // file, matching what the corpus audit hands the same rule.
+      for (const found of mod.check(text, node, language)) {
         violations.push(`${path}: ${found.message ?? found.excerpt}`)
       }
     }
@@ -714,6 +744,7 @@
   import type { AuditFs } from "../../src/api.ts"
   import { loadModule } from "../../src/utils.ts"
   import { resolve as resolvePath } from "node:path"
+  import { PROTECTED_TAGS, extractProse } from "./language-prose.ts"
   /**
    * Prose in the corpus obeys every rule that carries a check.
    *
@@ -731,29 +762,12 @@
   // violation is how you describe one, so a node reporting that a document
   // says "#349" has to be able to write that. Rewriting the quote to satisfy
   // the rule would misquote the thing being reported on.
-  const PROTECTED = new Set([
-    'pre', 'code', 'script', 'style',
-    'q', 'blockquote', 'language-avoid',
-    'knowledge-prompt', 'plan-global-constraints', 'language-fail',
-  ])
-
-  // A block element ends with a newline, so two paragraphs do not run together
-  // into one sentence. Without it the text reads "…scripts.The roster…", which
-  // no sentence split can break, and a rule counting words per sentence
-  // measures whole paragraphs.
-  const BLOCK = new Set(['p', 'li', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'td', 'th', 'dt', 'dd', 'figcaption'])
-
-  function prose(node) {
-    let out = ''
-    for (const child of Array.from(node.childNodes)) {
-      if (child.nodeType === 3) { out += child.textContent ?? ''; continue }
-      const tag = child.tagName?.toLowerCase()
-      if (!tag || PROTECTED.has(tag)) continue
-      out += prose(child)
-      if (BLOCK.has(tag)) out += '\n'
-    }
-    return out
-  }
+  //
+  // Shared with language lint's file mode in language-prose.ts, so an ad-hoc
+  // document checked before it joins the corpus is held to the same idea of
+  // checkable prose as this audit already holds every real document to.
+  const PROTECTED = PROTECTED_TAGS
+  const prose = extractProse
 
   // Rule scripts load through the same module hook the engine uses for every
   // other embedded script, so a rule can import and can be TypeScript. An

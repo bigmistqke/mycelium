@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: AuditFs is already rooted above docs/ specifically so a language rule could reach a source-file comment</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>AuditFs is already rooted above docs/ specifically so a language rule could reach a source-file comment</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-detail><p>src/api.ts's own doc comment on <code>AuditFs</code> says why it is rooted one level above
+<code>docs/</code> rather than at it: "a rule about language applies to a comment in a source file
+as much as to prose in a document, and an audit that can only see HTML can never say so." Nothing
+uses that reach yet — <code>prose-follows-the-language</code> only calls
+<code>fs.list('docs', { ext: '.html' })</code> — but the interface already supports listing and
+reading files by extension outside <code>docs/</code>, which is most of what checking JSDoc and
+comments in <code>.ts</code>/<code>.js</code> files would need on the audit side.</p>
+<p>Not implemented now: the immediate request was extension-based dispatch in <code>lint</code> for
+<code>.html</code> versus <code>.md</code>. Comments/JSDoc would need its own text-extraction step
+(strip code, keep only comment bodies) the same way <code>prose()</code> strips markup down to
+checkable text for HTML today.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-01-lint-branches-by-extension.goal.html">the future direction this goal's design should leave room for</a>
+</knowledge-observation>
+</body></html>
