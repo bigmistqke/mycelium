@@ -31,6 +31,8 @@ import type ts from "typescript"
 export interface ScriptBlock {
   /** Script type attribute, "" for a classic script with none. */
   type: string
+  /** The script's id attribute, if it has one — what a locator "#id" addresses. */
+  id: string | undefined
   /** Offset of the block's content in the containing HTML file. */
   start: number
   text: string
@@ -45,7 +47,8 @@ export function findScriptBlocks(html: string): ScriptBlock[] {
     const attrs = match[1]
     const text = match[2]
     const type = /type\s*=\s*"([^"]*)"/.exec(attrs)?.[1] ?? ""
-    blocks.push({ type, start: match.index + match[0].indexOf(">", 1 + attrs.length) + 1, text })
+    const id = /\bid\s*=\s*"([^"]*)"/.exec(attrs)?.[1]
+    blocks.push({ type, id, start: match.index + match[0].indexOf(">", 1 + attrs.length) + 1, text })
   }
   return blocks
 }
@@ -58,21 +61,113 @@ export function isNodeOnly(type: string): boolean {
   return type.startsWith("mycelium/")
 }
 
-// One mapping covering the whole block: every position in the virtual file
-// corresponds to a position in the source, offset by where the block starts. No
-// generated text is added, so there is nothing to exclude.
-function wholeBlockMapping(block: ScriptBlock): CodeMapping {
+function extensionFor(block: ScriptBlock): ".ts" | ".js" {
+  return isNodeOnly(block.type) ? ".ts" : ".js"
+}
+
+// The same locator a bare "#<locator>" resolves to at run time
+// (src/script-hooks.ts's resolve()): either the id an author wrote, or "@N",
+// the Nth <script> tag in the document — computed identically here and there
+// from the same real file, so a block with no id is still addressable.
+function findBlockIndexByLocator(blocks: ScriptBlock[], locator: string): number | undefined {
+  if (locator.startsWith("@")) {
+    const index = Number(locator.slice(1))
+    return blocks[index] ? index : undefined
+  }
+  const index = blocks.findIndex((b) => b.id === locator)
+  return index === -1 ? undefined : index
+}
+
+// A module specifier sitting right after "from" or "import"/"import(" — the
+// same shapes script-hooks.ts's resolve() has to handle at run time, minus
+// specifiers built by string concatenation, which neither hook can see
+// through. Text scanning rather than parsing, same tradeoff findScriptBlocks
+// above already makes, so a "#…" string sitting inside a comment or an
+// unrelated string literal at exactly that position could false-match; not
+// solved here, same as it is not solved there.
+const HASH_SPECIFIER = /(?<=\b(?:from|import)\s*\(?\s*)(['"])#([^'"]*)\1/g
+
+// Builds one block's virtual file text and its mapping back to the HTML
+// source. A bare "#locator" import is TypeScript's own reserved
+// package-subpath-import syntax — it has no idea this project overloads it to
+// mean "the sibling script with this id", which script-hooks.ts's resolve()
+// does at run time — so left alone it is always "cannot find module".
+// Rewriting it here to a real relative path to that sibling's own virtual
+// file lets TypeScript's ordinary module resolution do the rest.
+//
+// This has to happen at the text level: nothing in @volar/typescript's plugin
+// surface survives past project creation to hang a custom resolver on.
+// resolveLanguageServiceHost looked like the hook for it, but
+// createProject.js unconditionally reinstalls resolveModuleNameLiterals right
+// after calling every plugin's hook — read directly out of the installed
+// package rather than assumed from the type signature, after wiring it up
+// once and it doing nothing.
+//
+// Only the locator's own quoted text is replaced; everything else is copied
+// through unchanged. generatedLengths lets one mapping segment have a
+// different length on each side, so a diagnostic on a locator that resolves
+// to nothing still lands on the original "#locator" text in the HTML file,
+// not on where the replacement would have been.
+function buildBlockCode(
+  block: ScriptBlock,
+  blocks: ScriptBlock[],
+  htmlBaseName: string,
+): { text: string; mapping: CodeMapping } {
+  const sourceOffsets: number[] = []
+  const generatedOffsets: number[] = []
+  const lengths: number[] = []
+  const generatedLengths: number[] = []
+  let generatedText = ""
+  let cursor = 0
+
+  function copyThrough(end: number) {
+    if (end <= cursor) return
+    const length = end - cursor
+    sourceOffsets.push(block.start + cursor)
+    generatedOffsets.push(generatedText.length)
+    lengths.push(length)
+    generatedLengths.push(length)
+    generatedText += block.text.slice(cursor, end)
+    cursor = end
+  }
+
+  for (const match of block.text.matchAll(HASH_SPECIFIER)) {
+    const quote = match[1]
+    const matchStart = match.index
+    const matchEnd = matchStart + match[0].length
+    copyThrough(matchStart)
+
+    const locator = decodeURIComponent(match[2])
+    const targetIndex = findBlockIndexByLocator(blocks, locator)
+    const replacement =
+      targetIndex === undefined
+        ? match[0] // no such sibling — leave it, so "cannot find module" still fires
+        : `${quote}./${htmlBaseName}.${targetIndex}${extensionFor(blocks[targetIndex])}${quote}`
+
+    sourceOffsets.push(block.start + matchStart)
+    generatedOffsets.push(generatedText.length)
+    lengths.push(match[0].length)
+    generatedLengths.push(replacement.length)
+    generatedText += replacement
+    cursor = matchEnd
+  }
+  copyThrough(block.text.length)
+
   return {
-    sourceOffsets: [block.start],
-    generatedOffsets: [0],
-    lengths: [block.text.length],
-    data: {
-      verification: true,
-      completion: true,
-      semantic: true,
-      navigation: true,
-      structure: true,
-      format: false,
+    text: generatedText,
+    mapping: {
+      sourceOffsets,
+      generatedOffsets,
+      lengths,
+      generatedLengths,
+      data: {
+        verification: true,
+        completion: true,
+        semantic: true,
+        navigation: true,
+        structure: true,
+        format: false,
+      },
     },
   }
 }
@@ -98,10 +193,15 @@ export function createMyceliumLanguagePlugin(
       return undefined
     },
 
-    createVirtualCode(_uri, languageId, snapshot) {
+    createVirtualCode(uri, languageId, snapshot) {
       if (languageId !== "html") return undefined
       const html = snapshot.getText(0, snapshot.getLength())
       const blocks = findScriptBlocks(html)
+      // getExtraServiceScripts below names a block's virtual file
+      // "${fileName}.${i}${ext}", so every block from this document shares
+      // one directory — the specifiers buildBlockCode writes only need this
+      // basename, not the full path, to reach a sibling.
+      const htmlBaseName = uri.path.slice(uri.path.lastIndexOf("/") + 1)
       return {
         id: "root",
         languageId: "html",
@@ -109,12 +209,15 @@ export function createMyceliumLanguagePlugin(
         // The root itself maps nothing: the HTML around the scripts is not
         // code, and claiming it is would put TypeScript diagnostics on prose.
         mappings: [],
-        embeddedCodes: blocks.map((block, i) => ({
-          id: `script_${i}`,
-          languageId: isNodeOnly(block.type) ? "typescript" : "javascript",
-          snapshot: snapshotOf(block.text),
-          mappings: [wholeBlockMapping(block)],
-        })),
+        embeddedCodes: blocks.map((block, i) => {
+          const { text, mapping } = buildBlockCode(block, blocks, htmlBaseName)
+          return {
+            id: `script_${i}`,
+            languageId: isNodeOnly(block.type) ? "typescript" : "javascript",
+            snapshot: snapshotOf(text),
+            mappings: [mapping],
+          }
+        }),
         blocks,
       }
     },
@@ -141,7 +244,7 @@ export function createMyceliumLanguagePlugin(
         const blocks = (root as MyceliumRoot).blocks
         return root.embeddedCodes!.map((code, i) => {
           const block = blocks[i]
-          const ext = isNodeOnly(block.type) ? ".ts" : ".js"
+          const ext = extensionFor(block)
           return {
             fileName: `${fileName}.${i}${ext}`,
             code,
