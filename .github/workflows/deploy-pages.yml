@@ -50,7 +50,7 @@ jobs:
       # web that the project already knows are malformed. This is the same
       # command used locally and it exits non-zero on any failure.
       - name: Validate the graph
-        run: pnpm validate
+        run: pnpm mycelium validate
 
       - name: Build the index
         run: node src/run.ts knowledge generate graph --out index.html

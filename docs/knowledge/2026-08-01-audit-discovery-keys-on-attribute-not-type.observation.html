@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Audit discovery keys on data-audits, not on the mycelium/audit type every audit also carries</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>Audit discovery keys on data-audits, not on the mycelium/audit type every audit also carries</knowledge-title>
+  <knowledge-confidence>95</knowledge-confidence>
+  <knowledge-detail><p>
+  Every audit script in the corpus carries two markers:
+  <code>type="mycelium/audit"</code> and <code>data-audits="&lt;name&gt;"</code>.
+  Only the second one decides anything. Both <code>src/run.ts</code> and
+  <code>src/validate.ts</code> query <code>script[data-audits]</code>, so an audit
+  dropping its type attribute would still run, and one dropping
+  <code>data-audits</code> would vanish from the roster and from
+  <code>pnpm validate</code>.
+</p>
+<p>
+  The type attribute still earns its place, though not for discovery:
+  <code>src/script-hooks.ts</code> keys on the <code>mycelium/</code> prefix to load
+  the block as TypeScript rather than plain JavaScript.
+</p>
+<p>
+  Moving discovery onto the script type looks tidier and costs something concrete.
+  <code>data-audits</code> carries the audit's name, which the roster prints and
+  which a failure reports. A bare type carries no value, so the name would need
+  another attribute and the marker count lands back where it started.
+</p>
+<p>
+  Two more attributes already hang off the same script, <code>data-touches</code> and
+  <code>data-expects</code>, so an audit declares itself in attributes rather than in
+  its type. Any change here should move all four together or leave them alone.
+</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-31-audit-belongs-to-template-vocabulary.decision.html">the decision that put an audit in the template vocabulary, which left its discovery marker open</a>
+  <a data-rel="supports" href="./2026-08-01-rule-is-not-a-core-script-type.observation.html">the same finding in detail: core names one script type and reaches everything else by attribute</a>
+</knowledge-observation>
+</body></html>

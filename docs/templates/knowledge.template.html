@@ -273,12 +273,16 @@
 </p>
 <p>
   The convention: <code>data-validates="#id"</code> marks a script checking one instance against one
-  template (<code>check(root)</code>); <code>data-audits="name"</code> marks a script checking the whole
-  graph (<code>check(documents)</code>, an array of <code>{path, dom}</code> &mdash; the crawler hands over
-  parsed files, not a pre-built graph, so extraction stays the audit's own job), with
-  <code>data-touches</code> listing which types it concerns
-  &mdash; queryable the same way <code>data-rel</code> makes an edge queryable, instead of leaving it as
-  prose only a person reading this paragraph would know.
+  template, through <code>check(root)</code>. <code>data-audits="name"</code> marks a script checking the
+  whole graph, through <code>check(fs)</code>, where <code>fs</code> is a read-only
+  <code>AuditFs</code> that lists, reads and parses files on demand. The engine hands over the tree
+  rather than a pre-built graph, so extraction stays the audit's own job, and its root sits one level
+  above <code>docs/</code> so a check can reach <code>src/</code> as well.
+</p>
+<p>
+  <code>data-touches</code> lists which types an audit concerns, queryable the same way
+  <code>data-rel</code> makes an edge queryable, instead of leaving it as prose only a person reading
+  this paragraph would know.
 </p>
 
 <h3>orphans-except-goal</h3>
@@ -504,7 +508,7 @@
   <code>type="mycelium/command"</code> instead of <code>type="module"</code>. Never run in a browser: no
   live demo below, unlike every <code>data-audits</code> script above. Each
   command's own <code>/** &hellip; */</code> comment is its only documentation &mdash;
-  <code>mycelium run knowledge --help</code> (or an unrecognized command) prints every exported command's
+  <code>mycelium knowledge --help</code> (or an unrecognized command) prints every exported command's
   name and doc comment straight from this file, so the usage shown here and the usage the CLI reports can
   never drift apart.
 </p>
@@ -532,7 +536,7 @@
   /**
    * Create a new knowledge-<type> node file.
    *
-   *   mycelium run knowledge add <type> --title "…" --confidence NN --file <undated-slug>
+   *   mycelium knowledge add <type> --title "…" --confidence NN --file <undated-slug>
    *     [--status pending|active|completed|rejected] [--prompt "…"]
    *     [--detail "…" | --detail -] [--commit HASH] [--files "…"] [--branch NAME]
    *     [--date YYYY-MM-DD]
@@ -642,7 +646,7 @@
   /**
    * Add a data-rel edge from one existing node to another.
    *
-   *   mycelium run knowledge link <from-file> <to-file> --rel <rel> [--label "…"]
+   *   mycelium knowledge link <from-file> <to-file> --rel <rel> [--label "…"]
    *
    * <rel> is one of depends_on|blocks|supports|contradicts|alternative_to|
    * leads_to, or a new label if the project genuinely needs one — the
@@ -678,7 +682,7 @@
   /**
    * Delete a knowledge node file.
    *
-   *   mycelium run knowledge delete <file>
+   *   mycelium knowledge delete <file>
    *
    * Deletes the node AND every edge pointing at it, leaving no broken
    * references. Outgoing edges need no handling — they go with the file.
@@ -708,7 +712,7 @@
   /**
    * Remove a data-rel edge from one node to another.
    *
-   *   mycelium run knowledge unlink <from-file> <to-file> --rel <rel>
+   *   mycelium knowledge unlink <from-file> <to-file> --rel <rel>
    *
    * The inverse of `link`. Without it an edge could be created and its
    * label corrected but never taken back, so a typo in --rel left a
@@ -727,7 +731,7 @@
   /**
    * Update fields on an existing knowledge-<type> node file.
    *
-   *   mycelium run knowledge update <file> [--title "…"] [--confidence NN]
+   *   mycelium knowledge update <file> [--title "…"] [--confidence NN]
    *     [--status pending|active|completed|rejected] [--prompt "…"]
    *     [--detail "…" | --detail - | --detail ""] [--commit HASH]
    *     [--files "…"] [--branch NAME]
@@ -801,8 +805,8 @@
   /**
    * List every node or edge in the real knowledge graph (docs/knowledge/).
    *
-   *   mycelium run knowledge list nodes [--status S] [--type T]
-   *   mycelium run knowledge list edges
+   *   mycelium knowledge list nodes [--status S] [--type T]
+   *   mycelium knowledge list edges
    *
    * nodes: one line per file — path, type, status, title, and a [+detail]
    * marker. The parser reads the type from the root element tag. Status is
@@ -855,7 +859,7 @@
   /**
    * Print the graph's live threads, for reading at the start of a session.
    *
-   *   mycelium run knowledge recover
+   *   mycelium knowledge recover
    *
    * Three questions a new session needs answered, none of which `list`
    * can express because each is a property of the graph rather than of
@@ -1349,7 +1353,7 @@ ${cardCss}
   /**
    * Generate a visualization of the knowledge graph.
    *
-   *   mycelium run knowledge generate graph [--out <path>] [--base [<href>]]
+   *   mycelium knowledge generate graph [--out <path>] [--base [<href>]]
    *
    * Walks every knowledge/*.html file and extracts {nodes, edges} via
    * extractGraph (imported from ./extract-graph.ts, the same copy the two

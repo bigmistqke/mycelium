@@ -159,7 +159,7 @@
   <a href="./knowledge.template.html">knowledge.template.html</a> already uses, and the same reasons: never
   run in a browser (no live demo below, unlike <code>template.template.html</code>'s validator above), and each
   command's own <code>/** &hellip; */</code> comment is its only documentation, so
-  <code>mycelium run spec --help</code> and the usage shown here can never drift apart. No
+  <code>mycelium spec --help</code> and the usage shown here can never drift apart. No
   <code>link</code>: every cross-reference a spec makes already lives inside one of its rich fields' own
   markup (a <code>&lt;a data-rel&gt;</code> written directly into <code>--body</code>'s content), so there's
   no separate "attach an edge" operation the way <code>knowledge-*</code> needs one. No <code>list</code>,
@@ -201,7 +201,7 @@
   /**
    * Create a new spec-doc file.
    *
-   *   mycelium run spec add --title "…" --file <undated-topic>
+   *   mycelium spec add --title "…" --file <undated-topic>
    *     [--status draft|approved|implemented] [--body "…" | --body -]
    *
    * --file is required and becomes docs/specs/<today's-date>-<topic>.spec.html
@@ -287,7 +287,7 @@
   /**
    * Update fields on an existing spec-doc file.
    *
-   *   mycelium run spec update <file> [--title "…"]
+   *   mycelium spec update <file> [--title "…"]
    *     [--status draft|approved|implemented] [--body "…" | --body -]
    *
    * <file> is an existing docs/specs/<date>-<topic>.spec.html file.

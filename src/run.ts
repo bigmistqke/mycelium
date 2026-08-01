@@ -1,4 +1,4 @@
-// mycelium run <id> <command> [args…]. Protocol-only, same discipline as
+// mycelium <id> <command> [args…]. Protocol-only, same discipline as
 // validate.ts: the engine knows <template>, data-conforms-to, and how to find
 // the one script[type="mycelium/command"] a template file declares — never
 // what any command actually does. See
@@ -362,8 +362,8 @@ function readCommands(source: string): { name: string; summary: string }[] {
 // <script> tag alone would find a dozen frozen copies of older versions of
 // these same commands and list them as real.
 function printRoster(docsDir: string, stream: (line: string) => void) {
-  stream("usage: mycelium run <id> <command> [args…]")
-  stream("       mycelium run <id> --help          every flag and caveat for one family")
+  stream("usage: mycelium <id> <command> [args…]")
+  stream("       mycelium <id> --help          every flag and caveat for one family")
   stream("")
 
   const hosts = walkHtmlFiles(docsDir)
@@ -488,7 +488,7 @@ function exitQuietlyOnClosedPipe() {
 
 async function main() {
   exitQuietlyOnClosedPipe()
-  const [id, command, ...rest] = process.argv.slice(2)
+  const [id, namedCommand, ...rest] = process.argv.slice(2)
   const docsDir = resolvePath("./docs")
 
   // Help someone asked for goes to stdout and exits 0; help printed because
@@ -523,6 +523,19 @@ async function main() {
   const source = script.textContent ?? ""
   const mod = await loadModule(templateFile, script)
 
+  // A host may export a default, for when naming a subcommand would only
+  // repeat the host's own name: `mycelium validate` rather than `mycelium
+  // validate validate`. A flag in the subcommand slot belongs to that
+  // default too, so `mycelium validate --dir x` reads as one invocation
+  // rather than a command named "--dir". Asking for --help still prints
+  // help instead of running anything, and a host with no default still
+  // prints help when nothing follows it, exactly as before.
+  const isHelp = namedCommand === "--help" || namedCommand === "-h"
+  const useDefault =
+    typeof mod.default === "function" && !isHelp && (!namedCommand || namedCommand.startsWith("-"))
+  const command = useDefault ? "default" : namedCommand
+  const commandArgs = useDefault && namedCommand ? [namedCommand, ...rest] : rest
+
   if (!command || command === "--help" || command === "-h") {
     printHelp(id, templateLabel, mod, source, command ? out : err)
     process.exit(command ? 0 : 1)
@@ -535,7 +548,7 @@ async function main() {
     process.exit(1)
   }
 
-  const args = parseArgs(rest)
+  const args = parseArgs(commandArgs)
 
   // Generic path math for link-style commands: if the invocation has two
   // file arguments (`link <from> <to> …`), precompute the relative href

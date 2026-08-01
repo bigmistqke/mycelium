@@ -64,8 +64,8 @@ pnpm mycelium knowledge del <file>
 (Run from the repository root — pnpm resolves `mycelium` from the root
 `package.json` regardless of which subdirectory the shell is currently in.)
 
-This block is a convenience, not the roster. The command `mycelium run
---help` prints every family and every command it exports, read off the
+This block is a convenience, not the roster. The command `mycelium --help`
+prints every family and every command it exports, read off the
 command scripts themselves. A SessionStart hook runs it already, so scroll
 up rather than trusting this file to be current.
 
@@ -225,9 +225,9 @@ The graph's value is in its connections, not just its nodes.
 
 Root `knowledge-goal` nodes are the only valid orphans — exactly what
 `orphans-except-goal` (one of `knowledge.template.html`'s two collocated
-audits) checks for, now for real: `pnpm validate` runs it against the actual
+audits) checks for, now for real: `pnpm mycelium validate` runs it against the actual
 files, not just sample markup. Still worth checking by eye before running
-`pnpm validate`, but it's an automated gate now, not just a judgment call.
+`pnpm mycelium validate`, but it's an automated gate now, not just a judgment call.
 
 The six `data-rel` edge labels, unchanged from deciduous:
 `depends_on`, `blocks`, `supports`, `contradicts`, `alternative_to`,
@@ -267,7 +267,7 @@ does this on purpose.
 ### Audit Checklist (Before Every Commit)
 
 Same three questions deciduous asked. The first two are automated now —
-`pnpm validate` runs `dangling-outcome` and `orphans-except-goal` against the
+`pnpm mycelium validate` runs `dangling-outcome` and `orphans-except-goal` against the
 real files:
 
 1. Does every **knowledge-outcome** link back to what caused it? (`dangling-outcome`)
@@ -279,7 +279,7 @@ real files:
 
 ```bash
 pnpm mycelium knowledge recover   # the graph's live threads
-pnpm validate                     # every node validated, all four audits run
+pnpm mycelium validate                     # every node validated, all four audits run
 git status                        # current state
 ```
 `knowledge recover` replaces the old `/recover` slash command, which drove
@@ -290,7 +290,7 @@ claims** (either end of a `contradicts` edge). It is read-only and a
 SessionStart hook runs it automatically, so this is here as documentation
 rather than something to remember.
 
-`pnpm validate` validates every instance against its own template and runs
+`pnpm mycelium validate` validates every instance against its own template and runs
 the four graph-wide audits. It **exits non-zero on failure** — true only
 since 2026-07-30; before that it printed failures and exited 0, so no audit
 had ever actually gated anything.

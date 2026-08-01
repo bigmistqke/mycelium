@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Nothing types a command's flags, though the template already declares part of that contract</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>Nothing types a command's flags, though the template already declares part of that contract</knowledge-title>
+  <knowledge-confidence>65</knowledge-confidence>
+  <knowledge-detail><p>
+  <code>src/api.ts</code> types a command's <code>args</code> as
+  <code>ParsedArgs</code>, an index signature:
+  <code>{ _: string[]; [key: string]: string | string[] }</code>. So
+  <code>args.title</code> has type <code>string | string[]</code> inside every
+  command, and no command states its own flags in types at all. The JSDoc above
+  each export carries that contract in prose instead, and <code>--help</code>
+  prints the very same comment.
+</p>
+<p>Two ways to close that gap, differing in where the declaration lives:</p>
+<ul>
+  <li>Make <code>CommandContext</code> generic over an args shape, so each command
+    writes its own. This types the function body and nothing further, since Node
+    strips the annotations at run time and neither <code>--help</code> nor flag
+    validation can then read them. It also restates what the template already says.</li>
+  <li>Derive the args type from the <code>&lt;template&gt;</code> shape.
+    <code>&lt;spec-status required enum="draft approved implemented"&gt;</code>
+    already states that flag's contract exactly, so one declaration could drive the
+    type, the help text and the check together.</li>
+</ul>
+<p>
+  The second path only reaches flags that correspond to fields. <code>spec add</code>
+  also takes <code>--file</code>, a slug no document ever holds, and
+  <code>--body</code>, one blob covering four rich fields at once. Those still need a
+  declaration of their own, so derivation shrinks the duplication rather than
+  removing it.
+</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-25-template-schema-via-attributes.decision.html">the decision that made a field's shape machine-readable, which is what a derived args type would read</a>
+</knowledge-observation>
+</body></html>

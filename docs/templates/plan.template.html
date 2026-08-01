@@ -35,7 +35,7 @@
   each independently addressable via its own <code>data-conforms-to</code>. A parent's own
   <code>&lt;template&gt;</code> only ever declares a nested child tag as "may be present" &mdash; it can't
   reach into that child's own internal shape, which is why each of the three nested types needs its own
-  <code>data-conforms-to</code>: <code>pnpm validate</code>'s crawler finds every validatable instance purely
+  <code>data-conforms-to</code>: <code>pnpm mycelium validate</code>'s crawler finds every validatable instance purely
   by scanning for <code>[data-conforms-to]</code> anywhere in the tree.
 </p>
 <p>
@@ -437,7 +437,7 @@
   /**
    * Run the plan-check(s) attached to one step, or every step in the doc.
    *
-   *   mycelium run plan check <file> [<step-id>]
+   *   mycelium plan check <file> [<step-id>]
    *
    * The command shells out to each plan-check-command found via
    * node:child_process. This covers one named step, or every plan-step with a
@@ -517,7 +517,7 @@
   /**
    * Print a flat progress view of every step in a plan-doc.
    *
-   *   mycelium run plan list <file>
+   *   mycelium plan list <file>
    *
    * One line per plan-step: task id, task title, step id, step title,
    * status, and a [has-check] marker (blank if the step has no
@@ -592,12 +592,12 @@
   /**
    * Create a new plan-doc/plan-task/plan-step.
    *
-   *   mycelium run plan add doc --title "…" --file <topic> --goal "…"
+   *   mycelium plan add doc --title "…" --file <topic> --goal "…"
    *     --architecture "…" [--status rejected] [--date YYYY-MM-DD]
    *     [--tech-stack "…"] [--global-constraints "…"]
-   *   mycelium run plan add task <file> --title "…" --files "…"
+   *   mycelium plan add task <file> --title "…" --files "…"
    *     [--interfaces "…"] [--status rejected]
-   *   mycelium run plan add step <file> <task-id> --title "…"
+   *   mycelium plan add step <file> <task-id> --title "…"
    *     [--detail "…" | --detail -] [--check-command "…"]
    *     [--expected-success true|false] [--expected-output "…"]
    *
@@ -620,12 +620,12 @@
   /**
    * Update fields on an existing plan-doc/plan-task/plan-step.
    *
-   *   mycelium run plan update doc <file> [--title "…"] [--status …]
+   *   mycelium plan update doc <file> [--title "…"] [--status …]
    *     [--goal "…"] [--architecture "…"] [--tech-stack "…"]
    *     [--global-constraints "…"]
-   *   mycelium run plan update task <file> <task-id> [--title]
+   *   mycelium plan update task <file> <task-id> [--title]
    *     [--status] [--files] [--interfaces]
-   *   mycelium run plan update step <file> <step-id> [--title]
+   *   mycelium plan update step <file> <step-id> [--title]
    *     [--status pending|completed] [--detail "…" | --detail -]
    *     [--check-command "…"] [--expected-success true|false]
    *     [--expected-output "…"]

@@ -19,7 +19,7 @@
     unlike it, this one does have commands, which is exactly why it isn't named
     <code>explore.template.html</code>: that suffix already means "instances conform to this," and nothing
     does here.</div>
-  <div><b>Found the same way as a family template:</b> <code>mycelium run explore &lt;command&gt;</code>
+  <div><b>Found the same way as a family template:</b> <code>mycelium explore &lt;command&gt;</code>
     resolves through the same <code>&lt;id&gt;.template.html</code>-or-<code>&lt;id&gt;.command.html</code>
     lookup every other command uses &mdash; the engine doesn't distinguish the two once it's found the
     file, only in what it means for that file to exist.</div>
@@ -38,7 +38,7 @@
    * List every data-conforms-to instance across the whole docs/ tree,
    * regardless of which family it belongs to.
    *
-   *   mycelium run explore list
+   *   mycelium explore list
    *
    * One line per instance: its path (relative to docs/), its own root
    * tag name, and its data-conforms-to value. This command finds an

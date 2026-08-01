@@ -144,8 +144,10 @@ function discoverInstances(documents: ParsedDoc[]): Instance[] {
   return instances
 }
 
-async function main() {
-  const dir = resolvePath(process.argv[2] ?? "./docs")
+// Exported so `mycelium validate` can call it in-process, rather than
+// spawning this file as a second node run. The caller passes the directory
+// it already resolved; nothing here reads process.argv.
+export async function validate(dir: string) {
   const documents = parseAll(dir)
   const parseCache = new Map(documents.map((d) => [d.path, d.dom]))
   const auditFs = createAuditFs(dirname(dir), parseCache)
@@ -259,4 +261,6 @@ function formatItems(result: CheckResult): string {
   return items.map((item) => `      ${item}`).join("\n")
 }
 
-main()
+// Only when someone runs this file directly (`node src/validate.ts`). Importing it,
+// which `mycelium validate` does, must not start a run of its own.
+if (import.meta.main) validate(resolvePath(process.argv[2] ?? "./docs"))

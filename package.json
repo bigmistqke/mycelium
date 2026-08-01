@@ -8,7 +8,6 @@
     "node": ">=24"
   },
   "scripts": {
-    "validate": "node src/validate.ts",
     "mycelium": "node src/run.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check-scripts": "node editor/check.ts"

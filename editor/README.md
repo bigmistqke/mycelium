@@ -61,5 +61,5 @@ the one property it exists for.
 Diagnostics run under the project's own `tsconfig.json`, which is `strict`.
 Applied to code that has never been type-checked, that currently reports around
 180 findings, most of them implicit `any` on inner callbacks. They are real, but
-they are a backlog rather than a breakage, and `pnpm validate` does not gate on
+they are a backlog rather than a breakage, and `pnpm mycelium validate` does not gate on
 them.

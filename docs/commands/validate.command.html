@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commands: validate</title>
+<link rel="stylesheet" href="../theme.css">
+</head>
+<body>
+
+<h1>Commands: validate</h1>
+<div class="meta">
+  <div><b>Purpose:</b> check every document under <code>docs/</code> against the template it declares
+    conformance to, then run every cross-document audit the corpus declares. The gate the whole corpus
+    rests on, and the one command whose failure means something is wrong rather than missing.</div>
+  <div><b>Not a template:</b> like <code>explore.command.html</code>, this file declares no
+    <code>&lt;template id="…"&gt;</code> and nothing conforms to it. It has commands and no type, which is
+    what the <code>.command.html</code> suffix means.</div>
+  <div><b>Why a document at all:</b> the engine used to name <code>validate</code> in
+    <code>src/run.ts</code>, dispatching it before it looked for a host file. That reserved the word
+    against every future family and made core name one command it could not read off a document. Declaring
+    it here costs nothing and keeps the engine's knowledge to the protocol alone.</div>
+</div>
+
+<h2>Commands</h2>
+<p>
+  The work itself lives in <code>src/validate.ts</code>, the same way every other family's commands call
+  into <code>src/</code>. What this document declares is the command, not the implementation.
+</p>
+<p>
+  This host exports a default, so <code>mycelium validate</code> runs with no subcommand after it. Naming
+  one would only repeat the host's own name.
+</p>
+<script type="mycelium/command">
+  import type { CommandContext } from "../../src/api.ts"
+  import { validate } from "../../src/validate.ts"
+  import { resolve as resolvePath } from "node:path"
+  /**
+   * Validate every document, and run every cross-document audit.
+   *
+   *   mycelium validate [--dir <path>]
+   *
+   * Walks every .html file under the directory, resolves each
+   * data-conforms-to link, and checks that element against the shape its
+   * template declares. Then runs each script carrying data-audits over the
+   * whole tree, comparing what it found against the violations it declares
+   * in data-expects.
+   *
+   * Prints one line of counts, then a block per failure. Exits non-zero
+   * when anything failed, so a build or a hook can gate on it.
+   *
+   * --dir defaults to the docs/ directory the engine already resolved.
+   * Pass one to check a corpus somewhere else, which is what the tests of
+   * this project's own template fixtures do.
+   *
+   * This is the default export, so `mycelium validate` runs it with no
+   * subcommand. `mycelium validate check` names the same function.
+   */
+  export async function check({ fs, args }: CommandContext) {
+    await validate(args.dir ? resolvePath(args.dir as string) : fs.root)
+  }
+
+  export default check
+</script>
+
+</body>
+</html>

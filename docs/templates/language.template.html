@@ -264,7 +264,7 @@
   <a href="./knowledge.template.html">knowledge.template.html</a> and
   <a href="./spec.template.html">spec.template.html</a> already use, and each command's own
   <code>/** &hellip; */</code> comment is its only documentation, so
-  <code>mycelium run language --help</code> and the usage shown here can never drift apart.
+  <code>mycelium language --help</code> and the usage shown here can never drift apart.
 </p>
 <p>
   <code>link</code> and <code>unlink</code> are both here from the start, unlike in
@@ -381,14 +381,14 @@
   /**
    * Create a new language-term, language-rule or language-guide file.
    *
-   *   mycelium run language add term --title "…" --file <slug>
+   *   mycelium language add term --title "…" --file <slug>
    *     --part-of-speech noun|verb|adjective|adverb|phrase
    *     --status approved|rejected --meaning "…" [--detail "…" | --detail -]
    *
-   *   mycelium run language add rule --title "…" --file <slug>
+   *   mycelium language add rule --title "…" --file <slug>
    *     --pass "…" --fail "…" --check - [--detail "…"]
    *
-   *   mycelium run language add guide --title "…" --file <slug>
+   *   mycelium language add guide --title "…" --file <slug>
    *     --pass "…" --fail "…" [--detail "…" | --detail -]
    *
    * The command writes to language/terms/<slug>.term.html or
@@ -415,7 +415,7 @@
    * appears correct with the flag's content nowhere.
    *
    * A rejected term should point at its replacement, which is a separate step:
-   * mycelium run language link <slug>.term.html <other>.term.html --rel
+   * mycelium language link <slug>.term.html <other>.term.html --rel
    * alternative_to.
    *
    * The command validates the built node against its own type before writing
@@ -484,7 +484,7 @@
   /**
    * Update fields on an existing language entry.
    *
-   *   mycelium run language update <file> [--title "…"]
+   *   mycelium language update <file> [--title "…"]
    *     [--part-of-speech P] [--status approved|rejected] [--meaning "…"]
    *     [--pass "…"] [--fail "…"] [--check - | --check ""]
    *     [--detail "…" | --detail - | --detail ""]
@@ -548,7 +548,7 @@
   /**
    * Add a data-rel edge from one entry to another.
    *
-   *   mycelium run language link <from-file> <to-file> --rel <rel> [--label "…"]
+   *   mycelium language link <from-file> <to-file> --rel <rel> [--label "…"]
    *
    * The edge this family exists to draw is a rejected term pointing at the
    * word to use instead: --rel alternative_to. The vocabulary is open, the
@@ -578,7 +578,7 @@
   /**
    * Remove a data-rel edge from one entry to another.
    *
-   *   mycelium run language unlink <from-file> <to-file> --rel <rel>
+   *   mycelium language unlink <from-file> <to-file> --rel <rel>
    *
    * The inverse of link. Throws if no such edge exists, rather than
    * silently doing nothing.
@@ -595,8 +595,8 @@
   /**
    * Check text against every rule that carries a check.
    *
-   *   mycelium run language lint -
-   *   mycelium run language lint <file>
+   *   mycelium language lint -
+   *   mycelium language lint <file>
    *
    * `-` reads the text to check on standard input. This is the only mode with
    * no document behind it (for example, a commit message, which does not exist
@@ -769,7 +769,7 @@
    * Rewrite a file's comment-level violations, verifying every proposed
    * rewrite with the violated rule's own check before writing anything.
    *
-   *   mycelium run language autofix <file> [--diff]
+   *   mycelium language autofix <file> [--diff]
    *
    * Only fixes what has a source position to splice into: a comment in a
    * `.ts`/`.tsx`/`.js`/`.jsx` file, or inside a `<script>` an `.html` file
@@ -982,7 +982,7 @@
   /**
    * List the language.
    *
-   *   mycelium run language list [--type term|rule|guide] [--status S]
+   *   mycelium language list [--type term|rule|guide] [--status S]
    *
    * One line per entry: file, type, and the fields that distinguish entries
    * of that type from each other — status and meaning for a term, whether
