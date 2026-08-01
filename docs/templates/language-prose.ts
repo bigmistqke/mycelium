@@ -80,12 +80,19 @@ export function markdownToHtmlFragment(markdown: string): string {
     // nothing to either a rule reading text or one reading markup.
     if (trimmed.startsWith("|")) continue
 
+    // A list item's own text can wrap onto a following line with no marker
+    // of its own — only the first line has to look like a list for the
+    // block to be one; every other markerless line joins the item above it,
+    // the same way a real paragraph continues across a line break.
     const lines = trimmed.split("\n")
-    if (lines.every((l) => /^\s*([-*]|\d+\.)\s+/.test(l))) {
+    const MARKER = /^\s*([-*]|\d+\.)\s+/
+    if (MARKER.test(lines[0])) {
+      const items: string[] = []
       for (const line of lines) {
-        const item = line.replace(/^\s*([-*]|\d+\.)\s+/, "")
-        out.push(`<li>${inlineMarkdown(item)}</li>`)
+        if (MARKER.test(line)) items.push(line.replace(MARKER, ""))
+        else if (items.length > 0) items[items.length - 1] += ` ${line.trim()}`
       }
+      for (const item of items) out.push(`<li>${inlineMarkdown(item)}</li>`)
       continue
     }
 

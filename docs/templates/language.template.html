@@ -742,15 +742,19 @@
 </p>
 <script type="mycelium/audit" data-audits="prose-follows-the-language" data-touches="language-rule">
   import type { AuditFs } from "../../src/api.ts"
-  import { loadModule } from "../../src/utils.ts"
+  import { loadModule, parseHTML } from "../../src/utils.ts"
   import { resolve as resolvePath } from "node:path"
-  import { PROTECTED_TAGS, extractProse } from "./language-prose.ts"
+  import { PROTECTED_TAGS, extractProse, stripProtected, markdownToHtmlFragment } from "./language-prose.ts"
   /**
    * Prose in the corpus obeys every rule that carries a check.
    *
-   * Loads each rule, runs it against its own passing and failing example first,
-   * then over the text of every document with code, recorded prompts and
-   * failing examples excluded.
+   * Loads each rule, runs it against its own passing and failing example
+   * first, then over the text of every document with code, recorded
+   * prompts and failing examples excluded — every `.html` file under
+   * docs/, and every `.md` file reachable from the repository root
+   * (README.md, CLAUDE.md, editor/README.md), converted to just enough
+   * HTML for a rule about markup to read the same way lint's file mode
+   * already does.
    */
   // Text no rule may be applied to. A code block is code. Plan boilerplate
   // quotes the environment a plan runs in. A rule's own failing example
@@ -861,6 +865,21 @@
         // otherwise have to leave the family and become an audit, which would
         // put one rule in two homes.
         for (const found of rule.check(text, visible, language)) violations.push(`${path}: ${found.message}`)
+      }
+    }
+
+    // A real document that is not corpus HTML — README.md, CLAUDE.md — is
+    // still a document, so it gets the same rules, not a free pass for
+    // happening to sit outside docs/. Converted to just enough HTML for a
+    // rule about markup to read, the same way lint's file mode already
+    // does for one file at a time; this is that conversion run over every
+    // .md file the repository root can reach.
+    for (const path of fs.list('.', { ext: '.md' })) {
+      const { document } = parseHTML(`<body>${markdownToHtmlFragment(fs.read(path))}</body>`)
+      const body = stripProtected(document.querySelector('body'))
+      const text = extractProse(body)
+      for (const rule of rules) {
+        for (const found of rule.check(text, body, language)) violations.push(`${path}: ${found.message}`)
       }
     }
 
