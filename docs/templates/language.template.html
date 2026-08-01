@@ -278,15 +278,16 @@
   import type { CommandContext } from "../../src/api.ts"
   import { loadModule } from "../../src/utils.ts"
   import { resolve as resolvePath } from "node:path"
-  import { readFileSync } from "node:fs"
+  import { readFileSync, writeFileSync } from "node:fs"
+  import { spawnSync } from "node:child_process"
+  import { tmpdir } from "node:os"
   import { stripProtected, extractProse, markdownToHtmlFragment } from "./language-prose.ts"
-  import { extractComments } from "./code-comments.ts"
+  import { extractComments, commentRanges, parseComment, formatAsComment } from "./code-comments.ts"
   const TYPES = ['term', 'rule', 'guide']
 
-  // Fields in the order they should appear in a written document, per type.
-  // The validator does not care about order; a reader does, and every
-  // instance being laid out the same way is what makes forty of them
-  // skimmable.
+  // Fields in the order they should appear in a written document, per type. The
+  // validator does not care about order; a reader does, and laying out every
+  // instance the same way makes forty of them skimmable.
   const FIELD_ORDER = {
     term: ['language-title', 'language-part-of-speech', 'language-meaning', 'language-avoid', 'language-detail'],
     rule: ['language-title', 'language-pass', 'language-fail', 'language-detail', 'script'],
@@ -343,14 +344,12 @@
     if (fromStdin.length === 1) values[fromStdin[0]] = await cli.readStdin()
   }
 
-  // A flag belonging to the other type is an error, never a no-op. add
-  // writes only the fields its own type declares, so without this check
-  // `add term --pass "…"` would drop --pass on the floor and report
-  // success — the field would simply not be in the file, with nothing said
-  // about it. update has no such gap: it writes whatever it is given and
-  // lets the closed-schema validator reject it, which produces an error
-  // either way. This makes add fail the same way, and earlier, naming the
-  // flag that was typed.
+  // A flag from the wrong type triggers an error, never a no-op. add writes
+  // only the fields its type declares. Without this check, `add term --pass
+  // "…"` drops --pass and reports success. The file lacks the field, and the
+  // tool says nothing. update has no such gap: it writes whatever you provide
+  // and lets the validator reject it, producing an error either way. This makes
+  // add fail the same way, but earlier, naming the flag you typed.
   function rejectForeignFields(type, values) {
     const allowed = new Set(FIELD_ORDER[type])
     for (const tag of Object.keys(values)) {
@@ -392,36 +391,36 @@
    *   mycelium run language add guide --title "…" --file <slug>
    *     --pass "…" --fail "…" [--detail "…" | --detail -]
    *
-   * Writes language/terms/<slug>.term.html or language/rules/<slug>.rule.html.
-   * There is NO date prefix and no --date flag, unlike knowledge add and
-   * spec add: an entry here is not an event and does not belong to an
-   * exploration, and entries are looked up by their word. So --file is the
-   * whole name, and a slug carrying a date is rejected — not because it
-   * would acquire a second one, but because it would assert that the word
-   * dates from that day.
+   * The command writes to language/terms/<slug>.term.html or
+   * language/rules/<slug>.rule.html. There is NO date prefix and no --date
+   * flag, unlike knowledge add and spec add: an entry here is not an event and
+   * does not belong to an exploration, and you look up entries by their word.
+   * So --file is the whole name, and the command rejects a slug carrying a date
+   * — not because it would acquire a second one, but because it would assert
+   * that the word dates from that day.
    *
-   * For a term, --title is the word itself and --meaning is one sentence.
-   * For a rule, --title is the rule in one line and --pass/--fail are the
-   * two examples that pin it down; both are required, because a rule
-   * without them is read differently by every reader.
+   * For a term, --title is the word itself and --meaning is one sentence. For a
+   * rule, --title is the rule in one line and --pass/--fail are the two
+   * examples that pin it down; both are required, because every reader reads a
+   * rule without them differently.
    *
-   * --pass, --fail and --detail are free-form markup. Pass any of them as
-   * "-" to read that one from stdin, for anything longer than a line.
-   * Only one flag may use "-" per invocation, since there is only one
-   * stdin; asking for two is an error rather than a silent empty field.
+   * --pass, --fail and --detail are free-form markup. Pass any of them as "-"
+   * to read that one from stdin, for anything longer than a line. Only one flag
+   * may use "-" per invocation, since there is only one stdin; asking for two
+   * is an error rather than a silent empty field.
    *
-   * A flag belonging to the other type (--pass on a term, --meaning on a
-   * rule) is rejected by name. It would otherwise be dropped in silence,
-   * since add writes only the fields its own type declares, and the entry
-   * would be created looking correct with the flag's content nowhere.
+   * The command rejects a flag belonging to the other type (--pass on a term,
+   * --meaning on a rule) by name. The command would otherwise silently ignore
+   * it, since add writes only the fields its own type declares, and the entry
+   * appears correct with the flag's content nowhere.
    *
-   * A rejected term should point at its replacement, which is a separate
-   * step: mycelium run language link <slug>.term.html <other>.term.html
-   * --rel alternative_to.
+   * A rejected term should point at its replacement, which is a separate step:
+   * mycelium run language link <slug>.term.html <other>.term.html --rel
+   * alternative_to.
    *
-   * The built node is validated against its own type before anything is
-   * written, so a missing required field, a value outside an enum, or a
-   * field belonging to the other type is rejected and no file appears.
+   * The command validates the built node against its own type before writing
+   * anything, so the command rejects a missing required field, a value outside
+   * an enum, or a field belonging to the other type, and no file appears.
    */
   export async function add({ fs, args, cli }: CommandContext) {
     const type = args._[0]
@@ -490,16 +489,16 @@
    *     [--pass "…"] [--fail "…"] [--check - | --check ""]
    *     [--detail "…" | --detail - | --detail ""]
    *
-   * <file> is a whole existing filename including its .term.html or
-   * .rule.html suffix — contrast add, whose --file is a slug you choose.
-   * The type is read off the document's own root element, not passed again,
-   * so a flag belonging to the other type is rejected by name before
-   * anything is read or written, the same as in add.
+   * <file> is a whole existing filename including its .term.html or .rule.html
+   * suffix — contrast add, whose --file is a slug you choose. The command reads
+   * the type off the document's own root element, not passing it again, so the
+   * command rejects a flag belonging to the other type by name before reading
+   * or writing anything, the same as in add.
    *
-   * Per flag: omitted leaves the field untouched, a value upserts it
-   * (overwrite if present, append if not), and an explicit empty value ("")
-   * removes it. Removing a required field fails validation and the file on
-   * disk is left untouched.
+   * Per flag: omitted leaves the field untouched, a value upserts it (overwrite
+   * if present, append if not), and an explicit empty value ("") removes it.
+   * Removing a required field fails validation and the command leaves the file
+   * on disk untouched.
    */
   export async function update({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<file>'])
@@ -599,28 +598,27 @@
    *   mycelium run language lint -
    *   mycelium run language lint <file>
    *
-   * `-` reads the text to check on standard input; this is the only mode
-   * with no document behind it (a commit message, say, which does not exist
-   * as a file until the commit does), so a rule about markup finds nothing
-   * to look at, which is correct — only a rule reading plain text can fire.
+   * `-` reads the text to check on standard input. This is the only mode with
+   * no document behind it (for example, a commit message, which does not exist
+   * as a file until the commit does). A rule about markup finds nothing to look
+   * at, which is correct. Only a rule reading plain text can fire.
    *
    * `<file>` reads that file from disk, resolved from the current working
-   * directory, and branches on its extension. A `.html` file is parsed
-   * into a real document and stripped of every protected element, the
-   * same as the prose-follows-the-language audit does for a real corpus
-   * document, so every rule — including one that reads markup — runs
-   * exactly as it would once the file joins docs/; every `<script>` it
-   * embeds is also checked, comment by comment. A `.ts`/`.tsx`/`.js`/`.jsx`
-   * file is not a document at all — only its comments and JSDoc are
-   * checked, the same way a script's comments are. Anything else is
-   * treated as markdown: converted to just enough HTML for a rule about
-   * markup to have something real to read (a `<p>` per paragraph, `<code>`
-   * for a backtick span, `<strong>` for `**bold**`), not rendered. This is
-   * what makes checking a README or a spec still being drafted possible
+   * directory, and branches on its extension. A `.html` file is parsed into a
+   * real document and stripped of every protected element, the same as the
+   * prose-follows-the-language audit does for a real corpus document. Every
+   * rule—including one that reads markup—runs exactly as it would once the file
+   * joins docs/. Every `<script>` it embeds is also checked, comment by
+   * comment. A `.ts`/`.tsx`/`.js`/`.jsx` file is not a document at all — only
+   * its comments and JSDoc are checked, the same way a script's comments are.
+   * Anything else is treated as markdown: converted to just enough HTML for a
+   * rule about markup to have something real to read (a `<p>` per paragraph,
+   * `<code>` for a backtick span, `<strong>` for `**bold**`), not rendered.
+   * This is what makes checking a README or a spec still being drafted possible
    * before it is corpus HTML, or ever becomes it.
    *
-   * Either way, reports every rule the text breaks, one line each, then
-   * exits non-zero. Prints nothing and exits zero when the text is clean.
+   * Either way, reports every rule the text breaks, one line each, then exits
+   * non-zero. Prints nothing and exits zero when the text is clean.
    *
    * Only rules run, not guides. A guide carries no check by definition, so
    * there is nothing for it to contribute.
@@ -701,6 +699,286 @@
     throw new Error(`${violations.length} violation(s)`)
   }
 
+  const AUTOFIX_MODEL = "claude-haiku-4-5-20251001"
+
+  type AutofixHit = { rule: { title: string; pass: string; fail: string; detail: string }; found: any[] }
+  type AutofixItem = { id: number; text: string; hits: AutofixHit[]; retry?: { previous: string; reasons: string[] } }
+
+  // Builds each rule's context from its own title, pass/fail examples and
+  // detail, rather than from a hand-written description of it, so a rule
+  // stays the only place its own wording lives. Lint reads a rule's
+  // check() for the same reason, instead of a parallel description of
+  // what the check does.
+  function ruleBlock(hits: AutofixHit[]): string {
+    return hits
+      .map(({ rule, found }) => {
+        const messages = found.map((f: any) => `- ${f.message ?? f.excerpt}`).join("\n")
+        const why = rule.detail ? `\nWhy this rule exists: ${rule.detail}` : ""
+        return `Rule: ${rule.title}\nPasses: ${rule.pass}\nFails: ${rule.fail}${why}\nWhat it found:\n${messages}`
+      })
+      .join("\n\n")
+  }
+
+  // One call fixes every violated comment in the file at once, batched by
+  // number, rather than one process per comment — a file with a dozen
+  // violations costs one model call instead of a dozen. A comment whose
+  // first attempt still fails verification gets one retry, in the same
+  // shape of batched call, carrying its own previous attempt and exactly
+  // what is still wrong with it back to the model.
+  function autofixBatchPrompt(items: AutofixItem[]): string {
+    const sections = items
+      .map(({ id, text, hits, retry }) => {
+        const retryNote = retry
+          ? `\nYour previous attempt was:\n"""\n${retry.previous}\n"""\nThat attempt still had a problem: ${retry.reasons.join("; ")}. Fix that this time.\n`
+          : ""
+        return `### Comment ${id}\n${ruleBlock(hits)}\n${retryNote}\nText to rewrite (paragraphs separated by a blank line):\n"""\n${text}\n"""`
+      })
+      .join("\n\n")
+    return [
+      "Each numbered comment below violates one or more writing rules. Rewrite each one so it satisfies every rule listed for it, without changing what it claims, its terminology, or its number of paragraphs.",
+      "",
+      sections,
+      "",
+      'Reply with ONLY a JSON object mapping each comment\'s number (as a string key) to its corrected text, for example {"0": "corrected text", "3": "corrected text"}. Every comment number above must appear as a key. No markdown fences, no explanation, nothing outside the JSON object.',
+    ].join("\n")
+  }
+
+  function runAutofixBatch(items: AutofixItem[]): Map<number, string> {
+    // Runs from the OS temp dir with no MCP servers, not this repository's
+    // own working directory. A one-shot text rewrite needs neither this
+    // project's 15KB CLAUDE.md nor any configured MCP server. Loading both
+    // is most of what made an early version of this command take ~14s per
+    // call instead of ~3s.
+    const result = spawnSync("claude", ["-p", "--model", AUTOFIX_MODEL, "--strict-mcp-config"], {
+      input: autofixBatchPrompt(items),
+      encoding: "utf8",
+      maxBuffer: 16 * 1024 * 1024,
+      timeout: 4 * 60 * 1000,
+      cwd: tmpdir(),
+    })
+    if (result.error) throw new Error(`claude -p could not run: ${result.error.message}`)
+    if (result.status !== 0) throw new Error(`claude -p exited ${result.status}: ${(result.stderr ?? "").trim() || "(no stderr)"}`)
+    const cleaned = result.stdout.trim().replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "")
+    const parsed = JSON.parse(cleaned)
+    const out = new Map<number, string>()
+    for (const [id, text] of Object.entries(parsed)) if (typeof text === "string") out.set(Number(id), text)
+    return out
+  }
+
+  /**
+   * Rewrite a file's comment-level violations, verifying every proposed
+   * rewrite with the violated rule's own check before writing anything.
+   *
+   *   mycelium run language autofix <file> [--diff]
+   *
+   * Only fixes what has a source position to splice into: a comment in a
+   * `.ts`/`.tsx`/`.js`/`.jsx` file, or inside a `<script>` an `.html` file
+   * embeds — the same comment-by-comment checking `lint` already does for
+   * both. A violation in document prose (a `<p>`, a markdown paragraph)
+   * has no such mapping yet, so it is not attempted; run `lint` on the
+   * same file afterward to see what is still open.
+   *
+   * Every violated comment in the file goes into a single `claude -p`
+   * call running a small background model, batched by number. A file
+   * with a dozen violations costs one model call this way, not a dozen
+   * separate processes. A rewrite only counts once every one of its
+   * violated rules' own check() finds nothing wrong with it, the same
+   * function `lint` runs, and its paragraph count still matches the
+   * original. A comment that fails that gets
+   * exactly one retry, batched the same way, carrying its own previous
+   * attempt and exactly what is still wrong with it back to the model.
+   * Whatever fails a second time, or a model call that fails outright,
+   * leaves that comment untouched; either way this command reports it
+   * rather than dropping it silently.
+   *
+   * `--diff` prints what would change without writing it. Applies
+   * verified fixes directly to `<file>` otherwise, the same as every
+   * other command in this CLI.
+   */
+  export async function autofix({ fs, args, cli }: CommandContext) {
+    const target = args._[0]
+    if (!target) throw new Error("usage: language autofix <file> [--diff]")
+    if (target === "-") throw new Error("autofix needs a real file to write the fix back to; lint accepts -, autofix does not")
+
+    const isSource = [".ts", ".tsx", ".js", ".jsx"].some((ext) => target.endsWith(ext))
+    const isHtml = target.endsWith(".html")
+    if (!isSource && !isHtml) throw new Error("autofix only understands .ts/.tsx/.js/.jsx and .html files so far")
+
+    const replaces = new Map()
+    for (const { doc } of fs.list("language/terms")) {
+      const el = doc.querySelector("language-term")
+      if (!el) continue
+      const instead = el.querySelector("language-title")?.textContent?.trim()
+      for (const word of (el.querySelector("language-avoid")?.textContent ?? "").split(",").map((w) => w.trim()).filter(Boolean)) {
+        replaces.set(word.toLowerCase(), instead)
+      }
+    }
+    const language = { replaces }
+
+    const rules: { path: string; check: Function; title: string; pass: string; fail: string; detail: string }[] = []
+    for (const { path, doc } of fs.list("language/rules")) {
+      const el = doc.querySelector("language-rule")
+      const ruleScript = doc.querySelector("language-rule > script")
+      if (!ruleScript) continue
+      const mod = await loadModule(resolvePath(fs.root, path), ruleScript)
+      if (typeof mod.check !== "function") continue
+      rules.push({
+        path,
+        check: mod.check,
+        title: el?.querySelector("language-title")?.textContent?.trim() ?? path,
+        pass: el?.querySelector("language-pass")?.textContent?.trim() ?? "",
+        fail: el?.querySelector("language-fail")?.textContent?.trim() ?? "",
+        detail: el?.querySelector("language-detail")?.textContent?.trim() ?? "",
+      })
+    }
+
+    const absPath = resolvePath(process.cwd(), target)
+    const source = readFileSync(absPath, "utf8")
+
+    // Every comment's source range in <file> itself. A .ts-like file's own
+    // ranges apply directly; an .html file's ranges come from each
+    // <script> it embeds, offset by where that script's text starts in
+    // the outer file, since commentRanges only knows a script's own local
+    // offsets. Scripts are searched for in document order with an
+    // advancing cursor so two byte-identical scripts don't both resolve
+    // to the first one's position.
+    const regions: { pos: number; end: number; raw: string; text: string }[] = []
+    if (isSource) {
+      regions.push(...commentRanges(source))
+    } else {
+      const { document } = cli.parseHTML(source)
+      let searchFrom = 0
+      for (const script of Array.from(document.querySelectorAll("script")) as any[]) {
+        const scriptText = script.textContent ?? ""
+        const offset = source.indexOf(scriptText, searchFrom)
+        if (offset === -1) continue
+        searchFrom = offset + scriptText.length
+        for (const r of commentRanges(scriptText)) regions.push({ pos: offset + r.pos, end: offset + r.end, raw: r.raw, text: r.text })
+      }
+    }
+
+    const withViolations = regions
+      .map((region) => ({
+        region,
+        hits: rules.map((rule) => ({ rule, found: rule.check(region.text, undefined, language) })).filter(({ found }) => found.length > 0),
+      }))
+      .filter(({ hits }) => hits.length > 0)
+
+    if (withViolations.length === 0) {
+      console.log(`${target}: no comment-level violations found`)
+      return
+    }
+
+    const lineStartOf = (pos: number) => source.lastIndexOf("\n", pos - 1) + 1
+
+    // Structural checks that have nothing to do with the model run first,
+    // so a comment that cannot safely be spliced never costs a call.
+    type Candidate = { region: (typeof withViolations)[number]["region"]; hits: AutofixHit[]; lineStart: number; indent: string; isBlock: boolean; blocks: any[]; proseBlocks: any[] }
+    const candidates: Candidate[] = []
+    for (const { region, hits } of withViolations) {
+      const lineStart = lineStartOf(region.pos)
+      const indent = source.slice(lineStart, region.pos)
+      // A comment sharing its line with real code (a trailing `// note`) is
+      // not spliced: replacing it risks corrupting the code beside it, and
+      // this project's own comments are whole-line by convention anyway.
+      if (!/^\s*$/.test(indent)) {
+        console.log(`skipped (shares a line with code): ${region.text.slice(0, 60)}`)
+        continue
+      }
+
+      // The model rewrites only the prose. An indented example passes
+      // through verbatim below, never generated. parseComment's own
+      // flush rule differs slightly from formatCodeComment's (see its
+      // own comment), so a mismatch here means the two would disagree
+      // about where a paragraph starts. Leaving the comment untouched
+      // beats guessing at that point.
+      const { isBlock, blocks } = parseComment(region.raw)
+      const proseBlocks = blocks.filter((b) => b.type === "prose")
+      if (proseBlocks.map((b: any) => b.text).join("\n\n") !== region.text) {
+        console.log(`skipped (irregular comment structure): ${region.text.slice(0, 60)}`)
+        continue
+      }
+
+      candidates.push({ region, hits, lineStart, indent, isBlock, blocks, proseBlocks })
+    }
+
+    const MAX_ATTEMPTS = 2
+    const results = new Map<number, string>()
+    let pending = candidates.map((candidate, id) => ({ id, candidate, retry: undefined as { previous: string; reasons: string[] } | undefined }))
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS && pending.length > 0; attempt++) {
+      let batch: Map<number, string>
+      try {
+        batch = runAutofixBatch(pending.map((p) => ({ id: p.id, text: p.candidate.region.text, hits: p.candidate.hits, retry: p.retry })))
+      } catch (err) {
+        if (attempt === MAX_ATTEMPTS) for (const p of pending) console.log(`skipped (model call failed: ${(err as Error).message}): ${p.candidate.region.text.slice(0, 60)}`)
+        continue
+      }
+
+      const stillPending: typeof pending = []
+      for (const p of pending) {
+        const rewritten = batch.get(p.id)
+        const label = p.candidate.region.text.slice(0, 60)
+        if (rewritten === undefined) {
+          if (attempt === MAX_ATTEMPTS) console.log(`skipped (model returned no fix): ${label}`)
+          else stillPending.push({ ...p, retry: { previous: p.candidate.region.text, reasons: ["no rewrite was returned for this comment"] } })
+          continue
+        }
+
+        const stillBroken = p.candidate.hits.filter(({ rule }) => rule.check(rewritten, undefined, language).length > 0)
+        const rewrittenParagraphs = rewritten.split(/\n\s*\n/).map((t) => t.replace(/\s+/g, " ").trim()).filter(Boolean)
+        const wrongCount = rewrittenParagraphs.length !== p.candidate.proseBlocks.length
+
+        if (stillBroken.length === 0 && !wrongCount) {
+          results.set(p.id, rewritten)
+          console.log(`fixed: ${label}`)
+          continue
+        }
+
+        const reasons = [
+          ...stillBroken.map((h) => `still fails "${h.rule.title}"`),
+          ...(wrongCount ? [`changed the paragraph count from ${p.candidate.proseBlocks.length} to ${rewrittenParagraphs.length}`] : []),
+        ]
+        if (attempt === MAX_ATTEMPTS) console.log(`skipped (${reasons.join(", ")}): ${label}`)
+        else stillPending.push({ ...p, retry: { previous: rewritten, reasons } })
+      }
+      pending = stillPending
+    }
+
+    const edits: { pos: number; end: number; replacement: string }[] = []
+    candidates.forEach((candidate, id) => {
+      const rewritten = results.get(id)
+      if (rewritten === undefined) return
+      const rewrittenParagraphs = rewritten.split(/\n\s*\n/).map((t) => t.replace(/\s+/g, " ").trim()).filter(Boolean)
+      let next = 0
+      const rebuilt = candidate.blocks.map((block) => (block.type === "prose" ? { type: "prose" as const, text: rewrittenParagraphs[next++] } : block))
+      edits.push({ pos: candidate.lineStart, end: candidate.region.end, replacement: formatAsComment(rebuilt, candidate.indent, candidate.isBlock) })
+    })
+
+    if (edits.length === 0) return
+    edits.sort((a, b) => a.pos - b.pos)
+
+    if (args.diff) {
+      for (const edit of edits) {
+        console.log(`--- ${target}`)
+        console.log(`+++ ${target}`)
+        console.log(source.slice(edit.pos, edit.end).split("\n").map((l) => `-${l}`).join("\n"))
+        console.log(edit.replacement.split("\n").map((l) => `+${l}`).join("\n"))
+      }
+      return
+    }
+
+    let next = ""
+    let cursor = 0
+    for (const edit of edits) {
+      next += source.slice(cursor, edit.pos) + edit.replacement
+      cursor = edit.end
+    }
+    next += source.slice(cursor)
+    writeFileSync(absPath, next)
+    console.log(`wrote    ${target}`)
+  }
+
   /**
    * List the language.
    *
@@ -771,29 +1049,30 @@
   /**
    * Prose in the corpus obeys every rule that carries a check.
    *
-   * Loads each rule, runs it against its own passing and failing example
-   * first, then over the text of every document with code, recorded
-   * prompts and failing examples excluded — every `.html` file under
-   * docs/ (its own prose, and the comments in every `<script>` it embeds),
-   * every `.md` file reachable from the repository root (README.md,
-   * CLAUDE.md, editor/README.md) converted to just enough HTML for a rule
-   * about markup to read, and every comment and JSDoc block in every real
-   * `.ts`/`.tsx`/`.js`/`.jsx` file the repository root can reach.
+   * Loads each rule, runs it against its own passing and failing example first.
+   * Then runs it over every document's text with code, excluding recorded
+   * prompts and failing examples. It covers every `.html` file under docs/ (its
+   * own prose and `<script>` comments). It includes every `.md` file reachable
+   * from the repository root (README.md, CLAUDE.md, editor/README.md),
+   * converted to HTML for markup-aware rules. It covers comments and JSDoc
+   * blocks in every real `.ts`, `.tsx`, `.js`, and `.jsx` file the repository
+   * root can reach.
    */
-  // Text no rule may be applied to. A code block is code. Plan boilerplate
-  // quotes the environment a plan runs in. A rule's own failing example
-  // contains, by construction, exactly what that rule forbids. And a
-  // knowledge-prompt is a record of what somebody typed: editing one to
-  // satisfy a style rule would make the record false.
+  // Rules do not apply to text. A code block is code. Plan boilerplate quotes
+  // the environment a plan runs in. A rule's own failing example contains, by
+  // construction, exactly what that rule forbids. And a knowledge-prompt is a
+  // record of what somebody typed: editing one to satisfy a style rule would
+  // make the record false.
   //
   // A quotation is the same case as a prompt, one step removed. Naming a
-  // violation is how you describe one, so a node reporting that a document
-  // says "#349" has to be able to write that. Rewriting the quote to satisfy
-  // the rule would misquote the thing being reported on.
+  // violation is how you describe one, so a node reporting that a document says
+  // "#349" has to be able to write that. Rewriting the quote to satisfy the
+  // rule would misquote what the source reported.
   //
-  // Shared with language lint's file mode in language-prose.ts, so an ad-hoc
-  // document checked before it joins the corpus is held to the same idea of
-  // checkable prose as this audit already holds every real document to.
+  // Language lint shares this with its file mode in language-prose.ts, so an
+  // ad-hoc document that we check before it joins the corpus follows the same
+  // idea of checkable prose that this audit already applies to every real
+  // document.
   const PROTECTED = PROTECTED_TAGS
   const prose = extractProse
 
@@ -859,19 +1138,19 @@
     const violations = []
 
     // The half the schema cannot state. A rule declares <script required>, so
-    // a rule without a check cannot be written. Nothing forbids a script on a
+    // you cannot write a rule without a check. Nothing forbids a script on a
     // guide, because the closed-field rule only inspects language-* children
     // and a <script> is not one. A guide carrying a check would be enforcing
-    // something while filed as guidance, so it is caught here instead.
+    // something while filed as guidance, so we catch it here instead.
     for (const path of fs.list('docs/language/guides', { ext: '.guide.html' })) {
       if (fs.parse(path).querySelector('language-guide > script')) {
         violations.push(`${path}: a guide carries a check, so it should be a rule`)
       }
     }
 
-    // A rule is run against its own two examples first. The passing one must
-    // come back clean and the failing one must not, so a check that cannot
-    // decide its own examples is caught before it ever reaches the corpus.
+    // A rule runs against its own two examples first. The passing one must come
+    // back clean and the failing one must not, so we catch a check that cannot
+    // decide its own examples before it ever reaches the corpus.
     for (const rule of rules) {
       const el = fs.parse(rule.path).querySelector('language-rule')
       const pass = el.querySelector('language-pass')
@@ -905,10 +1184,10 @@
         for (const found of rule.check(text, visible, language)) violations.push(`${path}: ${found.message}`)
       }
 
-      // Every script this document embeds, whatever its type — a command,
-      // an audit, a rule's own check, a browser-facing module — carries
-      // comments no rule has read until now, since <script> is itself
-      // protected and never contributes to the prose above.
+      // Every script this document embeds, whatever its type — a command, an
+      // audit, a rule's own check, a browser-facing module — carries comments
+      // no rule has read until now. <script> itself is protected and never
+      // contributes to the prose above.
       for (const script of Array.from(doc.querySelectorAll('script'))) {
         checkComments(path, script.textContent ?? '', rules, language, violations)
       }

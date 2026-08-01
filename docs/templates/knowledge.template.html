@@ -517,10 +517,10 @@
 
   const REQUIRES_STATUS = ['goal', 'decision', 'action']
 
-  // Throws a clean, specific error for the handful of arguments no
-  // validator can ever catch (which file to write, which file to open,
-  // whether --rel was given at all) — everything else is left to each
-  // type's own knowledge-validates script, run via `validate` below.
+  // Throws a clean, specific error for the handful of arguments no validator
+  // can ever catch (which file to write, which file to open, whether the user
+  // gave --rel) — each type's knowledge-validates script handles everything
+  // else, run via `validate` below.
   function requireArgs(...checks) {
     for (const [value, label] of checks) {
       if (value === undefined) throw new Error(`missing required argument: ${label}`)
@@ -535,34 +535,32 @@
    *     [--detail "…" | --detail -] [--commit HASH] [--files "…"] [--branch NAME]
    *     [--date YYYY-MM-DD]
    *
-   * <type> is one of goal|decision|option|action|outcome|observation.
-   * --status only applies to goal/decision/action (default "pending").
-   * --prompt only applies to goal. --file is required and becomes
+   * <type> is one of goal|decision|option|action|outcome|observation. --status
+   * only applies to goal/decision/action (default "pending"). --prompt only
+   * applies to goal. --file is required and becomes
    * knowledge/<date>-<slug>.<type>.html, matching the convention
    * spec.template.html's own add already uses.
    *
-   * --file is the SLUG ONLY, with no date on it: this function supplies
-   * the date and prepends it. `--file how-and-why` yields
-   * knowledge/2026-07-31-how-and-why.observation.html. A slug that already
-   * carries a date is rejected outright, because the alternative is a
-   * silent 2026-07-31-2026-07-31-how-and-why that validates cleanly and
-   * shows its only symptom in the filename. Contrast link/update below,
-   * whose file argument is a whole existing filename, date and
-   * .<type>.html suffix included. --detail is free-form
-   * markup (real HTML, including <script> — no tag restriction); pass
-   * --detail - to read it from stdin instead of the command line, for
-   * anything more than a one-line value. The built node is validated
-   * against its own type's validator before being written — an
-   * unrecognized <type>, a missing required field, or a field the type
-   * doesn't allow is rejected and nothing is written.
+   * --file is the SLUG ONLY, with no date on it: this function supplies the
+   * date and prepends it. `--file how-and-why` yields
+   * knowledge/2026-07-31-how-and-why.observation.html. The function rejects a
+   * slug that already carries a date outright, because the alternative is a
+   * silent 2026-07-31-2026-07-31-how-and-why that validates cleanly and shows
+   * its symptom only in the filename. Link and update commands, by contrast,
+   * take a whole existing filename with its date and .<type>.html suffix.
+   * --detail holds free-form markup (real HTML, including <script> — no tag
+   * restriction). Pass --detail - to read it from stdin instead of the command
+   * line when the value is longer than one line. Before writing the node, the
+   * validator checks it against its own type's schema. It rejects an
+   * unrecognized <type>, a missing required field, or a field the type doesn't
+   * allow, and writes nothing.
    *
-   * --date defaults to today and should be left alone when authoring.
-   * It exists for IMPORTING material whose thinking happened earlier —
-   * the deciduous migration — because the date prefix is what carries
-   * which exploration a node belongs to, and stamping imported nodes
-   * with today's date would collapse four chapters of history into one
-   * day. See link-do-not-tag.decision.html, which leans on the filename
-   * date to argue that a separate topic-tag vocabulary is unnecessary.
+   * --date defaults to today; leave it alone when authoring. It exists for
+   * importing material whose thinking happened earlier — the deciduous
+   * migration. The date prefix carries which exploration a node belongs to, and
+   * stamping imported nodes with today's date would collapse four chapters of
+   * history into one day. See link-do-not-tag.decision.html, which leans on the
+   * filename date to argue that a separate topic-tag vocabulary is unnecessary.
    * Backdating something you are writing now defeats that, so don't.
    */
   export async function add({ fs, args, cli }: CommandContext) {
@@ -606,10 +604,10 @@
 </html>
 `)
 
-    // type is unchecked above, deliberately — String(type) keeps this line
-    // from throwing when <type> was never passed at all (args._[0] is
-    // undefined); an unrecognized or missing type is instead caught by
-    // validate() below, the same way a typo'd type would be.
+    // type is unchecked above, deliberately — String(type) keeps this line from
+    // throwing when <type> was never passed at all (args._[0] is undefined). An
+    // unrecognized or missing type is instead caught by validate() below, the
+    // same way a typo'd type would be.
     const typeLabel = String(type)
     const pageTitle = `${typeLabel.charAt(0).toUpperCase()}${typeLabel.slice(1)}: ${args.title}`
     doc.querySelector('title').textContent = pageTitle
@@ -680,14 +678,13 @@
    *
    *   mycelium run knowledge delete <file>
    *
-   * Deletes the node AND every edge pointing at it, so no href is left
-   * resolving to nothing. Outgoing edges need no handling — they go with
-   * the file.
+   * Deletes the node AND every edge pointing at it, leaving no broken
+   * references. Outgoing edges need no handling — they go with the file.
    *
-   * Each removed edge is printed, with the node it came from and its
+   * This command prints each removed edge, with the node it came from and its
    * label, because an incoming edge is a claim resting on this node and
-   * dropping it silently would hide that something upstream just lost
-   * its support. Deleting is not undoable from here; the file is in git.
+   * dropping it silently would hide that something upstream just lost its
+   * support. You cannot undo deleting from here; git has the file.
    */
   export function del({ fs, args }: CommandContext) {
     requireArgs([args._[0], '<file>'])
@@ -733,16 +730,15 @@
    *     [--detail "…" | --detail - | --detail ""] [--commit HASH]
    *     [--files "…"] [--branch NAME]
    *
-   * <file> is an existing knowledge/<slug>.<type>.html file; its type is
-   * read off its own root element, not passed again. Per flag: omitted
-   * leaves the field untouched, any other value upserts it (overwrite if
-   * the tag is already present, append if not), and an explicit empty
-   * value ("") removes the field entirely. --detail follows the same
-   * rule, but is free-form markup rather than plain text — pass
-   * --detail - to read it from stdin. The resulting node is validated
-   * against its own type's validator before being written — a
-   * disallowed field, or a required field left empty, is rejected and
-   * the file on disk is left untouched.
+   * <file> is an existing knowledge/<slug>.<type>.html file; read its type off
+   * its own root element rather than passing it again. Omitted flags leave the
+   * field untouched. Any other value upserts it: overwrite if the tag is
+   * already present, append if not. An explicit empty value ("") removes the
+   * field entirely. --detail follows the same rule but carries free-form markup
+   * rather than plain text — pass --detail - to read it from stdin. The
+   * validator checks the resulting node against its own type and writes it to
+   * disk — unless it contains a disallowed field or omits a required field, in
+   * which case the validator rejects it without modifying the file.
    */
   export async function update({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<file>'])
@@ -806,14 +802,13 @@
    *   mycelium run knowledge list nodes [--status S] [--type T]
    *   mycelium run knowledge list edges
    *
-   * nodes: one line per file — path, type (read off the root element's
-   * own tag name), status (blank if the type has none), title, and a
-   * [+detail] marker (blank if the node has no non-empty knowledge-detail).
-   * --status and --type optionally filter which nodes print; --type
-   * matches the bare type (e.g. "goal", not "knowledge-goal"), the same
-   * form `add <type>` takes.
-   * edges: one line per <a data-rel> found — source file, rel, href,
-   * label text.
+   * nodes: one line per file — path, type, status, title, and a [+detail]
+   * marker. The parser reads the type from the root element tag. Status is
+   * blank if the type has none. The [+detail] marker is blank unless the node
+   * has non-empty detail. Use --status and --type as optional filters: --type
+   * matches the bare form (e.g. "goal", not "knowledge-goal"), the same form
+   * that `add <type>` takes. edges: one line per <a data-rel> found — source
+   * file, rel, href, and label text.
    */
   export function list({ fs, args }: CommandContext) {
     const kind = args._[0]
@@ -1091,35 +1086,32 @@
    *
    *   mycelium run knowledge generate graph [--out <path>]
    *
-   * Walks every knowledge/*.html file, extracts {nodes, edges} via
-   * extractGraph (imported from ./extract-graph.ts, the same copy the
-   * two edge-reading audits above import), and writes a self-
-   * contained HTML page with the graph data inlined as JSON and
-   * cytoscape.js pulled from a CDN to render and lay it out. --out <path>
-   * writes straight to that path (relative to docs/, or absolute) for
-   * committing a snapshot; omitted, writes to a temp file under the OS
-   * temp dir and prints a file:// URL to open it.
+   * Walks every knowledge/*.html file and extracts {nodes, edges} via
+   * extractGraph (imported from ./extract-graph.ts, the same copy the two
+   * edge-reading audits above import). Writes a self-contained HTML page with
+   * the graph data inlined as JSON and cytoscape.js pulled from a CDN to render
+   * and lay it out. --out <path> writes straight to that path (relative to
+   * docs/, or absolute) for committing a snapshot. Omitted, writes to a temp
+   * file under the OS temp dir and prints a file:// URL to open it.
    */
   export function generate({ fs, args }: CommandContext) {
     const kind = args._[0]
     if (kind !== 'graph') throw new Error(`unknown generate kind "${kind}" — expected "graph"`)
 
-    // extractGraph resolves cross-file edges by URL against each document's
-    // own path, so that path has to be a real absolute filesystem path —
-    // fs.list()'s paths are relative to docs/, the same root run.ts itself
-    // resolves as "./docs" from the CLI's own working directory.
+    // extractGraph resolves cross-file edges by URL against each document's own
+    // path. The path must be a real absolute filesystem path. fs.list() returns
+    // paths relative to docs/, which is the root that run.ts resolves as
+    // "./docs" from the CLI's working directory.
     const documents = fs.list('knowledge').map(({ path, doc }) => ({
       path: resolvePath('./docs', path),
       dom: doc,
     }))
     const { nodes, edges } = extractGraph(documents)
 
-    // Some edges point outside knowledge/ entirely — a leads_to into a
-    // spec-doc, say — which extractGraph has no way to know isn't one of
-    // its own six types since it only ever scanned knowledge/. cytoscape
-    // requires both endpoints of every edge to be real elements in the
-    // graph, so those get dropped here, not silently: logged, so a link
-    // to a real spec doc doesn't look like a link to nowhere.
+    // Some edges point outside knowledge/ entirely—a leads_to into a spec-doc,
+    // say. extractGraph can't validate these, since it only scanned knowledge/.
+    // cytoscape requires both endpoints to be real, so these edges get dropped.
+    // They're logged (not silently), so a real spec doc link won't look broken.
     const nodeIds = new Set(nodes.map((n) => n.id))
     const validEdges = edges.filter((e) => nodeIds.has(e.from) && nodeIds.has(e.to))
     if (validEdges.length < edges.length) {

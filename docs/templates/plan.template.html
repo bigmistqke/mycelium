@@ -231,9 +231,9 @@
 
   async function addDoc({ fs, args, cli }) {
     requireArgs([args.title, "--title"], [args.file, "--file"], [args.goal, "--goal"], [args.architecture, "--architecture"])
-    // --date defaults to today and should be left alone when authoring. It
-    // exists for converting plans written earlier in another format, so the
-    // filename keeps the date the work actually happened on.
+    // --date defaults to today and you should leave it alone when authoring. It
+    // exists for converting plans you authored earlier in another format, so
+    // the filename keeps the date the work actually happened on.
     const date = args.date ?? todayDate()
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`--date must be YYYY-MM-DD, got "${date}"`)
     const path = `plans/${date}-${args.file}.plan.html`
@@ -439,22 +439,21 @@
    *
    *   mycelium run plan check <file> [<step-id>]
    *
-   * Shells out to each plan-check-command found (one named step, or
-   * every plan-step with a plan-check if no step-id is given) via
-   * node:child_process, compares the exit code against
-   * plan-check-success (default "true" — exit 0 required; "false" —
-   * nonzero required) and, if plan-check-output is present,
-   * substring-matches it against combined stdout+stderr. On a pass,
-   * flips that step's plan-status to "completed" — a failing check
-   * leaves status untouched, since a red step mid-TDD-cycle isn't
-   * abandoned, just not done yet. Steps with no plan-check are
-   * skipped, not touched. Throws (nonzero exit) if any checked step
-   * failed.
+   * The command shells out to each plan-check-command found via
+   * node:child_process. This covers one named step, or every plan-step with a
+   * plan-check when you give no step-id. It compares the exit code against
+   * plan-check-success (default "true" means exit 0; "false" means nonzero). If
+   * plan-check-output exists, it substring-matches the output against combined
+   * stdout+stderr. On a pass, it flips that step's plan-status to "completed" —
+   * a failing check leaves status untouched, since the tool doesn't abandon a
+   * red step mid-TDD-cycle—the step remains incomplete. The command skips steps
+   * with no plan-check without touching them. It throws (nonzero exit) if any
+   * checked step failed.
    *
-   * Each plan-check-command runs from the directory `mycelium` itself
-   * was invoked from, typically the repository root, with a 5-minute
-   * timeout — a hanging command fails the check rather than hanging
-   * `plan check` indefinitely.
+   * Each plan-check-command runs from the directory where you invoked
+   * `mycelium`, typically the repository root, with a 5-minute timeout. A
+   * hanging command fails the check rather than hanging `plan check`
+   * indefinitely.
    */
   export async function check({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], "<file>"])
@@ -501,15 +500,14 @@
     }
 
     if (anyFail) {
-      // Every mutation still in memory at this point is already
-      // known-valid — each passing step was individually validated with
-      // cli.validate() right after being flipped to completed, above.
-      // main()'s own fs.commit() call (after run() returns) is never
-      // reached once this throws, so without an explicit flush here, a
-      // mixed pass/fail run over multiple steps would silently discard
-      // even the genuinely-passing steps' plan-status flips. This does
-      // NOT apply to the per-step cli.validate() throw earlier in this
-      // function — that one means "this specific mutation is invalid,
+      // Every mutation still in memory at this point is already known-valid —
+      // each passing step was individually validated with cli.validate() right
+      // after being flipped to completed, above. main()'s own fs.commit() call
+      // (after run() returns) is never reached once this throws. Without an
+      // explicit flush here, a mixed pass/fail run over multiple steps would
+      // silently discard even the genuinely-passing steps' plan-status flips.
+      // This does NOT apply to the per-step cli.validate() throw earlier in
+      // this function — that one means "this specific mutation is invalid,
       // don't persist it," which committing here would defeat.
       fs.commit()
       throw new Error("one or more checks failed")
@@ -551,20 +549,20 @@
   /**
    * Fold a plan-task's (or plan-doc's) status out of the layer below.
    *
-   * Progress is a function of the steps, so it is computed rather than
-   * stored: all completed -> "completed", some -> "active", none ->
-   * "pending". Storing it created a second source of truth that could
-   * disagree with the first silently, and did — a task read "pending"
-   * while all three of its steps read "completed".
+   * Progress is a function of the steps, so it is computed rather than stored:
+   * all completed -> "completed", some -> "active", none -> "pending". Storing
+   * it created a second source of truth that could disagree with the first
+   * silently, and did — a task read "pending" while all three of its steps read
+   * "completed".
    *
-   * `rejected` is the exception and stays declared, because no
-   * arrangement of steps implies it: a task with nothing completed is
-   * pending if you still mean to do it and rejected if you don't, and
-   * that difference exists only in someone's head until written down.
-   * So an explicit <plan-status>rejected</plan-status> wins outright.
+   * `rejected` is the exception and stays declared, because no arrangement of
+   * steps implies it. A task with nothing completed is pending if you still
+   * mean to do it, rejected if you don't. That difference lives only in
+   * someone's head until written down. So an explicit
+   * <plan-status>rejected</plan-status> wins outright.
    *
-   * A doc folds over its tasks by folding each of those over its steps,
-   * which is the same operation one level up.
+   * A doc folds over its tasks by folding each of those over its steps, which
+   * is the same operation one level up.
    */
   function deriveStatus(el) {
     if (!el) return "pending"
@@ -632,17 +630,15 @@
    *     [--check-command "…"] [--expected-success true|false]
    *     [--expected-output "…"]
    *
-   * doc/task: per-flag upsert/clear-on-empty-string convention, same as
-   * every other update in this project.
+   * doc/task: per-flag upsert/clear-on-empty-string convention, same as every
+   * other update in this project.
    *
-   * step: same per-flag convention for title/status/detail.
-   * --check-command "" removes the whole nested plan-check;
-   * --check-command with a non-empty value upserts plan-check-command,
-   * creating the plan-check wrapper first if none exists yet;
-   * --expected-success/--expected-output upsert their own fields
-   * within an existing (or just-created) plan-check — passing either
-   * one when no plan-check exists and --check-command wasn't also
-   * given is an error.
+   * step: same per-flag convention for title/status/detail. --check-command ""
+   * removes the whole nested plan-check. --check-command with a non-empty value
+   * upserts plan-check-command, creating the plan-check wrapper first if none
+   * exists yet. --expected-success/--expected-output upsert their own fields
+   * within an existing (or just-created) plan-check. Passing either one when no
+   * plan-check exists and --check-command wasn't also given is an error.
    */
   export async function update({ fs, args, cli }: CommandContext) {
     const kind = args._[0]

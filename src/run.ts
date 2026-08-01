@@ -42,8 +42,18 @@ function parseArgs(argv: string[]): ParsedArgs {
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i]
     if (token.startsWith("--")) {
-      args[token.slice(2)] = argv[i + 1]
-      i++
+      const key = token.slice(2)
+      const next = argv[i + 1]
+      // A flag with nothing after it, or with another flag right after it,
+      // takes no value — --diff, say, rather than --diff <something>. Every
+      // flag this project had until now took a value, so this only ever
+      // widens what already parsed the same way.
+      if (next === undefined || next.startsWith("--")) {
+        args[key] = "true"
+      } else {
+        args[key] = next
+        i++
+      }
     } else {
       args._.push(token)
     }

@@ -54,7 +54,80 @@ function formatCodeComment(raw: string): string {
   return paragraphs.filter(Boolean).join("\n\n")
 }
 
-export function extractComments(source: string): string[] {
+export interface CommentBlock {
+  type: "prose" | "example"
+  // prose: the paragraph, its lines already joined with a single space.
+  // example: the original lines verbatim (marker stripped, own relative
+  // indent kept), joined with "\n" — reproduced exactly, never rewritten.
+  text: string
+}
+
+// The structured form formatCodeComment collapses into one string: a
+// comment's prose and its indented examples, in source order, as
+// separate blocks instead of prose-only. A caller rewriting a comment's
+// words needs this and extractComments alone cannot give it. formatCodeComment
+// throws the example away outright, which suits a rule that only ever
+// reads prose, and loses exactly what a comment-writing caller needs back.
+//
+// Kept independent of formatCodeComment rather than built from it: the
+// two need different flush rules. formatCodeComment merges prose across
+// an example with no blank line around it, an existing quirk no real
+// comment in this corpus triggers. This one flushes on every type
+// change instead, so a caller here always gets the example back
+// verbatim regardless. autofix below checks its output against
+// formatCodeComment's before trusting it, so that difference can never
+// produce a silent mismatch. It leaves an irregular comment alone,
+// rather than risk a parse the two functions would read differently.
+export function parseComment(raw: string): { isBlock: boolean; blocks: CommentBlock[] } {
+  const isBlock = raw.startsWith("/*")
+  const lines = isBlock ? raw.replace(/^\/\*+/, "").replace(/\*+\/$/, "").split("\n") : raw.split("\n")
+
+  const blocks: CommentBlock[] = []
+  let prose: string[] = []
+  let example: string[] = []
+  const flushProse = () => {
+    if (prose.length) blocks.push({ type: "prose", text: prose.join(" ") })
+    prose = []
+  }
+  const flushExample = () => {
+    if (example.length) blocks.push({ type: "example", text: example.join("\n") })
+    example = []
+  }
+
+  lines.forEach((line, i) => {
+    const stripped = !isBlock ? line.replace(/^\/\/\s?/, "") : i === 0 ? line : line.replace(/^\s*\*\s?/, "")
+    if (!stripped.trim()) {
+      flushProse()
+      flushExample()
+      return
+    }
+    if (!(isBlock && i === 0) && /^\s/.test(stripped)) {
+      flushProse()
+      example.push(stripped)
+      return
+    }
+    flushExample()
+    prose.push(stripped.trim())
+  })
+  flushProse()
+  flushExample()
+  return { isBlock, blocks }
+}
+
+export interface CommentRange {
+  // The source range a comment occupies, so a caller that wants to change
+  // what it says can splice this exact span rather than search for it.
+  pos: number
+  end: number
+  raw: string
+  text: string
+}
+
+// Every logical comment in a JS/TS/JSX/TSX source, with the source range it
+// occupies alongside the same reading-view text extractComments returns —
+// what a caller writing a comment BACK into the file needs that
+// extractComments alone does not give it.
+export function commentRanges(source: string): CommentRange[] {
   const sourceFile = ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
   const seen = new Set<number>()
   const found: { pos: number; end: number; kind: ts.SyntaxKind; raw: string }[] = []
@@ -81,8 +154,8 @@ export function extractComments(source: string): string[] {
   // as its own separate range. Merged here whenever nothing but a single
   // line break sits between one and the next, so a sentence this project
   // wrapped across two // lines gets checked as the one sentence it is.
-  const merged: string[] = []
-  let block: { end: number; parts: string[] } | null = null
+  const merged: { pos: number; end: number; raw: string }[] = []
+  let block: { pos: number; end: number; parts: string[] } | null = null
   for (const c of found) {
     const continuesBlock = block && c.kind === ts.SyntaxKind.SingleLineCommentTrivia && /^\n[ \t]*$/.test(source.slice(block.end, c.pos))
     if (continuesBlock) {
@@ -90,11 +163,52 @@ export function extractComments(source: string): string[] {
       block!.end = c.end
       continue
     }
-    if (block) merged.push(block.parts.join("\n"))
-    block = c.kind === ts.SyntaxKind.SingleLineCommentTrivia ? { end: c.end, parts: [c.raw] } : null
-    if (!block) merged.push(c.raw)
+    if (block) merged.push({ pos: block.pos, end: block.end, raw: block.parts.join("\n") })
+    block = c.kind === ts.SyntaxKind.SingleLineCommentTrivia ? { pos: c.pos, end: c.end, parts: [c.raw] } : null
+    if (!block) merged.push({ pos: c.pos, end: c.end, raw: c.raw })
   }
-  if (block) merged.push(block.parts.join("\n"))
+  if (block) merged.push({ pos: block.pos, end: block.end, raw: block.parts.join("\n") })
 
-  return merged.map(formatCodeComment).filter(Boolean)
+  return merged.map((m) => ({ ...m, text: formatCodeComment(m.raw) })).filter((m) => m.text)
+}
+
+export function extractComments(source: string): string[] {
+  return commentRanges(source).map((c) => c.text)
+}
+
+const WRAP_WIDTH = 80
+
+function wrapWords(text: string, width: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean)
+  const lines: string[] = []
+  let line = ""
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word
+    if (line && next.length > width) {
+      lines.push(line)
+      line = word
+    } else {
+      line = next
+    }
+  }
+  if (line) lines.push(line)
+  return lines
+}
+
+// The inverse of parseComment: blocks, in order, back into `//` or
+// `/** */` syntax at the given indent. A prose block is wrapped to the
+// same ~80 column width every hand-written comment in this project
+// already uses; an example block is reproduced exactly as parseComment
+// captured it, never wrapped or reworded.
+export function formatAsComment(blocks: CommentBlock[], indent: string, isBlock: boolean): string {
+  const width = WRAP_WIDTH - indent.length - 3
+  const bodyLines: string[] = []
+  blocks.forEach((block, i) => {
+    if (i > 0) bodyLines.push("")
+    bodyLines.push(...(block.type === "prose" ? wrapWords(block.text, width) : block.text.split("\n")))
+  })
+  if (isBlock) {
+    return [`${indent}/**`, ...bodyLines.map((l) => (l ? `${indent} * ${l}` : `${indent} *`)), `${indent} */`].join("\n")
+  }
+  return bodyLines.map((l) => (l ? `${indent}// ${l}` : `${indent}//`)).join("\n")
 }
