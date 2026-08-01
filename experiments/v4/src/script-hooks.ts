@@ -112,6 +112,26 @@ function findScript(document: Document, locator: string): Element | null {
   return document.getElementById(locator)
 }
 
+// A script's type says where it runs, and that decides what language it may
+// be written in. A mycelium/* script is only ever loaded here, by this hook,
+// under Node — so it may be TypeScript, and Node is told to strip it. Anything
+// else the hook serves has to stay valid in a browser and is handed over
+// unstripped. See docs/specs/2026-08-01-script-type-decides-the-language.spec.html.
+//
+// Node does not sniff: "module" against a source carrying a type annotation is
+// a SyntaxError, not a silent fallback. So the decision has to be made here,
+// per script, and it cannot be made once for everything this hook loads —
+// the hook is not reserved to mycelium/*. Telling Node that a browser-facing
+// script may contain TypeScript would let syntax no browser can run pass
+// unnoticed until the page is opened.
+//
+// Keyed on the prefix rather than a list of names, so a mycelium/* type this
+// project has not invented yet arrives already covered.
+function formatFor(script: Element): string {
+  const type = script.getAttribute("type") ?? ""
+  return type.startsWith("mycelium/") ? "module-typescript" : "module"
+}
+
 export async function load(
   url: string,
   context: LoadContext,
@@ -130,7 +150,7 @@ export async function load(
     const script = findScript(document as unknown as Document, locator)
     if (!script) throw new Error(`no script located by "${locator}" in ${htmlPath}`)
 
-    return { format: "module", source: script.textContent ?? "", shortCircuit: true }
+    return { format: formatFor(script), source: script.textContent ?? "", shortCircuit: true }
   }
   return nextLoad(url, context)
 }
