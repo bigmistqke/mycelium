@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Overlay real knowledge-* elements on a precomputed cytoscape layout, not a Xanadu-style on-demand panel canvas</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Overlay real knowledge-* elements on a precomputed cytoscape layout, not a Xanadu-style on-demand panel canvas</knowledge-title>
+  <knowledge-confidence>65</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-detail><p>The v4/experiments xanadu exploration (<code>v4-explore-canvas-rendering</code> worktree) deliberately
+rejected a precomputed node/edge diagram in favor of an on-demand canvas of real document panels — see its
+own "Pursue a canvas of real document panels... not a precomputed node/edge diagram" decision. That call
+was for an <em>explorer</em>: open only what you click, no upfront layout.</p>
+<p><code>knowledge generate graph</code> is a different tool with a different job: a single static snapshot
+of the whole graph at once, which is exactly why it exists as a separate command from <code>explore</code>.
+That job still wants an upfront layout — so this keeps cytoscape's cose layout and edge drawing, and only
+swaps the node's own visual: the same trick the xanadu work found (the hyphenated <code>knowledge-*</code>
+tags plus <code>knowledge.template.css</code> render a full card with zero JS component) rewrites the
+"circle plus truncated label" node into a real card overlay.</p>
+<p>Cards default to compact (title/confidence/status only, detail and prompt omitted) because a
+force-directed layout of 368 nodes with full detail inlined at all times would be illegible and slow.
+Clicking a card opens its full real markup — literally the node's own <code>&lt;knowledge-*&gt;</code>
+element with detail, prompt, and links intact — in a side panel, so the compact view defers the full
+html-node look by one click rather than dropping it.</p>
+</knowledge-detail>
+</knowledge-decision>
+</body></html>

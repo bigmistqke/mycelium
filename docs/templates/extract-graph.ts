@@ -24,6 +24,7 @@ export interface GraphNode {
   type: string
   title: string
   status: string
+  confidence: string
 }
 
 export interface GraphEdge {
@@ -54,6 +55,7 @@ export function extractGraph(documents: GraphDocument[]): { nodes: GraphNode[]; 
           type: tag,
           title: el.querySelector(`${family}-title`)?.textContent?.trim() ?? "",
           status: el.querySelector(`${family}-status`)?.textContent?.trim() ?? "",
+          confidence: el.querySelector(`${family}-confidence`)?.textContent?.trim() ?? "",
         })
       }
     }
