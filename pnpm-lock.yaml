@@ -14,6 +14,9 @@ importers:
       happy-dom:
         specifier: ^20.11.0
         version: 20.11.0
+      marked:
+        specifier: ^18.0.7
+        version: 18.0.7
       retext:
         specifier: ^9.0.0
         version: 9.0.0
@@ -165,6 +168,11 @@ packages:
   is-plain-obj@4.1.0:
     resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
     engines: {node: '>=12'}
+
+  marked@18.0.7:
+    resolution: {integrity: sha512-iDVQ5ldaiKXn6b2JroX5kgRfmwgqolW7NpaEzTl1k/2Zh1njIEN9yniyLV/mOvWwtsE8OGgkjsCYvijuPk1dtA==}
+    engines: {node: '>= 20'}
+    hasBin: true
 
   nlcst-is-literal@3.0.0:
     resolution: {integrity: sha512-LRlEzrPojNGqS5J48J5spHwwhri2mPAdls8Tf1u3h6cx2XLmBKpW97gIYo+J/nPR3DyjgX3aKginSEK53OWTCA==}
@@ -403,6 +411,8 @@ snapshots:
       - utf-8-validate
 
   is-plain-obj@4.1.0: {}
+
+  marked@18.0.7: {}
 
   nlcst-is-literal@3.0.0:
     dependencies:

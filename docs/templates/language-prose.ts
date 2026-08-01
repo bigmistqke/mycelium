@@ -5,6 +5,8 @@
 // document could pass one and fail the other for reasons that have nothing
 // to do with its actual prose.
 
+import { marked } from "marked"
+
 // Text no rule may be applied to, the same set the audit has always used: a
 // code block is code, a quotation is quoted for a reason, and a
 // knowledge-prompt is a record of what somebody typed.
@@ -40,63 +42,14 @@ export function stripProtected(node: any): any {
   return clone
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-}
-
-// Inline spans a rule about markup needs to see as real elements: a backtick
-// span becomes <code>, so PROTECTED_TAGS excludes it exactly like a real
-// corpus document's <code>; **bold**/__bold__ becomes <strong>, so a
-// mini-headline opener is a real element the same rule already looks for.
-function inlineMarkdown(line: string): string {
-  return escapeHtml(line)
-    .replace(/`([^`]+)`/g, (_, code) => `<code>${code}</code>`)
-    .replace(/\*\*([^*]+)\*\*|__([^_]+)__/g, (_, a, b) => `<strong>${a ?? b}</strong>`)
-}
-
-// Just enough of markdown for the two rules that need real markup — a <p>
-// per paragraph so paragraph-length can count sentences, a heading and a
-// list item each on their own line the same way an audit's BLOCK_TAGS keeps
-// them from running into a neighbor — not a renderer. Links, tables, nested
-// lists, and every other construct are deliberately left as literal text:
-// nothing here renders, it only has to look like the HTML the rules were
-// built against.
+// Real markdown, not a hand-rolled approximation of it: a first attempt at
+// this (blank-line paragraphs, a regex per inline span) got the common cases
+// right and a real one wrong on the first real document it ran against — a
+// list item's text wrapped onto a continuation line with no marker of its
+// own, which silently turned the whole list into one overlong paragraph.
+// marked already gets wrapped list items, nested lists, blockquotes, tables,
+// and every inline span right, which is exactly the class of bug a
+// hand-rolled version keeps re-discovering one document at a time.
 export function markdownToHtmlFragment(markdown: string): string {
-  const blocks = markdown.split(/\n{2,}/)
-  const out: string[] = []
-  for (const block of blocks) {
-    const trimmed = block.trim()
-    if (!trimmed) continue
-    if (trimmed.startsWith("```")) {
-      out.push(`<pre><code>${escapeHtml(trimmed)}</code></pre>`)
-      continue
-    }
-    const heading = /^(#{1,6})\s+(.*)$/.exec(trimmed)
-    if (heading) {
-      out.push(`<h2>${inlineMarkdown(heading[2])}</h2>`)
-      continue
-    }
-    // A table row or separator is not prose; a blank result contributes
-    // nothing to either a rule reading text or one reading markup.
-    if (trimmed.startsWith("|")) continue
-
-    // A list item's own text can wrap onto a following line with no marker
-    // of its own — only the first line has to look like a list for the
-    // block to be one; every other markerless line joins the item above it,
-    // the same way a real paragraph continues across a line break.
-    const lines = trimmed.split("\n")
-    const MARKER = /^\s*([-*]|\d+\.)\s+/
-    if (MARKER.test(lines[0])) {
-      const items: string[] = []
-      for (const line of lines) {
-        if (MARKER.test(line)) items.push(line.replace(MARKER, ""))
-        else if (items.length > 0) items[items.length - 1] += ` ${line.trim()}`
-      }
-      for (const item of items) out.push(`<li>${inlineMarkdown(item)}</li>`)
-      continue
-    }
-
-    out.push(`<p>${inlineMarkdown(block.replace(/\n/g, " "))}</p>`)
-  }
-  return out.join("\n")
+  return marked.parse(markdown, { async: false }) as string
 }

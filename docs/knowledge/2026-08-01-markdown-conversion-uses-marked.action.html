@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Replace the hand-rolled markdown-to-HTML conversion with marked</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Replace the hand-rolled markdown-to-HTML conversion with marked</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>The hand-rolled paragraph/list/heading/inline-span converter in <code>markdownToHtmlFragment</code>
+already needed one correctness patch (the list-continuation-line bug) on the first real document it
+ran against. That is the expected failure mode of approximating a well-specified format with a
+handful of regexes: each real document finds the next construct it does not handle — a nested list, a
+blockquote, an escaped asterisk, a reference-style link — one bug report at a time.</p>
+<p>Replaced it with <code>marked</code>, added as a dependency: the whole function is now
+<code>marked.parse(markdown, { async: false })</code>. This is the same tradeoff this project already
+made once, for the same reason — <code>retext</code>/<code>retext-passive</code> is "the first rule
+here to import a library," accepted because hand-rolling grammatical passive-voice detection was not
+practical. Markdown parsing is the same kind of problem: well-specified, widely solved, and worth a
+real implementation rather than a repeatedly-patched approximation.</p>
+<p>Verified against a fixture combining a wrapped list item, a nested list, and a blockquote — all
+three silently mishandled or unsupported by the previous version — and the audit/lint pipeline reports
+exactly the real violations in that fixture, nothing spurious. <code>pnpm mycelium language lint</code>
+on README.md and CLAUDE.md, <code>pnpm validate</code> (792 checked, 0 fail), <code>pnpm typecheck</code>,
+and <code>pnpm check-scripts</code> (175-diagnostic baseline) all stay exactly where they were.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-01-markdown-list-continuation-lines-bug.outcome.html">the bug this replacement makes moot</a>
+  <a data-rel="depends_on" href="./2026-08-01-validate-covers-md-files.goal.html">hardens the .md coverage this goal added</a>
+</knowledge-action>
+</body></html>
