@@ -1,0 +1,27 @@
+{
+  "name": "mycelium-language-support",
+  "displayName": "Mycelium",
+  "description": "TypeScript inside this project's <script type=\"mycelium/*\"> blocks, one virtual file per block",
+  "version": "0.0.1",
+  "private": true,
+  "publisher": "mycelium",
+  "engines": { "vscode": "^1.88.0" },
+  "categories": ["Programming Languages"],
+  "main": "./extension.js",
+  "activationEvents": ["onLanguage:html"],
+  "contributes": {
+    "configuration": {
+      "title": "Mycelium",
+      "properties": {
+        "mycelium.server.path": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to editor/server.ts. Defaults to the copy beside this extension."
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

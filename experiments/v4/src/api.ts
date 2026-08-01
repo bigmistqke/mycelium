@@ -40,6 +40,11 @@ export interface CommandFilesystem {
   create(path: string, seedHtml: string): Document
   delete(path: string): void
   list(dir: string): { path: string; doc: Document }[]
+  // Writes everything touched so far. The engine calls this once after a
+  // command returns, so a command does not normally call it — plan check does,
+  // deliberately, to flush the steps that passed before it throws for the ones
+  // that did not.
+  commit(): string[]
 }
 
 export interface CommandContext {

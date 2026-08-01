@@ -32,5 +32,5 @@
   // Only src/. The other 2,042 lines of this project live inside
   // <script type="mycelium/*"> blocks in docs/, which the TypeScript compiler
   // cannot read at all — that is the language server's job, not tsconfig's.
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "editor/**/*.ts", "docs/**/*.html"]
 }
