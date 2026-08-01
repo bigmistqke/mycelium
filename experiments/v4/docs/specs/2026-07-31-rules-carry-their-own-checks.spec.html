@@ -50,9 +50,11 @@
   <spec-design>
 <p>
   Delete <code>language-checkable</code>. A <code>language-rule</code> may instead carry a
-  <code>&lt;script&gt;</code> exporting <code>check(text)</code>. A rule with a script is enforced.
-  A rule without one is guidance. Enforceability stops being described and becomes observable, so
-  it cannot be wrong.
+  <code>&lt;script&gt;</code> exporting <code>check(text)</code>.
+</p>
+<p>
+  A rule with a script is enforced. A rule without one is guidance. Enforceability stops being
+  described and becomes observable, so it cannot be wrong.
 </p>
 <h3>A check takes text, not documents</h3>
 <p>
@@ -149,9 +151,12 @@
 <p>
   Sentence length is the one number this spec does not fix. A cap of 25 words, which is what
   ASD-STE100 uses, flags 519 sentences, a quarter of the corpus. At 40 words it flags 168 and at 50
-  it flags 68. The standard's number was chosen for aircraft maintenance procedures read by
-  non-native speakers, and this corpus is expository prose about software. The number is a judgment
-  about how much rewriting is worth it, and it is left open below.
+  it flags 68.
+</p>
+<p>
+  The standard chose its number for aircraft maintenance procedures read by non-native speakers,
+  and this corpus is expository prose about software. The number is a judgment about how much
+  rewriting is worth it, and it is left open below.
 </p>
 </spec-design>
   <spec-out-of-scope>
