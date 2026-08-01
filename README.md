@@ -10,8 +10,8 @@ argument in [`docs/DESIGN.html`](docs/DESIGN.html).
 
 This project's own decision history is the proof of the idea, not a special
 case living alongside it: the knowledge graph below is one template family
-among several — specs, runnable plans, and writing rules are built the exact
-same way, with no engine code that knows any of them by name.
+among several — specs, runnable plans, and writing rules follow the exact
+same pattern, with no engine code that knows any of them by name.
 
 ## Layout
 
@@ -24,7 +24,7 @@ docs/            every document — templates and every real instance of them
     template.template.html   the schema vocabulary the other four build on
     knowledge.template.html  knowledge-goal/decision/option/action/outcome/observation —
                              this project's own decision graph
-    spec.template.html       spec-doc — a design spec, written before or alongside the work
+    spec.template.html       spec-doc — a design spec that precedes or accompanies the work
     plan.template.html       plan-doc/task/step/check — a plan whose steps can carry a
                              shell command that proves they're done
     language.template.html   language-term/rule — this project's writing rules and terms
@@ -40,7 +40,7 @@ src/             Node-only, reads/writes docs/, never opened as a webpage
   utils.ts       shared helpers: HTML parsing, template resolution, per-instance
                  validation, stdin reading, and the data: URL script loader — see
                  "Opening the documents directly" below
-  api.ts         the type contract every command script is written against
+  api.ts         the type contract every command script relies on
 editor/          a language server that gives each <script> block under docs/
                  its own virtual file and the right language, instead of
                  merging a document into one file or ignoring the block
@@ -81,9 +81,8 @@ pnpm mycelium knowledge link 2026-07-23-build-v4.goal.html 2026-07-23-html-as-st
 `<id>` resolves to whichever file under `docs/` is named `<id>.template.html` or `<id>.command.html` —
 the latter for a one-off command with no document type of its own, like `docs/commands/explore.command.html`.
 `<command>` is a named export of that file's one `<script type="mycelium/command">`. The engine only
-knows how to find and run that script —
-what `add`/`link` actually do (field shape, where edges go) is declared inside the template document
-itself, not the engine. Each command documents its own arguments in a
+knows how to find and run that script — what `add`/`link` actually do (field shape, where edges go)
+is declared inside the template document itself, not the engine. Each command documents its own arguments in a
 `/** … */` comment right above its `export function`, which is also what `--help` prints — one source
 for both, the same way for every family. `mycelium run --help` prints the full roster of every family
 and every command it exports, read off those same comments, rather than a hand-maintained list. Full
@@ -106,12 +105,11 @@ outright because an editor doesn't recognize the `type`. See
 
 ## Opening the documents directly
 
-Every file under `docs/` is meant to be opened straight in a browser, no
-server required — no exceptions. A real ES module import is CORS-checked
-even for local files, and `file://` has no stable origin to satisfy that
-check — which is why the one thing that would otherwise need importing
-across the Node/browser boundary (a five-line `data:` URL script loader)
-isn't imported at all: it's written once in `src/utils.ts` for the Node
-side, and duplicated directly inline in each browser-facing live demo that
-needs it, rather than shared through a file either side would have to
-import.
+Every file under `docs/` opens straight in a browser, no server required —
+no exceptions. A real ES module import is CORS-checked even for local
+files, and `file://` has no stable origin to satisfy that check — which is
+why the one thing that would otherwise need importing across the
+Node/browser boundary (a five-line `data:` URL script loader) isn't
+imported at all: `src/utils.ts` writes it once for the Node side, and each
+browser-facing live demo that needs it duplicates it directly inline,
+rather than importing it from a file either side would have to share.
