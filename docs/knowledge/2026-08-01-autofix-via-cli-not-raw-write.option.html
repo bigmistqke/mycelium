@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option: Route an autofix through the family's own CLI update commands, not a raw file write</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-option data-conforms-to="../templates/knowledge.template.html#knowledge-option">
+  <knowledge-title>Route an autofix through the family's own CLI update commands, not a raw file write</knowledge-title>
+  <knowledge-confidence>60</knowledge-confidence>
+  <knowledge-detail><p>For a corpus document (a knowledge/spec/plan/language entry), a verified fix should go through
+that family's own <code>update --detail -</code> (or equivalent), the same write path every other
+change to that document already goes through, rather than a direct file edit. This keeps a model's
+fix subject to the same validation, reindentation, and unchanged-file skip every other write already
+gets. A file with no such family (README.md, a source comment) has no CLI verb to route through, so
+a direct write is the only option there.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-01-lint-autofix-with-small-model.goal.html">a write-path option for this goal</a>
+</knowledge-option>
+</body></html>
