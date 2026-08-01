@@ -25,11 +25,11 @@
 <p>
   Rules in that state are not followed reliably. The session that commissioned this spec
   used bolded mini-headlines and em-dash asides throughout, against a note naming both.
-  Earlier, eight nodes written on one day averaged 415 characters of title against 117 for
+  Earlier, someone wrote eight nodes in one day that averaged 415 characters of title against 117 for
   the rest of the graph and used the detail field zero times — a shape failure no validator
   caught, because no validator was looking at prose. The pattern is the one
   <a href="../knowledge/2026-07-31-hand-copied-command-list-reads-as-absence.observation.html">a
-  hand-copied command list is read as the whole tool</a> describes from a different angle:
+  readers treat a hand-copied command list as the whole tool</a> describes from a different angle:
   what the harness puts in front of the writer is what gets done, and a rule living
   somewhere the harness does not reach is a rule that is not in effect.
 </p>
@@ -37,8 +37,7 @@
 <p>
   The project's own vocabulary has no definitions. <code>harness</code>, <code>gate</code>,
   <code>audit</code>, <code>family</code>, <code>host</code>, <code>drift</code>,
-  <code>instance</code>, <code>conformance</code> all carry specific meanings here, none
-  written down. Nothing stops the next document calling a harness a scaffolding, and
+  <code>instance</code>, <code>conformance</code> all carry specific meanings here, nobody writes down. Nothing stops the next document calling a harness a scaffolding, and
   nothing would notice.
 </p>
 <p>
@@ -53,7 +52,7 @@
   this is where it stops: <q>Not live transclusion. Links point, they don't inline.</q> It
   lists revisiting that <q>once there's a real corpus to test them against</q> as the last
   item under What's next. The corpus now exists — 277 knowledge documents, 15 specs, 11
-  plans — so the condition it was waiting on has been met without anyone noticing.
+  plans — so the condition it was waiting on is already here, without anyone noticing.
 </p>
 <p>
   A shared vocabulary is a cheaper composable than transclusion, because the unit is the
@@ -75,7 +74,7 @@
   The whole hand-authored graph holds 334 edges. The single term <code>validator</code>
   touches 42 documents. A dozen terms of art would exceed the entire authored edge count.
   These are document-to-term edges rather than document-to-document, so they replace
-  nothing; they are a second and denser layer beneath the one being written by hand, and
+  nothing; they are a second and denser layer beneath the one people hand-write, and
   nobody has to write them.
 </p>
 </spec-problem>
@@ -90,8 +89,7 @@
 <p>
   <code>language-rule</code> is a rule about writing. It carries the rule itself, an
   example that passes, an example that fails, and whether a machine can check it. The
-  passing and failing examples are not decoration: a rule stated abstractly is read
-  differently by every reader, and the pair is what pins it down.
+  passing and failing examples are not decoration: readers read a rule stated abstractly differently, and the pair is what pins it down.
 </p>
 <p>
   <code>language-term</code> is a word. It carries one meaning, its part of speech,
@@ -155,8 +153,7 @@
 </p>
 <p>
   This is also why a term family is not the tag vocabulary that decision rejected. A tag is
-  asserted about a document from outside it; a term use is inside the document, and is found
-  rather than declared.
+  asserted about a document from outside it; a term use lives inside the document rather than being declared.
 </p>
 <h3>Absorbing the vocabulary that already exists</h3>
 <p>
@@ -220,7 +217,7 @@
     it. See <a href="../templates/language.template.html">the template</a>.
   </li>
   <li>
-    Do the derived use-edges live in a rebuildable index, or get written back into the
+    Do the derived use-edges live in a rebuildable index, or should we write them back into the
     documents? Writing them back makes them visible to every reader and to the existing edge
     commands, at the cost of touching every file on every scan. An index keeps the documents
     clean and is invisible until something queries it.
@@ -229,8 +226,7 @@
     Does the audit gate or report? Gating across 277 existing documents fails on the first
     run.
     <a href="../knowledge/2026-07-30-gate-on-shape-not-rate.decision.html">Gate on node shape,
-    not on logging rate</a> is the nearest precedent and suggests gating only what is newly
-    written, but "newly written" needs a definition that does not depend on git, which a
+    not on logging rate</a> is the nearest precedent and suggests gating only what we write after now, but "newly written" needs a definition that does not depend on git, which a
     reader of the graph cannot follow.
   </li>
   <li>
@@ -248,7 +244,7 @@
         job.
       </li>
       <li>
-        The definition of <code>harness</code> was written using <code>tooling</code>, the word
+        We wrote the definition of <code>harness</code> using <code>tooling</code>, the word
         <code>harness</code> exists to replace. A real violation, caught by running the check
         against the dictionary itself, which is the argument against excluding this family
         wholesale to make the first two cases go away.

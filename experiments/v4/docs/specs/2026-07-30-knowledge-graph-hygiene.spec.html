@@ -14,7 +14,7 @@
   <spec-problem>
 <p>Two corpora hold this project's decision history, and both are degraded in
 the same way for different reasons. Deciduous holds 400 SQLite nodes, frozen
-2026-07-23. The v4 HTML graph holds 137 nodes and is live. Neither can be read
+2026-07-23. The v4 HTML graph holds 137 nodes and is live. You cannot read either
 as a narrative, which is what a knowledge graph is for.</p>
 <p>Measured on the v4 graph, 2026-07-30:</p>
 <ul>
@@ -28,7 +28,7 @@ as a narrative, which is what a knowledge graph is for.</p>
   the rest of the graph, and uses <code>knowledge-detail</code> zero times in
   eight nodes.</li>
   <li>77 of 137 nodes predate <code>knowledge-detail</code> (added 4738449,
-  2026-07-24 15:19). Of the 52 written after it existed, 12 use it.</li>
+  2026-07-24 15:19). Of the 52 nodes created after it existed, 12 use it.</li>
 </ul>
 <p>Measured on deciduous: 400 nodes, 463 edges, zero
 descriptions — the field exists and was never populated, so the entire finding
@@ -77,8 +77,7 @@ unfixed harness refills with clutter at one action per 15 minutes.</p>
 failure is <em>quality</em>: is what you logged shaped right? Quantity is what
 a timer can measure, which is why the harness measures it.</p>
 <p>The good triggers — a rejected alternative, a contradicted prediction, a
-correction — are not machine-detectable. No hook can tell that something was
-learned. But the failures are all machine-detectable, and that is enough.</p>
+correction — are not machine-detectable. No hook can tell that you learned something. But the failures are all machine-detectable, and that is enough.</p>
 <ul>
   <li><code>title-length</code> — a title beyond roughly 140 characters is a
   paragraph in the wrong field. Measured 2026-07-30: this flags <strong>47 of
@@ -95,8 +94,7 @@ learned. But the failures are all machine-detectable, and that is enough.</p>
   2026-07-30.</strong> A decision with no <code>option</code> and no
   <code>alternative_to</code> edge does record a choice without a choosing, and
   it measured 17 of 21. It is removed anyway, because under a failing gate an
-  audit must be repairable and this one is not: it asks what was rejected months
-  ago, which was frequently never written down. The only ways to go green would
+  audit must be repairable and this one is not: it asks what you rejected months ago, which you frequently never recorded. The only ways to go green would
   be to invent alternatives or to suppress the audit — the first is worse than
   the gap, the second is the decay this spec exists to prevent. An audit nobody
   can satisfy honestly teaches that audits get bypassed.</li>
@@ -117,10 +115,10 @@ modes that are measurable.</p>
   <li><code>--detail</code> enters every documented signature: CLAUDE.md's
   <code>add</code> and <code>update</code>, and any hook or skill guidance
   text. This single omission is the whole 0-of-8.</li>
-  <li><code>contradicts</code> is taught and used. It exists in the vocabulary
-  and has never fired, while the July 2026 deciduous record is built from
+  <li><code>contradicts</code> belongs to the vocabulary and we use it.
+  It has never fired, while the July 2026 deciduous record comes from
   reversals — four documented self-corrections in one session.</li>
-  <li><code>option</code> is taught. Zero in v4, 48 in deciduous; the only
+  <li><code>option</code> belongs to the vocabulary. Zero in v4, 48 in deciduous; the only
   skill teaching it points at the dead CLI.</li>
   <li><code>resolves</code> and <code>produced</code> fold into
   <code>leads_to</code>.</li>
@@ -128,7 +126,7 @@ modes that are measurable.</p>
   <code>/work</code> (frozen CLI, and <code>/decision</code> teaches the grind),
   plus the v0 and v2 commands.</li>
   <li><code>/recover</code> is <em>replaced</em>, not just removed. It drives the
-  same frozen CLI, but it is the only thing that ever read the graph back, and
+  same frozen CLI, but it is the only thing that ever reads the graph back, and
   deleting it in the pass that adds write pressure gets the incentive backwards —
   the design-rationale literature's failure mode is that the writer is not the
   beneficiary. A <code>knowledge recover</code> command surfaces the live threads
@@ -151,7 +149,7 @@ the hand-maintained metadata that derive-rather-than-declare predicts will rot.<
   01-24 to 01-25, the verify gate 07-13 to 07-15, v4 07-23 onward), so a tag
   restates the filename as a hand-maintained second copy. Multi-membership is
   already an edge — the case that justified tags, v0's query-interface decision
-  belonging both to v0 and to the v3 synthesis, is written down as the
+  belonging both to v0 and to the v3 synthesis, you write down as the
   cache-of-comprehension decision citing the query-interface decision. And
   declaring it contradicted this section's own citations of the arguments that
   status is derived rather than declared, and that a derived value cannot rot. If chapters are ever wanted for reading history as narrative, that is a
@@ -188,19 +186,19 @@ a tag vocabulary that would have needed its own discipline.</p>
 one-line why; it cannot record what was rejected, what turned out wrong, or
 what evidence was gathered.</p>
 <p>The criterion selects, it does not decide. All 400 nodes
-were read on 2026-07-30 and the cut is now made per node, not by applying the
+read all 400 nodes on 2026-07-30 and now make the cut per node, not by applying the
 rule mechanically to reach a number. The earlier "roughly 183" estimate is
-withdrawn: it was derived before anyone had read the corpus, and reading it
+no longer valid: it was derived before anyone had read the corpus, and reading it
 showed the rule alone keeps too much.</p>
 <p>Every <code>decision</code> plus its
 <code>option</code> children passes — which covers the language choice (TypeScript
 vs Rust vs Hybrid) and the package-manager choice equally, though only one of those
-ever mattered. The missing test is <em>did the choice have consequences</em>,
+ever mattered. The missing test is whether the choice had consequences,
 and no rule supplies it.</p>
 <p>Two constraints bound the per-node review. The transitive closure over
-citations still holds, so no surviving node is left with a dangling reference
+citations still holds, so no surviving node carries a dangling reference
 into a node nobody imported. And the v4 graph already cites seven of them, so
-those and their closure are kept regardless of the review —
+we keep those and their closure regardless of the review —
 otherwise the graph cannot resolve its own citations, which is the concrete
 argument for doing the import at all.</p>
 <p>Long titles split into a real title plus <code>detail</code> — the same
@@ -281,7 +279,7 @@ Inline citations become <code>data-rel</code> edges.</p>
   prerequisite of this pass, not a later one. Warning was rejected as the thing
   that decays to 52%.
   <p>This forced a second decision. Failing only works if every audit is
-  satisfiable, so <code>decision-without-alternative</code> was cut — it flagged
+  satisfiable, so we cut <code>decision-without-alternative</code> — it flagged
   17 of 21 decisions and could not be repaired without inventing rejected
   alternatives from months ago. That leaves <code>title-length</code> (47 nodes,
   move the title into <code>detail</code>) and <code>hollow-action</code> (14 of

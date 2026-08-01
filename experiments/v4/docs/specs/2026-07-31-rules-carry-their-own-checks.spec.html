@@ -25,11 +25,11 @@
   The field states an intention in the grammar of a capability.
 </p>
 <p>
-  The declared value was also wrong within two hours of being written.
+  We also declared the value wrong within two hours.
   <code>say-harness-when-you-mean-harness</code> was marked <code>no</code>, when the truth is
   that a machine cannot decide it but can flag every candidate. The repair proposed at the time
   was a third value, <code>gate|flag|none</code>, which keeps the shape that failed: still
-  written by hand, still a claim about a capability rather than the capability, still able to
+  hand-written, still a claim about a capability rather than the capability, still able to
   disagree with what exists.
 </p>
 <h3>What the ruleset should be</h3>
@@ -38,7 +38,7 @@
   hand, but importing three hundred of them produces a hand-maintained copy of somebody else's
   list, which is precisely the failure
   <a href="../knowledge/2026-07-31-hand-copied-command-list-reads-as-absence.observation.html">a
-  hand-copied command list is read as the whole tool</a> records. A small ruleset authored here
+  readers treat a hand-copied command list as the whole tool</a> records. A small ruleset authored here
   has no upstream and therefore cannot drift from one.
 </p>
 <p>
@@ -67,8 +67,7 @@
   Giving a rule <code>check(documents)</code> and a <code>data-audits</code> marker makes it an
   audit, and that is what makes reaching comments in <code>src/</code> and messages in git look
   hard: the checker has to go and find text wherever it lives. Inverted, the problem is not there.
-  Text is brought to the rule. A commit message arrives on stdin, corpus prose arrives from an
-  audit that extracts it, and nothing has to reach outside <code>docs/</code> because nothing is
+  The rule receives the text. A commit message arrives on stdin, an audit extracts corpus prose and brings it, and nothing has to reach outside <code>docs/</code> because nothing is
   reaching at all.
 </p>
 <h3>One function, three callers, none of them a family</h3>
@@ -101,14 +100,14 @@
 <h3>The two examples are the check's tests, directly</h3>
 <p>
   <code>language-pass</code> and <code>language-fail</code> are required on every rule, for a
-  human reason: a rule stated abstractly is read differently by every reader. They are also strings,
+  human reason: readers read a rule stated abstractly differently. They are also strings,
   and a check takes a string, so running a rule against its own examples needs no fixture and no
   simulated corpus.
 </p>
 <p>
   <code>lint</code> verifies every rule against its own two examples as part of its own run. A check
-  that does not flag its failing example is broken. A check that flags its passing example is
-  broken. Neither can reach the corpus without being caught.
+  that does not flag its failing example fails the test. A check that flags its passing example fails the test.
+  We catch both before they reach the corpus.
 </p>
 <h3>Protected text belongs to the caller</h3>
 <p>
@@ -156,7 +155,7 @@
 <p>
   The standard chose its number for aircraft maintenance procedures read by non-native speakers,
   and this corpus is expository prose about software. The number is a judgment about how much
-  rewriting is worth it, and it is left open below.
+  rewriting is worth it, and we leave it open below.
 </p>
 </spec-design>
   <spec-out-of-scope>
@@ -166,8 +165,7 @@
 </p>
 <p>
   The migration pass over the existing corpus. 464 em-dash asides will not be fixed
-  by the commit that makes them detectable, and most of them were written by the same author writing
-  this.
+  by the commit that makes them detectable, and the same author writing this wrote most of them.
 </p>
 <p>
   Wiring lint into another family's commands. Ruled out rather than deferred; see
@@ -206,7 +204,7 @@
     <strong>Whether corpus linting joins <code>validate</code> immediately.</strong> Gating across
     277 existing documents fails on the first run.
     <a href="../knowledge/2026-07-30-gate-on-shape-not-rate.decision.html">Gate on node shape, not
-    on logging rate</a> is the nearest precedent and suggests gating only what is newly written, but
+    on logging rate</a> is the nearest precedent and suggests gating only what we write after now, but
     "newly written" needs a definition that does not depend on git, which a reader of the graph
     cannot follow.
   </li>

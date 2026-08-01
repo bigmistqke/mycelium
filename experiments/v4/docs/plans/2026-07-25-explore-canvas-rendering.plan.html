@@ -380,7 +380,7 @@ git commit -m "experiment(v4): add explore serve — HTTP server, static routing
       <plan-detail><p>Run <code>cd experiments/v4 &amp;&amp; pnpm mycelium explore serve --port 4321</code> and open <code>http://localhost:4321/</code>.</p>
 <ul>
   <li>In devtools console: <code>explore.openPanel("DESIGN.html")</code> — expected: a panel appears near the top-left of the canvas, titled with <code>DESIGN.html</code>'s real <code>&lt;title&gt;</code>, showing its real rendered content styled by its own stylesheet (readable prose, not unstyled text).</li>
-  <li>Run the same call again — expected: no second panel; the existing one is brought to front.</li>
+  <li>Run the same call again — expected: no second panel; the existing one comes to the front.</li>
   <li><code>explore.openPanel("knowledge/2026-07-25-does-not-exist.html")</code> — expected: a panel showing "Couldn't load this document (404)." in red, not a broken/empty panel.</li>
   <li>Click the panel's close button — expected: the panel is removed and <code>explore.panels.size</code> reflects one fewer entry.</li>
 </ul>
@@ -599,7 +599,7 @@ git commit -m "experiment(v4): explore serve grows a sidebar for browsing docs/"
       <plan-title>Verify by hand in a browser</plan-title>
       <plan-status>completed</plan-status>
       <plan-detail><p>Run <code>cd experiments/v4 &amp;&amp; pnpm mycelium explore serve --port 4321</code>, open <code>http://localhost:4321/</code> and open, from the sidebar, a <code>knowledge-decision</code> file known to contain at least one <code>&lt;a data-rel&gt;</code> link — e.g. <code>knowledge/2026-07-25-drop-html-head-body-keep-doctype-charset.decision.html</code>, which links to <code>2026-07-23-html-as-store.decision.html</code> and <code>2026-07-25-shadow-dom-panel-isolation.decision.html</code>.</p>
-<p>Click one of the links rendered inside that panel. Expected: the page does not navigate away; a new panel opens near the first one, and a line is drawn connecting the two panels.</p>
+<p>Click one of the links rendered inside that panel. Expected: the page does not navigate away; a new panel opens near the first one, and the app draws a line connecting the two panels.</p>
 <p>Drag neither panel yet (that is task 5) — just confirm the line's endpoints touch the two panels' borders, not their centers, and not empty/NaN coordinates (check via devtools that the <code>&lt;line&gt;</code> element has non-empty <code>x1/y1/x2/y2</code> attributes). Stop the server with Ctrl+C.</p>
 </plan-detail>
     </plan-step>
@@ -841,7 +841,7 @@ git commit -m "experiment(v4): explore serve shows and opens backlinks per panel
       <plan-detail><p>Run <code>cd experiments/v4 &amp;&amp; pnpm mycelium explore serve --port 4321</code>. Open <code>http://localhost:4321/</code>, open two connected panels (a document and one of its links), and drag one of them to a new spot.</p>
 <ul>
   <li>Expected: the URL's hash fragment now contains a JSON-shaped value (check the address bar or <code>location.hash</code> in devtools).</li>
-  <li>Reload the page (full page reload, not just re-navigating) — expected: both panels reopen automatically, in their dragged positions, with the connector between them redrawn; no empty canvas, no re-clicking required.</li>
+  <li>Reload the page (full page reload, not just re-navigating) — expected: both panels reopen automatically, in their dragged positions, with the app redrawing the connector between them; no empty canvas, no re-clicking required.</li>
   <li>Copy the URL and open it in a new private/incognito window — expected: the same layout appears there too.</li>
   <li>Close one panel — expected: the hash updates to no longer include it; reloading again does not bring it back.</li>
 </ul>

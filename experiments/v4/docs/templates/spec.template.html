@@ -36,7 +36,7 @@
 <p>
   Every tag this project invents is hyphenated. Two reasons: the actual Custom Elements API
   (<code>customElements.define(name, Class)</code>) throws on an unhyphenated name, so a bare
-  <code>&lt;spec&gt;</code> could never later be given real behavior without a breaking rename; and it's the
+  <code>&lt;spec&gt;</code> could never accept real behavior later without a breaking rename; and it's the
   same guarantee HTML itself relies on to add new elements safely &mdash; no future standard tag will ever
   contain a hyphen. This isn't hypothetical for this project specifically: an earlier, unhyphenated version
   of this very template used <code>&lt;title&gt;</code>, a real element with its own parsing rules, and the
@@ -72,7 +72,7 @@
   the body should stay free-form. That confused two different things: a template isn't a metadata header
   bolted onto a separate free-form document, it's a set of named containers, and a container can hold
   freeform content and still be queryable <em>as a section</em>, by tag name, even though what's inside it
-  isn't atomized into fields. What actually determines whether something can be found later isn't
+  isn't atomized into fields. What actually determines whether we can find something later isn't
   "structured vs. prose," it's "inside a named tag vs. bare in the document." A three-field template left
   everything past its header outside any tag at all &mdash; invisible to any query, no matter how load-bearing
   the content was.

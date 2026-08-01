@@ -14,8 +14,7 @@
   <knowledge-detail><p>
   An audit was the one thing here that was not a document: a bare script with two attributes, no
   title, nothing validating it, and no address anything could link to. That is why
-  <code>title-length</code> stayed invisible long enough for a rule duplicating it to be written by
-  hand.
+  <code>title-length</code> stayed invisible long enough for someone to hand-write a rule duplicating it.
 </p>
 <p>
   <code>template-audit</code> declares a title, optional detail and a required script. The type lives
@@ -31,8 +30,8 @@
 </p>
 <p>
   Verified: all five audits still discovered and running, the enforcing rule still catches an
-  injected violation, and an audit written without a script fails validation by name. That last one
-  is the schema doing work no audit could: an audit that holds nothing cannot be written.
+  injected violation, and an audit without a script fails validation by name. That last one
+  is the schema doing work no audit could: the schema rejects an audit carrying no script.
 </p>
 <p>
   What the schema still cannot say is that the script carries <code>data-audits</code>, since the

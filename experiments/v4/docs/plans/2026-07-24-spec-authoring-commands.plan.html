@@ -109,9 +109,9 @@ interface Cli {
    * HTML, including &lt;script&gt; — no tag restriction); pass --detail - to
    * read it from stdin instead of the command line, for anything more
    * than a one-line value. The built node is validated against its own
-   * type's validator before being written — an unrecognized &lt;type&gt;, a
+   * type's validator before the validator writes it — an unrecognized &lt;type&gt;, a
    * missing required field, or a field the type doesn't allow is
-   * rejected and nothing is written.
+   * rejected and the tool writes nothing.
    */</code></pre>
 <p>Replace with:</p>
 <pre><code>  /**
@@ -130,9 +130,9 @@ interface Cli {
    * including &lt;script&gt; — no tag restriction); pass --detail - to read it
    * from stdin instead of the command line, for anything more than a
    * one-line value. The built node is validated against its own type's
-   * validator before being written — an unrecognized &lt;type&gt;, a missing
+   * validator before the validator writes it — an unrecognized &lt;type&gt;, a missing
    * required field, or a field the type doesn't allow is rejected and
-   * nothing is written.
+   * the tool writes nothing.
    */</code></pre></plan-detail>
     </plan-step>
     <plan-step id="task-1-step-4" data-conforms-to="../templates/plan.template.html#plan-step">
@@ -211,7 +211,7 @@ html's own copy."</code></pre></plan-detail>
   command's own &lt;code&gt;/** &amp;hellip; */&lt;/code&gt; comment is its only documentation, so
   &lt;code&gt;mycelium run spec --help&lt;/code&gt; and the usage shown here can never drift apart. No
   &lt;code&gt;link&lt;/code&gt;: every cross-reference a spec makes already lives inside one of its rich fields' own
-  markup (a &lt;code&gt;&amp;lt;a data-rel&amp;gt;&lt;/code&gt; written directly into &lt;code&gt;--body&lt;/code&gt;'s content), so there's
+  markup (you write &lt;code&gt;&amp;lt;a data-rel&amp;gt;&lt;/code&gt; directly into &lt;code&gt;--body&lt;/code&gt;'s content), so there's
   no separate "attach an edge" operation the way &lt;code&gt;knowledge-*&lt;/code&gt; needs one. No &lt;code&gt;list&lt;/code&gt;,
   yet: see &lt;a href="../specs/2026-07-24-mycelium-spec-authoring-commands.spec.html"&gt;the design spec&lt;/a&gt; for
   why that's deferred, not forgotten.
@@ -266,7 +266,7 @@ html's own copy."</code></pre></plan-detail>
    * the command line, for anything more than a trivial one-line value.
    * spec-problem and spec-design are both required by this template's own
    * validator, so a --body that omits either one is rejected the same way
-   * a missing --title would be — nothing is written.
+   * a missing --title would be — the tool writes nothing.
    */
   export async function add({ fs, args, cli }) {
     requireArgs([args.file, '--file'])
@@ -404,7 +404,7 @@ ls "$SCRATCH/docs/specs" | grep "$TODAY-scratch-spec-test"
 node "$VALIDATE" "$SCRATCH/docs"</code></pre>
 <p>Expected: <code>wrote    specs/&lt;today&gt;-scratch-spec-test.spec.html</code>; the <code>ls | grep</code> finds the file (proves the date prefix matches the actual date used); <code>0 fail</code>.</p>
 <pre><code>grep -c "spec-problem\|spec-design\|spec-status&gt;draft\|spec-date&gt;$TODAY" "$SCRATCH/docs/specs/$TODAY-scratch-spec-test.spec.html"</code></pre>
-<p>Expected: <code>4</code> — confirms <code>spec-problem</code>, <code>spec-design</code>, the default <code>draft</code> status, and <code>spec-date</code> matching the same date used in the filename are all present in the written file.</p></plan-detail>
+<p>Expected: <code>4</code> — confirms <code>spec-problem</code>, <code>spec-design</code>, the default <code>draft</code> status, and <code>spec-date</code> matching the same date used in the filename are all present in the file the tool created.</p></plan-detail>
     </plan-step>
     <plan-step id="task-2-step-4" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Verify `--body -` (stdin) with real markup, in the same scratch copy</plan-title>
@@ -428,12 +428,12 @@ node "$(pwd)/experiments/v4/src/validate.ts" "$SCRATCH/docs" 2&gt;&amp;1 | tail 
 <p>Expected: <code>wrote</code>; <code>grep -c</code> reports <code>4</code> (every fragment survived, unescaped — real <code>&lt;pre&gt;&lt;code&gt;</code> and <code>&lt;p&gt;</code> tags, not <code>&amp;lt;p&amp;gt;</code>); <code>0 fail</code>. This is the concrete proof of the whole feature's motivation: three rich sections, one command, zero shell-escaping concerns.</p></plan-detail>
     </plan-step>
     <plan-step id="task-2-step-5" data-conforms-to="../templates/plan.template.html#plan-step">
-      <plan-title>Verify `add` rejects a `--body` missing a required field, nothing written</plan-title>
+      <plan-title>Verify `add` rejects a `--body` missing a required field, the tool creates nothing</plan-title>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>(cd "$SCRATCH" &amp;&amp; node "$RUN" spec add --title "incomplete spec test" --file incomplete-spec-test --body "&lt;spec-problem&gt;&lt;p&gt;only the problem, no design&lt;/p&gt;&lt;/spec-problem&gt;" 2&gt;&amp;1)
 echo "exit: $?"
 ls "$SCRATCH/docs/specs" | grep incomplete-spec-test</code></pre>
-<p>Expected: error output contains <code>missing or empty &lt;spec-design&gt;</code>, <code>exit: 1</code>, and the final <code>ls | grep</code> prints nothing — no file was written.</p></plan-detail>
+<p>Expected: error output contains <code>missing or empty &lt;spec-design&gt;</code>, <code>exit: 1</code>, and the final <code>ls | grep</code> prints nothing — the tool creates no file.</p></plan-detail>
     </plan-step>
     <plan-step id="task-2-step-6" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Verify `update` upserts, removes, and leaves fields alone correctly, per tag found</plan-title>
@@ -534,7 +534,7 @@ families now share).</code></pre></plan-detail>
       <plan-title>Verify</plan-title>
       <plan-status>completed</plan-status>
       <plan-detail><pre><code>grep -n "spec docs still need\|hand-authoring" CLAUDE.md</code></pre>
-<p>Expected: no output — the stale claim is gone (the replacement text says "no hand-authoring gap remains," not "still need hand-authoring").</p>
+<p>Expected: no output — the stale claim no longer exists (the replacement text says "no hand-authoring gap remains," not "still need hand-authoring").</p>
 <pre><code>cd experiments/v4
 pnpm validate</code></pre>
 <p>Expected: same count as before this task, <code>0 fail</code> — <code>CLAUDE.md</code> isn't part of the graph, this just confirms nothing else broke.</p></plan-detail>
