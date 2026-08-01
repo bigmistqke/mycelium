@@ -33,23 +33,24 @@ export function extractProse(node: any): string {
 }
 
 // A rule reading markup queries a copy with every protected element already
-// gone, the same guarantee the audit gives every rule over a real document:
-// it cannot reach a code block, a recorded prompt, or a rule's own failing
-// example, because those elements are not there to find.
+// gone, the same guarantee the audit gives every rule over a real
+// document. It cannot reach a code block, a recorded prompt, or a rule's
+// own failing example, because those elements are not there to find.
 export function stripProtected(node: any): any {
   const clone = node.cloneNode(true)
   for (const el of Array.from(clone.querySelectorAll([...PROTECTED_TAGS].join(",")))) (el as any).remove()
   return clone
 }
 
-// Real markdown, not a hand-rolled approximation of it: a first attempt at
+// Real markdown, not a hand-rolled approximation of it. A first attempt at
 // this (blank-line paragraphs, a regex per inline span) got the common cases
-// right and a real one wrong on the first real document it ran against — a
+// right and a real one wrong on the first real document it ran against. A
 // list item's text wrapped onto a continuation line with no marker of its
 // own, which silently turned the whole list into one overlong paragraph.
-// marked already gets wrapped list items, nested lists, blockquotes, tables,
-// and every inline span right, which is exactly the class of bug a
-// hand-rolled version keeps re-discovering one document at a time.
+// The marked library already gets wrapped list items, nested lists,
+// blockquotes, tables, and every inline span right, which is exactly the
+// class of bug a hand-rolled version keeps re-discovering one document at
+// a time.
 export function markdownToHtmlFragment(markdown: string): string {
   return marked.parse(markdown, { async: false }) as string
 }

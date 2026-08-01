@@ -212,13 +212,16 @@
    * knowledge.template.html's add, rather than silently acquiring a second
    * date. Contrast update below, whose file argument is a whole existing
    * filename including its date.
-   * --status defaults to "draft" if omitted. --body is a blob of markup
-   * using <spec-problem>/<spec-design>/<spec-out-of-scope>/<spec-open-questions>
+   *
+   * --status defaults to "draft" if omitted.
+   *
+   * --body is a blob of markup using
+   * <spec-problem>/<spec-design>/<spec-out-of-scope>/<spec-open-questions>
    * as its own delimiters — pass --body - to read it from stdin instead of
    * the command line, for anything more than a trivial one-line value.
-   * spec-problem and spec-design are both required by this template's own
-   * validator, so a --body that omits either one is rejected the same way
-   * a missing --title would be — nothing is written.
+   * This template's own validator requires both spec-problem and
+   * spec-design, so a --body that omits either one is rejected the same
+   * way a missing --title would be — add writes nothing.
    */
   export async function add({ fs, args, cli }: CommandContext) {
     requireArgs([args.file, '--file'])
@@ -288,13 +291,15 @@
    *     [--status draft|approved|implemented] [--body "…" | --body -]
    *
    * <file> is an existing docs/specs/<date>-<topic>.spec.html file.
+   *
    * --title/--status follow the usual rule: omitted leaves the field
-   * untouched, any other value upserts it. --body applies that same rule
-   * per tag found inside it, not per flag: a tag absent from --body's
-   * content leaves that field untouched, a tag present but empty removes
-   * the field, a tag with real content upserts it (overwrite if the field
-   * already exists, append if not). spec-date is never touched by
-   * update — only add sets it, once, at creation.
+   * untouched, any other value upserts it.
+   *
+   * --body applies that same rule per tag found inside it, not per flag.
+   * A tag absent from --body's content leaves that field untouched. A tag
+   * present but empty removes it. A tag with real content upserts it —
+   * overwrite if the field already exists, append if not. spec-date is
+   * never touched by update — only add sets it, once, at creation.
    */
   export async function update({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<file>'])

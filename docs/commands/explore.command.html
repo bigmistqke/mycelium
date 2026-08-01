@@ -41,12 +41,12 @@
    *   mycelium run explore list
    *
    * One line per instance: its path (relative to docs/), its own root
-   * tag name, and its data-conforms-to value. Instances are found purely
-   * by the presence of the data-conforms-to attribute — every matching
-   * element in a document, not just the first — the same generic signal
-   * and the same querySelectorAll validate.ts's own crawl uses, so this
-   * needs no per-family knowledge and picks up any future family for
-   * free. That also means a template file's own live worked-example
+   * tag name, and its data-conforms-to value. This command finds an
+   * instance purely by the presence of the data-conforms-to attribute on
+   * it — every matching element in a document, not just the first. That
+   * is the same generic signal and the same querySelectorAll validate.ts's
+   * own crawl uses, so this needs no per-family knowledge and picks up
+   * any future family for free. That also means a template file's own live worked-example
    * instances (knowledge.template.html has six, one per type) are listed
    * too, same as validate.ts counts them — this tool doesn't special-case
    * templates any more than it special-cases any other family. Files

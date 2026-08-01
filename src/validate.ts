@@ -26,10 +26,10 @@ interface AuditInfo {
   name: string
   touches: string | null
   // The violations this audit is supposed to find: the ids of instances that
-  // exist precisely so it has something to catch. A template's worked example
-  // is built to fail the audit it illustrates, and declaring that here is what
-  // lets the audit run over the whole corpus rather than having documentation
-  // hidden from it. Absent means "find nothing", which covers every audit
+  // exist precisely so it has something to catch. A template builds its
+  // worked example to fail the audit it illustrates, and declaring that here
+  // is what lets the audit run over the whole corpus rather than having
+  // documentation hidden from it. Absent means "find nothing", which covers every audit
   // with no fixture.
   expects: string[]
   file: string
@@ -42,9 +42,9 @@ interface CheckResult {
 }
 
 // What an audit is handed. Read-only, and rooted one level above the docs
-// directory so src/ is reachable: a rule about language applies to a comment
-// in a source file as much as to prose in a document, and an audit that can
-// only see HTML can never say so.
+// directory so src/ is reachable. A rule about language applies to a
+// comment in a source file as much as to prose in a document, and an
+// audit that can only see HTML can never say so.
 //
 // Handing over a filesystem rather than a list of parsed documents is the
 // whole point. Parsed documents are the engine deciding what a project's
@@ -151,8 +151,8 @@ async function main() {
   const auditFs = createAuditFs(dirname(dir), parseCache)
   const { templates, audits } = discoverTemplatesAndAudits(documents)
   const instances = discoverInstances(documents)
-  // Audits see every document, templates included. A template's worked
-  // examples are built to fail the audit they illustrate, and each audit
+  // Audits see every document, templates included. A template builds its
+  // worked examples to fail the audit they illustrate, and each audit
   // declares those in data-expects, so a deliberate violation is an
   // assertion rather than a failure.
   //

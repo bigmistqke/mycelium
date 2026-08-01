@@ -3,8 +3,8 @@
 //
 // Everything it knows about this project is in that plugin: which script types
 // are Node-only, and that a block is the unit rather than a file. This part is
-// the standard Volar wiring, kept separate so the plugin can be run without a
-// server — editor/check.ts does exactly that.
+// the standard Volar wiring, kept separate so something else can run the
+// plugin without a server — editor/check.ts does exactly that.
 
 import { createConnection, createServer, createTypeScriptProject } from "@volar/language-server/node.js"
 import { create as createTypeScriptServices } from "volar-service-typescript"

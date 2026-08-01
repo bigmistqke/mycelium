@@ -30,9 +30,9 @@ export function walkHtmlFiles(dir: string): string[] {
 
 // Given an instance's own file and its data-conforms-to value (a path
 // relative to that file, plus a #fragment naming the type), resolves to
-// "<absolute template file path>#<fragment>" — the same key both the
-// validator lookup below and validate.ts's whole-corpus discovery use to
-// find a type's <template>/<script data-validates> pair.
+// "<absolute template file path>#<fragment>". That is the same key both
+// the validator lookup below and validate.ts's whole-corpus discovery use
+// to find a type's <template>/<script data-validates> pair.
 export function resolveTemplateRef(instanceFile: string, conformsTo: string): string {
   const [relPath, fragId] = conformsTo.split("#")
   const templateFile = resolvePath(dirname(instanceFile), relPath)
@@ -40,10 +40,10 @@ export function resolveTemplateRef(instanceFile: string, conformsTo: string): st
 }
 
 // Identifies a script within its own document for script-hooks.ts's
-// resolve()/load() to re-find later: its own id if it declared one
-// (making it importable from elsewhere, per
-// docs/knowledge/2026-07-25-id-based-cross-script-imports.decision.html),
-// otherwise a positional token computed identically here and in load() —
+// resolve()/load() to re-find later: its own id if it declared one, making
+// it importable from elsewhere, per
+// docs/knowledge/2026-07-25-id-based-cross-script-imports.decision.html.
+// Otherwise a positional token, computed identically here and in load(),
 // derived from the file, never persisted or assigned randomly.
 function locatorFor(script: Element): string {
   const id = script.getAttribute("id")
@@ -56,11 +56,11 @@ function locatorFor(script: Element): string {
 }
 
 // Runs a template-embedded <script> as a real ES module, addressed by its
-// real file and its locator within that file (see locatorFor above) —
-// script-hooks.ts's resolve()/load() hooks (registered once by run.ts and
-// validate.ts) turn "<file>#<locator>" into a synthetic file: URL sitting
-// beside the real file, then re-extract that exact script's text as the
-// module's source. Real file: URL, real hierarchical base, so the
+// real file and its locator within that file (see locatorFor above).
+// Registered once by run.ts and validate.ts, script-hooks.ts's
+// resolve()/load() hooks turn "<file>#<locator>" into a synthetic file:
+// URL sitting beside the real file, then re-extract that exact script's
+// text as the module's source. Real file: URL, real hierarchical base, so the
 // script's own relative imports (a shared helper, another family's
 // validator via the same #locator form) resolve normally — unlike the
 // data: URL this replaced, which had no base to resolve anything against.
@@ -79,7 +79,7 @@ export async function loadCheck(filePath: string, script: Element): Promise<(...
 // Imports the one generic validator shared by every type that doesn't
 // declare its own data-validates script (see template.template.html).
 // A plain dynamic import, resolved by the same script-hooks.ts hook
-// loadCheck's own loadModule relies on -- both run.ts and validate.ts
+// loadCheck's own loadModule relies on. Both run.ts and validate.ts
 // already call register() before either of them ever reaches this
 // function, so the hook is always active by the time it's called.
 export async function loadGenericValidator(

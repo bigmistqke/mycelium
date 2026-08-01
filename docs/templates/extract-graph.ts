@@ -10,9 +10,9 @@
 // ever called by one, and gains nothing from being embedded.
 //
 // It used to be embedded, and the two audits each carried their own copy of it
-// rather than importing it, because they also ran in a browser demo loaded from
-// a data: URL, which has no base to resolve an import against. The demo is gone
-// and so is the copy.
+// rather than importing it. That was because they also ran in a browser demo
+// loaded from a data: URL, which has no base to resolve an import against.
+// Removing the demo removed that copy too.
 
 export interface GraphDocument {
   path: string

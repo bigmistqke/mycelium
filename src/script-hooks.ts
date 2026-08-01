@@ -16,14 +16,16 @@
 // own file, not a different one. Only recognized when the importer is
 // itself one of this mechanism's own synthetic virtual-module URLs — an
 // ordinary file importing a bare "#foo" is Node's own reserved
-// package-subpath-import syntax and is left for nextResolve, unmodified.
+// package-subpath-import syntax, so this hook leaves it for nextResolve,
+// unmodified.
 //
-// <locator> is either a real id (an author wrote <script id="…">, so the
-// script is addressable from outside its own file) or a positional token
-// "@N" (the Nth <script> tag in that document, computed identically at
-// resolve time and load time from the same real file) — the latter is
-// never written by hand, only minted internally for a script that has no
-// id but still needs some identity to run under. See the two decisions
+// <locator> is either a real id or a positional token "@N". A real id
+// means an author wrote <script id="…">, so the script is addressable
+// from outside its own file. "@N" is the Nth <script> tag in that
+// document, computed identically at resolve time and load time from the
+// same real file. Nobody writes it by hand — this hook mints it
+// internally for a script that has no id but still needs some identity to
+// run under. See the two decisions
 // this implements: docs/knowledge/2026-07-25-virtual-module-extraction-not-concatenation.decision.html
 // and docs/knowledge/2026-07-25-id-based-cross-script-imports.decision.html.
 
@@ -113,17 +115,18 @@ function findScript(document: Document, locator: string): Element | null {
 }
 
 // A script's type says where it runs, and that decides what language it may
-// be written in. A mycelium/* script is only ever loaded here, by this hook,
-// under Node — so it may be TypeScript, and Node is told to strip it. Anything
-// else the hook serves has to stay valid in a browser and is handed over
-// unstripped. See docs/specs/2026-08-01-script-type-decides-the-language.spec.html.
+// use. This hook is the only place a mycelium/* script ever loads, under
+// Node — so it may be TypeScript, and this hook tells Node to strip it.
+// Anything else the hook serves has to stay valid in a browser, so this
+// hook hands it over unstripped. See
+// docs/specs/2026-08-01-script-type-decides-the-language.spec.html.
 //
 // Node does not sniff: "module" against a source carrying a type annotation is
-// a SyntaxError, not a silent fallback. So the decision has to be made here,
-// per script, and it cannot be made once for everything this hook loads —
-// the hook is not reserved to mycelium/*. Telling Node that a browser-facing
-// script may contain TypeScript would let syntax no browser can run pass
-// unnoticed until the page is opened.
+// a SyntaxError, not a silent fallback. So this hook has to decide here, per
+// script, rather than once for everything it loads — it is not reserved to
+// mycelium/*. Telling Node that a browser-facing script may contain
+// TypeScript would let syntax no browser can run pass unnoticed until the
+// page is opened.
 //
 // Keyed on the prefix rather than a list of names, so a mycelium/* type this
 // project has not invented yet arrives already covered.

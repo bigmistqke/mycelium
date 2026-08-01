@@ -1,11 +1,11 @@
 // A Volar language plugin for this project's HTML documents.
 //
 // The problem it solves is stated in
-// docs/specs/2026-08-01-script-type-decides-the-language.spec.html: an HTML
+// docs/specs/2026-08-01-script-type-decides-the-language.spec.html. An HTML
 // language service builds one virtual JavaScript document per HTML file and
-// concatenates every script into it, which merges scopes that are separate when
-// they run, and it ignores a script whose type it does not recognize, which is
-// every script this project actually cares about.
+// concatenates every script into it, which merges scopes that are separate
+// when they run. It also ignores a script whose type it does not
+// recognize, which is every script this project actually cares about.
 //
 // Both follow from the same mistake — treating a file as the unit — so this
 // treats a script block as the unit. Every block becomes its own virtual file
@@ -15,10 +15,10 @@
 //   type="mycelium/*"        Node only, so TypeScript
 //   type="module", classic   a browser, so JavaScript
 //
-// The blocks are found by scanning the text rather than by parsing the
-// document. A <script> is raw text until its closing tag, which is what makes
-// scanning sound here and is the same property the authoring spec relies on to
-// embed HTML inside a command's own source.
+// This scans the text for the blocks rather than parsing the document. A
+// <script> is raw text until its closing tag, which is what makes scanning
+// sound here and is the same property the authoring spec relies on to embed
+// HTML inside a command's own source.
 
 import type { LanguagePlugin, VirtualCode, CodeMapping } from "@volar/language-core"
 // Imported for its side effect on the type system only: @volar/typescript
@@ -66,9 +66,10 @@ function extensionFor(block: ScriptBlock): ".ts" | ".js" {
 }
 
 // The same locator a bare "#<locator>" resolves to at run time
-// (src/script-hooks.ts's resolve()): either the id an author wrote, or "@N",
-// the Nth <script> tag in the document — computed identically here and there
-// from the same real file, so a block with no id is still addressable.
+// (src/script-hooks.ts's resolve()) is either the id an author wrote, or
+// "@N", the Nth <script> tag in the document. Both are computed
+// identically here and there from the same real file, so a block with no
+// id is still addressable.
 function findBlockIndexByLocator(blocks: ScriptBlock[], locator: string): number | undefined {
   if (locator.startsWith("@")) {
     const index = Number(locator.slice(1))
@@ -89,25 +90,26 @@ const HASH_SPECIFIER = /(?<=\b(?:from|import)\s*\(?\s*)(['"])#([^'"]*)\1/g
 
 // Builds one block's virtual file text and its mapping back to the HTML
 // source. A bare "#locator" import is TypeScript's own reserved
-// package-subpath-import syntax — it has no idea this project overloads it to
-// mean "the sibling script with this id", which script-hooks.ts's resolve()
-// does at run time — so left alone it is always "cannot find module".
+// package-subpath-import syntax. TypeScript has no idea this project
+// overloads it to mean "the sibling script with this id", which
+// script-hooks.ts's resolve() does at run time. So left alone it is
+// always "cannot find module".
 // Rewriting it here to a real relative path to that sibling's own virtual
 // file lets TypeScript's ordinary module resolution do the rest.
 //
 // This has to happen at the text level: nothing in @volar/typescript's plugin
 // surface survives past project creation to hang a custom resolver on.
-// resolveLanguageServiceHost looked like the hook for it, but
-// createProject.js unconditionally reinstalls resolveModuleNameLiterals right
-// after calling every plugin's hook — read directly out of the installed
-// package rather than assumed from the type signature, after wiring it up
-// once and it doing nothing.
+// The resolveLanguageServiceHost hook looked like the right one, but
+// createProject.js unconditionally reinstalls resolveModuleNameLiterals
+// right after calling every plugin's hook. This project found that fact
+// by reading the installed package directly rather than trusting the type
+// signature, after wiring the hook up once and watching it do nothing.
 //
 // Only the locator's own quoted text is replaced; everything else is copied
-// through unchanged. generatedLengths lets one mapping segment have a
-// different length on each side, so a diagnostic on a locator that resolves
-// to nothing still lands on the original "#locator" text in the HTML file,
-// not on where the replacement would have been.
+// through unchanged. The generatedLengths option lets one mapping segment
+// have a different length on each side. So a diagnostic on a locator that
+// resolves to nothing still lands on the original "#locator" text in the
+// HTML file, not on where the replacement would have been.
 function buildBlockCode(
   block: ScriptBlock,
   blocks: ScriptBlock[],
@@ -237,9 +239,9 @@ export function createMyceliumLanguagePlugin(
       // One real TypeScript file per script block. Separate files mean separate
       // module scopes, so two blocks in one document may each declare `lines`,
       // exactly as they may at run time.
-      // Volar hands this the base VirtualCode type, so the blocks recorded
-      // alongside the embedded codes are read back through the shape this
-      // plugin is the only producer of.
+      // Volar hands this the base VirtualCode type, so this reads the
+      // blocks recorded alongside the embedded codes back through the
+      // shape only this plugin produces.
       getExtraServiceScripts(fileName, root) {
         const blocks = (root as MyceliumRoot).blocks
         return root.embeddedCodes!.map((code, i) => {

@@ -176,8 +176,9 @@
       // Collapsed, not just trimmed. A field's value must not depend on how
       // its source happens to be wrapped: a title written across three
       // indented lines carries newlines and leading spaces into its text,
-      // and every check below would see them. `pattern` would test against
-      // the indentation and a length count would include it. Whitespace
+      // and every check below would see them. The `pattern` check would
+      // test against the indentation, and a length count would include it.
+      // Whitespace
       // between words is formatting, so it is normalised to one space
       // before anything reads the value.
       const text = node?.textContent.replace(/\s+/g, ' ').trim() ?? ''

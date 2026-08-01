@@ -1,7 +1,7 @@
 // The contract between the engine and a family's own embedded scripts.
 //
-// A command or an audit is written inside a template document and run by the
-// engine, which hands it these objects. Until this file existed the shapes
+// A project writes a command or an audit inside a template document, and the
+// engine runs it, handing it these objects. Until this file existed the shapes
 // were declared privately in run.ts and validate.ts, so a command could only
 // destructure them and hope — every one of the arguments below arrived as an
 // implicit any.
@@ -31,8 +31,8 @@ export interface Cli {
 }
 
 // The write side. A command mutates the documents it is handed, in place, and
-// returns nothing; everything touched is serialized and written once the
-// command has finished.
+// returns nothing; the engine serializes and writes everything touched once
+// the command has finished.
 export interface CommandFilesystem {
   // Absolute path every other path here is relative to.
   readonly root: string
@@ -54,9 +54,9 @@ export interface CommandContext {
 }
 
 // What an audit is handed. Read-only, and rooted one level above the docs
-// directory so src/ is reachable: a rule about language applies to a comment
-// in a source file as much as to prose in a document, and an audit that can
-// only see HTML can never say so.
+// directory so src/ is reachable. A rule about language applies to a
+// comment in a source file as much as to prose in a document, and an
+// audit that can only see HTML can never say so.
 export interface AuditFs {
   root: string
   list(dir?: string, options?: { ext?: string }): string[]
