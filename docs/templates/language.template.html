@@ -280,6 +280,7 @@
   import { resolve as resolvePath } from "node:path"
   import { readFileSync } from "node:fs"
   import { stripProtected, extractProse, markdownToHtmlFragment } from "./language-prose.ts"
+  import { extractComments } from "./code-comments.ts"
   const TYPES = ['term', 'rule', 'guide']
 
   // Fields in the order they should appear in a written document, per type.
@@ -604,16 +605,19 @@
    * to look at, which is correct — only a rule reading plain text can fire.
    *
    * `<file>` reads that file from disk, resolved from the current working
-   * directory. A `.html` file is parsed into a real document and stripped
-   * of every protected element, the same as the prose-follows-the-language
-   * audit does for a real corpus document, so every rule — including one
-   * that reads markup — runs exactly as it would once the file joins
-   * docs/. Any other extension is treated as markdown: converted to just
-   * enough HTML for a rule about markup to have something real to read (a
-   * `<p>` per paragraph, `<code>` for a backtick span, `<strong>` for
-   * `**bold**`), not rendered. This is what makes checking a README or a
-   * spec still being drafted possible before it is corpus HTML, or ever
-   * becomes it.
+   * directory, and branches on its extension. A `.html` file is parsed
+   * into a real document and stripped of every protected element, the
+   * same as the prose-follows-the-language audit does for a real corpus
+   * document, so every rule — including one that reads markup — runs
+   * exactly as it would once the file joins docs/; every `<script>` it
+   * embeds is also checked, comment by comment. A `.ts`/`.tsx`/`.js`/`.jsx`
+   * file is not a document at all — only its comments and JSDoc are
+   * checked, the same way a script's comments are. Anything else is
+   * treated as markdown: converted to just enough HTML for a rule about
+   * markup to have something real to read (a `<p>` per paragraph, `<code>`
+   * for a backtick span, `<strong>` for `**bold**`), not rendered. This is
+   * what makes checking a README or a spec still being drafted possible
+   * before it is corpus HTML, or ever becomes it.
    *
    * Either way, reports every rule the text breaks, one line each, then
    * exits non-zero. Prints nothing and exits zero when the text is clean.
@@ -627,11 +631,17 @@
       throw new Error('usage: language lint -   or   language lint <file>')
     }
 
-    let text: string
+    let text = ''
     let node: any
+    let comments: string[] = []
 
     if (target === '-') {
       text = await cli.readStdin()
+    } else if (['.ts', '.tsx', '.js', '.jsx'].some((ext) => target.endsWith(ext))) {
+      // Not a document at all — a source file's comments are prose, its
+      // code is not, so only the comments get checked, the same as a
+      // script embedded in an HTML document does below.
+      comments = extractComments(readFileSync(resolvePath(process.cwd(), target), 'utf8'))
     } else {
       const raw = readFileSync(resolvePath(process.cwd(), target), 'utf8')
       // A .html file is already a full document; markdown is only a
@@ -641,6 +651,13 @@
         : cli.parseHTML(`<body>${markdownToHtmlFragment(raw)}</body>`)
       node = stripProtected(document.querySelector('body'))
       text = extractProse(node)
+      // Every script the document embeds carries comments of its own,
+      // the same as the prose-follows-the-language audit checks for a
+      // real corpus file — <script> is itself a protected element, so
+      // none of this text is already part of `text` above.
+      if (target.endsWith('.html')) {
+        comments = Array.from(document.querySelectorAll('script')).flatMap((s: any) => extractComments(s.textContent ?? ''))
+      }
     }
 
     const violations = []
@@ -659,18 +676,23 @@
     const language = { replaces }
 
     for (const { path, doc } of fs.list('language/rules')) {
-      const script = doc.querySelector('language-rule > script')
-      if (!script) continue
+      const ruleScript = doc.querySelector('language-rule > script')
+      if (!ruleScript) continue
       // Loaded through the engine's own loader, the same way the audit below
       // loads them, rather than a data: URL. fs.list returns paths relative
       // to this filesystem's root, which is what resolvePath needs here.
-      const mod = await loadModule(resolvePath(fs.root, path), script)
+      const mod = await loadModule(resolvePath(fs.root, path), ruleScript)
       if (typeof mod.check !== 'function') continue
       // node is undefined for stdin — a rule about markup finds nothing
       // there, which is correct — and a real (stripped) document for a
       // file, matching what the corpus audit hands the same rule.
       for (const found of mod.check(text, node, language)) {
         violations.push(`${path}: ${found.message ?? found.excerpt}`)
+      }
+      for (const comment of comments) {
+        for (const found of mod.check(comment, undefined, language)) {
+          violations.push(`${path}: ${found.message ?? found.excerpt}`)
+        }
       }
     }
 
@@ -745,16 +767,18 @@
   import { loadModule, parseHTML } from "../../src/utils.ts"
   import { resolve as resolvePath } from "node:path"
   import { PROTECTED_TAGS, extractProse, stripProtected, markdownToHtmlFragment } from "./language-prose.ts"
+  import { extractComments } from "./code-comments.ts"
   /**
    * Prose in the corpus obeys every rule that carries a check.
    *
    * Loads each rule, runs it against its own passing and failing example
    * first, then over the text of every document with code, recorded
    * prompts and failing examples excluded — every `.html` file under
-   * docs/, and every `.md` file reachable from the repository root
-   * (README.md, CLAUDE.md, editor/README.md), converted to just enough
-   * HTML for a rule about markup to read the same way lint's file mode
-   * already does.
+   * docs/ (its own prose, and the comments in every `<script>` it embeds),
+   * every `.md` file reachable from the repository root (README.md,
+   * CLAUDE.md, editor/README.md) converted to just enough HTML for a rule
+   * about markup to read, and every comment and JSDoc block in every real
+   * `.ts`/`.tsx`/`.js`/`.jsx` file the repository root can reach.
    */
   // Text no rule may be applied to. A code block is code. Plan boilerplate
   // quotes the environment a plan runs in. A rule's own failing example
@@ -809,6 +833,20 @@
       }
     }
     return map
+  }
+
+  // A comment carries no markup of its own — it is not a paragraph, it has
+  // no bolded opener to have — so it gets no second argument, the same as
+  // stdin text in lint's own mode. Only a rule that reads plain text can
+  // fire here, which is the correct half of the vocabulary for a comment.
+  function checkComments(path, source, rules, language, violations) {
+    for (const comment of extractComments(source)) {
+      for (const rule of rules) {
+        for (const found of rule.check(comment, undefined, language)) {
+          violations.push(`${path}: ${found.message}`)
+        }
+      }
+    }
   }
 
   export async function check(fs: AuditFs) {
@@ -866,6 +904,14 @@
         // put one rule in two homes.
         for (const found of rule.check(text, visible, language)) violations.push(`${path}: ${found.message}`)
       }
+
+      // Every script this document embeds, whatever its type — a command,
+      // an audit, a rule's own check, a browser-facing module — carries
+      // comments no rule has read until now, since <script> is itself
+      // protected and never contributes to the prose above.
+      for (const script of Array.from(doc.querySelectorAll('script'))) {
+        checkComments(path, script.textContent ?? '', rules, language, violations)
+      }
     }
 
     // A real document that is not corpus HTML — README.md, CLAUDE.md — is
@@ -880,6 +926,14 @@
       const text = extractProse(body)
       for (const rule of rules) {
         for (const found of rule.check(text, body, language)) violations.push(`${path}: ${found.message}`)
+      }
+    }
+
+    // A real source file, same idea as a .md file one loop up: every
+    // comment and JSDoc block in it is prose nothing has read until now.
+    for (const ext of ['.ts', '.tsx', '.js', '.jsx']) {
+      for (const path of fs.list('.', { ext })) {
+        checkComments(path, fs.read(path), rules, language, violations)
       }
     }
 

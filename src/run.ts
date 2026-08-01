@@ -6,9 +6,8 @@
 
 import { mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { basename, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
-import { register, stripTypeScriptTypes } from "node:module"
-import { parse } from "acorn"
-import type { Comment } from "acorn"
+import { register } from "node:module"
+import ts from "typescript"
 import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
 
 register("./script-hooks.ts", import.meta.url)
@@ -20,11 +19,12 @@ import type { Cli, CommandContext, ParsedArgs, Validate } from "./api.ts"
 
 export type { Cli, CommandContext, ParsedArgs, Validate }
 
-// A command host is either a content family's own <id>.template.html
-// (instances conform to it via data-conforms-to) or a singleton
-// <id>.command.html with no instances of its own — a whole-docs-tree tool
-// like docs/commands/explore.command.html. Both are found the same way,
-// searched in that order so a family template always wins a name clash.
+// A command host is either a content family's own <id>.template.html,
+// whose instances conform to it via data-conforms-to, or a singleton
+// <id>.command.html with no instances of its own. The latter is a
+// whole-docs-tree tool, like docs/commands/explore.command.html.
+// findTemplateFile finds both the same way, searching in that order so a
+// family template always wins a name clash.
 const TEMPLATE_FILE_SUFFIXES = ["template.html", "command.html"]
 
 function findTemplateFile(dir: string, id: string): string | null {
@@ -59,7 +59,7 @@ function parseArgs(argv: string[]): ParsedArgs {
 //
 // get()/create() snapshot each document's serialized HTML the moment it's
 // parsed; commit() re-serializes and compares against that snapshot before
-// writing, skipping any file that was read but never actually mutated.
+// writing, skipping any file the command read but never actually mutated.
 // Both snapshots go through the same happy-dom serialization path, so
 // parse/reserialize formatting noise cancels out on both sides — the only
 // way they can differ is a real change in between. This is what makes
@@ -97,26 +97,29 @@ function serialize(doc: Document): string {
 // consistent 2-space-per-level indentation, matching this project's own
 // hand-authored style. Plain appendChild() — what every command's
 // field()-style helper does — leaves every field butted up against its
-// neighbor with no whitespace at all. Strips any existing whitespace-only
-// text children first and rebuilds from scratch, so this is safe to call
-// more than once on the same document (get() calls it once for the
-// comparison snapshot; commit() calls it again as the last step before
-// writing, after whatever a command did to the tree in between).
+// neighbor with no whitespace at all. It strips any existing whitespace-only
+// text children first and rebuilds from scratch, so it is safe to call more
+// than once on the same document.
+//
+// get() calls it once for the comparison snapshot; commit() calls it again
+// as the last step before writing, after whatever a command did to the
+// tree in between.
 //
 // Most families (knowledge-*, spec-doc) only ever have one conforming
-// element per document, so this used to look for a single root. plan-*
-// nests conforming types three deep (plan-doc > plan-task > plan-step >
-// plan-check), so every [data-conforms-to] element in the document is now
-// reindented independently, each at a depth based on how many *other
-// conforming elements* (not raw DOM ancestors — <html>/<head>/<body>
-// don't count) contain it. A top-level root (depth 0) gets exactly the
-// indentation this function has always produced; a nested one gets
-// indented two spaces deeper per level of conforming-element nesting.
+// element per document, so this used to look for a single root.
 //
-// Still reformats one level only, per element — anything nested inside a
-// non-conforming child (e.g. knowledge-detail's or plan-detail's own
-// arbitrary markup) is left exactly as authored, since reformatting
-// arbitrary nested content risks corrupting significant whitespace inside
+// plan-* nests conforming types three deep (plan-doc > plan-task >
+// plan-step > plan-check), so this now reindents every [data-conforms-to]
+// element in the document independently. Each sits at a depth based on how many
+// *other conforming elements* contain it — not raw DOM ancestors, so
+// <html>/<head>/<body> don't count. A top-level root (depth 0) gets
+// exactly the indentation this function has always produced; a nested one
+// gets indented two spaces deeper per level of conforming-element nesting.
+//
+// Still reformats one level only, per element — this leaves anything nested
+// inside a non-conforming child (e.g. knowledge-detail's or plan-detail's
+// own arbitrary markup) exactly as authored, since reformatting arbitrary
+// nested content risks corrupting significant whitespace inside
 // <pre>/<script>.
 function indentRootChildren(doc: Document): void {
   const roots = Array.from(doc.querySelectorAll("[data-conforms-to]"))
@@ -228,64 +231,71 @@ class Filesystem {
 }
 
 // Every command script is TypeScript — a type-only import at the top, a
-// CommandContext annotation on every exported function's parameter — and
-// acorn parses plain JavaScript only. Stripping first lets the same acorn
-// pass that already finds exports and doc comments handle real command
-// scripts instead of only the untyped ones. `mode: "strip"` replaces erased
-// syntax with matching whitespace rather than removing it, so every
-// position acorn reports — and the comment-to-export distance check below,
-// which depends on those positions — still lines up with the source on disk.
-function parseCommandSource(source: string, onComment: Comment[]) {
-  return parse(stripTypeScriptTypes(source, { mode: "strip" }), { ecmaVersion: "latest", sourceType: "module", onComment })
+// CommandContext annotation on every exported function's parameter. So
+// this is parsed with the real TypeScript compiler rather than a JavaScript
+// parser that would have to strip types first. ScriptKind.TSX is a strict
+// superset of what a command script actually contains; see
+// docs/templates/code-comments.ts for why that is safe here.
+function parseCommandSource(source: string): ts.SourceFile {
+  return ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
+}
+
+function hasExportModifier(node: ts.Node): boolean {
+  return !!(ts.canHaveModifiers(node) && ts.getModifiers(node)?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword))
 }
 
 // Commands are discovered by their JSDoc, not a separate manifest: the
 // engine never needs to know what a command means, only where its doc
-// comment sits relative to the export it documents. Parsed with acorn
-// rather than a regex so `export async function`, arrow-function exports,
-// and reordered/reformatted commands all still get picked up correctly.
-function exportedFunctionNames(node: any): string[] {
-  if (node.type === "FunctionDeclaration" && node.id) return [node.id.name]
-  if (node.type !== "ExportNamedDeclaration" || !node.declaration) return []
-  const decl = node.declaration
-  if (decl.type === "FunctionDeclaration" && decl.id) return [decl.id.name]
-  if (decl.type !== "VariableDeclaration") return []
-  return decl.declarations
-    .filter((d: any) => d.id?.type === "Identifier" && /Function/.test(d.init?.type ?? ""))
-    .map((d: any) => d.id.name)
+// comment sits relative to the export it documents. Parsed with the real
+// compiler rather than a regex so `export async function`, arrow-function
+// exports, and reordered/reformatted commands all still get picked up
+// correctly.
+function exportedFunctionNames(stmt: ts.Statement): string[] {
+  if (ts.isFunctionDeclaration(stmt) && hasExportModifier(stmt) && stmt.name) return [stmt.name.text]
+  if (!ts.isVariableStatement(stmt) || !hasExportModifier(stmt)) return []
+  return stmt.declarationList.declarations
+    .filter((d) => ts.isIdentifier(d.name) && !!d.initializer && (ts.isFunctionExpression(d.initializer) || ts.isArrowFunction(d.initializer)))
+    .map((d) => (d.name as ts.Identifier).text)
 }
 
 function formatComment(raw: string): string {
   return raw
+    .replace(/^\/\*+/, "")
+    .replace(/\*+\/$/, "")
     .split("\n")
     .map((line) => line.replace(/^\s*\*\s?/, "").trimEnd())
     .filter((line, i, arr) => !(line === "" && (i === 0 || i === arr.length - 1)))
     .join("\n")
 }
 
+// The nearest block comment (JSDoc or plain) immediately preceding a node —
+// the same idea acorn's comment list + distance check used to implement,
+// now reading it directly off the compiler's own notion of a node's leading
+// trivia.
+function leadingBlockComment(source: string, node: ts.Node): string | undefined {
+  const ranges = ts.getLeadingCommentRanges(source, node.getFullStart())
+  const doc = ranges?.filter((r) => r.kind === ts.SyntaxKind.MultiLineCommentTrivia).pop()
+  return doc ? source.slice(doc.pos, doc.end) : undefined
+}
+
 function extractCommandDocs(source: string): Map<string, string> {
   const docs = new Map<string, string>()
-  const comments: Comment[] = []
-  const ast = parseCommandSource(source, comments)
+  const sourceFile = parseCommandSource(source)
 
-  for (const node of (ast as any).body) {
-    const names = exportedFunctionNames(node)
+  for (const stmt of sourceFile.statements) {
+    const names = exportedFunctionNames(stmt)
     if (names.length === 0) continue
-    // The doc comment for this export is the nearest preceding block
-    // comment with only whitespace between its `*/` and the export.
-    const doc = comments
-      .filter((c) => c.type === "Block" && c.end <= node.start && /^\s*$/.test(source.slice(c.end, node.start)))
-      .sort((a, b) => b.end - a.end)[0]
+    const doc = leadingBlockComment(source, stmt)
     if (!doc) continue
-    for (const name of names) docs.set(name, formatComment(doc.value))
+    for (const name of names) docs.set(name, formatComment(doc))
   }
   return docs
 }
 
 // The opening sentence of a doc comment, as one line. Not its first LINE:
 // these comments are hand-wrapped at roughly 72 columns, so a first line is
-// as likely to end mid-clause as at a sentence boundary, and a roster made
-// of half-sentences reads like it is broken. Joins the leading paragraph
+// as likely to end mid-clause as at a sentence boundary, and a roster of
+// half-sentences reads as broken. Joins the leading paragraph
 // back into one line and cuts at the first sentence-ending period, falling
 // back to a hard truncation for a comment that opens with no period at all.
 const SUMMARY_MAX = 76
@@ -311,21 +321,17 @@ function firstSentence(doc: string): string {
 // because printHelp takes its NAMES from the loaded module's real exports
 // and only asks the docs map for text. The roster never loads a module —
 // it reads source only, so that it can describe every family without
-// executing any of them — so it has to reject non-exports itself or it
+// executing any of them. So it has to reject non-exports itself, or it
 // would advertise a file's private helpers as commands.
 function readCommands(source: string): { name: string; summary: string }[] {
-  const comments: Comment[] = []
-  const ast = parseCommandSource(source, comments)
+  const sourceFile = parseCommandSource(source)
   const commands: { name: string; summary: string }[] = []
 
-  for (const node of (ast as any).body) {
-    if (node.type !== "ExportNamedDeclaration" || !node.declaration) continue
-    const names = exportedFunctionNames(node)
+  for (const stmt of sourceFile.statements) {
+    const names = exportedFunctionNames(stmt)
     if (names.length === 0) continue
-    const doc = comments
-      .filter((c) => c.type === "Block" && c.end <= node.start && /^\s*$/.test(source.slice(c.end, node.start)))
-      .sort((a, b) => b.end - a.end)[0]
-    for (const name of names) commands.push({ name, summary: doc ? firstSentence(formatComment(doc.value)) : "" })
+    const doc = leadingBlockComment(source, stmt)
+    for (const name of names) commands.push({ name, summary: doc ? firstSentence(formatComment(doc)) : "" })
   }
   return commands
 }
@@ -334,15 +340,15 @@ function readCommands(source: string): { name: string; summary: string }[] {
 // to someone who never thought to ask for the family it lives in. The point
 // is the NAMES: a reader who knows `unlink` exists can get its flags from
 // `<id> --help`, but a reader who doesn't concludes the capability is
-// missing — which is what happened when a hand-maintained list in CLAUDE.md
-// fell three commands behind what the CLI exports. Nothing here is
-// maintained by hand; it is read off the same command scripts the engine
-// runs.
+// missing. That is what happened when a hand-maintained list in CLAUDE.md
+// fell three commands behind what the CLI exports. Nobody maintains this
+// by hand; printRoster reads it straight off the same command scripts the
+// engine runs.
 //
 // A file is a command host only if its name ends in one of
 // TEMPLATE_FILE_SUFFIXES, the same rule findTemplateFile uses to resolve an
 // <id>. That matters beyond consistency: specs and plans QUOTE command
-// scripts in escaped code blocks, so a scan that went looking for the
+// scripts in escaped code blocks. A scan that went looking for the
 // <script> tag alone would find a dozen frozen copies of older versions of
 // these same commands and list them as real.
 function printRoster(docsDir: string, stream: (line: string) => void) {
@@ -359,10 +365,10 @@ function printRoster(docsDir: string, stream: (line: string) => void) {
     const script = document.querySelector('script[type="mycelium/command"]')
     if (!script) continue
 
-    // A host whose script acorn can't parse is a real problem, but it is
-    // not this function's problem — the roster's job is to be a complete
-    // index of the families that DO work, so a broken one is named and
-    // stepped over rather than taking every other family down with it.
+    // A host this function cannot read is a real problem, but it is not
+    // this function's problem. The roster's job is to be a complete index
+    // of the families that DO work. So this names a broken one and steps
+    // over it, rather than taking every other family down with it.
     let commands: { name: string; summary: string }[]
     try {
       commands = readCommands(script.textContent ?? "")
@@ -381,24 +387,41 @@ function printRoster(docsDir: string, stream: (line: string) => void) {
   }
 }
 
+// Every block comment anywhere in the file, in source order. An audit's own
+// description sits after its imports rather than at the very top of the
+// file, so finding only the trivia leading the first token would miss it.
+// This walks every node instead, the same way code-comments.ts does for a
+// rule checking a script's prose.
+function allBlockComments(source: string, sourceFile: ts.SourceFile): { pos: number; raw: string }[] {
+  const seen = new Set<number>()
+  const found: { pos: number; raw: string }[] = []
+  function record(pos: number, end: number, kind: ts.CommentKind) {
+    if (kind !== ts.SyntaxKind.MultiLineCommentTrivia || seen.has(pos)) return
+    seen.add(pos)
+    found.push({ pos, raw: source.slice(pos, end) })
+  }
+  function visit(node: ts.Node) {
+    ts.forEachLeadingCommentRange(source, node.getFullStart(), record)
+    ts.forEachTrailingCommentRange(source, node.getEnd(), record)
+    node.forEachChild(visit)
+  }
+  visit(sourceFile)
+  return found.sort((a, b) => a.pos - b.pos)
+}
+
 // The leading doc comment of a script that is one module rather than a set of
 // exports. An audit is a single check, so its description sits at the top of
 // the file instead of above an export, and readCommands would not find it.
 function leadingComment(source: string): string {
-  const comments: Comment[] = []
-  try {
-    parseCommandSource(source, comments)
-  } catch {
-    return ""
-  }
-  const first = comments.filter((c) => c.type === "Block").sort((a, b) => a.start - b.start)[0]
-  return first ? firstSentence(formatComment(first.value)) : ""
+  const sourceFile = parseCommandSource(source)
+  const first = allBlockComments(source, sourceFile)[0]
+  return first ? firstSentence(formatComment(first.raw)) : ""
 }
 
 // Every audit declared anywhere under docs/, with what it holds true. Audits
 // are the other half of what this tool does, and listing only commands is how
-// one of them stayed invisible long enough for a writing rule duplicating it
-// to be written by hand.
+// one of them stayed invisible long enough for someone to write a writing
+// rule duplicating it by hand.
 function printAudits(docsDir: string, stream: (line: string) => void) {
   const found: { name: string; touches: string; summary: string; file: string }[] = []
   for (const file of walkHtmlFiles(docsDir)) {
@@ -441,7 +464,7 @@ function printHelp(id: string, templateLabel: string, mod: Record<string, unknow
 }
 
 // Node reports a closed downstream pipe as an 'error' event on stdout rather
-// than killing the process with SIGPIPE the way a C program would, so any
+// than killing the process with SIGPIPE the way a C program would. So any
 // command printing more lines than `head` or `less` asks for dies with an
 // unhandled EPIPE instead of stopping quietly. Commands that stream (list,
 // and anything else printing per-node output) are exactly the ones people
@@ -458,12 +481,12 @@ async function main() {
   const [id, command, ...rest] = process.argv.slice(2)
   const docsDir = resolvePath("./docs")
 
-  // Help that was asked for goes to stdout and exits 0; help printed because
+  // Help someone asked for goes to stdout and exits 0; help printed because
   // the invocation was wrong goes to stderr and exits non-zero. The usual
-  // convention, but load-bearing here rather than cosmetic: the roster is
-  // read by a SessionStart hook, and a hook that discards stderr (as this
-  // project's does, to keep node's noise out of the transcript) would
-  // discard the whole roster with it.
+  // convention, but load-bearing here rather than cosmetic: a SessionStart
+  // hook reads the roster. A hook that discards stderr (as this project's
+  // does, to keep node's noise out of the transcript) would discard the
+  // whole roster with it.
   const out = (line: string) => console.log(line)
   const err = (line: string) => console.error(line)
 
@@ -504,9 +527,10 @@ async function main() {
 
   const args = parseArgs(rest)
 
-  // Generic path math for link-style commands: if two file arguments were
-  // given (`link <from> <to> …`), precompute the relative href between
-  // them so the command never has to know where either file lives on disk.
+  // Generic path math for link-style commands: if the invocation has two
+  // file arguments (`link <from> <to> …`), precompute the relative href
+  // between them so the command never has to know where either file lives
+  // on disk.
   if (args._.length >= 2) {
     const [from, to] = args._
     args.href = "./" + relativePath(dirname(resolvePath(docsDir, from)), resolvePath(docsDir, to))

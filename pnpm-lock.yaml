@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      acorn:
-        specifier: ^8.17.0
-        version: 8.17.0
       happy-dom:
         specifier: ^20.11.0
         version: 20.11.0
@@ -26,6 +23,9 @@ importers:
       retext-stringify:
         specifier: ^4.0.0
         version: 4.0.0
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
     devDependencies:
       '@types/node':
         specifier: ^26.1.2
@@ -42,9 +42,6 @@ importers:
       '@volar/typescript':
         specifier: 2.4.28
         version: 2.4.28
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
       volar-service-typescript:
         specifier: ^0.0.71
         version: 0.0.71(@volar/language-service@2.4.28)
