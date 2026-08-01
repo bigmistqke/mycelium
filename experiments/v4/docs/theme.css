@@ -92,26 +92,19 @@ th { color: var(--muted); font-weight: 600; }
   margin: 1.25rem 0;
 }
 .callout.not { border-color: var(--fail); }
-.live-demo {
+.worked-example {
   border: 1px solid var(--accent);
   border-radius: 8px;
   padding: 1.25rem;
   margin: 1.25rem 0;
 }
-.live-demo h4 {
+.worked-example h4 {
   margin-top: 0;
   color: var(--accent);
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-#validator-output {
-  font-weight: 600;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-}
-#validator-output.pass { color: var(--pass); background: color-mix(in srgb, var(--pass) 15%, transparent); }
-#validator-output.fail { color: var(--fail); background: color-mix(in srgb, var(--fail) 15%, transparent); }
 .mermaid { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
 footer {
   margin-top: 2.5rem;

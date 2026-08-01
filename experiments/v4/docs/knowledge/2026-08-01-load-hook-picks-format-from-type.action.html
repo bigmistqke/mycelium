@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Make the load hook pick a script's format from its type</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Make the load hook pick a script's format from its type</knowledge-title>
+  <knowledge-confidence>95</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>One function, <code>formatFor</code>, and one call site.
+<code>load</code> now returns <code>module-typescript</code> for a
+<code>mycelium/*</code> script and <code>module</code> for everything else it
+serves.</p>
+<p>Both directions were checked against a real file rather than a fixture. A
+type annotation added to the <code>mycelium/command</code> block in
+<code>knowledge.template.html</code> ran; the same annotation added to the
+<code>type="module"</code> block beside it failed to load with
+<code>Unexpected token ':'</code>. The second is the point of doing this per
+script: a browser-facing block cannot quietly acquire syntax no browser can
+run.</p>
+<p>Nothing is converted yet. This makes conversion possible and changes no
+existing script.</p>
+</knowledge-detail>
+  <knowledge-commit>5e76cba</knowledge-commit>
+  <knowledge-files>experiments/v4/src/script-hooks.ts</knowledge-files>
+  <knowledge-branch>v4-html-language-support</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-08-01-script-type-states-the-runtime.decision.html">implements the decision</a>
+</knowledge-action>
+</body></html>

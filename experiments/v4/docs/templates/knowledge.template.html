@@ -191,13 +191,18 @@
   <code>knowledge-decision</code>, the closest existing label for that relationship.
 </p>
 
-<div class="live-demo">
-  <h4>This section actually runs</h4>
+<div class="worked-example">
+  <h4>A worked example</h4>
   <p>
     One sample instance per type, checked by <code>template.template.html</code>'s generic validator, per
     the attributes on each type's own <code>&lt;template&gt;</code> above. Wired together with real
-    <code>data-rel</code> edges, not just sitting side by side &mdash; the graph-wide audits below parse
-    <em>this exact markup</em> for their input, nothing hand-typed.
+    <code>data-rel</code> edges, not just sitting side by side &mdash; the graph-wide audits below read
+    <em>this exact markup</em>, nothing hand-typed.
+  </p>
+  <p>
+    They are real instances, not illustrations. <code>mycelium validate</code> finds them by their
+    <code>data-conforms-to</code> the same way it finds every instance in the corpus, so this file fails
+    if one stops conforming.
   </p>
 
   <div id="sample-instances" style="display:none">
@@ -244,49 +249,6 @@
     </knowledge-observation>
   </div>
 
-  <pre id="validator-output">running&hellip;</pre>
-
-  <script type="module">
-    function checkGeneric(el, tag, requiredFields, checkStatus) {
-      const errors = []
-      for (const f of requiredFields) {
-        const node = el.querySelector(f)
-        if (!node || !node.textContent.trim()) errors.push(`missing or empty <${f}>`)
-      }
-      const confidence = el.querySelector('knowledge-confidence')?.textContent.trim()
-      if (confidence && (!/^\d+$/.test(confidence) || +confidence < 0 || +confidence > 100)) {
-        errors.push(`<knowledge-confidence> must be an integer 0-100, got "${confidence}"`)
-      }
-      if (checkStatus) {
-        const status = el.querySelector('knowledge-status')?.textContent.trim()
-        if (status && !['pending', 'active', 'completed', 'rejected'].includes(status)) {
-          errors.push(`<knowledge-status> must be pending|active|completed|rejected, got "${status}"`)
-        }
-      }
-      return { ok: errors.length === 0, errors }
-    }
-
-    const specs = [
-      ['knowledge-goal', ['knowledge-title', 'knowledge-confidence', 'knowledge-status'], true],
-      ['knowledge-decision', ['knowledge-title', 'knowledge-confidence', 'knowledge-status'], true],
-      ['knowledge-option', ['knowledge-title', 'knowledge-confidence'], false],
-      ['knowledge-action', ['knowledge-title', 'knowledge-confidence', 'knowledge-status'], true],
-      ['knowledge-outcome', ['knowledge-title', 'knowledge-confidence'], false],
-      ['knowledge-observation', ['knowledge-title', 'knowledge-confidence'], false],
-    ]
-
-    const container = document.getElementById('sample-instances')
-    const lines = specs.map(([tag, fields, hasStatus]) => {
-      const el = container.querySelector(tag)
-      const result = checkGeneric(el, tag, fields, hasStatus)
-      return result.ok
-        ? `PASS  <${tag}>`
-        : `FAIL  <${tag}>: ${result.errors.join('; ')}`
-    })
-    const out = document.getElementById('validator-output')
-    out.textContent = lines.join('\n')
-    out.className = lines.every(l => l.startsWith('PASS')) ? 'pass' : 'fail'
-  </script>
 </div>
 
 <h2>Graph-wide audits</h2>
@@ -332,25 +294,7 @@
    * whatever it says. Root goals are the exception because nothing precedes
    * them.
    */
-  const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
-
-  function extractGraph(documents) {
-    const nodes = []
-    const edges = []
-    for (const { path, dom } of documents) {
-      for (const tag of TYPES) {
-        for (const el of dom.querySelectorAll(tag)) nodes.push({ id: el.id || path, type: tag })
-      }
-      for (const a of dom.querySelectorAll('a[data-rel]')) {
-        const source = a.closest(TYPES.join(','))
-        if (!source) continue
-        const href = a.getAttribute('href')
-        const to = href.startsWith('#') ? href.slice(1) : new URL(href, 'file://' + path).pathname
-        edges.push({ from: source.id || path, to })
-      }
-    }
-    return { nodes, edges }
-  }
+  import { extractGraph } from "./extract-graph.ts"
 
   export function check(fs) {
     // An audit is handed a filesystem, not a document list, so this line is
@@ -385,25 +329,7 @@
    *
    * An outcome with no cause records that something happened and loses why.
    */
-  const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
-
-  function extractGraph(documents) {
-    const nodes = []
-    const edges = []
-    for (const { path, dom } of documents) {
-      for (const tag of TYPES) {
-        for (const el of dom.querySelectorAll(tag)) nodes.push({ id: el.id || path, type: tag })
-      }
-      for (const a of dom.querySelectorAll('a[data-rel]')) {
-        const source = a.closest(TYPES.join(','))
-        if (!source) continue
-        const href = a.getAttribute('href')
-        const to = href.startsWith('#') ? href.slice(1) : new URL(href, 'file://' + path).pathname
-        edges.push({ from: source.id || path, to })
-      }
-    }
-    return { nodes, edges }
-  }
+  import { extractGraph } from "./extract-graph.ts"
 
   export function check(fs) {
     // An audit is handed a filesystem, not a document list, so this line is
@@ -518,23 +444,15 @@
   }
 </script>
 
-<div class="live-demo">
-  <h4>This section actually runs</h4>
+<div class="worked-example">
+  <h4>What the audits above are aimed at</h4>
   <p>
-    Runs the exact four <code>data-audits</code> scripts above, not a hand-copied re-implementation &mdash;
-    their source text is pulled straight from the <code>&lt;script&gt;</code> tags and dynamically
-    <code>import()</code>ed from a <code>data:</code> URL via a local <code>loadCheck</code>, the same trick
-    (and the same five lines) <a href="../specs/2026-07-23-mycelium-crawler.spec.html">the
-    crawler</a> uses under Node in <code>utils.ts</code> &mdash; duplicated, not shared, since a real
-    cross-file import would be CORS-checked with no stable origin to satisfy it over <code>file://</code>,
-    and still works with a plain double-click either way. Their <code>documents</code> argument
-    here is just <code>[{ path: 'sample', dom: sample-instances }]</code>, a one-file stand-in for a real
-    crawl. The samples are wired so extraction produces exactly one violation per audit:
+    The samples are wired so that extraction produces exactly one violation per audit:
     <code>sample-observation</code> has no edges at all, <code>sample-outcome</code> has only an
     outgoing edge (to <code>sample-action</code>) with nothing pointing into it, and
     <code>sample-hollow-action</code> carries neither a detail nor a commit. That last one also has an
     outgoing <code>depends_on</code> edge purely so it doesn't show up in
-    <code>orphans-except-goal</code> as well and change what that demo asserts.
+    <code>orphans-except-goal</code> as well and change what it asserts.
   </p>
   <p>
     Each audit names its own violation in <code>data-expects</code>, and that is what makes these
@@ -550,90 +468,27 @@
     would go on saying PASS is this one.
   </p>
 
-  <pre id="audit-output">running&hellip;</pre>
-
-  <script type="module">
-    async function loadCheck(scriptSource) {
-      const mod = await import(`data:text/javascript,${encodeURIComponent(scriptSource)}`)
-      return mod.check
-    }
-
-    // A stub of the filesystem `mycelium validate` hands an audit, standing in
-    // for a real crawl with a single document: the sample container above.
-    // Each audit turns this into its own document list, so the stub only has
-    // to answer the two calls that line makes.
-    const fs = {
-      root: '',
-      list: () => ['sample'],
-      parse: () => document.getElementById('sample-instances'),
-    }
-
-    // Each audit's own data-expects is what it should find, so this demo and
-    // `mycelium validate` are checking one declaration rather than two copies
-    // of it. A list written here as well could disagree with the build, and
-    // the demo would keep saying PASS while the build failed.
-    const lines = []
-    let allCorrect = true
-    for (const script of document.querySelectorAll('script[data-audits]')) {
-      const name = script.getAttribute('data-audits')
-      const want = (script.getAttribute('data-expects') ?? '').trim().split(/\s+/).filter(Boolean)
-      const result = await (await loadCheck(script.textContent))(fs)
-      const correct = JSON.stringify(result.violations.toSorted()) === JSON.stringify(want.toSorted())
-      allCorrect = allCorrect && correct
-      lines.push(`${(name + ':').padEnd(21)}violations = [${result.violations.join(', ')}]  ${correct ? 'PASS (matches expected)' : 'FAIL (expected [' + want.join(', ') + '])'}`)
-    }
-    const out = document.getElementById('audit-output')
-    out.textContent = lines.join('\n')
-    out.className = allCorrect ? 'pass' : 'fail'
-  </script>
 </div>
 
-<h2>Graph extraction, shared via a real cross-script import</h2>
+<h2>Graph extraction, in a file</h2>
 <p>
-  <code>extractGraph(documents)</code> below is deliberately <em>not</em> what the two graph-consuming audits
-  above call (<code>orphans-except-goal</code> and <code>dangling-outcome</code> —
-  <code>hollow-action</code> reads fields rather than edges, so it never needs a graph at all) —
-  they keep their own inline copy on purpose, since each audit's <code>&lt;script data-audits&gt;</code> also
-  runs as a browser live-demo via a <code>data:</code> URL import, and a <code>data:</code> URL module has no
-  hierarchical base to resolve a cross-script <code>import</code> against (the same reasoning
-  <a data-rel="elaborates" href="../knowledge/2026-07-24-duplicate-not-share-loadcheck.decision.html">duplicate-not-share-loadcheck</a>
-  already gave for a smaller case). The <code>generate</code> command below has no such constraint — it only
-  ever runs under Node via <code>mycelium run</code> — so it imports this copy for real, by <code>id</code>,
-  the way
-  <a data-rel="elaborates" href="../knowledge/2026-07-25-id-based-cross-script-imports.decision.html">the
-  addressing decision</a> intended and
-  <a data-rel="elaborates" href="../knowledge/2026-07-25-defer-cross-template-import-demo.decision.html">the
-  deferred-demo decision</a> left for whenever a real use case showed up.
+  <code>extractGraph(documents)</code> lives in <code>extract-graph.ts</code>, beside this file, and all
+  three of its callers import it: the two graph-consuming audits above
+  (<code>orphans-except-goal</code> and <code>dangling-outcome</code> —
+  <code>hollow-action</code> reads fields rather than edges, so it never needs a graph at all) and the
+  <code>generate</code> command below.
 </p>
-<script type="module" id="extract-graph">
-  const TYPES = ['knowledge-goal', 'knowledge-decision', 'knowledge-option', 'knowledge-action', 'knowledge-outcome', 'knowledge-observation']
-
-  export function extractGraph(documents) {
-    const nodes = []
-    const edges = []
-    for (const { path, dom } of documents) {
-      for (const tag of TYPES) {
-        const family = tag.split('-')[0]
-        for (const el of dom.querySelectorAll(tag)) {
-          nodes.push({
-            id: el.id || path,
-            type: tag,
-            title: el.querySelector(`${family}-title`)?.textContent.trim() ?? '',
-            status: el.querySelector(`${family}-status`)?.textContent.trim() ?? '',
-          })
-        }
-      }
-      for (const a of dom.querySelectorAll('a[data-rel]')) {
-        const source = a.closest(TYPES.join(','))
-        if (!source) continue
-        const href = a.getAttribute('href')
-        const to = href.startsWith('#') ? href.slice(1) : new URL(href, 'file://' + path).pathname
-        edges.push({ from: source.id || path, to, rel: a.getAttribute('data-rel'), label: a.textContent.trim() })
-      }
-    }
-    return { nodes, edges }
-  }
-</script>
+<p>
+  It was embedded here until the in-page demos were removed, and each of those two audits carried its own
+  copy rather than importing. That was not preference. An audit also ran in a demo that loaded it from a
+  <code>data:</code> URL, and a <code>data:</code> URL module has no base to resolve an
+  <code>import</code> against, so an audit that imported anything would have broken the demo — the same
+  reasoning
+  <a data-rel="elaborates" href="../knowledge/2026-07-24-duplicate-not-share-loadcheck.decision.html">duplicate-not-share-loadcheck</a>
+  gave for a smaller case. With the demo gone the constraint goes, and the copies with it. See
+  <a data-rel="elaborates" href="../specs/2026-08-01-script-type-decides-the-language.spec.html">the spec</a>
+  for why this became a file rather than a script carrying an <code>id</code>.
+</p>
 
 <h2>Authoring commands</h2>
 <p>
@@ -649,7 +504,7 @@
 </p>
 <script type="mycelium/command">
   import { todayDate } from "./shared.ts"
-  import { extractGraph } from "#extract-graph"
+  import { extractGraph } from "./extract-graph.ts"
   import { tmpdir } from "node:os"
   import { join, resolve as resolvePath } from "node:path"
 
@@ -1230,9 +1085,8 @@
    *   mycelium run knowledge generate graph [--out <path>]
    *
    * Walks every knowledge/*.html file, extracts {nodes, edges} via
-   * extractGraph (imported from this same file's #extract-graph script —
-   * see "Graph extraction, shared via a real cross-script import" above
-   * for why the audits don't share this copy), and writes a self-
+   * extractGraph (imported from ./extract-graph.ts, the same copy the
+   * two edge-reading audits above import), and writes a self-
    * contained HTML page with the graph data inlined as JSON and
    * cytoscape.js pulled from a CDN to render and lay it out. --out <path>
    * writes straight to that path (relative to docs/, or absolute) for

@@ -168,12 +168,12 @@ graph LR
   re-crawling the documents, never the record of truth.
 </p>
 
-<h2>Proof, live</h2>
-<div class="live-demo">
-  <h4>This section actually runs</h4>
+<h2>Proof</h2>
+<div class="worked-example">
+  <h4>A worked example</h4>
   <p>
-    A template, an instance, and a validator, in this very document. Its result below was computed by the
-    script that follows it, not written by hand.
+    A template and an instance, in this very document. The point being made is that a document can carry
+    its own shape and something that answers to it, without either living anywhere else.
   </p>
 
   <template id="claim-shape">
@@ -184,21 +184,6 @@ graph LR
     <p data-claim>This document has no template of its own. It's the document that will eventually
     justify writing one.</p>
   </div>
-
-  <pre id="validator-output">running&hellip;</pre>
-
-  <script type="module" data-validates="#claim-shape">
-    function check(root) {
-      return !!root.querySelector('[data-claim]')
-    }
-    const sample = document.getElementById('sample-instance')
-    const out = document.getElementById('validator-output')
-    const ok = check(sample)
-    out.textContent = ok
-      ? 'PASS: #sample-instance conforms to #claim-shape'
-      : 'FAIL: #sample-instance is missing [data-claim]'
-    out.className = ok ? 'pass' : 'fail'
-  </script>
 </div>
 
 <h2>Proof case: deciduous as a template series</h2>

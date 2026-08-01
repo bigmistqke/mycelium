@@ -127,12 +127,17 @@
 <h2>Validator</h2>
 <p>Validation is handled by the generic validator in <code>template.template.html</code> using the schema attributes on the <code>&lt;template&gt;</code> element above.</p>
 
-<div class="live-demo">
-  <h4>This section actually runs</h4>
+<div class="worked-example">
+  <h4>A worked example</h4>
   <p>
     A sample <code>&lt;spec-doc&gt;</code> instance, checked by <code>template.template.html</code>'s generic
-    validator, per the attributes on this type's own <code>&lt;template&gt;</code> above. It omits both
+    validator against the attributes on this type's own <code>&lt;template&gt;</code> above. It omits both
     optional sections, which is valid.
+  </p>
+  <p>
+    It is a real instance, not an illustration: <code>mycelium validate</code> finds it by its
+    <code>data-conforms-to</code> the same way it finds every instance in the corpus, so it is checked on
+    every run and this file fails if it stops conforming.
   </p>
 
   <div id="sample-instance">
@@ -145,35 +150,6 @@
     </spec-doc>
   </div>
 
-  <pre id="validator-output">running&hellip;</pre>
-
-  <script type="module">
-    function check(root) {
-      const el = root.matches?.('spec-doc') ? root : root.querySelector('spec-doc')
-      if (!el) return { ok: false, errors: ['missing <spec-doc> element'] }
-      const errors = []
-      for (const tag of ['spec-title', 'spec-status', 'spec-date', 'spec-problem', 'spec-design']) {
-        const node = el.querySelector(tag)
-        if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
-      }
-      const statusValue = el.querySelector('spec-status')?.textContent.trim()
-      if (statusValue && !['draft', 'approved', 'implemented'].includes(statusValue)) {
-        errors.push(`<spec-status> must be draft|approved|implemented, got "${statusValue}"`)
-      }
-      for (const tag of ['spec-out-of-scope', 'spec-open-questions']) {
-        const node = el.querySelector(tag)
-        if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
-      }
-      return { ok: errors.length === 0, errors }
-    }
-    const sample = document.getElementById('sample-instance')
-    const out = document.getElementById('validator-output')
-    const result = check(sample)
-    out.textContent = result.ok
-      ? 'PASS: #sample-instance conforms to #spec-doc'
-      : `FAIL: ${result.errors.join('; ')}`
-    out.className = result.ok ? 'pass' : 'fail'
-  </script>
 </div>
 
 <h2>Authoring commands</h2>

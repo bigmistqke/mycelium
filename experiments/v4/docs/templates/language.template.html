@@ -205,11 +205,16 @@
   first, validator function optional</a> settled.
 </p>
 
-<div class="live-demo">
-  <h4>This section actually runs</h4>
+<div class="worked-example">
+  <h4>A worked example</h4>
   <p>
-    One instance of each type, checked in the browser by the same rules the template declares. The
+    One instance of each type, checked against the same rules this template declares. The
     term omits <code>language-detail</code>, which is valid; the rule includes it.
+  </p>
+  <p>
+    These are real instances, not illustrations: <code>mycelium validate</code> finds them by their
+    <code>data-conforms-to</code> the same way it finds every instance in the corpus, so they are checked
+    on every run and this file fails if one stops conforming.
   </p>
 
   <div id="sample-instance">
@@ -251,66 +256,6 @@
     </language-guide>
   </div>
 
-  <pre id="validator-output">running&hellip;</pre>
-
-  <script type="module">
-    const FIELDS = {
-      'language-term': {
-        required: ['language-title', 'language-part-of-speech', 'language-meaning'],
-        optional: ['language-avoid', 'language-detail'],
-        enums: {
-          'language-part-of-speech': ['noun', 'verb', 'adjective', 'adverb', 'phrase'],
-        },
-      },
-      'language-rule': {
-        required: ['language-title', 'language-pass', 'language-fail'],
-        optional: ['language-detail'],
-        enums: {},
-      },
-      'language-guide': {
-        required: ['language-title', 'language-pass', 'language-fail'],
-        optional: ['language-detail'],
-        enums: {},
-      },
-    }
-
-    function check(el) {
-      const type = el.tagName.toLowerCase()
-      const schema = FIELDS[type]
-      if (!schema) return { ok: false, errors: [`unknown type <${type}>`] }
-      const errors = []
-      for (const tag of schema.required) {
-        const node = el.querySelector(tag)
-        if (!node || !node.textContent.trim()) errors.push(`missing or empty <${tag}>`)
-      }
-      for (const tag of schema.optional) {
-        const node = el.querySelector(tag)
-        if (node && !node.textContent.trim()) errors.push(`<${tag}> present but empty — omit it instead`)
-      }
-      for (const [tag, allowed] of Object.entries(schema.enums)) {
-        const value = el.querySelector(tag)?.textContent.trim()
-        if (value && !allowed.includes(value)) errors.push(`<${tag}> must be ${allowed.join('|')}, got "${value}"`)
-      }
-      // The closed half of the schema: a field belonging to the other type
-      // is an error here, not ignored content.
-      const known = new Set([...schema.required, ...schema.optional])
-      for (const child of el.children) {
-        const tag = child.tagName.toLowerCase()
-        if (tag.startsWith('language-') && !known.has(tag)) errors.push(`<${tag}> is not a field of <${type}>`)
-      }
-      return { ok: errors.length === 0, errors }
-    }
-
-    const out = document.getElementById('validator-output')
-    const results = Array.from(document.getElementById('sample-instance').children)
-      .filter((el) => el.hasAttribute('data-conforms-to'))
-      .map((el) => ({ type: el.tagName.toLowerCase(), ...check(el) }))
-    const bad = results.filter((r) => !r.ok)
-    out.textContent = bad.length === 0
-      ? `PASS: ${results.map((r) => r.type).join(' and ')} both conform`
-      : bad.map((r) => `FAIL ${r.type}: ${r.errors.join('; ')}`).join('\n')
-    out.className = bad.length === 0 ? 'pass' : 'fail'
-  </script>
 </div>
 
 <h2>Authoring commands</h2>

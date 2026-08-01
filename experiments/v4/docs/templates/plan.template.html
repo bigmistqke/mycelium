@@ -124,15 +124,17 @@
   &lt;plan-check-output&gt;function not defined&lt;/plan-check-output&gt;
 &lt;/plan-check&gt;</code></pre>
 
-<div class="live-demo">
-  <h4>This section actually runs</h4>
+<div class="worked-example">
+  <h4>A worked example</h4>
   <p>
-    One realistic nested instance (a doc containing a task containing a step containing a check), checked by
-    a locally-defined direct-children-scoped validator &mdash; duplicated rather than imported, the same way
-    <code>knowledge.template.html</code>'s own live-demo validator duplicates rather than imports (a
-    browser-loaded module has no reliable way to import across files over <code>file://</code>). The real
-    authoritative check is <code>pnpm validate</code>, which does use the real shared
-    <code>validateFromTemplate</code> under Node.
+    One realistic nested instance: a doc containing a task containing a step containing a check. Each of the
+    four carries its own <code>data-conforms-to</code>, so each is checked separately against the type it
+    names, which is what makes this a worked example of the nesting rather than of one type.
+  </p>
+  <p>
+    They are real instances, not illustrations. <code>mycelium validate</code> finds them the same way it
+    finds every instance in the corpus and checks them with the shared
+    <code>validateFromTemplate</code>, so this file fails if one stops conforming.
   </p>
 
   <div id="sample-instances" style="display:none">
@@ -156,44 +158,6 @@
     </plan-doc>
   </div>
 
-  <pre id="validator-output">running...</pre>
-
-  <script type="module">
-    function directChild(root, tag) {
-      return Array.from(root.children).find((c) => c.tagName.toLowerCase() === tag)
-    }
-
-    function checkGeneric(el, required, enums) {
-      const errors = []
-      for (const f of required) {
-        const node = directChild(el, f)
-        if (!node || !node.textContent.trim()) errors.push(`missing or empty <${f}>`)
-      }
-      for (const [f, values] of Object.entries(enums)) {
-        const node = directChild(el, f)
-        const text = node?.textContent.trim()
-        if (text && !values.includes(text)) errors.push(`<${f}> must be ${values.join('|')}, got "${text}"`)
-      }
-      return { ok: errors.length === 0, errors }
-    }
-
-    const specs = [
-      ['plan-doc', 'sample-doc', ['plan-title', 'plan-date', 'plan-goal', 'plan-architecture'], { 'plan-status': ['rejected'] }],
-      ['plan-task', 'sample-task', ['plan-title', 'plan-files'], { 'plan-status': ['rejected'] }],
-      ['plan-step', 'sample-step', ['plan-title', 'plan-status'], { 'plan-status': ['pending', 'completed'] }],
-      ['plan-check', 'sample-check', ['plan-check-command'], { 'plan-check-success': ['true', 'false'] }],
-    ]
-
-    const container = document.getElementById('sample-instances')
-    const lines = specs.map(([tag, id, required, enums]) => {
-      const el = container.querySelector(`#${id}`)
-      const result = checkGeneric(el, required, enums)
-      return result.ok ? `PASS  <${tag}>` : `FAIL  <${tag}>: ${result.errors.join('; ')}`
-    })
-    const out = document.getElementById('validator-output')
-    out.textContent = lines.join('\n')
-    out.className = lines.every((l) => l.startsWith('PASS')) ? 'pass' : 'fail'
-  </script>
 </div>
 
 <h2>Authoring commands</h2>
