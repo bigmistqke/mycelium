@@ -140,7 +140,7 @@
   &lt;language-pass&gt;&hellip; an example that passes &hellip;&lt;/language-pass&gt;
   &lt;language-fail&gt;&hellip; an example that fails &hellip;&lt;/language-fail&gt;
   &lt;language-detail&gt;&hellip; optional, free-form &hellip;&lt;/language-detail&gt;
-  &lt;script&gt;export function check(text) { &hellip; }&lt;/script&gt;
+  &lt;script type="mycelium/rule"&gt;export function check(text) { &hellip; }&lt;/script&gt;
 &lt;/language-rule&gt;
 
 &lt;language-guide&gt;   &lt;!-- same fields, no script --&gt;
@@ -465,6 +465,10 @@
       const value = values[tag]
       if (value === undefined || value === '') continue
       const el = doc.createElement(tag)
+      // A rule's check is Node-only machinery, so its script says so: an
+      // unrecognized type keeps a browser from running it on page load, and
+      // it is what tells the module hook the script may be TypeScript.
+      if (tag === 'script') el.setAttribute('type', 'mycelium/rule')
       if (RICH_FIELDS.has(tag)) el.innerHTML = value
       else el.textContent = value
       root.appendChild(el)
@@ -525,6 +529,10 @@
         continue
       }
       const el = doc.createElement(tag)
+      // A rule's check is Node-only machinery, so its script says so: an
+      // unrecognized type keeps a browser from running it on page load, and
+      // it is what tells the module hook the script may be TypeScript.
+      if (tag === 'script') el.setAttribute('type', 'mycelium/rule')
       if (RICH_FIELDS.has(tag)) el.innerHTML = value
       else el.textContent = value
       root.appendChild(el)
@@ -623,11 +631,10 @@
     for (const { path, doc } of fs.list('language/rules')) {
       const script = doc.querySelector('language-rule > script')
       if (!script) continue
-      // Loaded through a data: URL, the same way the audit loads them and the
-      // browser demos in the other templates do. No path arithmetic, and the
-      // same limit: a rule loaded this way cannot import a library by bare
-      // name, because a data: URL has no base to resolve one against.
-      const mod = await loadModule(resolvePath('docs', path), script)
+      // Loaded through the engine's own loader, the same way the audit below
+      // loads them, rather than a data: URL. fs.list returns paths relative
+      // to this filesystem's root, which is what resolvePath needs here.
+      const mod = await loadModule(resolvePath(fs.root, path), script)
       if (typeof mod.check !== 'function') continue
       // No second argument: text on stdin has no document behind it, so a
       // rule about markup finds nothing here, which is correct.
@@ -746,11 +753,10 @@
     return out
   }
 
-  // Rule scripts load through a data: URL rather than the module hook the
-  // engine uses, so this needs no path arithmetic and works the same way the
-  // browser demos in the other templates already do. The cost is that a rule
-  // loaded this way cannot import a library by bare name: a data: URL has no
-  // base to resolve one against.
+  // Rule scripts load through the same module hook the engine uses for every
+  // other embedded script, so a rule can import and can be TypeScript. An
+  // AuditFs is rooted one level above docs/, which is why the paths it lists
+  // start with "docs/" and are resolved against that root here.
   async function loadRules(fs) {
     const rules = []
     for (const path of fs.list('docs/language', { ext: '.rule.html' })) {

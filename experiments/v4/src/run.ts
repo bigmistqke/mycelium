@@ -169,6 +169,14 @@ class Filesystem {
     this.#root = root
   }
 
+  // A command that has to hand a real file path to something else needs to
+  // resolve one, and every path this class takes or returns is relative to
+  // this root. AuditFs has exposed the same thing all along; this is the
+  // read side of it, so a command can do the arithmetic an audit already can.
+  get root(): string {
+    return this.#root
+  }
+
   get(path: string): Document {
     const full = resolvePath(this.#root, path)
     let entry = this.#touched.get(full)

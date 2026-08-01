@@ -12,7 +12,7 @@
   <language-pass><p>The roster reads the command scripts, so it cannot drift.</p></language-pass>
   <language-fail><p><strong>The fix.</strong> The roster is read off the command scripts.</p></language-fail>
   <language-detail><p>A bolded opener is a heading wearing a paragraph. It promises structure the document does not have, and a reader skimming the bold text gets an outline nobody wrote. Say the thing in a sentence.</p></language-detail>
-  <script>// Markup, not text, so this reads the document rather than the string. A
+  <script type="mycelium/rule">// Markup, not text, so this reads the document rather than the string. A
 // paragraph whose first element child is bold and starts the paragraph is
 // the mini-headline shape. Bold later in a paragraph is emphasis and fine.
 export function check(text, doc) {
