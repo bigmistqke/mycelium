@@ -18,7 +18,7 @@
     <code>../language/rules/&lt;slug&gt;.rule.html</code>, with <b>no date prefix</b> &mdash; see
     below, this is the one place this family departs from its siblings</div>
   <div><b>Purpose:</b> hold this project's writing rules and its terms of art as documents, so that
-    the language every other family is written in is itself part of the corpus</div>
+    the language every other family writes in is itself part of the corpus</div>
   <div><b>Sibling of:</b> <code>knowledge.template.html</code> (six types),
     <code>spec.template.html</code> (one), <code>plan.template.html</code> (three)</div>
   <div><b>Specified by:</b> <a data-rel="specifies" href="../specs/2026-07-31-language-template-html.spec.html">the
@@ -45,7 +45,7 @@
 <h2>Two types, because a rule and a word are not the same object</h2>
 <p>
   A <code>language-rule</code> is a rule about writing, and its load-bearing content is a pair of
-  examples. A rule stated abstractly is read differently by every reader; the example that passes
+  examples. Every reader reads a rule stated abstractly differently; the example that passes
   and the example that fails are what pin it down, which is why both are required rather than
   optional colour.
 </p>
@@ -75,7 +75,7 @@
 </p>
 <p>
   Terms and rules sit in separate directories because thirty-five one-line words and fourteen
-  rules interleave alphabetically otherwise, and neither list can be read. This is a split by
+  rules interleave alphabetically otherwise, and nobody could read either list. This is a split by
   type, not by subject: a term goes with terms and a rule with rules, so there is no judgment to
   make on each entry. A split by subject would be one, which is the cost
   <a data-rel="depends_on" href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do
@@ -165,7 +165,7 @@
   A rule carries a check; a guide does not. That is the entire difference between
   the two types, and it is why they are two types rather than one with a field saying which.
   <code>language-rule</code> declares <code>&lt;script required&gt;</code>, so a rule with no
-  check fails its own template and cannot be written. Nothing can claim to be enforced and not be.
+  check fails its own template, and nobody can write one. Nothing can claim to be enforced and not be.
 </p>
 <p>
   A field would have let it. An earlier version of this template had
@@ -226,7 +226,7 @@
       <language-fail>The generic validator reads the schema attrs on the tmpl.</language-fail>
       <language-detail>
         <p>Taken from the commit-message rules, where it exists because a commit has to be
-          readable by someone who was not present when it was written.</p>
+          readable by someone who was not present when the author wrote it.</p>
       </language-detail>
       <script>
         const SHORT = ['attrs', 'tmpl', 'repo', 'info']
@@ -746,15 +746,15 @@
 
 <h2>The audit that runs the rules</h2>
 <p>
-  Every rule carrying a <code>&lt;script&gt;</code> is run against the prose of every document.
-  A rule that carries no script is guidance: it is stated and not enforced, and whether a rule is
-  enforced is read off whether the script is there rather than declared in a field that can
-  disagree with it.
+  The audit runs every rule carrying a <code>&lt;script&gt;</code> against the prose of every document.
+  A rule that carries no script is guidance: it is stated and not enforced, and the script's
+  presence, not a separate field that could disagree with it, decides whether a rule is
+  enforced.
 </p>
 <p>
   A rule's check takes text. That is what lets the same rule apply to a commit message, a comment
-  in a source file, and a field in a document, without any of them being reached for: the text is
-  brought to the rule. Deciding which text is prose belongs here, to the thing that knows what a
+  in a source file, and a field in a document, without any of them being reached for: the engine
+  brings the text to the rule instead. Deciding which text is prose belongs here, to the thing that knows what a
   document is, rather than to each rule.
 </p>
 <script type="mycelium/audit" data-audits="prose-follows-the-language" data-touches="language-rule">
