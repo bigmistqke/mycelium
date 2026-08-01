@@ -1,17 +1,20 @@
 # mycelium
 
 A generic protocol engine: a template is an HTML document that declares a
-vocabulary — field shapes, cross-document validators, CLI commands — and any
+vocabulary — field shapes, cross-document validators, CLI commands. Any
 other document opts into that vocabulary by linking to the one template it
-conforms to. The engine itself has no built-in notion of "goal," "decision,"
-or any other type; it only knows how to read a `<template>` element, a
+conforms to.
+
+The engine itself has no built-in notion of "goal," "decision," or any
+other type. It only knows how to read a `<template>` element, a
 `data-conforms-to` link, and a `<script type="mycelium/command">`. Full
 argument in [`docs/DESIGN.html`](docs/DESIGN.html).
 
-This project's own decision history is the proof of the idea, not a special
-case living alongside it: the knowledge graph below is one template family
-among several — specs, runnable plans, and writing rules follow the exact
-same pattern, with no engine code that knows any of them by name.
+This project's own decision history is the proof of the idea, not a
+special case living alongside it. The knowledge graph below is one
+template family among several — specs, runnable plans, and writing rules
+follow the exact same pattern, with no engine code that knows any of them
+by name.
 
 ## Layout
 
@@ -58,15 +61,18 @@ no build step, no `tsx`/`ts-node`.
 pnpm validate [dir]   # defaults to ./docs
 ```
 
-Walks every `.html` file under `dir`, validates each instance against its
-own parsed subtree — a generic, attribute-driven check read off the
-type's `<template>` (see `templates/template.template.html`), falling
-back to a type's own `data-validates` script as additional validation
-when one still exists — and runs every collocated cross-document audit
-it finds — all against the real files, not sample fixtures. The engine
-has no built-in notion of what a "goal" or an "edge" is; it only knows
-the templating protocol (`<template>`, `data-conforms-to`,
-`data-validates`, `data-audits`). Full design:
+Walks every `.html` file under `dir` and validates each instance against
+its own parsed subtree. The check is generic and attribute-driven, read
+off the type's own `<template>` (see `templates/template.template.html`).
+It falls back to a type's own `data-validates` script when one still
+exists.
+
+It also runs every collocated cross-document audit it finds, all against
+the real files, not sample fixtures. The engine has no built-in notion of
+what a "goal" or an "edge" is — it only knows the templating protocol
+(`<template>`, `data-conforms-to`, `data-validates`, `data-audits`).
+
+Full design:
 [`docs/specs/2026-07-23-mycelium-crawler.spec.html`](docs/specs/2026-07-23-mycelium-crawler.spec.html).
 
 ## Writing a new node or edge
@@ -78,38 +84,46 @@ pnpm mycelium knowledge add goal --title "…" --confidence 85 --file build-v4
 pnpm mycelium knowledge link 2026-07-23-build-v4.goal.html 2026-07-23-html-as-store.decision.html --rel leads_to --label "…"
 ```
 
-`<id>` resolves to whichever file under `docs/` is named `<id>.template.html` or `<id>.command.html` —
-the latter for a one-off command with no document type of its own, like `docs/commands/explore.command.html`.
-`<command>` is a named export of that file's one `<script type="mycelium/command">`. The engine only
-knows how to find and run that script — what `add`/`link` actually do (field shape, where edges go)
-is declared inside the template document itself, not the engine. Each command documents its own arguments in a
-`/** … */` comment right above its `export function`, which is also what `--help` prints — one source
-for both, the same way for every family. `mycelium run --help` prints the full roster of every family
-and every command it exports, read off those same comments, rather than a hand-maintained list. Full
-design: [`docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`](docs/specs/2026-07-23-mycelium-authoring-commands.spec.html).
+`<id>` resolves to whichever file under `docs/` is named `<id>.template.html` or `<id>.command.html`.
+The latter is for a one-off command with no document type of its own, like `docs/commands/explore.command.html`.
+`<command>` is a named export of that file's one `<script type="mycelium/command">`.
+
+The engine only knows how to find and run that script. What `add`/`link` actually do — field shape,
+where edges go — is declared inside the template document itself, not the engine.
+
+Each command documents its own arguments in a `/** … */` comment right above its `export function`.
+This same comment is also what `--help` prints, one source for both, the same way for every family.
+
+`mycelium run --help` prints the full roster of every family and every command it exports, read off
+those same comments, rather than a hand-maintained list. Full design:
+[`docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`](docs/specs/2026-07-23-mycelium-authoring-commands.spec.html).
 
 `add` prefixes the filename it writes with today's actual date, computed the same way in every
-family's own `add` — `--file build-v4` on `knowledge add`
-never writes `knowledge/build-v4.goal.html`, only `knowledge/<date>-build-v4.goal.html`. It's not a flag
-and can't be overridden; the date is whatever day `add` actually ran on, so a node's filename and its
-place in chronological order can never drift apart. Full design:
+family's own `add`. `--file build-v4` on `knowledge add` never writes `knowledge/build-v4.goal.html`,
+only `knowledge/<date>-build-v4.goal.html`.
+
+It's not a flag and can't be overridden — the date is whatever day `add` actually ran on, so a node's
+filename and its place in chronological order can never drift apart. Full design:
 [`docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html`](docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html).
 
 ## Editor support
 
-Every `<script>` block under `docs/` gets its own virtual file and the right
-language — TypeScript or JavaScript, decided by the block's own `type`
-attribute — instead of being merged into one file per document or ignored
-outright because an editor doesn't recognize the `type`. See
-[`editor/README.md`](editor/README.md) for how it works and how to install it.
+Every `<script>` block under `docs/` gets its own virtual file and the
+right language, decided by the block's own `type` attribute. Without this,
+an editor merges every block into one file per document, or ignores a
+block outright because it doesn't recognize the `type`.
+
+See [`editor/README.md`](editor/README.md) for how it works and how to
+install it.
 
 ## Opening the documents directly
 
 Every file under `docs/` opens straight in a browser, no server required —
 no exceptions. A real ES module import is CORS-checked even for local
-files, and `file://` has no stable origin to satisfy that check — which is
-why the one thing that would otherwise need importing across the
-Node/browser boundary (a five-line `data:` URL script loader) isn't
-imported at all: `src/utils.ts` writes it once for the Node side, and each
+files, and `file://` has no stable origin to satisfy that check.
+
+That's why the one thing that would otherwise need importing across the
+Node/browser boundary — a five-line `data:` URL script loader — isn't
+imported at all. `src/utils.ts` writes it once for the Node side. Each
 browser-facing live demo that needs it duplicates it directly inline,
 rather than importing it from a file either side would have to share.

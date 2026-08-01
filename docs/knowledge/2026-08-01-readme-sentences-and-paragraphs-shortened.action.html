@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Break the README's long sentences and paragraphs down, verified against the file mode of lint</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Break the README's long sentences and paragraphs down, verified against the file mode of lint</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Running <code>pnpm mycelium language lint README.md</code> in file mode (rather than the
+earlier stdin check, which could not see paragraph-length at all) found five real sentence-length
+violations the earlier stdin-based check had missed. Split each into two or three shorter sentences.</p>
+<p>Fixing the flagged sentences alone still left several paragraphs at the rule's own four-sentence
+ceiling, denser than this corpus's own norm — the passive-voice rule's own detail field notes the
+median paragraph elsewhere in the corpus is one sentence. Went further than the violations required
+and split most multi-sentence paragraphs down to two, matching that norm rather than just clearing
+the limit.</p>
+<p><code>lint README.md</code> now exits 0, and <code>pnpm validate</code> stays at 783 checked, 0
+fail.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-01-lint-branches-by-extension-implemented.action.html">the file-mode lint that finally surfaced these violations</a>
+</knowledge-action>
+</body></html>
