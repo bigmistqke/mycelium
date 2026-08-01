@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Build a language server that gives every script block its own virtual file</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Build a language server that gives every script block its own virtual file</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Volar's <code>getExtraServiceScripts</code> is what makes this possible: it
+returns several TypeScript files from one source file, each with its own name,
+so a block gets its own module scope rather than being concatenated with its
+neighbours. A block's type decides its language by the same prefix test
+<code>src/script-hooks.ts</code> uses to decide its format, so the editor and
+the loader apply one rule in two places.</p>
+<p>Checked by driving the real server over LSP rather than by reading the
+plugin. It reports diagnostics at positions in the HTML file, hovering the
+<code>fs</code> parameter answers <code>CommandFilesystem</code>, two blocks in
+one document declaring the same name produce nothing, and a type annotation is
+accepted in a <code>mycelium/*</code> block while the same annotation in the
+<code>module</code> block beside it is refused.</p>
+<p>Its first run over the corpus found a real gap. The contract in
+<code>src/api.ts</code> had no <code>commit</code>, and <code>plan check</code>
+calls it deliberately to flush the steps that passed before throwing for the
+ones that did not.</p>
+<p>One limit worth recording: <code>getExtraServiceScripts</code> is available
+to a language server and not to a TypeScript plugin, so this cannot be
+repackaged as a plugin without losing the property it exists for.</p>
+</knowledge-detail>
+  <knowledge-commit>dee703f</knowledge-commit>
+  <knowledge-files>experiments/v4/editor/language-plugin.ts, experiments/v4/editor/server.ts, experiments/v4/editor/check.ts, experiments/v4/editor/vscode, experiments/v4/tsconfig.json, experiments/v4/src/api.ts</knowledge-files>
+  <knowledge-branch>v4-html-language-support</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-08-01-html-editor-language-support.goal.html">the last step of this goal</a>
+  <a data-rel="depends_on" href="./2026-08-01-editor-merges-scripts-per-file.observation.html">undoes the merge that observation describes</a>
+</knowledge-action>
+</body></html>
