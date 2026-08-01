@@ -63,21 +63,23 @@ Everything in this section comes from the engine. It is the whole of what myceli
 
 Everything the engine understands, in one table. A document is otherwise ordinary HTML.
 
-| marker                                | what the engine does with it                                     |
-| ------------------------------------- | ---------------------------------------------------------------- |
-| `data-conforms-to="<file>#<type>"`    | checks that element against that type                            |
-| `<template id="<type>">`              | reads the shape: `required`, `pattern`, `enum`                   |
-| `<script type="mycelium/command">`    | its exports become subcommands, its doc comments become `--help` |
-| `data-audits="<name>"`                | runs that check across every document at once                    |
-| `data-validates="#<type>"`            | runs that check on one instance                                  |
-| `data-touches` / `data-expects`       | which types an audit concerns, which violations it declares      |
-| `#<id>` or `<file>#<id>` in an import | resolves to that script, in this document or another             |
+| marker | what the engine does with it |
+| --- | --- |
+| [`data-conforms-to="<file>#<type>"`](#data-conforms-to-a-document-claiming-a-type) | checks that element against that type |
+| [`<template id="<type>">`](#template-the-shape-a-type-takes) | reads the shape: `required`, `pattern`, `enum` |
+| [`<script type="mycelium/command">`](#myceliumcommand-exports-becoming-subcommands) | its exports become subcommands, its doc comments become `--help` |
+| [`data-validates="#<type>"`](#data-validates-a-check-on-one-instance) | runs that check on one instance |
+| [`data-audits="<name>"`](#data-audits-a-check-across-every-document) | runs that check across every document at once |
+| [`data-touches` / `data-expects`](#data-audits-a-check-across-every-document) | which types an audit concerns, which violations it declares |
+| [`#<id>` or `<file>#<id>` in an import](#id-imports-and-what-else-a-script-may-reach) | resolves to that script, in this document or another |
 
 That list is the whole vocabulary. Everything else is a convention some template invented, and core stays out of it. The language family runs its writing rules that way: each rule is a document stating the rule in prose and carrying the code that enforces it, loaded by that family's own audit. Its checks reach document prose, the markdown at the repository root, and the comments and JSDoc in every source file.
 
-### The template file
+One file declares a family: the types, the shape each one takes, the commands that author them, and the checks they answer to. The sections below take the table one row at a time.
 
-One file declares a family: the types, the shape each one takes, the commands that author them, and the checks they answer to. A document claims one of those types by linking to it, addressed by path and fragment:
+### `data-conforms-to`, a document claiming a type
+
+A document says which type it answers to by linking to it, addressed by path and fragment, the same way any part of a web page has always been addressed:
 
 ```html
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
@@ -86,7 +88,9 @@ One file declares a family: the types, the shape each one takes, the commands th
 </spec-doc>
 ```
 
-### The `<template>` element is the schema
+There is no registry of type names, so nothing collides. Two projects can both declare a type called `goal` and never meet, because a document points at one specific file rather than a name that has to stay unique. The engine follows the link, reads the shape it finds, and checks the element against it.
+
+### `<template>`, the shape a type takes
 
 A `<template>` is inert: a browser parses it and renders nothing, which makes it somewhere to keep a type's skeleton where no reader mistakes it for content. Each child is a field, and three attributes constrain one:
 
@@ -109,7 +113,17 @@ A `<template>` is inert: a browser parses it and renders nothing, which makes it
 
 A field carrying none of the three stays optional and free-form. A field the template never declares is an error, so a mistyped tag name fails instead of sitting there unread. An empty element is also an error, required or not, because a field present but blank claims something the document never says.
 
-### A check the schema cannot state
+### `mycelium/command`, exports becoming subcommands
+
+Every function a command script exports becomes a subcommand, and the block comment above it becomes that subcommand's `--help`. One source serves both, so the documentation cannot drift from the command it describes. The roster reads those same comments, which is why `mycelium --help` lists every command without anyone keeping a list.
+
+Only two kinds of file carry commands, `<id>.template.html` and `<id>.command.html`, and the engine ignores such a script anywhere else. That restriction pays for itself here. Specs and plans quote command scripts inside escaped code blocks, so a search for the tag alone would turn up frozen copies of older versions of these same commands and offer them as real ones.
+
+A host may also export a default, which runs when no subcommand follows the host name. That is why `mycelium validate` takes no second word.
+
+Nothing constrains what the function does. A command is ordinary code holding the file tree, so it can author a document, run a shell command, call a model, or render the whole corpus as a page. Mycelium's part is finding it and running it.
+
+### `data-validates`, a check on one instance
 
 Presence, pattern and enumeration cover most of it. A constraint reaching past those goes in a script beside the template:
 
@@ -123,7 +137,32 @@ The attribute names the type this checks, and `check` receives the conforming el
 
 No type in this repository needs one today. Every hand-written check moved into the schema once the attributes could say it, and a constraint the schema still cannot express usually spans documents, which makes it an audit instead.
 
-### What the scripts may use
+### `data-audits`, a check across every document
+
+A schema states what one document must look like. Other claims only hold across the whole corpus: that every outcome links back to whatever caused it, or that no link points at a deleted file. Those go in an audit, a script carrying `data-audits` and the name it reports under.
+
+```html
+<script type="mycelium/audit" data-audits="every-link-resolves" data-touches="knowledge-*">
+  export function check(fs) { … }   // returns the violations it found
+</script>
+```
+
+The engine hands it a read-only view of the tree, rooted one level above `docs/` so a check can reach the source files too. It lists, reads and parses on demand rather than receiving a prepared graph, so what counts as a node or an edge stays the audit's own business. An audit reports what it found and never decides whether that is acceptable, which is the engine's call.
+
+`mycelium validate` runs every audit it finds, and one failure fails the run. Six exist today:
+
+```
+dangling-outcome            An outcome is linked back to whatever caused it.
+every-link-resolves         Every link in the corpus points at a file that exists.
+hollow-action               An action carries a detail or a commit, so it records what it did.
+nothing-outside-the-type    A document that is an instance keeps its content inside its declared type.
+orphans-except-goal         Every node but a root goal is reached by an edge or reaches one.
+prose-follows-the-language  Prose in the corpus obeys every rule that carries a check.
+```
+
+Two attributes tune one. `data-touches` names the types it concerns, which is how the roster above says what each one covers. `data-expects` names violations it should find. A template's worked example is often built to break the audit it illustrates, and declaring that violation turns it into an assertion rather than a failure. A declared violation that stops appearing fails too, catching an example that has quietly stopped demonstrating anything.
+
+### `#id` imports, and what else a script may reach
 
 A `<script type="mycelium/…">` is TypeScript. Node strips the annotations at run time, so nothing stands between the file and running it, and the loader keys on the `mycelium/` prefix rather than a list of names.
 
@@ -146,10 +185,6 @@ Four kinds of import resolve from inside one:
 A bare specifier falls through to Node's own resolver, so a script reaches `node_modules` and the `node:` builtins. The passive-voice rule imports `retext` and `retext-passive` to do its work.
 
 The last two forms are what let one block serve both sides. `#preview` above runs in a browser when someone opens the page, and the command imports that same source rather than a copy of it. This is not hypothetical plumbing: `src/utils.ts` reaches into `template.template.html#validate-from-template` exactly this way, which is how the generic schema validator gets loaded.
-
-### What a command may do
-
-Nothing constrains it. A command is ordinary code holding the file tree, so it can author a document, run a shell command, call a model, or render the whole corpus as a page. Mycelium's part is finding it and running it.
 
 ### Commands without a type
 
