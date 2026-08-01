@@ -27,7 +27,17 @@
 
     "strict": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+
+    // A mycelium/* script may import a type="module" sibling by #id (see
+    // editor/language-plugin.ts). Without this, resolving the specifier is as
+    // far as it goes — TypeScript refuses to open a .js file for type
+    // information at all, so the import is "implicitly any" under strict.
+    // This lets it infer real types from the plain JS instead. checkJs stays
+    // off: a type="module" block runs in a browser and is not written
+    // against this config, so it should contribute types to an importer
+    // without being linted by it.
+    "allowJs": true
   },
   // Only src/. The other 2,042 lines of this project live inside
   // <script type="mycelium/*"> blocks in docs/, which the TypeScript compiler
