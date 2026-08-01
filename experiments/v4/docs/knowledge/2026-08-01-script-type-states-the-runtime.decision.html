@@ -19,7 +19,7 @@ a browser, so the content stays JavaScript.</p>
 <p>Node does not guess. A load hook returning <code>format: "module"</code> for
 a source carrying a type annotation fails with <code>SyntaxError: Unexpected
 token ':'</code>, and returning <code>format: "module-typescript"</code> runs
-it. Both were tried before this was written.</p>
+it. Both were tried while writing this.</p>
 <p>The hook therefore reads each script's own type rather than applying one
 format to everything it serves. That is not tidiness. The hook is not reserved
 to <code>mycelium/*</code>: <code>knowledge.template.html</code> line 605 is a

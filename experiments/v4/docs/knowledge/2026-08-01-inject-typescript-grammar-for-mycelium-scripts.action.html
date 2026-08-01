@@ -17,7 +17,7 @@ all — it is a pure LSP client. Fixing
 means adding one: a small injection grammar that recognizes
 <code>type="mycelium/…"</code> and embeds <code>source.ts</code> for the
 block body instead of falling through to <code>source.unknown</code>.
-Attribute highlighting inside the opening tag is kept by including the
+Attribute highlighting inside the opening tag survives by including the
 built-in grammar's own <code>#attribute</code> rule rather than
 reimplementing it.</p>
 <p>The first version targeted <code>text.html.basic</code> and did nothing —
@@ -25,7 +25,8 @@ reported back by the person testing it, still wrong after a reload. Reading
 VS Code's actual bundled grammars settled why: opening a <code>.html</code>
 file tokenizes with <code>text.html.derivative</code>
 (<code>extensions/html/syntaxes/html-derivative.tmLanguage.json</code>), the
-grammar registered for the <code>html</code> language. That file reaches
+grammar registered for the <code>html</code> language.</p>
+<p>That file reaches
 <code>text.html.basic</code> only through
 <code>{ include: "text.html.basic#core-minus-invalid" }</code>, a reference
 to one repository rule, which never pushes <code>text.html.basic</code> onto

@@ -35,7 +35,7 @@ module specifier shaped like <code>#locator</code> and rewrites it to a real
 relative path — <code>./&lt;html file&gt;.&lt;sibling's block index&gt;&lt;.ts
 or .js&gt;</code> — pointing at that sibling's own virtual file, which
 TypeScript's ordinary relative-path resolution already understands with no
-custom resolver at all. A locator matching nothing is left untouched, so
+custom resolver at all. A locator matching nothing stays untouched, so
 "cannot find module" still fires — the same failure mode
 <code>script-hooks.ts</code>'s own <code>resolve()</code> has for a dangling
 reference.</p>
@@ -47,7 +47,7 @@ diagnostic on an unresolved locator still lands on the original
 <code>"#locator"</code> text in the HTML file rather than on where the
 replacement would have been.</p>
 <p>Checked three ways. A block with an untyped <code>type="module"</code>
-sibling: the "cannot find module" error is gone, replaced by
+sibling: the "cannot find module" error disappears, replaced by
 <code>ts(7016)</code> ("implicitly has an 'any' type") — correct, expected
 TypeScript behavior for importing a plain <code>.js</code> file with
 <code>allowJs</code> off, not a defect in this. Two <code>mycelium/*</code>

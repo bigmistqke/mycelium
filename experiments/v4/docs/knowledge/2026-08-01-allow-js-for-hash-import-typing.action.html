@@ -28,7 +28,7 @@ project's TypeScript rules.</p>
 <p>Checked against a fixture with a plain JS function
 (<code>function YOLO(n) { return n * 2 }</code>) exported from a
 <code>type="module"</code> sibling and consumed by id: the "cannot open"
-error is gone, TypeScript infers <code>YOLO</code>'s shape from the function
+error disappears, TypeScript infers <code>YOLO</code>'s shape from the function
 body itself, and a real mismatched-type assignment on the call site is
 correctly caught. The full corpus (<code>node editor/check.ts</code>, no
 arguments) came back byte-for-byte identical to the pre-#id-resolution

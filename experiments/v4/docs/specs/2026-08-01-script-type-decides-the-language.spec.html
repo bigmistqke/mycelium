@@ -13,7 +13,7 @@
   <spec-date>2026-08-01</spec-date>
   <spec-problem>
 <p>
-  Most of this project's code cannot be read by an editor. The script blocks in
+  An editor cannot read most of this project's code. The script blocks in
   <code>docs/</code> hold 2,042 lines; <code>src/</code> holds 1,065. The
   smaller half is the half that gets language support.
 </p>
@@ -26,7 +26,7 @@
   1,719 lines of them.
 </p>
 <p>
-  The blocks it does recognize are given wrong answers. It builds one virtual
+  The blocks it recognizes receive wrong answers. It builds one virtual
   JavaScript document per HTML file and concatenates every script into it, which
   merges scopes that are separate when they run.
   <code>knowledge.template.html</code> declares <code>const lines</code> at line
@@ -42,8 +42,10 @@
   <code>let</code> or <code>class</code> there goes into the global lexical
   scope shared by every other classic script in the document, so two of them
   declaring one name really is a <code>SyntaxError</code>. The service applies
-  that rule to modules, where it does not hold. Both kinds appear in this
-  corpus, so the distinction decides which errors are real. Every classic script
+  that rule to modules, where it does not hold.
+</p>
+<p>
+  Both kinds appear in this corpus, so the distinction decides which errors are real. Every classic script
   here was checked, and no two in one document declare the same name, so every
   redeclaration reported today is false.
 </p>
@@ -69,7 +71,7 @@
   <tr><td><code>module</code>, classic</td><td>a browser</td><td>JavaScript</td></tr>
 </tbody></table>
 <p>
-  Node strips types when it is told to and not otherwise. A load hook returning
+  Node strips types when you tell it to and not otherwise. A load hook returning
   <code>format: "module"</code> for a source carrying a type annotation fails
   with <code>SyntaxError: Unexpected token ':'</code>; returning
   <code>format: "module-typescript"</code> runs it. The format is a declaration,
@@ -98,14 +100,14 @@ const format = type.startsWith("mycelium/") ? "module-typescript" : "module"</co
 <p>
   They do cost something while they stay. The audits at
   <code>knowledge.template.html</code> lines 327 and 382 each carry their own
-  copy of graph extraction, and the source says why: written out rather than
-  imported from a helper, because the same script also runs in the demo through
+  copy of graph extraction, and the source says why: each duplicates the code
+  rather than importing it from a helper, because the same script also runs in the demo through
   a <code>data:</code> URL, which has no base to resolve a relative import
   against. With the demo gone both import <code>#extract-graph</code>, which
   already exists at line 605.
 </p>
 <p>
-  What is lost is documentation, and only documentation. A demo is the browser
+  What this loses is documentation, and only documentation. A demo is the browser
   side of a template: it shows a reader what a validator does while they are
   looking at it. Nothing here replaces that, and it should be recorded rather
   than glossed.
@@ -189,7 +191,7 @@ const format = type.startsWith("mycelium/") ? "module-typescript" : "module"</co
   <code>data:</code> URL has no base to resolve against. It cannot be
   type-stripped either, for the same reason — the hook never sees it. The
   virtual-module loader has neither limit, because it resolves against the real
-  file the script was read from.
+  file the script came from.
 </p>
 <h2>A language server gives every block its own file</h2>
 <p>
@@ -246,7 +248,10 @@ const format = type.startsWith("mycelium/") ? "module-typescript" : "module"</co
   <code>serve</code> commands build as strings, none of which shares a snippet
   with anything. A script type cannot be the answer if it ever arises, because a
   browser will not run a type it does not recognize — that inertness is the
-  whole reason <code>mycelium/*</code> works. The forms that would work are a
+  whole reason <code>mycelium/*</code> works.
+</p>
+<p>
+  The forms that would work are a
   real file both sides load, a classic script assigning to
   <code>globalThis</code> as
   <a href="../knowledge/2026-07-23-reverse-runtime-to-globalthis.decision.html">the
@@ -258,14 +263,14 @@ const format = type.startsWith("mycelium/") ? "module-typescript" : "module"</co
 <p>
   Does anything take over what the demos did as documentation? Their checking is
   covered, but a template that demonstrates itself when opened taught something
-  a passing build does not. A demo written against a shared script with an id,
+  a passing build does not. A demo targeting a shared script with an id,
   rather than against an audit's source text, would keep working and would break
   no rule — it would just be demonstrating the shared part rather than the audit
   itself. Whether that is worth writing is open.
 </p>
 <p>
-  Does a rule stay JavaScript? Rules are the one family whose scripts are
-  written to be small enough to read whole, and a rule that gains a type
+  Does a rule stay JavaScript? Rules are the one family that keeps its scripts
+  small enough to read whole, and a rule that gains a type
   annotation gains a build-time dependency on the same reader. Moving them onto
   the loader makes TypeScript available to them; it does not settle whether they
   should use it. JSDoc in a plain JavaScript rule is the third answer, and it is
