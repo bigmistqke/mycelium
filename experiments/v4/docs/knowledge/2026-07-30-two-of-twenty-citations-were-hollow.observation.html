@@ -26,15 +26,16 @@ belonging, derive liveness</a>:</p>
   derived status</a>.</li>
 </ul>
 <p>Both claims were sound; only the pointers were wrong. That is
-what makes this the expensive kind. A citation to a node that does not exist is
-caught by any link checker. A citation to a real node that does not support the
+what makes this the expensive kind.</p>
+<p>Any link checker catches a citation to a node that does not exist. A citation to a real node that does not support the
 claim reads as fine and survives every structural check —
 <a href="./2026-07-27-mutation-testing-vs-blind-rederivation-for-hollow-citations.observation.html">exactly
-the case that node argues needs mutation testing or blind re-derivation</a>. It
-was found by blind re-derivation: reading the target and asking whether it says
+the case that node argues needs mutation testing or blind re-derivation</a>. Blind
+re-derivation found it: reading the target and asking whether it says
 what the citing node claims.</p>
 <p>The error propagated. Two later nodes inherited it without
-re-checking. <a href="./2026-07-30-option-retired-status-enum.option.html">The
+re-checking.</p>
+<p><a href="./2026-07-30-option-retired-status-enum.option.html">The
 retired-status-enum option</a> repeated the first one.
 <a href="./2026-07-30-link-do-not-tag.decision.html">Link, do not tag</a>,
 written hours later, repeated the second — describing the wrong pointer rather

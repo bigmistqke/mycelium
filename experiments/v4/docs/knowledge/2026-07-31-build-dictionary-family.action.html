@@ -36,10 +36,10 @@
   doubling reason the other two families reject it for.
 </p>
 <p>
-  A bug was found by testing rather than by reading: <code>add</code> writes only the fields its
+  Testing, not reading, found a bug: <code>add</code> writes only the fields its
   own type declares, so <code>add term --pass "…"</code> dropped the flag in silence and
   reported success. Now rejected by name, in both <code>add</code> and <code>update</code>,
-  before anything is read or written. This is the same silent-drop shape as
+  before the command reads or writes anything. This is the same silent-drop shape as
   <a href="./2026-07-31-hand-copied-command-list-reads-as-absence.observation.html">the stale
   command list</a> that opened the session.
 </p>
