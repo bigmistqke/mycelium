@@ -167,6 +167,7 @@
   why that's deferred, not forgotten.
 </p>
 <script type="mycelium/command">
+  import type { CommandContext } from "../../src/api.ts"
   import { todayDate } from "./shared.ts"
 
   // Still local on purpose, unlike todayDate above: two lines, one call
@@ -219,7 +220,7 @@
    * validator, so a --body that omits either one is rejected the same way
    * a missing --title would be — nothing is written.
    */
-  export async function add({ fs, args, cli }) {
+  export async function add({ fs, args, cli }: CommandContext) {
     requireArgs([args.file, '--file'])
     // Same guard, and for the same reason, as knowledge.template.html's add:
     // a topic that already carries a date gets a second one prepended, and
@@ -295,7 +296,7 @@
    * already exists, append if not). spec-date is never touched by
    * update — only add sets it, once, at creation.
    */
-  export async function update({ fs, args, cli }) {
+  export async function update({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<file>'])
     const path = `specs/${args._[0]}`
     const doc = fs.get(path)

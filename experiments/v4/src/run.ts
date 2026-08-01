@@ -8,23 +8,17 @@ import { mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { basename, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
 import { parse } from "acorn"
+import type { Comment } from "acorn"
 import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
 
 register("./script-hooks.ts", import.meta.url)
 
-type Validate = (root: Element, instancePath: string) => Promise<{ ok: boolean; errors: string[] }>
+// The shapes a command is handed now live in api.ts, so a command embedded in
+// a template document can import the same declaration the engine builds
+// against instead of destructuring an implicit any.
+import type { Cli, CommandContext, ParsedArgs, Validate } from "./api.ts"
 
-interface Cli {
-  validate: Validate
-  readStdin: () => Promise<string>
-  parseHTML: (html: string) => { document: Document }
-}
-
-interface CommandContext {
-  fs: Filesystem
-  args: ParsedArgs
-  cli: Cli
-}
+export type { Cli, CommandContext, ParsedArgs, Validate }
 
 // A command host is either a content family's own <id>.template.html
 // (instances conform to it via data-conforms-to) or a singleton
@@ -41,11 +35,6 @@ function findTemplateFile(dir: string, id: string): string | null {
     if (found) return found
   }
   return null
-}
-
-interface ParsedArgs {
-  _: string[]
-  [key: string]: string | string[]
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -264,7 +253,7 @@ function formatComment(raw: string): string {
 
 function extractCommandDocs(source: string): Map<string, string> {
   const docs = new Map<string, string>()
-  const comments: { type: string; value: string; start: number; end: number }[] = []
+  const comments: Comment[] = []
   const ast = parse(source, { ecmaVersion: "latest", sourceType: "module", onComment: comments })
 
   for (const node of (ast as any).body) {
@@ -313,7 +302,7 @@ function firstSentence(doc: string): string {
 // executing any of them — so it has to reject non-exports itself or it
 // would advertise a file's private helpers as commands.
 function readCommands(source: string): { name: string; summary: string }[] {
-  const comments: { type: string; value: string; start: number; end: number }[] = []
+  const comments: Comment[] = []
   const ast = parse(source, { ecmaVersion: "latest", sourceType: "module", onComment: comments })
   const commands: { name: string; summary: string }[] = []
 
@@ -384,7 +373,7 @@ function printRoster(docsDir: string, stream: (line: string) => void) {
 // exports. An audit is a single check, so its description sits at the top of
 // the file instead of above an export, and readCommands would not find it.
 function leadingComment(source: string): string {
-  const comments: { type: string; value: string; start: number; end: number }[] = []
+  const comments: Comment[] = []
   try {
     parse(source, { ecmaVersion: "latest", sourceType: "module", onComment: comments })
   } catch {

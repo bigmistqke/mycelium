@@ -1,0 +1,36 @@
+{
+  // Describes how this project actually runs: Node 24 executing src/*.ts
+  // directly, no build step, no emit. Every setting below follows from that
+  // one fact rather than from a preference.
+  "compilerOptions": {
+    // Node 24 strips types, it does not compile them. Anything that needs a
+    // runtime representation (enum, namespace, parameter property) would be
+    // erased into nothing and break at runtime, so the compiler rejects it
+    // here instead of letting an editor call it valid.
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+
+    // The imports in src/ are written the way Node wants them — "./utils.ts",
+    // extension included. Without these two, every one of those specifiers is
+    // an error (TS5097), which is most of what an editor complains about today.
+    "allowImportingTsExtensions": true,
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+
+    "target": "esnext",
+    // happy-dom supplies Element/Document/Node at runtime; the DOM lib is what
+    // names them at author time. Both are needed — esnext alone leaves every
+    // DOM annotation in src/ unresolved.
+    "lib": ["esnext", "dom"],
+    "types": ["node"],
+
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  // Only src/. The other 2,042 lines of this project live inside
+  // <script type="mycelium/*"> blocks in docs/, which the TypeScript compiler
+  // cannot read at all — that is the language server's job, not tsconfig's.
+  "include": ["src/**/*.ts"]
+}

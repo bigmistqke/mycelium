@@ -17,5 +17,9 @@
     "retext": "^9.0.0",
     "retext-passive": "^5.0.0",
     "retext-stringify": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "6.0.3"
   }
 }

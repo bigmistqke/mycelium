@@ -181,6 +181,7 @@
   re-running anything &mdash; a flat progress view over a plan-doc's nested tasks/steps.
 </p>
 <script type="mycelium/command">
+  import type { CommandContext } from "../../src/api.ts"
   import { todayDate } from "./shared.ts"
   import { spawnSync } from "node:child_process"
 
@@ -455,7 +456,7 @@
    * timeout — a hanging command fails the check rather than hanging
    * `plan check` indefinitely.
    */
-  export async function check({ fs, args, cli }) {
+  export async function check({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], "<file>"])
     const path = `plans/${args._[0]}`
     const doc = getPlanFile(fs, path)
@@ -526,7 +527,7 @@
    * already on disk, and DERIVES each task's status and the doc's from
    * them. Task and doc status are not stored; see deriveStatus below.
    */
-  export function list({ fs, args }) {
+  export function list({ fs, args }: CommandContext) {
     requireArgs([args._[0], "<file>"])
     const path = `plans/${args._[0]}`
     const doc = getPlanFile(fs, path)
@@ -610,7 +611,7 @@
    * this accepts is "rejected" — the one state no arrangement of steps
    * can imply. Omit it unless you are abandoning the work.
    */
-  export async function add({ fs, args, cli }) {
+  export async function add({ fs, args, cli }: CommandContext) {
     const kind = args._[0]
     if (kind === "doc") return addDoc({ fs, args, cli })
     if (kind === "task") return addTask({ fs, args, cli })
@@ -643,7 +644,7 @@
    * one when no plan-check exists and --check-command wasn't also
    * given is an error.
    */
-  export async function update({ fs, args, cli }) {
+  export async function update({ fs, args, cli }: CommandContext) {
     const kind = args._[0]
     if (kind === "doc") return updateDoc({ fs, args, cli })
     if (kind === "task") return updateTask({ fs, args, cli })

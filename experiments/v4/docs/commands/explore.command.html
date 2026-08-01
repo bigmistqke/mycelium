@@ -33,6 +33,7 @@
   changes when a new content family is added.
 </p>
 <script type="mycelium/command">
+  import type { CommandContext } from "../../src/api.ts"
   /**
    * List every data-conforms-to instance across the whole docs/ tree,
    * regardless of which family it belongs to.
@@ -53,7 +54,7 @@
    * like this one) are silently skipped, not an error: absence of the
    * attribute just means "not an instance."
    */
-  export async function list({ fs }) {
+  export async function list({ fs }: CommandContext) {
     for (const { path, doc } of fs.list(".")) {
       for (const root of Array.from(doc.querySelectorAll("[data-conforms-to]"))) {
         const tag = root.tagName.toLowerCase()

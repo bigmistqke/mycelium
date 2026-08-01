@@ -275,6 +275,7 @@
   session that added the command roster</a> ran into directly.
 </p>
 <script type="mycelium/command">
+  import type { CommandContext } from "../../src/api.ts"
   import { loadModule } from "../../src/utils.ts"
   import { resolve as resolvePath } from "node:path"
   const TYPES = ['term', 'rule', 'guide']
@@ -419,7 +420,7 @@
    * written, so a missing required field, a value outside an enum, or a
    * field belonging to the other type is rejected and no file appears.
    */
-  export async function add({ fs, args, cli }) {
+  export async function add({ fs, args, cli }: CommandContext) {
     const type = args._[0]
     if (!TYPES.includes(type)) {
       throw new Error(`<type> must be one of ${TYPES.join('|')}, got "${type ?? '(nothing)'}"`)
@@ -497,7 +498,7 @@
    * removes it. Removing a required field fails validation and the file on
    * disk is left untouched.
    */
-  export async function update({ fs, args, cli }) {
+  export async function update({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<file>'])
     const path = pathFor(args._[0])
     const doc = fs.get(path)
@@ -554,7 +555,7 @@
    * Upserts on (rel, href): re-linking the same pair with the same rel
    * rewrites that edge's label rather than appending a second copy.
    */
-  export function link({ fs, args }) {
+  export function link({ fs, args }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
     fs.get(pathFor(args._[1]))
     const doc = fs.get(pathFor(args._[0]))
@@ -580,7 +581,7 @@
    * The inverse of link. Throws if no such edge exists, rather than
    * silently doing nothing.
    */
-  export function unlink({ fs, args }) {
+  export function unlink({ fs, args }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
     const doc = fs.get(pathFor(args._[0]))
     const root = doc.querySelector('[data-conforms-to]')
@@ -607,7 +608,7 @@
    * Only rules run, not guides. A guide carries no check by definition, so
    * there is nothing for it to contribute.
    */
-  export async function lint({ fs, args, cli }) {
+  export async function lint({ fs, args, cli }: CommandContext) {
     if (args._[0] !== '-') {
       throw new Error('usage: language lint -   (reads the text to check on standard input)')
     }
@@ -662,7 +663,7 @@
    * --status is a term field, so passing it excludes every rule and guide.
    * `list --status rejected` prints rejected terms and nothing else.
    */
-  export function list({ fs, args }) {
+  export function list({ fs, args }: CommandContext) {
     const oneLine = (text) => text.trim().replace(/\s+/g, ' ')
 
     for (const { path, doc } of fs.list('language')) {
@@ -710,6 +711,7 @@
   document is, rather than to each rule.
 </p>
 <script type="mycelium/audit" data-audits="prose-follows-the-language" data-touches="language-rule">
+  import type { AuditFs } from "../../src/api.ts"
   import { loadModule } from "../../src/utils.ts"
   import { resolve as resolvePath } from "node:path"
   /**
@@ -791,7 +793,7 @@
     return map
   }
 
-  export async function check(fs) {
+  export async function check(fs: AuditFs) {
     const rules = await loadRules(fs)
     // The vocabulary, handed to every rule as its third argument. A rule about
     // words needs to know the words, and that is not reaching into the corpus:

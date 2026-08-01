@@ -48,7 +48,10 @@ export function resolveTemplateRef(instanceFile: string, conformsTo: string): st
 function locatorFor(script: Element): string {
   const id = script.getAttribute("id")
   if (id) return id
-  const scripts = Array.from(script.ownerDocument!.querySelectorAll("script"))
+  // querySelectorAll("script") is typed as HTMLScriptElement here, while every
+  // caller holds a plain Element, so compare as Element rather than widening
+  // the parameter to something no caller has.
+  const scripts = Array.from(script.ownerDocument!.querySelectorAll("script")) as Element[]
   return `@${scripts.indexOf(script)}`
 }
 

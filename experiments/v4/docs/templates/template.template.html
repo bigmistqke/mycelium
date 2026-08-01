@@ -64,6 +64,7 @@
   there were none.
 </p>
 <script type="mycelium/audit" data-audits="every-link-resolves">
+  import type { AuditFs } from "../../src/api.ts"
   /**
    * Every link in the corpus points at a file that exists.
    *
@@ -75,7 +76,7 @@
   import { existsSync } from "node:fs"
   import { dirname, resolve } from "node:path"
 
-  export function check(fs) {
+  export function check(fs: AuditFs) {
     const violations = []
     for (const path of fs.list('docs', { ext: '.html' })) {
       const full = resolve(fs.root, path)
@@ -105,6 +106,7 @@
   declaring a <code>&lt;template&gt;</code>, which separates the two without naming a directory.
 </p>
 <script type="mycelium/audit" data-audits="nothing-outside-the-type">
+  import type { AuditFs } from "../../src/api.ts"
   /**
    * A document that is an instance keeps its content inside its declared type.
    *
@@ -112,7 +114,7 @@
    * no query finds it. A document that declares a type is documentation about
    * that type, so its prose is the point and it is skipped.
    */
-  export function check(fs) {
+  export function check(fs: AuditFs) {
     const violations = []
     for (const path of fs.list('docs', { ext: '.html' })) {
       const doc = fs.parse(path)
