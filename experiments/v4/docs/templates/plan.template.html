@@ -204,8 +204,8 @@
   separate hyphenated command names, which JavaScript can't export as plain identifiers.
 </p>
 <p>
-  <code>check</code> shells out to a step's <code>plan-check-command</code> (or every step's, if no step id is
-  given), compares the exit code against <code>plan-check-success</code> and, if present, substring-matches
+  <code>check</code> shells out to a step's <code>plan-check-command</code> (or every step's, if the caller
+  omits a step id), compares the exit code against <code>plan-check-success</code> and, if present, substring-matches
   <code>plan-check-output</code> against combined stdout/stderr. A pass flips that step's
   <code>plan-status</code> to <code>completed</code>; a fail leaves it untouched and the command exits
   nonzero once every step has been tried. Steps with no <code>plan-check</code> are skipped, not treated as
