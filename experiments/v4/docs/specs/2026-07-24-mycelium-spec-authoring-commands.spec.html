@@ -97,9 +97,9 @@
       <a data-rel="elaborates" href="../knowledge/2026-07-24-duplicate-not-share-loadcheck.decision.html">already
       applied to <code>loadModule</code>/<code>loadCheck</code></a>: a data: URL-loaded command script can't
       do a relative import anyway (a data: URL has no hierarchical base to resolve <code>./utils.ts</code>
-      against), and each family's command script is meant to be self-contained &mdash; <code>requireArgs</code>
+      against), and each family's command script stays self-contained by design &mdash; <code>requireArgs</code>
       already lives only in <code>knowledge.template.html</code>, not shared with a family that didn't exist
-      yet when it was written. <code>spec.template.html</code>'s own command script gets its own
+      yet when someone wrote it. <code>spec.template.html</code>'s own command script gets its own
       <code>requireArgs</code>, too, not a copy imported from <code>knowledge.template.html</code>.
     </p>
 
@@ -119,7 +119,7 @@
         <code>@</code> or a second flag. The <code>@</code> was purely a flag-count question, confusing to
         present as if it were the fix.</li>
       <li><b>A file per rich field</b> (<code>--problem-file</code>, <code>--design-file</code>, one real
-        file each). Genuinely solves the collision &mdash; files, unlike stdin, can each be read
+        file each). Genuinely solves the collision &mdash; unlike stdin, the command can read each file
         independently &mdash; but at the cost of needing a separate temp file per field just to write one
         spec, real friction for what's usually a single sitting of authoring.</li>
       <li><b>Defer problem/design to a later <code>update</code> call</b>, so <code>add</code> only ever
@@ -146,8 +146,8 @@
 EOF</code></pre>
     <p>
       One flag, one stdin stream (or one literal string, for a trivial case), no collision possible &mdash;
-      because there's only ever one thing being read, and it can carry as many or as few of the four
-      sections as the call actually needs. Not present in the blob at all: that field is left alone.
+      because the command only ever reads one thing, which can carry as many or as few of the four
+      sections as the call actually needs. Not present in the blob at all: the command leaves that field alone.
     </p>
     <p>
       Parsing reuses the exact mechanism already used for <code>knowledge-detail</code>'s own real-markup
@@ -200,7 +200,7 @@ EOF</code></pre>
         single-field case fine (a blob containing only one tag), so keeping both would just be two ways to
         do the same thing.</li>
       <li><b>No <code>--date</code> override flag.</b> Considered and rejected above &mdash; nothing in this
-        project's actual usage has ever needed a spec dated other than the day it was written.</li>
+        project's actual usage has ever needed a spec dated other than the day someone wrote it.</li>
     </ul>
   </spec-out-of-scope>
 </spec-doc>

@@ -147,8 +147,8 @@ mycelium knowledge list edges   # one line per edge: from --rel--> to</code></pr
       read its type directly off its own tag name (<code>el.tagName.toLowerCase()</code>, e.g.
       <code>knowledge-action</code>) rather than checking against a hardcoded list of the six known types
       &mdash; a seventh type added to <code>knowledge.template.html</code> later would show up in
-      <code>list</code> automatically, unlike the two audits' <code>TYPES</code> array. Status is read via the
-      family prefix (<code>knowledge-status</code>) if present, blank for types that don't have one
+      <code>list</code> automatically, unlike the two audits' <code>TYPES</code> array. Read status via the
+      family prefix (<code>knowledge-status</code>) when present, blank for types that don't have one
       (<code>option</code>/<code>outcome</code>/<code>observation</code>).
     </p>
     <p>

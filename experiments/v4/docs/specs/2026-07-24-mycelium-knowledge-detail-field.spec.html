@@ -32,7 +32,7 @@
       <code>--flag "value"</code> &mdash; parsed by the shell before the command ever runs. That already causes
       friction for a short title with an apostrophe in it; a multi-paragraph value with embedded quotes,
       angle brackets, and markup would be substantially worse. A field that can only practically be filled in
-      by hand-editing the file defeats the reason <code>add</code>/<code>update</code> were built.
+      by hand-editing the file defeats the reason <code>add</code>/<code>update</code> exist.
     </p>
   </spec-problem>
 
@@ -79,8 +79,8 @@
       <code>knowledge-detail</code> permits <code>&lt;script&gt;</code> content, deliberately. This isn't
       "no allowlist" applied carelessly &mdash; it's the same pattern this project already uses for its own
       validators and audits: every <code>data-validates</code>/<code>data-audits</code> script ships next to
-      a live-demo section that runs the check against a sample instance, right there in the browser, so the
-      claim "this validator catches X" is proven, not just asserted. A <code>knowledge-observation</code>
+      a live-demo section that runs the check against a sample instance, right there in the browser, so that
+      demo proves the claim "this validator catches X" instead of just asserting it. A <code>knowledge-observation</code>
       making an empirical claim can now do the same thing for itself &mdash; embed a small script that
       reproduces the behavior it's describing and prints the result, instead of asking a reader to trust
       prose. This is a direct application of this session's own observation that this project's documents
@@ -188,7 +188,7 @@ knowledge/other-node.goal.html	knowledge-goal	completed	Another title	</code></p
         follow-up, not part of this scope &mdash; if it changes later, this spec's file://-safety guidance
         would need revisiting, not the field design itself.</li>
       <li><b>No <code>type="mycelium/command"</code> script for <code>spec.template.html</code>.</b> Referenced
-        here as the reason the input-resolution helper is built shared rather than inline, but actually
+        here as the reason to build the input-resolution helper shared rather than inline, but actually
         building spec's authoring commands is separate, already-tracked, unstarted work.</li>
     </ul>
   </spec-out-of-scope>

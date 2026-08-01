@@ -111,10 +111,10 @@ export async function loadCheck(scriptSource: string): Promise&lt;(...args: unkn
       <code>file://</code> CORS. This work doesn't reopen that question or reverse that decision — it
       answers a narrower one that decision never asked: given <em>something</em> needs sharing across
       Node/browser without real imports, is a whole shared file with its own loading mechanism warranted for
-      a five-line function with exactly two call sites? Per this project's own convention, the old node is
-      left untouched (it's still correct about the question it actually answered) and a new
-      <code>knowledge-decision</code> records this one, linked back with <code>elaborates</code> rather than
-      <code>contradicts</code>.
+      a five-line function with exactly two call sites? Per this project's own convention, this work leaves
+      the old node untouched (it's still correct about the question it actually answered) and adds a new
+      <code>knowledge-decision</code> that records this one, linked back with <code>elaborates</code> rather
+      than <code>contradicts</code>.
     </p>
   </spec-design>
 
