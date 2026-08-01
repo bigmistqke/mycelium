@@ -26,7 +26,10 @@
 <p>
   The knowledge isn't missing, it's scattered. Commit messages, issues, design specs and ADRs,
   documentation, tests: each of these already exists to capture some piece of intent, and none of them
-  stay connected to the code or to each other. A commit references an issue by number, in prose nothing
+  stay connected to the code or to each other.
+</p>
+<p>
+  A commit references an issue by number, in prose nothing
   resolves. An ADR sits in a folder nobody links back to the lines it constrains. A test has no structural
   tie to the claim it verifies, usually just a filename convention if you're lucky. The record exists, but
   it's spread across half a dozen silos and formats, held together only by whoever happens to remember
@@ -34,7 +37,7 @@
 </p>
 <p>
   That loss compounds over a project's life. The same bug shows up again in a different shape, because
-  the insight that would have prevented it got spent once on a fix instead of being kept somewhere the
+  the insight that would have prevented it got spent once on a fix instead of staying somewhere the
   next pass could find and recognize as the same problem again. <code>packages/v3/DESIGN.md</code>
   measured a narrow instance of this: of five hand-written tests for a two-line <code>max</code> function,
   mutation testing showed two were load-bearing and three were noise. The tests that looked responsible
@@ -65,7 +68,10 @@
   A node is one <code>.html</code> file. Open it directly in a browser and the prose renders, the
   diagrams render, and any code inside a <code>&lt;script&gt;</code> tag runs, showing its own result
   inline. Hand the same file to a thin CLI (<code>mycelium run node.html</code>) and it extracts that same
-  <code>&lt;script&gt;</code> content and runs it under Node. Nothing is transformed between the two, it's
+  <code>&lt;script&gt;</code> content and runs it under Node.
+</p>
+<p>
+  Nothing is transformed between the two, it's
   the same bytes read two different ways. There is no build step that could drift from the source, because
   there is no separate build output.
 </p>
