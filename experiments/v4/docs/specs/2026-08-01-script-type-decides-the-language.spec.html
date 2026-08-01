@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: The script type states the runtime, and the runtime decides the language</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>The script type states the runtime, and the runtime decides the language</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-08-01</spec-date>
+  <spec-problem>
+<p>
+  Most of this project's code cannot be read by an editor. The script blocks in
+  <code>docs/</code> hold 2,042 lines; <code>src/</code> holds 1,065. The
+  smaller half is the half that gets language support.
+</p>
+<p>
+  An HTML language service treats a script as JavaScript only when its
+  <code>type</code> says so. <code>mycelium/command</code>,
+  <code>mycelium/audit</code> and <code>mycelium/rule</code> say nothing it
+  recognizes, so twelve blocks are plain text to it: no highlighting, no
+  completion, no diagnostics. That is where every authoring command lives, all
+  1,719 lines of them.
+</p>
+<p>
+  The blocks it does recognize are given wrong answers. It builds one virtual
+  JavaScript document per HTML file and concatenates every script into it, which
+  merges scopes that are separate when they run.
+  <code>knowledge.template.html</code> declares <code>const lines</code> at line
+  279, inside the module starting at 249, and again at line 572, inside the
+  module starting at 552. Two modules, two scopes, nothing wrong — reported as a
+  redeclaration on both. The same merge reads the concatenation as a plain
+  script whenever it has no top-level import or export, so a legal top-level
+  <code>await</code> is reported as an error too.
+</p>
+<p>
+  The merge is not simply a mistake, which is why it cannot be argued away. For
+  a classic script it is correct: a top-level <code>const</code>,
+  <code>let</code> or <code>class</code> there goes into the global lexical
+  scope shared by every other classic script in the document, so two of them
+  declaring one name really is a <code>SyntaxError</code>. The service applies
+  that rule to modules, where it does not hold. Both kinds appear in this
+  corpus, so the distinction decides which errors are real. Every classic script
+  here was checked, and no two in one document declare the same name, so every
+  redeclaration reported today is false.
+</p>
+<p>
+  Underneath all of it is a question this project has never answered in one
+  place: which scripts run where. The answer is currently spread across a type
+  attribute, a loader, two <code>data:</code> URLs and a browser demo, and no
+  two of them agree on how to find it.
+</p>
+</spec-problem>
+  <spec-design>
+<h2>The type states the runtime</h2>
+<p>
+  A script's <code>type</code> already carries three jobs, set out in
+  <a href="2026-07-23-mycelium-authoring-commands.spec.html">the authoring
+  commands spec</a>: a browser will not run an unrecognized type, the tag keeps
+  its raw-text parsing, and the type value is the discovery selector. It takes a
+  fourth here, and the four agree.
+</p>
+<table>
+  <tbody><tr><th>Script type</th><th>Runtime</th><th>Language</th></tr>
+  <tr><td><code>mycelium/*</code></td><td>Node only</td><td>TypeScript</td></tr>
+  <tr><td><code>module</code>, classic</td><td>a browser</td><td>JavaScript</td></tr>
+</tbody></table>
+<p>
+  Node strips types when it is told to and not otherwise. A load hook returning
+  <code>format: "module"</code> for a source carrying a type annotation fails
+  with <code>SyntaxError: Unexpected token ':'</code>; returning
+  <code>format: "module-typescript"</code> runs it. The format is a declaration,
+  not a hint, so <code>load</code> in <code>src/script-hooks.ts</code> reads the
+  script's own type and picks:
+</p>
+<pre><code>const type = script.getAttribute("type") ?? ""
+const format = type.startsWith("mycelium/") ? "module-typescript" : "module"</code></pre>
+<p>
+  Per type, not for every script the hook serves. The hook is not reserved to
+  <code>mycelium/*</code>: <code>knowledge.template.html</code> line 605 is a
+  <code>type="module"</code> script with <code>id="extract-graph"</code>, it has
+  to stay valid in a browser, and the command block imports it through this same
+  hook at line 649. A single format for everything would tell Node that a
+  browser-facing script may contain TypeScript.
+</p>
+<h2>The in-page demos go</h2>
+<p>
+  Six blocks, 202 lines, each ending in a <code>getElementById</code> call
+  against an output element. They re-run a gate that already runs.
+  <code>src/validate.ts</code> compares every audit's violations against its own
+  <code>data-expects</code> and exits non-zero on a mismatch, which is the same
+  comparison the demo in <code>knowledge.template.html</code> performs at line
+  572. Removing them costs no checking.
+</p>
+<p>
+  They do cost something while they stay. The audits at
+  <code>knowledge.template.html</code> lines 327 and 382 each carry their own
+  copy of graph extraction, and the source says why: written out rather than
+  imported from a helper, because the same script also runs in the demo through
+  a <code>data:</code> URL, which has no base to resolve a relative import
+  against. With the demo gone both import <code>#extract-graph</code>, which
+  already exists at line 605.
+</p>
+<p>
+  What is lost is documentation, and only documentation. A demo is the browser
+  side of a template: it shows a reader what a validator does while they are
+  looking at it. Nothing here replaces that, and it should be recorded rather
+  than glossed.
+</p>
+<p>
+  It is not the property
+  <a href="2026-07-23-mycelium-crawler.spec.html">the crawler spec</a> holds to,
+  which is that every document in this project works with a plain double-click
+  and needs no server. Every document still does. A demo removed makes a
+  document show less, not fail to open, so that claim is untouched.
+</p>
+<p>
+  The two sides are separable, and that is what makes this a small change rather
+  than a large one. A demo is browser-facing documentation. A command, an audit
+  and a rule are machinery that only ever runs under Node. Deciding the language
+  for the second does not require the first to exist, and removing the first
+  takes nothing away from what a reader can open.
+</p>
+<h2>A shared snippet is a file, not a block</h2>
+<p>
+  <code>knowledge.template.html</code> line 605 holds
+  <code>extractGraph</code> in a <code>type="module"</code> script with an
+  <code>id</code>, imported at line 649 by the command block. Under this spec
+  that type means a browser runs it, and no browser does — the prose beside it
+  at line 590 says the importing command only ever runs under Node, and nothing
+  else in the document touches it. It is a shared snippet that predates the type
+  attribute meaning anything about a runtime.
+</p>
+<p>
+  It becomes a <code>.ts</code> file in <code>docs/templates/</code>, beside
+  <code>shared.ts</code>, which is already exactly this: TypeScript, on disk,
+  imported as <code>./shared.ts</code> by three command blocks. A relative
+  import out of an embedded script already resolves, because the synthetic
+  module URL the loader mints sits beside the real HTML file, so the audits can
+  import the moved file the same way.
+</p>
+<p>
+  The line this draws is worth stating, because it decides where the next
+  snippet goes. What the engine discovers lives in the document; what is merely
+  called can live in a file. A command, an audit and a rule are declared by
+  type and found by a selector, so the document has to hold them. A helper is
+  not declared, only called, and gains nothing from being embedded.
+</p>
+<p>
+  No new script type is introduced. A type reserved for shared snippets was
+  considered and is not worth its own concept: it would need the engine to
+  ignore it, the language server to map it, and a reader to learn it, in order
+  to reach code a plain file already holds with none of that. Moving this one
+  snippet leaves the author-written <code>#locator</code> import with no users
+  at all, which is a fair measure of how much the embedded form was carrying.
+  The engine's own <code>&lt;file&gt;#&lt;locator&gt;</code> path is a different
+  thing and stays: it is how every embedded script is loaded.
+</p>
+<p>
+  Which is the sharpest argument for removing the demos, and it does not depend
+  on TypeScript at all. <code>type="mycelium/audit"</code> declares that a
+  browser will not run the script. The demo then takes that script's source and
+  runs it in a browser. It is the one place where the rule the type states is
+  not true, and it is the reason those audits cannot import
+  <code>#extract-graph</code> like the command block does. Remove it and the
+  rule holds everywhere, with no exception left to remember.
+</p>
+<h2>Rules load through the same mechanism as everything else</h2>
+<p>
+  <code>language.template.html</code> loads a rule's script through
+  <code>data:text/javascript</code> in two places, at lines 683 and 803, while
+  commands and audits go through the virtual-module loader in
+  <code>src/script-hooks.ts</code>. Two mechanisms for one job.
+</p>
+<p>
+  The comment beside the first gives two reasons. One is that it avoids path
+  arithmetic, but <code>fs.root</code> is already an absolute path handed to
+  every audit and <code>template.template.html</code> line 81 already resolves
+  against it; the only real gap is that <code>Filesystem</code> in
+  <code>src/run.ts</code> keeps its root private, so it gains a public reader.
+  The other is that it matches the browser demos, which this spec removes.
+</p>
+<p>
+  The same comment names what it costs: a rule loaded from a <code>data:</code>
+  URL cannot import anything, by bare name or by relative path, because a
+  <code>data:</code> URL has no base to resolve against. It cannot be
+  type-stripped either, for the same reason — the hook never sees it. The
+  virtual-module loader has neither limit, because it resolves against the real
+  file the script was read from.
+</p>
+<h2>A language server gives every block its own file</h2>
+<p>
+  The merge is the root of every false error, so the fix is to stop merging.
+  Volar builds a language server from a mapping between a host file and the
+  virtual files inside it, which is exactly the shape of the problem: one
+  virtual file per script block, each with the module semantics its type
+  implies, so module scope is module scope and a classic script's shared global
+  scope stays shared.
+</p>
+<p>
+  It resolves the two import forms <code>src/script-hooks.ts</code> already
+  resolves, so what an editor believes and what Node does stay the same
+  statement: <code>#locator</code> for a script in the importing script's own
+  file, and <code>path.html#locator</code> for one in another.
+</p>
+<p>
+  A command's context is declared, not injected. Once a command block is
+  TypeScript it can import the type and annotate its own parameter, which means
+  the type is visible in the document that uses it and any reader can follow it
+  to its definition. A server that silently supplied the type instead would put
+  knowledge of one family into the tooling, which is the arrangement
+  <a href="2026-07-23-mycelium-authoring-commands.spec.html">the authoring
+  commands spec</a> keeps the engine out of.
+</p>
+<p>
+  <code>src/</code> gets a <code>tsconfig.json</code> describing how it actually
+  runs: Node executing the files directly, so type-erasable syntax only,
+  <code>.ts</code> import specifiers allowed, and no emit. Without one an editor
+  supplies its own defaults, and those defaults produce the errors currently
+  reported against <code>src/</code>.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>
+  Completion and validation for the custom elements themselves —
+  <code>knowledge-goal</code>, <code>plan-step</code>,
+  <code>language-term</code> and their fields. It is worth doing and the
+  templates already hold everything it needs, but it is a separate body of work
+  from making the scripts readable.
+</p>
+<p>
+  Removing <code>data-conforms-to</code>. The attribute is derivable: across 741
+  of them the fragment always equals the tag name and the path always names that
+  family's template, with no exceptions. Deriving it would still be a change to
+  the engine, the validator and every instance, and it would trade a link a
+  reader can follow for a rule they have to know. It deserves its own spec and
+  its own decision rather than arriving as a consequence of this one.
+</p>
+<p>
+  Code shared between a browser and a <code>mycelium/*</code> block. There is
+  none today: the browser side of this project is the demos this spec removes,
+  a diagram in <code>DESIGN.html</code>, and pages the <code>generate</code> and
+  <code>serve</code> commands build as strings, none of which shares a snippet
+  with anything. A script type cannot be the answer if it ever arises, because a
+  browser will not run a type it does not recognize — that inertness is the
+  whole reason <code>mycelium/*</code> works. The forms that would work are a
+  real file both sides load, a classic script assigning to
+  <code>globalThis</code> as
+  <a href="../knowledge/2026-07-23-reverse-runtime-to-globalthis.decision.html">the
+  runtime reversal</a> chose, or the <code>data:</code> URL the demo uses. The
+  gap is named here so it is not mistaken for something this spec closes.
+</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>
+  Does anything take over what the demos did as documentation? Their checking is
+  covered, but a template that demonstrates itself when opened taught something
+  a passing build does not. A demo written against a shared script with an id,
+  rather than against an audit's source text, would keep working and would break
+  no rule — it would just be demonstrating the shared part rather than the audit
+  itself. Whether that is worth writing is open.
+</p>
+<p>
+  Does a rule stay JavaScript? Rules are the one family whose scripts are
+  written to be small enough to read whole, and a rule that gains a type
+  annotation gains a build-time dependency on the same reader. Moving them onto
+  the loader makes TypeScript available to them; it does not settle whether they
+  should use it. JSDoc in a plain JavaScript rule is the third answer, and it is
+  the one that keeps a rule readable whole while still being checked.
+</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>

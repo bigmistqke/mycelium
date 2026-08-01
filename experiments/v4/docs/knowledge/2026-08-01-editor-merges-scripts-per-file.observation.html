@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: An editor merges every script in one HTML file, so two modules that each declare the same name collide</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>An editor merges every script in one HTML file, so two modules that each declare the same name collide</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-detail><p>The false errors in <code>docs/</code> come from one behaviour: an HTML
+language service builds <em>one</em> virtual JavaScript document per HTML file
+and concatenates every script it recognizes into it. Separate
+<code>&lt;script type="module"&gt;</code> blocks, which are separate modules with
+separate scopes at run time, land in one shared scope.</p>
+<p><code>knowledge.template.html</code> shows it exactly: line 279 declares
+<code>const lines</code> inside the module that starts at 249, and line 572
+declares <code>const lines</code> inside the module that starts at 552. Two
+modules, two scopes, nothing wrong when they run — but the editor reports
+<q>Cannot redeclare block-scoped variable</q> on both.</p>
+<p>The merge is not simply a mistake, which is worth stating because it explains
+why the behaviour is there at all. For a <em>classic</em> script — no
+<code>type</code> attribute — one shared scope is correct: a top-level
+<code>const</code>, <code>let</code> or <code>class</code> in a classic script
+goes into the global lexical scope, shared by every other classic script in the
+document, so two of them declaring the same name really is a
+<code>SyntaxError</code>. (<code>var</code> is exempt; redeclaring it is
+allowed.) The service applies that one correct rule to modules, where it does
+not hold.</p>
+<p>Both kinds appear in this tree, so the distinction decides which errors are
+real. Every classic script here was checked: no two of them in the same document
+declare the same name, so every redeclaration error currently reported is
+false.</p>
+<p>The same merge treats the concatenation as a plain script rather than a
+module whenever the merged text has no top-level import or export, so a
+legitimate top-level <code>await</code> is reported as an error too.</p>
+<p>Neither error describes anything wrong with the file. Both disappear under a
+language server that gives each script block its own virtual file, which is what
+makes that the fix rather than renaming the variables.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-01-html-editor-language-support.goal.html">the merge is what produces the false errors the goal names</a>
+  <a data-rel="supports" href="./2026-08-01-script-type-states-the-runtime.decision.html">the merge is what a per-script virtual file undoes</a>
+</knowledge-observation>
+</body></html>

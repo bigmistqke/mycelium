@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Write the spec for the script type deciding a script's runtime and language</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Write the spec for the script type deciding a script's runtime and language</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Wrote
+<a href="../specs/2026-08-01-script-type-decides-the-language.spec.html">the
+spec</a> before touching the loader or the templates, because the work changes
+<code>src/script-hooks.ts</code>, every template, and a property an earlier
+decision paid for.</p>
+<p>The measurements it rests on were taken first: 2,042 lines of script in
+<code>docs/</code> against 1,065 in <code>src/</code>, 1,719 of them commands;
+741 <code>data-conforms-to</code> attributes with no exception to the naming
+convention; 202 lines of demo scaffolding across six blocks; and two runs of a
+load hook proving that Node rejects a type annotation under
+<code>format: "module"</code> and accepts it under
+<code>format: "module-typescript"</code>.</p>
+</knowledge-detail>
+  <knowledge-files>docs/specs/2026-08-01-script-type-decides-the-language.spec.html</knowledge-files>
+  <knowledge-branch>v4-html-language-support</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-08-01-html-editor-language-support.goal.html">the spec is the first step of this goal</a>
+</knowledge-action>
+</body></html>

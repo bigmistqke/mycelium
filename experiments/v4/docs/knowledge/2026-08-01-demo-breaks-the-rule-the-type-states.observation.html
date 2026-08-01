@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: The demo is the one place a script declared Node-only is run in a browser</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>The demo is the one place a script declared Node-only is run in a browser</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-detail><p><code>type="mycelium/audit"</code> states that a browser will not run the
+script. The demo in <code>knowledge.template.html</code> then reads that
+script's source text and runs it in a browser through a <code>data:</code> URL.
+It is the single exception to a rule the type attribute otherwise states without
+one.</p>
+<p>The exception has a cost that shows up somewhere else entirely. Because those
+audits must survive being run in a browser, they cannot use the
+<code>#locator</code> import the command block uses at line 649 — that form is
+resolved by this project's own loader, on the Node side. So the audits at lines
+327 and 382 each carry their own copy of graph extraction instead of importing
+<code>#extract-graph</code> from line 605, and the source says so outright.</p>
+<p>This holds whether or not anything becomes TypeScript. The duplication is
+paid for by the demo, not by the language.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-01-remove-in-page-demos.decision.html">the exception is what the removal ends</a>
+</knowledge-observation>
+</body></html>
