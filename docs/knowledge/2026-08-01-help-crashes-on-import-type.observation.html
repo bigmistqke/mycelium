@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Every family's --help crashes: run.ts's roster reader chokes on the type-only imports the language work added</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>Every family's --help crashes: run.ts's roster reader chokes on the type-only imports the language work added</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-detail><p>While checking the README's example commands still work: <code>pnpm mycelium knowledge --help</code>
+(and <code>spec</code>, <code>plan</code>, <code>language</code> — every family checked) throws an
+uncaught acorn <code>SyntaxError: Unexpected token</code> instead of printing help. The top-level
+roster (<code>pnpm mycelium --help</code>) does not crash, because <code>printRoster</code> wraps its
+call to <code>readCommands</code> in a try/catch and prints
+<code>&lt;file&gt; (unreadable: …)</code> for a family it cannot parse; the per-family
+<code>&lt;id&gt; --help</code> path calls the same <code>readCommands</code> with no such guard.</p>
+<p>Cause: <code>readCommands</code> parses a command script's source with acorn
+(<code>ecmaVersion: "latest"</code>, plain JavaScript, no TypeScript plugin), and every family's
+<code>&lt;script type="mycelium/command"&gt;</code> now opens with
+<code>import type { CommandContext } from "../../src/api.ts"</code> — TypeScript-only syntax acorn
+does not parse. Actual command execution (<code>add</code>, <code>link</code>, …) is unaffected,
+since that path runs the script as a real module through Node's own type stripping rather than
+through acorn; only the <code>--help</code> introspection feature fails.</p>
+<p>Not a regression from today's directory move — the crash reproduces identically regardless of
+where the files live, since it depends only on script content acorn cannot parse, not on any path.
+Logged as a finding rather than fixed, since it surfaced as a side effect of checking the README's
+examples, not as work requested.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-01-readme-as-generic-protocol-engine.action.html">found while checking the README's example commands still work</a>
+</knowledge-observation>
+</body></html>

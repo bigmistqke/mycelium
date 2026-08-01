@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Strip TypeScript types before acorn parses a command script, so --help works again</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Strip TypeScript types before acorn parses a command script, so --help works again</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Fixes the crash the previous observation found: added <code>parseCommandSource</code> in
+<code>src/run.ts</code>, running <code>node:module</code>'s <code>stripTypeScriptTypes</code>
+(<code>mode: "strip"</code>) ahead of acorn, and pointed <code>readCommands</code>,
+<code>extractCommandDocs</code>, and <code>leadingComment</code> at it instead of calling
+<code>parse(source, ...)</code> on raw TypeScript directly.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-01-help-crashes-on-import-type.observation.html">the crash this action fixes</a>
+  <a data-rel="leads_to" href="./2026-08-01-help-fixed-by-stripping-types.outcome.html">verified fixed</a>
+</knowledge-action>
+</body></html>

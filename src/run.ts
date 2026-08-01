@@ -6,7 +6,7 @@
 
 import { mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { basename, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
-import { register } from "node:module"
+import { register, stripTypeScriptTypes } from "node:module"
 import { parse } from "acorn"
 import type { Comment } from "acorn"
 import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
@@ -227,6 +227,18 @@ class Filesystem {
   }
 }
 
+// Every command script is TypeScript — a type-only import at the top, a
+// CommandContext annotation on every exported function's parameter — and
+// acorn parses plain JavaScript only. Stripping first lets the same acorn
+// pass that already finds exports and doc comments handle real command
+// scripts instead of only the untyped ones. `mode: "strip"` replaces erased
+// syntax with matching whitespace rather than removing it, so every
+// position acorn reports — and the comment-to-export distance check below,
+// which depends on those positions — still lines up with the source on disk.
+function parseCommandSource(source: string, onComment: Comment[]) {
+  return parse(stripTypeScriptTypes(source, { mode: "strip" }), { ecmaVersion: "latest", sourceType: "module", onComment })
+}
+
 // Commands are discovered by their JSDoc, not a separate manifest: the
 // engine never needs to know what a command means, only where its doc
 // comment sits relative to the export it documents. Parsed with acorn
@@ -254,7 +266,7 @@ function formatComment(raw: string): string {
 function extractCommandDocs(source: string): Map<string, string> {
   const docs = new Map<string, string>()
   const comments: Comment[] = []
-  const ast = parse(source, { ecmaVersion: "latest", sourceType: "module", onComment: comments })
+  const ast = parseCommandSource(source, comments)
 
   for (const node of (ast as any).body) {
     const names = exportedFunctionNames(node)
@@ -303,7 +315,7 @@ function firstSentence(doc: string): string {
 // would advertise a file's private helpers as commands.
 function readCommands(source: string): { name: string; summary: string }[] {
   const comments: Comment[] = []
-  const ast = parse(source, { ecmaVersion: "latest", sourceType: "module", onComment: comments })
+  const ast = parseCommandSource(source, comments)
   const commands: { name: string; summary: string }[] = []
 
   for (const node of (ast as any).body) {
@@ -375,7 +387,7 @@ function printRoster(docsDir: string, stream: (line: string) => void) {
 function leadingComment(source: string): string {
   const comments: Comment[] = []
   try {
-    parse(source, { ecmaVersion: "latest", sourceType: "module", onComment: comments })
+    parseCommandSource(source, comments)
   } catch {
     return ""
   }
