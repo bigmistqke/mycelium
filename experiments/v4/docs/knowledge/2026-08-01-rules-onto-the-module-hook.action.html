@@ -11,12 +11,11 @@
   <knowledge-title>Load a rule through the module hook and give every rule script a type</knowledge-title>
   <knowledge-confidence>95</knowledge-confidence>
   <knowledge-status>completed</knowledge-status>
-  <knowledge-detail><p>Both callers go through <code>importRule</code> in
-<code>docs/templates/load-rule.ts</code> and pass an absolute path, because they
-are rooted differently: the lint command holds a filesystem rooted at
-<code>docs/</code>, the prose audit one rooted a level above it.
-<code>Filesystem</code> gained a reader for its root, which was the only thing
-actually missing.</p>
+  <knowledge-detail><p>Both callers go through <code>loadModule</code> in <code>src/utils.ts</code>
+and pass an absolute path, because they are rooted differently: the lint
+command holds a filesystem rooted at <code>docs/</code>, the prose audit one
+rooted a level above it. <code>Filesystem</code> gained a reader for its root,
+which was the only thing actually missing.</p>
 <p>Two of the three rule files carried a bare untyped script, which a browser
 executes on page load. They say <code>type="mycelium/rule"</code> now, and
 <code>add</code> and <code>update</code> set it when they create one, so a new
@@ -25,9 +24,16 @@ rule cannot go back to being untyped.</p>
 violations across two rule files, the audit fails a planted violation and passes
 once it is removed, and a rule made through <code>add</code> is picked up and
 run.</p>
+<p>Landed on <code>loadModule</code> rather than a rule-specific
+<code>importRule</code> helper this action originally wrote: rebasing this
+branch onto main found main had independently fixed the same problem the
+same day, by reusing <code>loadModule</code>, which already existed. The two
+did the identical thing through the identical mechanism, so the newly
+written helper was redundant and dropped in favor of the one already in the
+codebase.</p>
 </knowledge-detail>
-  <knowledge-commit>8a4040f</knowledge-commit>
-  <knowledge-files>experiments/v4/docs/templates/load-rule.ts, experiments/v4/docs/templates/language.template.html, experiments/v4/src/run.ts, experiments/v4/docs/language/rules</knowledge-files>
+  <knowledge-commit>ae87315</knowledge-commit>
+  <knowledge-files>experiments/v4/src/utils.ts, experiments/v4/docs/templates/language.template.html, experiments/v4/src/run.ts, experiments/v4/docs/language/rules</knowledge-files>
   <knowledge-branch>v4-html-language-support</knowledge-branch>
   <a data-rel="depends_on" href="./2026-08-01-html-editor-language-support.goal.html">a step of this goal</a>
 </knowledge-action>
