@@ -2,21 +2,26 @@
 
 ## Knowledge Graph Workflow
 
-**THIS IS MANDATORY. Log decisions IN REAL-TIME, not retroactively.**
+This logging is mandatory. Log decisions in real time, not retroactively.
 
-As of 2026-07-23 this project's decision graph is written as HTML nodes under
+As of 2026-07-23 this project writes its decision graph as HTML nodes under
 `docs/knowledge/`, conforming to the templates in
 `docs/templates/knowledge.template.html`. It replaces `deciduous`
 (the SQLite-backed CLI) for all new logging, project-wide — this was `experiments/v4`
 inside a monorepo until 2026-08-01, when that content became the repository
 root; there's nowhere better for this to live. The earlier log held ~400 nodes
-(v0 through 2026-07-23). It was frozen on that date and **deleted on
-2026-07-30**, along with its database and its JSON export — 60 nodes were
-imported here first; the rest are gone. Nothing in this repo can query it, so
-nothing here may refer to it as though it were still available. Full reasoning:
+(v0 through 2026-07-23).
+
+It stopped growing on that date, and the project **deleted** it on
+2026-07-30, along with its database and its JSON export. 60 nodes came in
+here as imports first; nothing else survived. Nothing in this repository
+can query it, so nothing here may refer to it as though it were still
+available.
+
+Full reasoning:
 `docs/specs/2026-07-23-deciduous-template-series.spec.html`.
 
-**60 of those 400 were imported on 2026-07-30**, by one rule: a node comes in
+60 of those 400 were imported on 2026-07-30, by one rule: a node comes in
 only if it can be linked to material already here. See
 `docs/knowledge/2026-07-30-link-do-not-tag.decision.html`.
 Imported nodes keep their original date in the filename — that prefix is what
@@ -25,7 +30,8 @@ records which exploration a node belongs to, which is why `add` grew a
 
 ### CRITICAL: referring to the earlier decision log
 
-The earlier log was a SQLite database, frozen 2026-07-23 and now deleted. Its
+The earlier log was a SQLite database that the project froze on 2026-07-23
+and later deleted. Its
 node numbers (`#349`, `#20`) meant something only inside it, and **nothing in
 this graph may refer to them**. There are zero such references left; keep it
 that way.
@@ -36,7 +42,7 @@ that way.
   a wrong reference — two of twenty citations pointed at the wrong node before
   anyone checked
   (`2026-07-30-two-of-twenty-citations-were-hollow.observation.html`).
-- Everything else in that log is **gone**, so describe it rather than cite it:
+- Everything else in that log no longer exists, so describe it rather than cite it:
   "an option about which language to implement in". The description is what a
   reader needed anyway.
 
@@ -45,7 +51,7 @@ repository.** Not a number in a deleted database, not an external tool, and not
 something recoverable from git history — git is not a place a reader of the
 graph can follow a link to.
 
-**Use the CLI to log, don't hand-author.** The commands below exist and are
+Use the CLI to log, don't hand-author. The commands below exist and are
 tested working:
 
 ```bash
@@ -58,65 +64,81 @@ pnpm mycelium knowledge del <file>
 (Run from the repository root — pnpm resolves `mycelium` from the root
 `package.json` regardless of which subdirectory the shell is currently in.)
 
-**This block is a convenience, not the roster.** `mycelium run --help` prints
-every family and every command it exports, read off the command scripts
-themselves, and a SessionStart hook runs it so it is already in context —
-scroll up rather than trusting this file to be current. `mycelium <family>
---help` then prints one family's full flags and caveats, straight from each
-command's own doc comment. Prefer both over what is written here: this block
-is maintained by hand and has been wrong. It listed three commands the day
+This block is a convenience, not the roster. The command `mycelium run
+--help` prints every family and every command it exports, read off the
+command scripts themselves. A SessionStart hook runs it already, so scroll
+up rather than trusting this file to be current.
+
+The command `mycelium <family> --help` then prints one family's full
+flags and caveats, straight from each command's own doc comment. Prefer
+both over what this block says: a person maintains it by hand, and it has
+been wrong before. It listed three commands the day
 `unlink` and `del` already existed, and an agent reading it concluded an
 `unlink` was the next gap to build and reported that as a finding. If you
 find a command in `--help` that is missing here, add it.
 
-`unlink` is what a mis-aimed edge needs. `link` upserts on (rel, href), so it
-can correct a label but never a direction or a wrong `--rel` — those leave a
-second, wrong edge alongside the right one. `unlink` then `link` redirects in
-two commands; do not delete and rebuild the node.
+`unlink` is what a mis-aimed edge needs. The `link` command upserts on
+(rel, href), so it can correct a label but never a direction or a wrong
+`--rel` — those leave a second, wrong edge alongside the right one.
+Running `unlink` then `link` redirects in two commands; do not delete and
+rebuild the node.
 
-**`--file` takes a bare slug with no date on it.** `add` prepends the date
+`--file` takes a bare slug with no date on it. `add` prepends the date
 itself and writes `knowledge/<date>-<slug>.<type>.html`, so the date appears
 in the filename whether or not you typed one. Pass `--file
 prior-art-controlled-natural-languages`, not `--file
-2026-07-31-prior-art-controlled-natural-languages`. The dated form is now
-rejected with an error naming the slug to pass instead — but it used to
-produce `2026-07-31-2026-07-31-prior-art-….observation.html` silently, since
-such a node validates fine and shows its only symptom in the filename. That
-mistake has been made. The surrounding prose talks about date-prefixed
-filenames constantly, so a slug that already carries a date looks like it is
-following the convention rather than breaking it. Note the argument names in
-the signature above: `<undated-slug>` for `add`, whose value you are
-choosing, against `<file>` for every other command, which takes the full
-existing filename including its date and its `.<type>.html` suffix. The same
-split, and the same guard, applies to `spec add` below.
+2026-07-31-prior-art-controlled-natural-languages`.
 
-**`--detail` is where the finding goes.** The title is a title — a line you
+The dated form is now rejected with an error naming the slug to pass
+instead. It used to silently produce
+`2026-07-31-2026-07-31-prior-art-….observation.html`, since such a node
+validates fine and shows its only symptom in the filename. This has
+happened before.
+
+The surrounding prose talks about date-prefixed filenames constantly, so a
+slug that already carries a date looks like it is following the convention
+rather than breaking it.
+
+Note the argument names in the signature above: `<undated-slug>` for
+`add`, whose value you are choosing, against `<file>` for every other
+command, which takes the full existing filename including its date and its
+`.<type>.html` suffix. The same split, and the same guard, applies to
+`spec add` below.
+
+`--detail` is where the finding goes. The title is a title — a line you
 can scan in a list. Everything else (the evidence, the numbers, the reasoning,
 the caveats) belongs in `--detail`, which takes real HTML with no tag
-restriction. For anything longer than a line, pass `--detail -` and pipe the
-content in on stdin via a heredoc, which avoids fighting shell quoting. On
-`update`, `--detail ""` clears the field.
+restriction.
 
-This flag existed for days before it was written down here, and the cost was
-measurable: eight nodes written on 2026-07-27 average 415 characters of title
+For anything longer than a line, pass `--detail -` and pipe the content in
+on stdin via a heredoc, which avoids fighting shell quoting. On `update`,
+`--detail ""` clears the field.
+
+This flag existed for days before this file documented it, and the cost was
+measurable: eight nodes from 2026-07-27 average 415 characters of title
 against 117 for the rest of the graph, and use `detail` zero times. An agent
 copies the signature, not the prose — so if a field is missing from the line
 above, it does not get used.
 
 This replaces the Write/Read+Edit dance for every node/edge `knowledge-*`
-covers — no file content passes through the model doing the logging, same
-as `deciduous add`/`deciduous link` never did. `add` creates a node,
-`link` connects two, `update` fills in or clears a field on one that
-already exists (e.g. adding `<knowledge-commit>` to an action node once
-its commit exists) — the field-update gap this section used to name here
-is closed. `unlink` and `del` are the two undo operations, and both are
-about not leaving a wrong claim standing: `unlink` removes one edge,
+covers — no file content passes through the model doing the logging, the
+same as `deciduous add`/`deciduous link` never did.
+
+The `add` command creates a node, `link` connects two, and `update` fills
+in or clears a field on one that already exists — for example, adding
+`<knowledge-commit>` to an action node once its commit exists. This
+closes the field-update gap this section used to name.
+
+`unlink` and `del` are the two undo operations, and both are about not
+leaving a wrong claim standing. Concretely: `unlink` removes one edge, and
 `del` removes a node **and** every edge pointing at it, printing each one
 it drops, because an incoming edge is something upstream resting on the
-node you just took away. Spec docs get the same treatment now too, via
-`spec.template.html`'s own `add`/`update` — no `link` (a spec's
-cross-references live inside its own rich-field markup, not as separate
-edges) and no `list` yet (deferred, not forgotten):
+node you just took away.
+
+Spec docs get the same treatment now too, via `spec.template.html`'s own
+`add`/`update`. There is no `link`, since a spec's cross-references live
+inside its own rich-field markup, not as separate edges, and no `list`
+yet — deferred, not forgotten:
 
 ```bash
 pnpm mycelium spec add --title "…" --file <undated-topic> [--status draft|approved|implemented] --body "…"
@@ -157,15 +179,15 @@ AUDIT regularly          -> Check for missing connections (see below)
 
 ### CRITICAL: Capture VERBATIM User Prompts
 
-**`<knowledge-prompt>` must be the EXACT user message, not a summary.** When
+`<knowledge-prompt>` must be the exact user message, not a summary. When
 a user request triggers new work, capture their full message word-for-word
 inside the field — same rule deciduous had for `-p`/`--prompt-stdin`, just a
 tag instead of a flag.
 
-**When to capture prompts:**
-- Root `knowledge-goal` nodes: YES — the FULL original request
-- Major direction changes: YES — when user redirects the work
-- Routine downstream nodes: NO — they inherit context via `data-rel` edges
+When to capture prompts:
+- Root `knowledge-goal` nodes: yes, the full original request
+- Major direction changes: yes, when the user redirects the work
+- Routine downstream nodes: no, they inherit context via `data-rel` edges
 
 ### Node shape
 
@@ -192,7 +214,7 @@ docs/knowledge/<slug>.<type>.html   (type = goal|decision|option|action|outcome|
 
 ### CRITICAL: Maintain Connections
 
-**The graph's value is in its CONNECTIONS, not just nodes.**
+The graph's value is in its connections, not just its nodes.
 
 | When you create... | IMMEDIATELY link to... |
 |-------------------|------------------------|
@@ -201,7 +223,7 @@ docs/knowledge/<slug>.<type>.html   (type = goal|decision|option|action|outcome|
 | `knowledge-option` | Its parent decision (`depends_on`) |
 | `knowledge-observation` | Related goal/action |
 
-**Root `knowledge-goal` nodes are the ONLY valid orphans** — exactly what
+Root `knowledge-goal` nodes are the only valid orphans — exactly what
 `orphans-except-goal` (one of `knowledge.template.html`'s two collocated
 audits) checks for, now for real: `pnpm validate` runs it against the actual
 files, not just sample markup. Still worth checking by eye before running
@@ -215,8 +237,8 @@ The six `data-rel` edge labels, unchanged from deciduous:
 
 ### CRITICAL: Link Commits to Actions/Outcomes
 
-**After every git commit, add the hash to the relevant node — but that
-usually means editing the node you already wrote, not writing a new one.**
+After every git commit, add the hash to the relevant node — but that
+usually means editing the node you already wrote, not writing a new one.
 
 ```bash
 git commit -m "feat: add auth"
