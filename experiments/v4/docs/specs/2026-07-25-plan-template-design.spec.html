@@ -110,10 +110,13 @@
   not just its direct children. Its separate "unexpected field" check already does this correctly
   (<code>Array.from(el.children)</code>, direct children only); only the required/pattern/enum lookup doesn't.
   This has never mattered before: no existing <code>knowledge-*</code> or <code>spec-doc</code> instance
-  nests a same-named field inside itself. <code>plan-*</code> is the first family where it does
+  nests a same-named field inside itself.
+</p>
+<p>
+  <code>plan-*</code> is the first family where it does
   (<code>plan-title</code>/<code>plan-status</code> at three nesting levels), so the fix — scoping that
   lookup to direct children, matching the unexpected-field check's existing behavior — has to land before
-  <code>plan.template.html</code> can be built correctly. Backward-compatible: identical behavior for every
+  building <code>plan.template.html</code> can proceed correctly. Backward-compatible: identical behavior for every
   existing single-level instance, since a direct-children scan and a subtree scan return the same first match
   whenever there's no nested same-tag element in the first place. The same direct-children-only lookup
   discipline also applies to <code>plan.template.html</code>'s own command code whenever it reads or upserts
@@ -146,14 +149,14 @@
 <p>
   At most one <code>plan-check</code> per <code>plan-step</code> — <code>plan-step</code>'s own
   <code>&lt;template&gt;</code> declares it as a single optional field (checked via one direct-child lookup,
-  matching only the first), so a step wanting two independent checks would need to be split into two steps
+  matching only the first), so a step wanting two independent checks would need splitting into two steps
   instead. Because <code>plan-check</code> is its own conforming type rather than a plain field, creating or
   editing one takes <em>two</em> <code>cli.validate()</code> calls in the owning command — one for the
   <code>plan-step</code> itself, one for the nested <code>plan-check</code> — not one.
 </p>
 <p>
   <code>mycelium run plan check &lt;file&gt; [&lt;step-id&gt;]</code> runs the check(s) it finds (one named
-  step, or every <code>plan-step</code> with a <code>plan-check</code> in the doc if no step is given),
+  step, or every <code>plan-step</code> with a <code>plan-check</code> in the doc if the caller names no step),
   reports pass/fail per step, and <em>only on pass</em> flips that step's <code>plan-status</code> to
   <code>completed</code>. A failing check leaves status untouched rather than marking it <code>rejected</code>
   — a red step mid-TDD-cycle isn't abandoned, just not done yet. Steps with no <code>plan-check</code>
@@ -190,7 +193,7 @@
     <code>plan-doc</code> root, prints the new task id.</li>
   <li><code>add step</code> — <code>mycelium run plan add step &lt;file&gt; &lt;task-id&gt; --title "…" [--detail "…" | --detail -] [--check-command "…" [--expected-success true|false] [--expected-output "…"]]</code>.
     Appends one <code>&lt;plan-step id="&lt;task-id&gt;-step-M"&gt;</code> (status <code>pending</code>)
-    inside the named task, with a nested <code>plan-check</code> when <code>--check-command</code> is given;
+    inside the named task, with a nested <code>plan-check</code> when the caller supplies <code>--check-command</code>;
     prints the new step id.</li>
   <li><code>update doc</code> — <code>mycelium run plan update doc &lt;file&gt; [--title] [--status] [--goal] [--architecture] [--tech-stack] [--global-constraints]</code>.
     Scoped to the doc's own header fields.</li>

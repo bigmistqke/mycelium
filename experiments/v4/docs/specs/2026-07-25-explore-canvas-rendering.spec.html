@@ -41,7 +41,10 @@
     at <code>docs/</code>: any request path maps directly to a file under <code>docs/</code> and is served
     as static content, except <code>GET /</code>, which serves a generated shell page. The shell page comes
     from a <code>renderExplorePage()</code> template-string function, the same shape
-    <code>generate graph</code>'s own <code>renderGraphPage()</code> already uses. The command prints the
+    <code>generate graph</code>'s own <code>renderGraphPage()</code> already uses.
+  </p>
+  <p>
+    The command prints the
     server's URL and leaves opening a browser to the person running it, matching
     <code>generate graph</code>'s existing behavior rather than adding OS-specific "open a browser" logic.
     It runs until interrupted; nothing it does needs cleanup on exit.
@@ -73,7 +76,7 @@
   </p>
   <h2>Link interception</h2>
   <p>
-    Any <code>&lt;a href&gt;</code> click inside a panel's shadow root is caught by a listener on the shadow
+    A listener on the shadow root catches any <code>&lt;a href&gt;</code> click inside a panel's shadow
     root — composed events still bubble out of shadow boundaries — and opens the target as a new panel with
     a connector instead of navigating the page. No special-casing <code>data-rel</code> versus a plain
     link: anything with an <code>href</code> behaves the same way, matching this tool's existing
@@ -102,13 +105,13 @@
   </p>
   <h2>URL state</h2>
   <p>
-    The set of open panels is kept in <code>location.hash</code>, not the query string, so it never round-
-    trips to the server: on every panel open, close, or drag-end (debounced, not on every pointer-move
+    The explorer keeps the set of open panels in <code>location.hash</code>, not the query string, so it
+    never round-trips to the server: on every panel open, close, or drag-end (debounced, not on every pointer-move
     frame), the current canvas — for each open panel, its path, its <code>x</code>/<code>y</code> position,
     and the path of the panel it was opened from, if any — is serialized into the hash via
     <code>history.replaceState</code>, so dragging a panel around doesn't spam browser history with an
     entry per pixel. On page load, if the hash carries state, those panels are rebuilt in place instead of
-    starting from the empty sidebar-only canvas, and a connector is drawn between each restored panel and
+    starting from the empty sidebar-only canvas, and the explorer draws a connector between each restored panel and
     the one it was opened from, using the same live <code>getBoundingClientRect()</code> recomputation the
     connector layer already does — nothing about a connector's exact pixel start point needs to be stored
     for this to work correctly. Pasting a URL to someone else reproduces the same layout for them. No
