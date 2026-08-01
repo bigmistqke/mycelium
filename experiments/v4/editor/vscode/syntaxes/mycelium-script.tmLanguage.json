@@ -1,0 +1,59 @@
+{
+  "information_for_contributors": [
+    "This grammar exists because VS Code's built-in html.tmLanguage.json only",
+    "embeds source.js for a <script> whose type is empty or a recognized",
+    "JavaScript mime type. Any other type — including every mycelium/* type",
+    "this project uses — falls through to that grammar's last branch, which",
+    "assigns the block source.unknown: no grammar, so no syntax highlighting",
+    "at all. This injects one extra rule ahead of that fallback, matched only",
+    "for type=\"mycelium/...\", that embeds source.ts instead. The prefix test",
+    "is the same one src/script-hooks.ts and editor/language-plugin.ts use to",
+    "decide a block's language; if that prefix ever changes, this does too.",
+    "",
+    "The injection targets text.html.derivative, not text.html.basic. VS Code",
+    "opens .html files with the grammar registered for the html language,",
+    "which is html-derivative.tmLanguage.json (scopeName text.html.derivative)",
+    "— confirmed by reading extensions/html/package.json's languages/grammars",
+    "contributions. That grammar reaches html.tmLanguage.json only through",
+    "{ include: 'text.html.basic#core-minus-invalid' }, a reference to one",
+    "repository rule, which does not push text.html.basic onto the scope",
+    "stack the way tokenizing a file whose own scopeName is text.html.basic",
+    "would. An injectionSelector of text.html.basic therefore never matches a",
+    "real .html buffer; verified by tokenizing a sample through the actual",
+    "vscode-textmate/vscode-oniguruma engine outside the editor."
+  ],
+  "scopeName": "mycelium.script.injection",
+  "injectionSelector": "L:text.html.derivative",
+  "patterns": [{ "include": "#mycelium-script-tag" }],
+  "repository": {
+    "mycelium-script-tag": {
+      "begin": "(<)((?i:script))\\b(?=[^>]*\\btype\\s*=\\s*(['\"])mycelium/[^'\"]*\\3)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html" },
+        "2": { "name": "entity.name.tag.html" }
+      },
+      "end": "(</)((?i:script))(>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html" },
+        "2": { "name": "entity.name.tag.html" },
+        "3": { "name": "punctuation.definition.tag.end.html" }
+      },
+      "name": "meta.embedded.block.html",
+      "patterns": [
+        {
+          "begin": "\\G",
+          "end": "(>)",
+          "endCaptures": { "1": { "name": "punctuation.definition.tag.end.html" } },
+          "name": "meta.tag.metadata.script.start.html",
+          "patterns": [{ "include": "text.html.basic#attribute" }]
+        },
+        {
+          "begin": "(?<=>)",
+          "end": "(?=</(?i:script))",
+          "name": "meta.embedded.block.typescript",
+          "patterns": [{ "include": "source.ts" }]
+        }
+      ]
+    }
+  }
+}

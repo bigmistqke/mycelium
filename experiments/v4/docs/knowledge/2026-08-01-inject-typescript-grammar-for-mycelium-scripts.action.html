@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Inject a TextMate grammar so mycelium/* script blocks embed source.ts</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Inject a TextMate grammar so mycelium/* script blocks embed source.ts</knowledge-title>
+  <knowledge-confidence>75</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>The extension currently ships no <code>contributes.grammars</code> at
+all — it is a pure LSP client. Fixing
+<a href="./2026-08-01-script-tag-gets-source-unknown-scope.observation.html">the source.unknown scope this observation found</a>
+means adding one: a small injection grammar that recognizes
+<code>type="mycelium/…"</code> and embeds <code>source.ts</code> for the
+block body instead of falling through to <code>source.unknown</code>.
+Attribute highlighting inside the opening tag is kept by including the
+built-in grammar's own <code>#attribute</code> rule rather than
+reimplementing it.</p>
+<p>The first version targeted <code>text.html.basic</code> and did nothing —
+reported back by the person testing it, still wrong after a reload. Reading
+VS Code's actual bundled grammars settled why: opening a <code>.html</code>
+file tokenizes with <code>text.html.derivative</code>
+(<code>extensions/html/syntaxes/html-derivative.tmLanguage.json</code>), the
+grammar registered for the <code>html</code> language. That file reaches
+<code>text.html.basic</code> only through
+<code>{ include: "text.html.basic#core-minus-invalid" }</code>, a reference
+to one repository rule, which never pushes <code>text.html.basic</code> onto
+the scope stack. An injection selector naming it therefore never matches a
+real buffer. Retargeting at <code>text.html.derivative</code>, in both the
+grammar's own <code>injectionSelector</code> and the extension's
+<code>injectTo</code>, is the actual fix.</p>
+<p>Checked outside the editor rather than by reloading and looking again:
+tokenized a sample block through the real <code>vscode-textmate</code> +
+<code>vscode-oniguruma</code> engine, loading the same grammar files VS Code
+ships. Against the first version every content line came back
+<code>source.unknown</code>, reproducing the report. Against the fix,
+<code>import</code>/<code>type</code>/<code>export</code>/<code>function</code>/<code>const</code>/<code>return</code>
+each carry their real TypeScript scope
+(<code>keyword.control.import.ts</code>, <code>storage.type.function.ts</code>,
+…).</p>
+</knowledge-detail>
+  <knowledge-files>experiments/v4/editor/vscode/package.json, experiments/v4/editor/vscode/syntaxes/mycelium-script.tmLanguage.json</knowledge-files>
+  <knowledge-branch>v4-html-language-support</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-08-01-script-tag-gets-source-unknown-scope.observation.html">fixes the gap this observation found</a>
+</knowledge-action>
+</body></html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: The built-in HTML grammar gives an unrecognized script type zero syntax scope</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>The built-in HTML grammar gives an unrecognized script type zero syntax scope</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-detail><p>Read against the real grammar VS Code ships
+(<code>extensions/html/syntaxes/html.tmLanguage.json</code>), not guessed
+from behavior. A <code>&lt;script&gt;</code> tag's content only gets
+<code>source.js</code> when <code>type</code> is empty or a recognized
+JavaScript mime type, and only gets nested <code>text.html.basic</code> when
+<code>type</code> matches a template convention
+(<code>text/x-handlebars</code>, <code>text/template</code>, …). Anything
+else — including every <code>mycelium/*</code> type this project uses — falls
+to the grammar's last branch, which names the region
+<code>source.unknown</code>: no grammar is registered for that scope, so
+TextMate contributes nothing there.</p>
+<p>That means every color visible in a <code>mycelium/*</code> block comes
+from the language server's semantic tokens, not from syntax highlighting —
+and the standard TypeScript semantic-token legend does not cover bare
+keywords. The result looks inconsistent rather than absent: identifiers like
+a type name or a destructured binding get colored, while
+<code>import</code>, <code>export</code>, <code>function</code>, and
+<code>type</code> (as a keyword) do not, because nothing is tokenizing them
+at all.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-01-build-language-server.action.html">found while testing the language server this action built</a>
+</knowledge-observation>
+</body></html>

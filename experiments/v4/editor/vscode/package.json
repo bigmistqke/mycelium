@@ -19,7 +19,14 @@
           "description": "Absolute path to editor/server.ts. Defaults to the copy beside this extension."
         }
       }
-    }
+    },
+    "grammars": [
+      {
+        "scopeName": "mycelium.script.injection",
+        "path": "./syntaxes/mycelium-script.tmLanguage.json",
+        "injectTo": ["text.html.derivative"]
+      }
+    ]
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
