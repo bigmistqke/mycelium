@@ -6,7 +6,48 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    dependencies:
+      acorn:
+        specifier: ^8.17.0
+        version: 8.17.0
+      happy-dom:
+        specifier: ^20.11.0
+        version: 20.11.0
+      retext:
+        specifier: ^9.0.0
+        version: 9.0.0
+      retext-passive:
+        specifier: ^5.0.0
+        version: 5.0.0
+      retext-stringify:
+        specifier: ^4.0.0
+        version: 4.0.0
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.2
+        version: 26.1.2
+      '@volar/kit':
+        specifier: 2.4.28
+        version: 2.4.28(typescript@6.0.3)
+      '@volar/language-core':
+        specifier: 2.4.28
+        version: 2.4.28
+      '@volar/language-server':
+        specifier: 2.4.28
+        version: 2.4.28
+      '@volar/typescript':
+        specifier: 2.4.28
+        version: 2.4.28
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      volar-service-typescript:
+        specifier: ^0.0.71
+        version: 0.0.71(@volar/language-service@2.4.28)
+      vscode-uri:
+        specifier: ^3.1.0
+        version: 3.1.0
 
   experiments/v4:
     dependencies:
@@ -55,9 +96,6 @@ packages:
 
   '@types/nlcst@2.0.3':
     resolution: {integrity: sha512-vSYNSDe6Ix3q+6Z7ri9lyWqgGhJTmzRjZRqyq15N0Z/1/UnVsno9G/N40NBijoYx2seFDIl0+B2mgAb9mezUCA==}
-
-  '@types/node@25.0.10':
-    resolution: {integrity: sha512-zWW5KPngR/yvakJgGOmZ5vTBemDoSqF3AcV/LrO5u5wTWyEAVVh+IT39G4gtyAkh3CtTZs8aX/yRM82OfzHJRg==}
 
   '@types/node@26.1.2':
     resolution: {integrity: sha512-Vu4a5UFA9rIIFJ7rB/Vaafh9lrCQszopTCx6KjFboXTGQbPNasehVR5TEiithSDGyd1DEiUByggTZsg8jukeIg==}
@@ -180,9 +218,6 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  undici-types@7.16.0:
-    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
-
   undici-types@8.3.0:
     resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
 
@@ -282,10 +317,6 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
 
-  '@types/node@25.0.10':
-    dependencies:
-      undici-types: 7.16.0
-
   '@types/node@26.1.2':
     dependencies:
       undici-types: 8.3.0
@@ -296,7 +327,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 25.0.10
+      '@types/node': 26.1.2
 
   '@volar/kit@2.4.28(typescript@6.0.3)':
     dependencies:
@@ -346,7 +377,7 @@ snapshots:
 
   buffer-image-size@0.6.4:
     dependencies:
-      '@types/node': 25.0.10
+      '@types/node': 26.1.2
 
   dequal@2.0.3: {}
 
@@ -360,7 +391,7 @@ snapshots:
 
   happy-dom@20.11.0:
     dependencies:
-      '@types/node': 25.0.10
+      '@types/node': 26.1.2
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
       buffer-image-size: 0.6.4
@@ -447,8 +478,6 @@ snapshots:
       semver: 7.7.3
 
   typescript@6.0.3: {}
-
-  undici-types@7.16.0: {}
 
   undici-types@8.3.0: {}
 

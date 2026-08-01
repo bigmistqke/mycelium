@@ -5,20 +5,20 @@
 **THIS IS MANDATORY. Log decisions IN REAL-TIME, not retroactively.**
 
 As of 2026-07-23 this project's decision graph is written as HTML nodes under
-`experiments/v4/docs/knowledge/`, conforming to the templates in
-`experiments/v4/docs/templates/knowledge.template.html`. It replaces `deciduous`
-(the SQLite-backed CLI) for all new logging, project-wide, not just
-v4-related work — even though v4 itself is still nominally "the experiment,"
-there's nowhere better for this to live yet. The earlier log held ~400 nodes
+`docs/knowledge/`, conforming to the templates in
+`docs/templates/knowledge.template.html`. It replaces `deciduous`
+(the SQLite-backed CLI) for all new logging, project-wide — this was `experiments/v4`
+inside a monorepo until 2026-08-01, when that content became the repository
+root; there's nowhere better for this to live. The earlier log held ~400 nodes
 (v0 through 2026-07-23). It was frozen on that date and **deleted on
 2026-07-30**, along with its database and its JSON export — 60 nodes were
 imported here first; the rest are gone. Nothing in this repo can query it, so
 nothing here may refer to it as though it were still available. Full reasoning:
-`experiments/v4/docs/specs/2026-07-23-deciduous-template-series.spec.html`.
+`docs/specs/2026-07-23-deciduous-template-series.spec.html`.
 
 **60 of those 400 were imported on 2026-07-30**, by one rule: a node comes in
 only if it can be linked to material already here. See
-`experiments/v4/docs/knowledge/2026-07-30-link-do-not-tag.decision.html`.
+`docs/knowledge/2026-07-30-link-do-not-tag.decision.html`.
 Imported nodes keep their original date in the filename — that prefix is what
 records which exploration a node belongs to, which is why `add` grew a
 `--date` flag and why you should leave it alone when authoring.
@@ -49,14 +49,14 @@ graph can follow a link to.
 tested working:
 
 ```bash
-pnpm --filter @mycelium/v4 mycelium knowledge add <type> --title "…" --confidence NN [--status S] [--prompt "…"] [--detail "…" | --detail -] [--commit HASH] [--date YYYY-MM-DD] --file <undated-slug>
-pnpm --filter @mycelium/v4 mycelium knowledge link <from-file> <to-file> --rel <rel> --label "…"
-pnpm --filter @mycelium/v4 mycelium knowledge unlink <from-file> <to-file> --rel <rel>
-pnpm --filter @mycelium/v4 mycelium knowledge update <file> [--title "…"] [--confidence NN] [--status S] [--prompt "…"] [--detail "…" | --detail - | --detail ""] [--commit HASH] [--files "…"] [--branch NAME]
-pnpm --filter @mycelium/v4 mycelium knowledge del <file>
+pnpm mycelium knowledge add <type> --title "…" --confidence NN [--status S] [--prompt "…"] [--detail "…" | --detail -] [--commit HASH] [--date YYYY-MM-DD] --file <undated-slug>
+pnpm mycelium knowledge link <from-file> <to-file> --rel <rel> --label "…"
+pnpm mycelium knowledge unlink <from-file> <to-file> --rel <rel>
+pnpm mycelium knowledge update <file> [--title "…"] [--confidence NN] [--status S] [--prompt "…"] [--detail "…" | --detail - | --detail ""] [--commit HASH] [--files "…"] [--branch NAME]
+pnpm mycelium knowledge del <file>
 ```
-(`--filter @mycelium/v4` works from anywhere in the repo; drop it and just run
-`pnpm mycelium ...` if already inside `experiments/v4/`.)
+(Run from the repository root — pnpm resolves `mycelium` from the root
+`package.json` regardless of which subdirectory the shell is currently in.)
 
 **This block is a convenience, not the roster.** `mycelium run --help` prints
 every family and every command it exports, read off the command scripts
@@ -119,19 +119,19 @@ cross-references live inside its own rich-field markup, not as separate
 edges) and no `list` yet (deferred, not forgotten):
 
 ```bash
-pnpm --filter @mycelium/v4 mycelium spec add --title "…" --file <undated-topic> [--status draft|approved|implemented] --body "…"
-pnpm --filter @mycelium/v4 mycelium spec update <file> [--title "…"] [--status S] [--body "…"]
+pnpm mycelium spec add --title "…" --file <undated-topic> [--status draft|approved|implemented] --body "…"
+pnpm mycelium spec update <file> [--title "…"] [--status S] [--body "…"]
 ```
 `spec add`'s `--file` is undated for the same reason `knowledge add`'s is, with
 one difference: there is no `--date` flag here at all. The date is always
 today's, and it fills both the filename and the `<spec-date>` field from one
 value so the two can never drift apart.
 No hand-authoring gap remains for either family. Full design:
-`experiments/v4/docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`
+`docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`
 (commands),
-`experiments/v4/docs/specs/2026-07-23-mycelium-update-command.spec.html`
+`docs/specs/2026-07-23-mycelium-update-command.spec.html`
 (`update`, and the closed-schema validator check that backs it), and
-`experiments/v4/docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html`
+`docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html`
 (spec's own `add`/`update`, its single `--body` flag covering multiple
 rich fields at once, and the date-prefixed-filename convention both
 families now share).
@@ -169,7 +169,7 @@ tag instead of a flag.
 
 ### Node shape
 
-Six types, in one file: `experiments/v4/docs/templates/knowledge.template.html`
+Six types, in one file: `docs/templates/knowledge.template.html`
 is the source of truth for exact required/optional fields per type — don't
 duplicate that table here, read it. In short: every type has `title` and
 `confidence`; `status` (`pending`/`active`/`completed`/`rejected`) is on
@@ -177,10 +177,10 @@ duplicate that table here, read it. In short: every type has `title` and
 `action`/`outcome` only; `prompt` is optional, `goal` only; `detail` is
 optional on every type (free-form content, including `<script>`, no tag
 restriction — see
-`experiments/v4/docs/specs/2026-07-24-mycelium-knowledge-detail-field.spec.html`).
+`docs/specs/2026-07-24-mycelium-knowledge-detail-field.spec.html`).
 
 ```html
-experiments/v4/docs/knowledge/<slug>.<type>.html   (type = goal|decision|option|action|outcome|observation)
+docs/knowledge/<slug>.<type>.html   (type = goal|decision|option|action|outcome|observation)
 
 <knowledge-TYPE data-conforms-to="../templates/knowledge.template.html#knowledge-TYPE">
   <knowledge-title>…</knowledge-title>
@@ -225,7 +225,7 @@ git commit -m "feat: add auth"
 Then update the `knowledge-action` node this commit belongs to — via the CLI, not a hand edit:
 
 ```bash
-pnpm --filter @mycelium/v4 mycelium knowledge update <action-file> --commit <HEAD's short hash> --branch main
+pnpm mycelium knowledge update <action-file> --commit <HEAD's short hash> --branch main
 ```
 A **new** `knowledge-outcome` node is for reporting something not already
 evident from the action: a result that differs from what was planned, a
@@ -234,7 +234,7 @@ action said would happen, happened, here's the hash" is not new
 information — it belongs in the action node's own `knowledge-commit`
 field, not a second file whose only content is confirming the first one.
 Writing one anyway for every single commit is exactly the over-fragmentation
-["field vs link"](experiments/v4/docs/specs/2026-07-23-deciduous-template-series.spec.html#field-vs-link)
+["field vs link"](docs/specs/2026-07-23-deciduous-template-series.spec.html#field-vs-link)
 already warns against, just at the level of nodes instead of fields.
 
 If a single commit doesn't map cleanly to one node — spans several nodes'
@@ -256,9 +256,9 @@ real files:
 ### Session Start Checklist
 
 ```bash
-pnpm --filter @mycelium/v4 mycelium knowledge recover   # the graph's live threads
-pnpm --filter @mycelium/v4 validate                     # every node validated, all four audits run
-git status                                              # current state
+pnpm mycelium knowledge recover   # the graph's live threads
+pnpm validate                     # every node validated, all four audits run
+git status                        # current state
 ```
 `knowledge recover` replaces the old `/recover` slash command, which drove
 the frozen CLI. It prints three things, each a property of the graph rather

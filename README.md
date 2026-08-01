@@ -1,4 +1,4 @@
-# @mycelium/v4
+# mycelium
 
 A knowledge graph as hypermedia: HTML documents that render in a browser and
 are also the queryable source of truth, no separate database. Full argument

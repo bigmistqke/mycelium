@@ -8,8 +8,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'experiments/v4/docs/**'
-      - 'experiments/v4/src/**'
+      - 'docs/**'
+      - 'src/**'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
@@ -50,18 +50,16 @@ jobs:
       # web that the project already knows are malformed. This is the same
       # command used locally and it exits non-zero on any failure.
       - name: Validate the graph
-        working-directory: experiments/v4
         run: pnpm validate
 
       - name: Build the index
-        working-directory: experiments/v4
         run: node src/run.ts knowledge generate graph --out index.html
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: experiments/v4/docs
+          path: docs
 
       - id: deploy
         uses: actions/deploy-pages@v4

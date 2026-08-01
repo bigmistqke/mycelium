@@ -1,9 +1,33 @@
 {
   "name": "mycelium",
+  "version": "0.0.0",
   "private": true,
   "description": "Intent-driven programming substrate",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
-    "test": "pnpm -r test",
-    "build": "pnpm -r build"
+    "validate": "node src/validate.ts",
+    "mycelium": "node src/run.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "check-scripts": "node editor/check.ts"
+  },
+  "dependencies": {
+    "acorn": "^8.17.0",
+    "happy-dom": "^20.11.0",
+    "retext": "^9.0.0",
+    "retext-passive": "^5.0.0",
+    "retext-stringify": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "@volar/kit": "2.4.28",
+    "@volar/language-core": "2.4.28",
+    "@volar/language-server": "2.4.28",
+    "@volar/typescript": "2.4.28",
+    "typescript": "6.0.3",
+    "volar-service-typescript": "^0.0.71",
+    "vscode-uri": "^3.1.0"
   }
 }
