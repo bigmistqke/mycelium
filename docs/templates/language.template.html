@@ -281,7 +281,7 @@
   import { readFileSync, writeFileSync } from "node:fs"
   import { spawnSync } from "node:child_process"
   import { tmpdir } from "node:os"
-  import { stripProtected, extractProse, markdownToHtmlFragment } from "./language-prose.ts"
+  import { stripProtected, extractProse, markdownToHtmlFragment, markdownParagraphRanges, BLOCK_TAGS, PROTECTED_TAGS } from "./language-prose.ts"
   import { extractComments, commentRanges, parseComment, formatAsComment } from "./code-comments.ts"
   const TYPES = ['term', 'rule', 'guide']
 
@@ -702,7 +702,7 @@
   const AUTOFIX_MODEL = "claude-haiku-4-5-20251001"
 
   type AutofixHit = { rule: { title: string; pass: string; fail: string; detail: string }; found: any[] }
-  type AutofixItem = { id: number; text: string; hits: AutofixHit[]; retry?: { previous: string; reasons: string[] } }
+  type AutofixItem = { id: number; kind: "comment" | "markdown" | "html"; text: string; hits: AutofixHit[]; retry?: { previous: string; reasons: string[] } }
 
   // Builds each rule's context from its own title, pass/fail examples and
   // detail, rather than from a hand-written description of it, so a rule
@@ -726,20 +726,29 @@
   // shape of batched call, carrying its own previous attempt and exactly
   // what is still wrong with it back to the model.
   function autofixBatchPrompt(items: AutofixItem[]): string {
+    // A batch is always one file, so always one kind — read once rather
+    // than per item.
+    const noun = items[0]?.kind === "comment" ? "comment" : "passage"
+    const label = noun[0].toUpperCase() + noun.slice(1)
     const sections = items
-      .map(({ id, text, hits, retry }) => {
+      .map(({ id, kind, text, hits, retry }) => {
         const retryNote = retry
           ? `\nYour previous attempt was:\n"""\n${retry.previous}\n"""\nThat attempt still had a problem: ${retry.reasons.join("; ")}. Fix that this time.\n`
           : ""
-        return `### Comment ${id}\n${ruleBlock(hits)}\n${retryNote}\nText to rewrite (paragraphs separated by a blank line):\n"""\n${text}\n"""`
+        const markupNote = kind === "markdown"
+          ? "\nThis text is markdown source. Preserve every backtick code span, link, and emphasis marker exactly, except where a rule above requires changing the words inside one.\n"
+          : kind === "html"
+            ? "\nThis text is an HTML fragment. Preserve every tag and attribute exactly (e.g. <code>, <a href=\"...\">, <em>), except where a rule above requires changing the words inside one.\n"
+            : ""
+        return `### ${label} ${id}\n${ruleBlock(hits)}\n${retryNote}${markupNote}\nText to rewrite (paragraphs separated by a blank line):\n"""\n${text}\n"""`
       })
       .join("\n\n")
     return [
-      "Each numbered comment below violates one or more writing rules. Rewrite each one so it satisfies every rule listed for it, without changing what it claims, its terminology, or its number of paragraphs.",
+      `Each numbered ${noun} below violates one or more writing rules. Rewrite each one so it satisfies every rule listed for it, without changing what it claims, its terminology, or its number of paragraphs.`,
       "",
       sections,
       "",
-      'Reply with ONLY a JSON object mapping each comment\'s number (as a string key) to its corrected text, for example {"0": "corrected text", "3": "corrected text"}. Every comment number above must appear as a key. No markdown fences, no explanation, nothing outside the JSON object.',
+      `Reply with ONLY a JSON object mapping each ${noun}'s number (as a string key) to its corrected text, for example {"0": "corrected text", "3": "corrected text"}. Every number above must appear as a key. No markdown fences, no explanation, nothing outside the JSON object.`,
     ].join("\n")
   }
 
@@ -766,34 +775,59 @@
   }
 
   /**
-   * Rewrite a file's comment-level violations, verifying every proposed
-   * rewrite with the violated rule's own check before writing anything.
+   * Rewrite a file's comment- or paragraph-level violations. Verify every
+   * proposed rewrite with the violated rule's own check before writing.
    *
    *   mycelium language autofix <file> [--diff]
    *
-   * Only fixes what has a source position to splice into: a comment in a
-   * `.ts`/`.tsx`/`.js`/`.jsx` file, or inside a `<script>` an `.html` file
-   * embeds — the same comment-by-comment checking `lint` already does for
-   * both. A violation in document prose (a `<p>`, a markdown paragraph)
-   * has no such mapping yet, so it is not attempted; run `lint` on the
-   * same file afterward to see what is still open.
+   * Fix comments with a source position in `.ts`, `.tsx`, `.js`, or `.jsx`
+   * files. Fix `<script>` blocks in `.html` files and top-level `.md`
+   * paragraphs. Also fix block-level leaf elements in corpus `.html` documents.
+   * For markdown, use `markdownParagraphRanges` with marked's tokenizer instead
+   * of hand-rolled parsing (see `markdownToHtmlFragment`'s comment). Leaf
+   * elements include any `<p>` in a `knowledge-detail`, any `<td>`, any
+   * heading, or any element `BLOCK_TAGS` names without a `BLOCK_TAGS`
+   * descendant. A `<li>` or `<div>` wrapping further blocks is not a leaf. Do
+   * not splice it as one unit. Instead, splice its nested `<p>`s individually.
+   * This follows the same "only self-contained blocks" rule the markdown path
+   * uses for lists. Run `lint` afterward to check for remaining issues.
    *
-   * Every violated comment in the file goes into a single `claude -p`
-   * call running a small background model, batched by number. A file
-   * with a dozen violations costs one model call this way, not a dozen
-   * separate processes. A rewrite only counts once every one of its
-   * violated rules' own check() finds nothing wrong with it, the same
-   * function `lint` runs, and its paragraph count still matches the
-   * original. A comment that fails that gets
-   * exactly one retry, batched the same way, carrying its own previous
-   * attempt and exactly what is still wrong with it back to the model.
-   * Whatever fails a second time, or a model call that fails outright,
-   * leaves that comment untouched; either way this command reports it
-   * rather than dropping it silently.
+   * A markdown or HTML candidate carries two strings; a comment carries one.
+   * `text` (protected elements stripped, like `lint`'s file mode) is what rules
+   * check. `markdown` (the raw substring) is what the model sees and splices
+   * back. Checking and splicing from the same stripped string would silently
+   * destroy every backtick span, link, tag, and emphasis marker a rewrite
+   * touched, since stripping a `<code>` element removes its text along with its
+   * markup. Checking re-parses a rewrite the same way region-building did, so
+   * the two markup-reading rules can verify it. Comments cannot reach
+   * `paragraph-length` or `no-bolded-mini-headlines`, since they carry no node.
+   * The rules verify markdown and HTML fixes the same way they verify real
+   * documents. Skip a markdown paragraph with a hard line break (two trailing
+   * spaces, or a trailing backslash, before a newline) rather than attempt it:
+   * nothing here has verified that round-trips through a model rewrite. Find an
+   * HTML leaf element by searching the source for its serialized `outerHTML`
+   * with an advancing cursor. Use the same technique this command already used
+   * to find each `<script>`'s range. A document whose original markup a
+   * serializer cannot reproduce byte-for-byte (unusual entities, omitted
+   * closing tags) silently drops that one element rather than mis-splicing it.
    *
-   * `--diff` prints what would change without writing it. Applies
-   * verified fixes directly to `<file>` otherwise, the same as every
-   * other command in this CLI.
+   * The system collects every violated comment or paragraph in the file into a
+   * single `claude -p` call, which runs a small background model. It groups
+   * violations by number. A file with a dozen violations costs one model call
+   * this way, not a dozen separate processes. A rewrite only counts once its
+   * violated rules' own check() finds nothing wrong with it — the same function
+   * `lint` runs. It must still reduce to the same number of paragraphs: one for
+   * markdown and HTML candidates, whatever the original comment had, and — for
+   * HTML — still have no `BLOCK_TAGS` descendant once you rewrap it in its own
+   * tag. A candidate that fails gets exactly one retry. Batch it the same way,
+   * carrying its own previous attempt and exactly what is still wrong with it
+   * back to the model. Whatever fails a second time, or a model call that fails
+   * outright, leaves that comment or paragraph untouched; either way this
+   * command reports it rather than dropping it silently.
+   *
+   * `--diff` prints what would change without writing it. Applies verified
+   * fixes directly to `<file>` otherwise, the same as every other command in
+   * this CLI.
    */
   export async function autofix({ fs, args, cli }: CommandContext) {
     const target = args._[0]
@@ -802,7 +836,8 @@
 
     const isSource = [".ts", ".tsx", ".js", ".jsx"].some((ext) => target.endsWith(ext))
     const isHtml = target.endsWith(".html")
-    if (!isSource && !isHtml) throw new Error("autofix only understands .ts/.tsx/.js/.jsx and .html files so far")
+    const isMarkdown = target.endsWith(".md")
+    if (!isSource && !isHtml && !isMarkdown) throw new Error("autofix only understands .ts/.tsx/.js/.jsx, .html, and .md files so far")
 
     const replaces = new Map()
     for (const { doc } of fs.list("language/terms")) {
@@ -836,16 +871,22 @@
     const source = readFileSync(absPath, "utf8")
 
     // Every comment's source range in <file> itself. A .ts-like file's own
-    // ranges apply directly; an .html file's ranges come from each
-    // <script> it embeds, offset by where that script's text starts in
-    // the outer file, since commentRanges only knows a script's own local
-    // offsets. Scripts are searched for in document order with an
-    // advancing cursor so two byte-identical scripts don't both resolve
-    // to the first one's position.
-    const regions: { pos: number; end: number; raw: string; text: string }[] = []
+    // ranges apply directly; an .html file's ranges come from each <script> it
+    // embeds, offset by where that script's text starts in the outer file,
+    // since commentRanges only knows a script's own local offsets. Scripts are
+    // searched for in document order with an advancing cursor so two
+    // byte-identical scripts don't both resolve to the first one's position. A
+    // .md file's ranges are its top-level paragraphs (via
+    // `markdownParagraphRanges`). Each carries two strings: `text` (protected
+    // elements stripped, like `lint`'s file mode) for checking, and `markdown`
+    // (untouched raw) for what the model sees and splices back. Stripping a
+    // `<code>` element removes its text along with its markup, so checking
+    // against and splicing from the same stripped string would silently eat
+    // every backtick span, link, and emphasis marker a rewrite touched.
+    const regions: { pos: number; end: number; raw: string; text: string; kind: "comment" | "markdown" | "html"; tag?: string; node?: any; markdown?: string; leading?: string; trailing?: string }[] = []
     if (isSource) {
-      regions.push(...commentRanges(source))
-    } else {
+      regions.push(...commentRanges(source).map((r) => ({ ...r, kind: "comment" as const })))
+    } else if (isHtml) {
       const { document } = cli.parseHTML(source)
       let searchFrom = 0
       for (const script of Array.from(document.querySelectorAll("script")) as any[]) {
@@ -853,29 +894,117 @@
         const offset = source.indexOf(scriptText, searchFrom)
         if (offset === -1) continue
         searchFrom = offset + scriptText.length
-        for (const r of commentRanges(scriptText)) regions.push({ pos: offset + r.pos, end: offset + r.end, raw: r.raw, text: r.text })
+        for (const r of commentRanges(scriptText)) regions.push({ pos: offset + r.pos, end: offset + r.end, raw: r.raw, text: r.text, kind: "comment" })
+      }
+
+      // Every block-level leaf in the document's own body is a BLOCK_TAGS
+      // element with no BLOCK_TAGS descendant of its own, and not itself inside
+      // a PROTECTED_TAGS element (a <blockquote>, a <knowledge-prompt>, ...).
+      // The document search never reaches these elements, for the same reason
+      // extractProse never reads into one. Find each HTML leaf element by
+      // searching in document order with an advancing cursor over its
+      // serialized outerHTML. Use the same technique the <script> search above
+      // uses. A document whose serializer cannot reproduce the markup
+      // byte-for-byte (an omitted closing tag, an unusual entity) fails that
+      // search. The system silently skips that element rather than mis-splicing
+      // it.
+      const blockSelector = [...BLOCK_TAGS].join(",")
+      const protectedSelector = [...PROTECTED_TAGS].join(",")
+      let htmlSearchFrom = 0
+      for (const el of Array.from(document.body?.querySelectorAll(blockSelector) ?? []) as any[]) {
+        if (el.closest(protectedSelector)) continue
+        if (el.querySelector(blockSelector)) continue
+
+        const raw = el.outerHTML
+        const offset = source.indexOf(raw, htmlSearchFrom)
+        if (offset === -1) continue
+        htmlSearchFrom = offset + raw.length
+
+        const tag = el.tagName.toLowerCase()
+        const openEnd = raw.indexOf(">") + 1
+        const closeStart = raw.lastIndexOf(`</${tag}>`)
+        if (openEnd <= 0 || closeStart < openEnd) continue
+        const leading = raw.slice(0, openEnd)
+        const trailing = raw.slice(closeStart)
+        const inner = raw.slice(openEnd, closeStart)
+
+        // The two node-dependent rules (paragraph-length,
+        // no-bolded-mini-headlines) run node.querySelectorAll('p') —
+        // written for the whole-document audit, where node is always a
+        // document a paragraph sits inside, never a bare paragraph itself.
+        // Re-parsed as its own tiny <body>-wrapped document, the same way
+        // every other fragment in this file already gets read (the
+        // markdown branch below, and this same file's own verify step),
+        // rather than assembled by hand with createElement. No rule needs
+        // to know it was ever handed anything but a document.
+        const { document: leafDoc } = cli.parseHTML(`<body>${raw}</body>`)
+        const stripped = stripProtected(leafDoc.querySelector("body"))
+        // A leaf has no BLOCK_TAGS descendant of its own, so nothing inside
+        // it can trigger extractProse's only job beyond .textContent:
+        // keeping adjacent block siblings from running into one sentence.
+        regions.push({ pos: offset, end: offset + raw.length, raw, text: stripped.textContent, node: stripped, kind: "html", tag, markdown: inner, leading, trailing })
+      }
+    } else {
+      for (const { pos, end, raw } of markdownParagraphRanges(source)) {
+        const leading = raw.match(/^\s*/)?.[0] ?? ""
+        const trailing = raw.match(/\s*$/)?.[0] ?? ""
+        const core = raw.slice(leading.length, raw.length - trailing.length)
+
+        // A hard line break (trailing double-space, or a backslash) inside
+        // a paragraph has no verified round-trip through a model rewrite,
+        // unlike headings/lists/blockquotes/fenced code — left alone
+        // rather than risk losing it silently.
+        if (/ {2,}\n|\\\n/.test(core)) {
+          console.log(`skipped (hard line break, unverified round-trip): ${core.slice(0, 60)}`)
+          continue
+        }
+
+        const { document: fragDoc } = cli.parseHTML(`<body>${markdownToHtmlFragment(core)}</body>`)
+        const stripped = stripProtected(fragDoc.querySelector("body"))
+        // Parity with the comment path's "irregular comment structure" skip:
+        // leave paragraphs alone if they don't reduce to exactly one <p> after
+        // removing protected elements, rather than guessing at them.
+        if (stripped.children.length !== 1 || stripped.children[0].tagName.toLowerCase() !== "p") {
+          console.log(`skipped (not a single plain paragraph): ${core.slice(0, 60)}`)
+          continue
+        }
+
+        regions.push({ pos, end, raw, text: extractProse(stripped), node: stripped, kind: "markdown", markdown: core, leading, trailing })
       }
     }
 
     const withViolations = regions
       .map((region) => ({
         region,
-        hits: rules.map((rule) => ({ rule, found: rule.check(region.text, undefined, language) })).filter(({ found }) => found.length > 0),
+        // region.node is undefined for a comment (no markup to check),
+        // and the stripped <p> for a markdown paragraph — the only change
+        // needed for the two node-dependent rules to reach markdown at all.
+        hits: rules.map((rule) => ({ rule, found: rule.check(region.text, region.node, language) })).filter(({ found }) => found.length > 0),
       }))
       .filter(({ hits }) => hits.length > 0)
 
     if (withViolations.length === 0) {
-      console.log(`${target}: no comment-level violations found`)
+      console.log(`${target}: no fixable violations found`)
       return
     }
 
     const lineStartOf = (pos: number) => source.lastIndexOf("\n", pos - 1) + 1
 
     // Structural checks that have nothing to do with the model run first,
-    // so a comment that cannot safely be spliced never costs a call.
-    type Candidate = { region: (typeof withViolations)[number]["region"]; hits: AutofixHit[]; lineStart: number; indent: string; isBlock: boolean; blocks: any[]; proseBlocks: any[] }
+    // so a comment or paragraph that cannot safely be spliced never costs
+    // a call. A markdown or HTML region is already verified down to exactly
+    // one plain leaf at region-build time, so it needs none of a comment's
+    // own checks here.
+    type Candidate =
+      | { kind: "comment"; region: (typeof withViolations)[number]["region"]; hits: AutofixHit[]; lineStart: number; indent: string; isBlock: boolean; blocks: any[]; proseBlocks: any[] }
+      | { kind: "markdown" | "html"; region: (typeof withViolations)[number]["region"]; hits: AutofixHit[] }
     const candidates: Candidate[] = []
     for (const { region, hits } of withViolations) {
+      if (region.kind === "markdown" || region.kind === "html") {
+        candidates.push({ kind: region.kind, region, hits })
+        continue
+      }
+
       const lineStart = lineStartOf(region.pos)
       const indent = source.slice(lineStart, region.pos)
       // A comment sharing its line with real code (a trailing `// note`) is
@@ -899,7 +1028,7 @@
         continue
       }
 
-      candidates.push({ region, hits, lineStart, indent, isBlock, blocks, proseBlocks })
+      candidates.push({ kind: "comment", region, hits, lineStart, indent, isBlock, blocks, proseBlocks })
     }
 
     const MAX_ATTEMPTS = 2
@@ -909,36 +1038,94 @@
     for (let attempt = 1; attempt <= MAX_ATTEMPTS && pending.length > 0; attempt++) {
       let batch: Map<number, string>
       try {
-        batch = runAutofixBatch(pending.map((p) => ({ id: p.id, text: p.candidate.region.text, hits: p.candidate.hits, retry: p.retry })))
+        batch = runAutofixBatch(pending.map((p) => ({
+          id: p.id,
+          kind: p.candidate.kind,
+          text: p.candidate.region.markdown ?? p.candidate.region.text,
+          hits: p.candidate.hits,
+          retry: p.retry,
+        })))
       } catch (err) {
-        if (attempt === MAX_ATTEMPTS) for (const p of pending) console.log(`skipped (model call failed: ${(err as Error).message}): ${p.candidate.region.text.slice(0, 60)}`)
+        if (attempt === MAX_ATTEMPTS) for (const p of pending) console.log(`skipped (model call failed: ${(err as Error).message}): ${(p.candidate.region.markdown ?? p.candidate.region.text).slice(0, 60)}`)
         continue
       }
 
       const stillPending: typeof pending = []
       for (const p of pending) {
         const rewritten = batch.get(p.id)
-        const label = p.candidate.region.text.slice(0, 60)
+        const original = p.candidate.region.markdown ?? p.candidate.region.text
+        const label = original.slice(0, 60)
         if (rewritten === undefined) {
           if (attempt === MAX_ATTEMPTS) console.log(`skipped (model returned no fix): ${label}`)
-          else stillPending.push({ ...p, retry: { previous: p.candidate.region.text, reasons: ["no rewrite was returned for this comment"] } })
+          else stillPending.push({ ...p, retry: { previous: original, reasons: ["no rewrite was returned for this comment"] } })
           continue
         }
 
-        const stillBroken = p.candidate.hits.filter(({ rule }) => rule.check(rewritten, undefined, language).length > 0)
-        const rewrittenParagraphs = rewritten.split(/\n\s*\n/).map((t) => t.replace(/\s+/g, " ").trim()).filter(Boolean)
-        const wrongCount = rewrittenParagraphs.length !== p.candidate.proseBlocks.length
+        // A markdown rewrite is itself markdown: derive its text and node by
+        // rebuilding them the same way as the original region, rather than
+        // checking the raw string. This lets the two node-dependent rules
+        // verify it. The system catches rewrites that grow a second paragraph
+        // or blockquote wrapper. The single-<p> check runs on the POST-strip
+        // tree, not the raw parse — a blockquote-wrapped rewrite still parses
+        // to one nested <p> before stripping, and blockquote is a protected
+        // tag, so only the stripped tree can tell the two apart.
+        let checkText: string
+        let checkNode: any
+        let structurallyOk: boolean
+        if (p.candidate.kind === "markdown") {
+          const { document: fragDoc } = cli.parseHTML(`<body>${markdownToHtmlFragment(rewritten.trim())}</body>`)
+          const stripped = stripProtected(fragDoc.querySelector("body"))
+          structurallyOk = stripped.children.length === 1 && stripped.children[0].tagName.toLowerCase() === "p"
+          checkText = structurallyOk ? extractProse(stripped) : ""
+          checkNode = structurallyOk ? stripped : undefined
+        } else if (p.candidate.kind === "html") {
+          // Rewrap in whatever parent its own tag needs to parse correctly. The
+          // HTML parser silently reparents a bare <li> or <td> outside a
+          // <ul>/<table>. Then verify it still has no BLOCK_TAGS descendant,
+          // applying the same leaf test region-building performs on the
+          // original element.
+          const tag = (p.candidate.region as any).tag as string
+          const wrapped =
+            tag === "li" ? `<ul>${rewritten.trim()}</ul>`
+            : tag === "td" || tag === "th" ? `<table><tr>${rewritten.trim()}</tr></table>`
+            : `<${tag}>${rewritten.trim()}</${tag}>`
+          const { document: fragDoc } = cli.parseHTML(`<body>${wrapped}</body>`)
+          const bodyEl = fragDoc.querySelector("body")
+          const el = bodyEl?.querySelector(tag)
+          structurallyOk = !!el && !el.querySelector([...BLOCK_TAGS].join(","))
+          // The stripped <body> goes to the rules, not the stripped leaf
+          // alone — the same reason region-building re-parses one, and the
+          // markdown branch above hands rules its own stripped body rather
+          // than the stripped <p> alone. A leaf has no BLOCK_TAGS descendant
+          // of its own, so .textContent already matches what extractProse
+          // would produce here.
+          const strippedBody = structurallyOk ? stripProtected(bodyEl) : undefined
+          checkText = structurallyOk ? strippedBody.textContent : ""
+          checkNode = structurallyOk ? strippedBody : undefined
+        } else {
+          checkText = rewritten
+          checkNode = undefined
+          const rewrittenParagraphs = rewritten.split(/\n\s*\n/).map((t) => t.replace(/\s+/g, " ").trim()).filter(Boolean)
+          structurallyOk = rewrittenParagraphs.length === (p.candidate as any).proseBlocks.length
+        }
 
-        if (stillBroken.length === 0 && !wrongCount) {
+        const stillBroken = structurallyOk
+          ? p.candidate.hits.filter(({ rule }) => rule.check(checkText, checkNode, language).length > 0)
+          : p.candidate.hits
+
+        if (stillBroken.length === 0 && structurallyOk) {
           results.set(p.id, rewritten)
           console.log(`fixed: ${label}`)
           continue
         }
 
-        const reasons = [
-          ...stillBroken.map((h) => `still fails "${h.rule.title}"`),
-          ...(wrongCount ? [`changed the paragraph count from ${p.candidate.proseBlocks.length} to ${rewrittenParagraphs.length}`] : []),
-        ]
+        const reasons = structurallyOk
+          ? stillBroken.map((h) => `still fails "${h.rule.title}"`)
+          : [
+              p.candidate.kind === "markdown" ? "rewrite no longer parses as a single plain markdown paragraph"
+              : p.candidate.kind === "html" ? "rewrite no longer parses as a single plain element"
+              : "changed the paragraph count",
+            ]
         if (attempt === MAX_ATTEMPTS) console.log(`skipped (${reasons.join(", ")}): ${label}`)
         else stillPending.push({ ...p, retry: { previous: rewritten, reasons } })
       }
@@ -949,6 +1136,19 @@
     candidates.forEach((candidate, id) => {
       const rewritten = results.get(id)
       if (rewritten === undefined) return
+      if (candidate.kind === "markdown" || candidate.kind === "html") {
+        // leading/trailing come from the ORIGINAL raw paragraph or tag, not the
+        // model's output. For markdown, this keeps blank-line spacing between
+        // paragraphs intact regardless of what whitespace the rewrite came back
+        // with. For HTML, it keeps the original opening tag (with its
+        // attributes) and closing tag untouched.
+        edits.push({
+          pos: candidate.region.pos,
+          end: candidate.region.end,
+          replacement: (candidate.region.leading ?? "") + rewritten.trim() + (candidate.region.trailing ?? ""),
+        })
+        return
+      }
       const rewrittenParagraphs = rewritten.split(/\n\s*\n/).map((t) => t.replace(/\s+/g, " ").trim()).filter(Boolean)
       let next = 0
       const rebuilt = candidate.blocks.map((block) => (block.type === "prose" ? { type: "prose" as const, text: rewrittenParagraphs[next++] } : block))

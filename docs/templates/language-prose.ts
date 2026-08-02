@@ -17,8 +17,12 @@ export const PROTECTED_TAGS = new Set([
 ])
 
 // A block element ends with a newline, so two paragraphs do not run together
-// into one sentence.
-const BLOCK_TAGS = new Set(["p", "li", "div", "h1", "h2", "h3", "h4", "h5", "h6", "td", "th", "dt", "dd", "figcaption"])
+// into one sentence. The leaf test autofix also finds a corpus HTML element it
+// can safely rewrite and splice back. Any of these with none of these as a
+// descendant is a self-contained unit. This follows the same "only touch a
+// self-contained block" rule that already keeps a list item's own nested
+// paragraphs out of markdown autofix.
+export const BLOCK_TAGS = new Set(["p", "li", "div", "h1", "h2", "h3", "h4", "h5", "h6", "td", "th", "dt", "dd", "figcaption"])
 
 export function extractProse(node: any): string {
   let out = ""
@@ -53,4 +57,25 @@ export function stripProtected(node: any): any {
 // a time.
 export function markdownToHtmlFragment(markdown: string): string {
   return marked.parse(markdown, { async: false }) as string
+}
+
+// One range per top-level markdown paragraph, in source order, with the
+// exact original substring. Built by walking marked's own token list with a
+// running cursor, not by searching for each paragraph's text with indexOf —
+// that would find the wrong occurrence for two identical paragraphs. A
+// token's `raw` field reconstructs the source byte-for-byte
+// (tokens.map(t => t.raw).join('') === source), the same guarantee
+// commentRanges gives a caller wanting to splice a fix back into exactly
+// where a comment was. Only top-level tokens are walked — a list item or
+// blockquote's own paragraphs are never candidates, matching autofix's own
+// "only touch a self-contained block" rule for comments.
+export function markdownParagraphRanges(source: string): { pos: number; end: number; raw: string }[] {
+  const tokens = marked.lexer(source)
+  const out: { pos: number; end: number; raw: string }[] = []
+  let pos = 0
+  for (const token of tokens) {
+    if (token.type === "paragraph") out.push({ pos, end: pos + token.raw.length, raw: token.raw })
+    pos += token.raw.length
+  }
+  return out
 }
