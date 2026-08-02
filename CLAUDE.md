@@ -216,12 +216,26 @@ docs/knowledge/<slug>.<type>.html   (type = goal|decision|option|action|outcome|
 
 The graph's value is in its connections, not just its nodes.
 
-| When you create... | IMMEDIATELY link to... |
-|-------------------|------------------------|
-| `knowledge-outcome` | The action/goal it resolves |
-| `knowledge-action` | The goal/decision that spawned it |
-| `knowledge-option` | Its parent decision (`depends_on`) |
-| `knowledge-observation` | Related goal/action |
+`link <from-file> <to-file>` always writes the edge inside `<from-file>` —
+so the argument order decides direction, and "link X to Y" in prose is not
+enough to know which is `from` and which is `to`. `dangling-outcome`
+specifically checks for an *incoming* edge on the outcome, so an outcome
+node must be `<to-file>`, never `<from-file>`. Getting this backwards
+still runs `link` without error — it just leaves the wrong-direction edge
+for `pnpm mycelium validate` to catch later, or for nothing to catch if
+the edge's own rel happens to satisfy no audit. Copy the literal command
+below rather than inferring the order from the target column:
+
+| When you create... | Run |
+|-------------------|-----|
+| `knowledge-outcome` | `link <the-goal-or-action-file> <this-outcome-file> --rel leads_to` |
+| `knowledge-action` | `link <this-action-file> <the-goal-or-decision-file> --rel depends_on` |
+| `knowledge-option` | `link <this-option-file> <its-parent-decision-file> --rel depends_on` |
+| `knowledge-observation` | `link <this-observation-file> <the-related-goal-or-action-file> --rel supports` |
+
+`--rel` in that last row is the common case; use `contradicts` instead when
+the observation conflicts with something already in the graph — that is
+what feeds `knowledge recover`'s contested-claims list.
 
 Root `knowledge-goal` nodes are the only valid orphans — exactly what
 `orphans-except-goal` (one of `knowledge.template.html`'s two collocated
