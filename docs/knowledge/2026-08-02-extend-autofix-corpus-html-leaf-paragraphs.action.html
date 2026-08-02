@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Extend autofix to corpus HTML leaf-block paragraphs</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Extend autofix to corpus HTML leaf-block paragraphs</knowledge-title>
+  <knowledge-confidence>60</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-detail><p>Adds a third <code>AutofixItem</code> kind, <code>html</code>, alongside <code>comment</code> and <code>markdown</code>. Region-finding for <code>.html</code> files now walks <code>document.body</code> for <code>BLOCK_TAGS</code> leaf elements. It finds only elements with no <code>BLOCK_TAGS</code> descendant and no <code>PROTECTED_TAGS</code> ancestor. For each, it locates the exact source range by searching for its serialized <code>outerHTML</code> with an advancing cursor, using the same technique that the <code>&lt;script&gt;</code>-range search already used, applied to a leaf element instead of a script.</p>
+<p>The model sees the element's raw innerHTML (tags preserved, told to keep them exact) and the rewrite is spliced back between the original opening and closing tags, mirroring the markdown path's leading/core/trailing split.</p>
+<p>Verification wraps the rewrite back in its own tag (<code>li</code> in a <code>ul</code>, <code>td</code>/<code>th</code> in a <code>table</code>/<code>tr</code>, everything else standalone) and requires no <code>BLOCK_TAGS</code> descendant survive, before running the same <code>stripProtected</code> + <code>extractProse</code> + <code>rule.check()</code> pipeline every other kind already uses.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-02-autofix-html-leaf-block-generalization.decision.html">implements the leaf-block rule</a>
+  <a data-rel="depends_on" href="./2026-08-01-autofix-markdown-paragraph-support.action.html">extends the same batch/verify/retry harness</a>
+  <a data-rel="leads_to" href="./2026-08-02-corpus-html-leaf-autofix-verified.outcome.html">verified working</a>
+  <knowledge-commit>0d4edb2</knowledge-commit>
+  <knowledge-branch>main</knowledge-branch>
+</knowledge-action>
+</body></html>
