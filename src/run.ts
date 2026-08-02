@@ -1,7 +1,7 @@
-// mycelium <id> <command> [args…]. Protocol-only, same discipline as
-// validate.ts: the engine knows <template>, data-conforms-to, and how to find
-// the one script[type="mycelium/command"] a template file declares — never
-// what any command actually does. See
+// mycelium <id> <command> [args…]. Protocol-only: the engine knows
+// <template>, data-conforms-to, and how to find the one
+// script[type="mycelium/command"] a template file declares — never what any
+// command, validate included, actually does. See
 // docs/specs/2026-07-23-mycelium-authoring-commands.spec.html.
 
 import { mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"

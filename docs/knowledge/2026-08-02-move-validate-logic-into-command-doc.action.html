@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Move validate.ts's crawl-and-report logic into validate.command.html's script</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Move validate.ts's crawl-and-report logic into validate.command.html's script</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>pending</knowledge-status>
+  <knowledge-detail><p>
+  Implementing what <a href="../knowledge/2026-08-02-validate-ts-is-subcommand-not-core.observation.html">validate.ts's
+  crawl-and-report logic is a subcommand's implementation, not core</a> established: move
+  everything in <code>src/validate.ts</code> beyond the primitives already shared in
+  <code>src/utils.ts</code> (<code>parseHTML</code>, <code>walkFiles</code>,
+  <code>walkHtmlFiles</code>, <code>resolveTemplateRef</code>, <code>loadCheck</code>,
+  <code>loadGenericValidator</code>) into <code>validate.command.html</code>'s own
+  <code>&lt;script type="mycelium/command"&gt;</code>, the same as
+  <code>knowledge.template.html</code>, <code>language.template.html</code>,
+  <code>plan.template.html</code>, <code>spec.template.html</code>, and
+  <code>explore.command.html</code> already do. <code>src/validate.ts</code> is deleted once
+  the logic moves; <code>AuditFs</code>'s type now comes from <code>src/api.ts</code>, which
+  already exports it and is what audits already import it from.
+</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-02-validate-ts-is-subcommand-not-core.observation.html">validate.ts's crawl-and-report logic is a subcommand's implementation, not core</a>
+  <a data-rel="leads_to" href="./2026-08-02-validate-logic-moved-into-command-doc.outcome.html">validate's crawl-and-report logic now lives in validate.command.html, src/validate.ts gone</a>
+</knowledge-action>
+</body></html>

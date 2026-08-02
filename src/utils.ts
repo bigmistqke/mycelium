@@ -56,8 +56,8 @@ export function walkHtmlFiles(dir: string): string[] {
 // Given an instance's own file and its data-conforms-to value (a path
 // relative to that file, plus a #fragment naming the type), resolves to
 // "<absolute template file path>#<fragment>". That is the same key both
-// the validator lookup below and validate.ts's whole-corpus discovery use
-// to find a type's <template>/<script data-validates> pair.
+// the validator lookup below and validate.command.html's whole-corpus
+// discovery use to find a type's <template>/<script data-validates> pair.
 export function resolveTemplateRef(instanceFile: string, conformsTo: string): string {
   const [relPath, fragId] = conformsTo.split("#")
   const templateFile = resolvePath(dirname(instanceFile), relPath)
@@ -82,7 +82,7 @@ function locatorFor(script: Element): string {
 
 // Runs a template-embedded <script> as a real ES module, addressed by its
 // real file and its locator within that file (see locatorFor above).
-// Registered once by run.ts and validate.ts, script-hooks.ts's
+// Registered once by run.ts, script-hooks.ts's
 // resolve()/load() hooks turn "<file>#<locator>" into a synthetic file:
 // URL sitting beside the real file, then re-extract that exact script's
 // text as the module's source. Real file: URL, real hierarchical base, so the
@@ -104,9 +104,10 @@ export async function loadCheck(filePath: string, script: Element): Promise<(...
 // Imports the one generic validator shared by every type that doesn't
 // declare its own data-validates script (see template.template.html).
 // A plain dynamic import, resolved by the same script-hooks.ts hook
-// loadCheck's own loadModule relies on. Both run.ts and validate.ts
-// already call register() before either of them ever reaches this
-// function, so the hook is always active by the time it's called.
+// loadCheck's own loadModule relies on. run.ts already calls register()
+// before any command reaches this function. validate.command.html's own
+// script is no exception. So the hook is always active by the time it's
+// called.
 export async function loadGenericValidator(
   docsDir: string,
 ): Promise<(templateEl: Element, instanceEl: Element) => { ok: boolean; errors: string[] }> {
@@ -117,10 +118,10 @@ export async function loadGenericValidator(
 
 // Validates one element against its own declared type, for callers (like
 // run.ts's authoring commands) that only ever need to check a single node
-// they just built or mutated — not validate.ts's whole-corpus batch pass.
-// Reads the referenced template file fresh on every call and never throws:
-// an unresolvable reference is a reported failure, not an exception, the
-// same way validate.ts already treats it.
+// they just built or mutated — not validate.command.html's whole-corpus
+// batch pass. Reads the referenced template file fresh on every call and
+// never throws: an unresolvable reference is a reported failure, not an
+// exception, the same way validate.command.html already treats it.
 export async function validateInstance(
   docsDir: string,
   instancePath: string,
