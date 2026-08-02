@@ -2,11 +2,36 @@ import { readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, join, resolve as resolvePath } from "node:path"
 import { pathToFileURL } from "node:url"
 import { Window } from "happy-dom"
+import { parse as parse5Parse } from "parse5"
 
 export function parseHTML(html: string): { document: Document } {
   const window = new Window()
   window.document.write(html)
   return { document: window.document as unknown as Document }
+}
+
+// A second parse serves callers that need to map nodes back to exact byte
+// ranges in the original text. Happy-dom (parseHTML above) never tracks this.
+// parse5, the parser jsdom builds on, does this: when reading with
+// sourceCodeLocationInfo enabled, every node carries its own range, split into
+// startTag/endTag sub-ranges. Returns parse5's own tree shape
+// (childNodes/tagName/sourceCodeLocation), not a DOM — a caller wanting to run
+// a query still parses the same source again with parseHTML above and works
+// from that tree instead; this one is for position only.
+export function parseHTMLWithLocations(html: string): any {
+  return parse5Parse(html, { sourceCodeLocationInfo: true })
+}
+
+// The first descendant with the given tag name, depth-first — for finding
+// a known landmark (a document's own <body>) in whichever tree shape the
+// caller handed in, parse5's included.
+export function findFirstByTag(node: any, tag: string): any {
+  for (const child of node.childNodes ?? []) {
+    if (child.tagName?.toLowerCase() === tag) return child
+    const found = findFirstByTag(child, tag)
+    if (found) return found
+  }
+  return undefined
 }
 
 // Every file under dir, recursively. node_modules is skipped: rooting an

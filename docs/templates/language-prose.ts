@@ -6,6 +6,7 @@
 // to do with its actual prose.
 
 import { marked } from "marked"
+import { parseHTMLWithLocations, findFirstByTag } from "../../src/utils.ts"
 
 // Text no rule may be applied to, the same set the audit has always used: a
 // code block is code, a quotation is quoted for a reason, and a
@@ -77,5 +78,57 @@ export function markdownParagraphRanges(source: string): { pos: number; end: num
     if (token.type === "paragraph") out.push({ pos, end: pos + token.raw.length, raw: token.raw })
     pos += token.raw.length
   }
+  return out
+}
+
+function hasBlockDescendant(node: any): boolean {
+  for (const child of node.childNodes ?? []) {
+    const tag = child.tagName?.toLowerCase()
+    if (tag && BLOCK_TAGS.has(tag)) return true
+    if (hasBlockDescendant(child)) return true
+  }
+  return false
+}
+
+// Every block-level leaf in an .html document's <body>: a BLOCK_TAGS element
+// with no BLOCK_TAGS descendant of its own, and not itself inside a
+// PROTECTED_TAGS element — the same elements extractProse never reads into, for
+// the same reason. Reads via parseHTMLWithLocations (utils.ts), not the
+// happy-dom parseHTML the rest of this file's callers use to query documents,
+// because it is the one of the two that tracks source positions. That makes
+// each leaf's `raw`/`leading`/`trailing`/`inner` a direct slice of the original
+// source, never a re-serialization. Unlike a caller searching for a node's
+// re-rendered outerHTML, nothing here fails to round-trip through unusual
+// entities or quoting differences. A node inserted implicitly by the parser
+// during tree correction carries no location and is skipped, as does an element
+// with an implicit end tag (like `</p>`). Neither has a literal source range to
+// hand back.
+export function htmlLeafElementRanges(
+  source: string,
+): { pos: number; end: number; raw: string; tag: string; leading: string; trailing: string; inner: string }[] {
+  const document = parseHTMLWithLocations(source)
+  const body = findFirstByTag(document, "body")
+  const out: { pos: number; end: number; raw: string; tag: string; leading: string; trailing: string; inner: string }[] = []
+  function walk(node: any, protectedAncestor: boolean) {
+    for (const child of node.childNodes ?? []) {
+      const tag = child.tagName?.toLowerCase()
+      if (!tag) continue
+      const childProtected = protectedAncestor || PROTECTED_TAGS.has(tag)
+      const loc = child.sourceCodeLocation
+      if (!protectedAncestor && BLOCK_TAGS.has(tag) && loc?.startTag && loc?.endTag && !hasBlockDescendant(child)) {
+        out.push({
+          pos: loc.startOffset,
+          end: loc.endOffset,
+          raw: source.slice(loc.startOffset, loc.endOffset),
+          tag,
+          leading: source.slice(loc.startOffset, loc.startTag.endOffset),
+          trailing: source.slice(loc.endTag.startOffset, loc.endOffset),
+          inner: source.slice(loc.startTag.endOffset, loc.endTag.startOffset),
+        })
+      }
+      walk(child, childProtected)
+    }
+  }
+  if (body) walk(body, false)
   return out
 }

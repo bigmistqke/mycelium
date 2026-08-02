@@ -281,7 +281,7 @@
   import { readFileSync, writeFileSync } from "node:fs"
   import { spawnSync } from "node:child_process"
   import { tmpdir } from "node:os"
-  import { stripProtected, extractProse, markdownToHtmlFragment, markdownParagraphRanges, BLOCK_TAGS, PROTECTED_TAGS } from "./language-prose.ts"
+  import { stripProtected, extractProse, markdownToHtmlFragment, markdownParagraphRanges, htmlLeafElementRanges, BLOCK_TAGS } from "./language-prose.ts"
   import { extractComments, commentRanges, parseComment, formatAsComment } from "./code-comments.ts"
   const TYPES = ['term', 'rule', 'guide']
 
@@ -804,12 +804,13 @@
    * The rules verify markdown and HTML fixes the same way they verify real
    * documents. Skip a markdown paragraph with a hard line break (two trailing
    * spaces, or a trailing backslash, before a newline) rather than attempt it:
-   * nothing here has verified that round-trips through a model rewrite. Find an
-   * HTML leaf element by searching the source for its serialized `outerHTML`
-   * with an advancing cursor. Use the same technique this command already used
-   * to find each `<script>`'s range. A document whose original markup a
-   * serializer cannot reproduce byte-for-byte (unusual entities, omitted
-   * closing tags) silently drops that one element rather than mis-splicing it.
+   * nothing here has verified that round-trips through a model rewrite. An
+   * HTML leaf element's range comes from `htmlLeafElementRanges`
+   * (`language-prose.ts`), which reads the file through `parse5` — the parser
+   * that tracks exact source positions, unlike `happy-dom` (what every other
+   * document read in this file goes through). An element the parser inserted
+   * implicitly, or whose end tag was itself implicit, carries no such
+   * position and is skipped rather than guessed at.
    *
    * The system collects every violated comment or paragraph in the file into a
    * single `claude -p` call, which runs a small background model. It groups
@@ -897,52 +898,26 @@
         for (const r of commentRanges(scriptText)) regions.push({ pos: offset + r.pos, end: offset + r.end, raw: r.raw, text: r.text, kind: "comment" })
       }
 
-      // Every block-level leaf in the document's own body is a BLOCK_TAGS
-      // element with no BLOCK_TAGS descendant of its own, and not itself inside
-      // a PROTECTED_TAGS element (a <blockquote>, a <knowledge-prompt>, ...).
-      // The document search never reaches these elements, for the same reason
-      // extractProse never reads into one. Find each HTML leaf element by
-      // searching in document order with an advancing cursor over its
-      // serialized outerHTML. Use the same technique the <script> search above
-      // uses. A document whose serializer cannot reproduce the markup
-      // byte-for-byte (an omitted closing tag, an unusual entity) fails that
-      // search. The system silently skips that element rather than mis-splicing
-      // it.
-      const blockSelector = [...BLOCK_TAGS].join(",")
-      const protectedSelector = [...PROTECTED_TAGS].join(",")
-      let htmlSearchFrom = 0
-      for (const el of Array.from(document.body?.querySelectorAll(blockSelector) ?? []) as any[]) {
-        if (el.closest(protectedSelector)) continue
-        if (el.querySelector(blockSelector)) continue
-
-        const raw = el.outerHTML
-        const offset = source.indexOf(raw, htmlSearchFrom)
-        if (offset === -1) continue
-        htmlSearchFrom = offset + raw.length
-
-        const tag = el.tagName.toLowerCase()
-        const openEnd = raw.indexOf(">") + 1
-        const closeStart = raw.lastIndexOf(`</${tag}>`)
-        if (openEnd <= 0 || closeStart < openEnd) continue
-        const leading = raw.slice(0, openEnd)
-        const trailing = raw.slice(closeStart)
-        const inner = raw.slice(openEnd, closeStart)
-
+      // Every block-level leaf in the document's body has its exact range read
+      // by htmlLeafElementRanges (language-prose.ts). This function reads the
+      // file a second time through parse5, the only parser of the two this
+      // project uses that tracks source positions. The range comes from
+      // sourceCodeLocation, not from re-rendered markup.
+      for (const { pos, end, raw, tag, leading, trailing, inner } of htmlLeafElementRanges(source)) {
         // The two node-dependent rules (paragraph-length,
         // no-bolded-mini-headlines) run node.querySelectorAll('p') —
         // written for the whole-document audit, where node is always a
         // document a paragraph sits inside, never a bare paragraph itself.
         // Re-parsed as its own tiny <body>-wrapped document, the same way
         // every other fragment in this file already gets read (the
-        // markdown branch below, and this same file's own verify step),
-        // rather than assembled by hand with createElement. No rule needs
-        // to know it was ever handed anything but a document.
+        // markdown branch below, and this same file's own verify step).
+        // No rule needs to know it was ever handed anything but a document.
         const { document: leafDoc } = cli.parseHTML(`<body>${raw}</body>`)
         const stripped = stripProtected(leafDoc.querySelector("body"))
         // A leaf has no BLOCK_TAGS descendant of its own, so nothing inside
         // it can trigger extractProse's only job beyond .textContent:
         // keeping adjacent block siblings from running into one sentence.
-        regions.push({ pos: offset, end: offset + raw.length, raw, text: stripped.textContent, node: stripped, kind: "html", tag, markdown: inner, leading, trailing })
+        regions.push({ pos, end, raw, text: stripped.textContent, node: stripped, kind: "html", tag, markdown: inner, leading, trailing })
       }
     } else {
       for (const { pos, end, raw } of markdownParagraphRanges(source)) {
