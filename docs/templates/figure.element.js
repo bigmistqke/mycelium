@@ -39,33 +39,56 @@
   // Separating the two by band is a rule; nudging either one is not.
   var LANE_BAND = 0.45
 
-  // Every edge leaving one box for one row shares a lane, which is what makes
-  // them read as a fork. Their trunks then coincide at the source and their
-  // horizontals merge into one bus, instead of each edge dropping to a height
-  // of its own and splitting the same junction into three near-parallel lines.
+  // Edges crossing one gap are grouped by which of them touch, and a group
+  // shares a lane. Two edges touch when they share either end, so a fork and a
+  // merge are the same thing seen from opposite directions.
   //
-  // Forks crossing the same gap still need separate lanes, and the widest takes
-  // the one nearest the source, so a long run crosses above the short ones
-  // rather than through them.
+  // Grouping by source alone forked correctly and never merged: three edges
+  // into one box have three different sources, so they took three lanes and
+  // arrived as three near-parallel lines instead of one.
+  //
+  // Groups crossing the same gap still need separate lanes, and the widest
+  // takes the one nearest the source, so a long run crosses above the short
+  // ones rather than through them.
+  function componentsOf(list) {
+    var parent = list.map(function (_, i) { return i })
+    function find(i) {
+      while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i] }
+      return i
+    }
+    for (var i = 0; i < list.length; i++) {
+      for (var j = i + 1; j < list.length; j++) {
+        if (list[i].fromId !== list[j].fromId && list[i].toId !== list[j].toId) continue
+        var a = find(i)
+        var b = find(j)
+        if (a !== b) parent[a] = b
+      }
+    }
+    var groups = {}
+    list.forEach(function (e, k) {
+      var root = find(k)
+      ;(groups[root] = groups[root] || []).push(e)
+    })
+    return Object.keys(groups).map(function (key) { return groups[key] })
+  }
+
   function assignLanes(edges) {
     var channels = {}
     edges.forEach(function (e) {
       if (e.back) return
       var channel = Math.round(e.a.bottom) + ":" + Math.round(e.b.top)
-      var fork = channel + ":" + e.fromId
-      channels[channel] = channels[channel] || {}
-      ;(channels[channel][fork] = channels[channel][fork] || []).push(e)
+      ;(channels[channel] = channels[channel] || []).push(e)
     })
     Object.keys(channels).forEach(function (channel) {
-      var forks = Object.keys(channels[channel]).map(function (key) { return channels[channel][key] })
-      var widthOf = function (fork) {
-        return Math.max.apply(null, fork.map(function (e) { return Math.abs(e.b.midX - e.a.midX) }))
+      var groups = componentsOf(channels[channel])
+      var widthOf = function (group) {
+        return Math.max.apply(null, group.map(function (e) { return Math.abs(e.b.midX - e.a.midX) }))
       }
-      forks.sort(function (p, q) { return widthOf(q) - widthOf(p) })
-      forks.forEach(function (fork, i) {
-        fork.forEach(function (e) {
+      groups.sort(function (p, q) { return widthOf(q) - widthOf(p) })
+      groups.forEach(function (group, i) {
+        group.forEach(function (e) {
           var band = (e.b.top - e.a.bottom) * LANE_BAND
-          e.lane = e.a.bottom + (band * (i + 1)) / (forks.length + 1)
+          e.lane = e.a.bottom + (band * (i + 1)) / (groups.length + 1)
         })
       })
     })
@@ -163,6 +186,7 @@
       if (!from || !to) return
       edges.push({
         fromId: edge.getAttribute("from"),
+        toId: edge.getAttribute("to"),
         fromNode: from,
         toNode: to,
         // Read, not measured. Comparing box positions would let a
