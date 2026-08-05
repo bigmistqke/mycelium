@@ -127,7 +127,6 @@
   var SVG = "http://www.w3.org/2000/svg"
 
   function draw(graph) {
-    var origin = graph.getBoundingClientRect()
     var old = graph.querySelector("svg.figure-wires")
     if (old) old.remove()
     Array.prototype.forEach.call(graph.querySelectorAll(".figure-label"), function (el) { el.remove() })
@@ -136,7 +135,7 @@
     svg.setAttribute("class", "figure-wires")
 
     var marker = document.createElementNS(SVG, "marker")
-    marker.setAttribute("id", "figure-arrow-" + (graph.id || Math.abs(origin.width | 0)))
+    marker.setAttribute("id", "figure-arrow-" + (graph.id || "figure"))
     marker.setAttribute("viewBox", "0 0 8 8")
     marker.setAttribute("refX", "7")
     marker.setAttribute("refY", "4")
@@ -166,8 +165,6 @@
         fromId: edge.getAttribute("from"),
         fromNode: from,
         toNode: to,
-        a: boxOf(from, origin),
-        b: boxOf(to, origin),
         // Read, not measured. Comparing box positions would let a
         // rearrangement restyle an edge with nothing in the document changing,
         // and an inference from measured state always has a wrong answer
@@ -179,10 +176,9 @@
     })
 
     // A back edge's label goes into an edge column first, as an ordinary grid
-    // item, and the grid then sizes that column to hold it. Measuring comes
-    // after, so the wire can follow the label. Doing it the other way round is
-    // what made a label's own width my problem, and a longer one always found
-    // the edge of the figure.
+    // item, and the grid then sizes that column to hold it. Doing it the other
+    // way round made a label's own width this code's problem, and a longer one
+    // always found the edge of the figure.
     var kinds = columnKinds(graph)
     var edgeColumns = []
     kinds.forEach(function (kind, i) { if (kind === "edge") edgeColumns.push(i + 1) })
@@ -202,7 +198,18 @@
       graph.appendChild(slot)
       e.slot = slot
     })
-    edges.forEach(function (e) { if (e.slot) e.marker = boxOf(e.slot, graph.getBoundingClientRect()) })
+
+    // Everything gets measured here, after the slots are in and never before.
+    // An empty edge column has no width, so putting a label in one widens it
+    // and pushes every node along. Boxes read before that are short by exactly
+    // that column, which is what drew the wires beside the boxes rather than
+    // into them.
+    var placed = graph.getBoundingClientRect()
+    edges.forEach(function (e) {
+      e.a = boxOf(e.fromNode, placed)
+      e.b = boxOf(e.toNode, placed)
+      if (e.slot) e.marker = boxOf(e.slot, placed)
+    })
 
     assignLanes(edges)
     edges.forEach(function (e) {
