@@ -45,16 +45,23 @@
   function route(a, b, lane) {
     if (b.top >= a.bottom - 1) {
       var gap = b.top - a.bottom
-      var y = a.bottom + Math.min(10 + lane * 6, gap * 0.75)
+      var y = a.bottom + gap / 2 + lane * 6
       return {
         d: "M" + a.midX + "," + a.bottom + " L" + a.midX + "," + y +
            " L" + b.midX + "," + y + " L" + b.midX + "," + b.top,
-        label: { x: b.midX, y: b.top - 9 },
+        // On the vertical drop, halfway between the elbow and the box. Sitting
+        // it just above the target put it on the arrowhead, where the label and
+        // the thing it points at fight for the same few pixels.
+        label: { x: b.midX, y: (y + b.top) / 2 },
       }
     }
     // Anything not going downward leaves sideways, so a line back up the figure
     // does not run through the boxes between.
-    var side = a.right + 18 + lane * 10
+    // Far enough out that a label centred on the line still clears the boxes
+    // this route passes. Hugging them and nudging the label aside instead was
+    // worse: a chip beside a wire stops reading as that wire's label, and the
+    // overlap it avoided was the route's fault rather than the label's.
+    var side = a.right + 56 + lane * 12
     return {
       d: "M" + a.right + "," + a.midY + " L" + side + "," + a.midY +
          " L" + side + "," + b.midY + " L" + b.right + "," + b.midY,
@@ -68,6 +75,7 @@
     var origin = graph.getBoundingClientRect()
     var old = graph.querySelector("svg.figure-wires")
     if (old) old.remove()
+    Array.prototype.forEach.call(graph.querySelectorAll(".figure-label"), function (el) { el.remove() })
 
     var svg = document.createElementNS(SVG, "svg")
     svg.setAttribute("class", "figure-wires")
@@ -91,7 +99,13 @@
     // Which lane an edge takes, counted per source box. Two edges leaving the
     // same node would otherwise draw the same elbow twice.
     var lanes = {}
+    var labels = []
 
+    // Every wire first, before any label. SVG paints in document order, so a
+    // label drawn during its own edge's turn still ends up under the wires of
+    // every edge after it. That struck through two of the three labels in the
+    // first render: the third edge's horizontal lane ran at exactly the height
+    // the first two had put their text.
     Array.prototype.forEach.call(graph.querySelectorAll("figure-edge"), function (edge) {
       var fromName = edge.getAttribute("from")
       var from = graph.querySelector('figure-node[id="' + fromName + '"]')
@@ -100,39 +114,44 @@
       // only covers a page opened without validation having run.
       if (!from || !to) return
 
+      var a = boxOf(from, origin)
+      var b = boxOf(to, origin)
       lanes[fromName] = (lanes[fromName] || 0) + 1
-      var wire = route(boxOf(from, origin), boxOf(to, origin), lanes[fromName] - 1)
+      var wire = route(a, b, lanes[fromName] - 1)
 
       var path = document.createElementNS(SVG, "path")
       path.setAttribute("class", "wire")
       path.setAttribute("d", wire.d)
       path.setAttribute("marker-end", "url(#" + marker.getAttribute("id") + ")")
-      if (boxOf(to, origin).top < boxOf(from, origin).top) path.setAttribute("data-kind", "back")
+      if (b.top < a.top) path.setAttribute("data-kind", "back")
       svg.appendChild(path)
 
       var label = edge.textContent.trim()
-      if (!label) return
-      // A rect behind the text, sized from the glyphs once they exist. A stroke
-      // halo left the wire showing through the gaps between words, so "js ts
-      // tsx" read as one underscored word.
-      var text = document.createElementNS(SVG, "text")
-      text.setAttribute("x", wire.label.x)
-      text.setAttribute("y", wire.label.y)
-      text.setAttribute("text-anchor", "middle")
-      text.textContent = label
-      svg.appendChild(text)
-
-      var box = text.getBBox()
-      var bed = document.createElementNS(SVG, "rect")
-      bed.setAttribute("class", "label-bed")
-      bed.setAttribute("x", box.x - 3)
-      bed.setAttribute("y", box.y - 1)
-      bed.setAttribute("width", box.width + 6)
-      bed.setAttribute("height", box.height + 2)
-      svg.insertBefore(bed, text)
+      if (label) labels.push({ text: label, at: wire.label, back: b.top < a.top })
     })
 
     graph.insertBefore(svg, graph.firstChild)
+
+    // Labels are HTML, not SVG. SVG text carries no background, so a chip
+    // behind one meant a rect sized by getBBox. That answers zero while the SVG
+    // is still detached, so every rect came out twelve by six in the corner and
+    // no label was ever masked.
+    //
+    // An absolutely positioned element needs no measuring at all. The graph is
+    // already a positioned ancestor, a half-size translate centres the chip on
+    // its anchor whatever width the text turns out to be, and the border and
+    // the rounding are ordinary CSS rather than attributes computed here.
+    labels.forEach(function (item) {
+      var chip = document.createElement("div")
+      chip.className = "figure-label"
+      chip.style.left = item.at.x + "px"
+      chip.style.top = item.at.y + "px"
+      // The same kind the wire carries, so the stylesheet can give a label the
+      // colour of the line it names rather than a border of its own.
+      if (item.back) chip.setAttribute("data-kind", "back")
+      chip.textContent = item.text
+      graph.appendChild(chip)
+    })
   }
 
   var FigureGraph = function () {

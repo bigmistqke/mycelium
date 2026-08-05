@@ -6,7 +6,12 @@
 figure-graph {
   display: grid;
   position: relative;
-  gap: 1.75rem 1.25rem;
+  /* One row gap for the whole figure, tall enough to seat a label chip. Giving
+     the extra room only to nodes that receive a labelled edge looked cheaper
+     and was not: a margin grows the whole grid row, so an unlabelled node in
+     another column inherited the space and its own edges came out longer than
+     its neighbours' for no reason a reader could see. */
+  gap: 2.75rem 1.25rem;
   padding: 1.5rem;
   margin: 1.5rem 0;
   border: 1px solid var(--border);
@@ -18,11 +23,20 @@ figure-graph {
      through the border. */
   grid-auto-columns: minmax(0, 1fr);
   justify-items: stretch;
-  align-items: start;
+  /* stretch, not start. A row is as tall as its tallest box, and that box may
+     be in any column, so aligning to the top leaves every shorter box a pocket
+     of slack underneath it. The edge below then reads as longer for a reason
+     nothing in its own column shows. Filling the row makes the distance from
+     one box's bottom to the next box's top exactly the row gap, everywhere. */
+  align-items: stretch;
 }
 
 figure-node {
-  display: block;
+  /* Centred in the box rather than sitting at its top, since a box now fills
+     whatever height its row turned out to need. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   z-index: 1;
   /* A grid item's own floor is its min-content width, so a long identifier
@@ -83,14 +97,31 @@ figure-graph > svg.figure-wires path.wire[data-kind="back"] {
 /* A label sits on its own wire, so it needs to knock a hole in the line rather
    than overprint it. The rect does that; a text halo left the wire showing
    through the word gaps, which read as underscores. */
-figure-graph > svg.figure-wires rect.label-bed {
-  fill: var(--code-bg);
-}
-figure-graph > svg.figure-wires text {
+/* A label is an ordinary element sitting on the figure, not SVG text. The
+   element positions it and nothing measures it: a half-size translate centres
+   it on its anchor whatever the text turns out to be, so the chip below is
+   plain CSS rather than attributes computed from a bounding box. */
+.figure-label {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  padding: 0.1rem 0.45rem;
+  border-radius: 5px;
+  background: var(--bg);
   font: 500 10px ui-monospace, SFMono-Regular, Menlo, monospace;
-  fill: var(--muted);
-  dominant-baseline: middle;
+  white-space: nowrap;
+  pointer-events: none;
+  /* Bordered in the colour of the wire it names, so a label reads as belonging
+     to one line rather than as a box that happens to sit near it. The two
+     values below track the two wire rules above; a third kind of wire needs a
+     third pair here. */
+  border: 1px solid var(--muted);
+  color: var(--muted);
 }
+.figure-label[data-kind="back"] {
+  border-color: var(--accent);
+}
+
 
 /* A grid of boxes stacks into a column on a narrow screen. The connectors
    redraw from the new positions, since nothing about them was stored. */

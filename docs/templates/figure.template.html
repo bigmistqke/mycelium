@@ -42,15 +42,19 @@
   project cares about most, and closing it is most of the reason to build anything here.
 </p>
 
-<h2>Coordinates are measured, never written</h2>
+<h2>A cell is structure, a pixel is not</h2>
 <p>
-  A node declares which row and column it occupies, and CSS grid places it. Nothing in the document says
-  where anything is in pixels.
+  A node declares which row and column it occupies and CSS grid places it. That is a coordinate, and it is
+  not the kind that rots. <code>3,1</code> means the same thing at any font size, any width and any theme,
+  because the browser works out where that lands every time it draws.
 </p>
 <p>
-  The connectors come from measuring the real layout after the browser has done it. So the geometry never
-  reaches the file at all, not even generated. That is the difference from the hand-placed version: the
-  problem there was never that numbers existed, it was that a person had to keep them true.
+  Hand-placed markup failed for a different reason. Its numbers were pixels, so a person had to keep them
+  true, and they stopped being true the moment anything moved. The problem was never that numbers existed.
+</p>
+<p>
+  The connectors carry no numbers at all. They come from measuring the real layout after the browser has
+  done it, so nothing about the geometry reaches the file, not even generated.
 </p>
 
 <h2>Why a classic script, with no mycelium type</h2>
