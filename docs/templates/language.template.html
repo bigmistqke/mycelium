@@ -711,11 +711,11 @@
       // node is undefined for stdin — a rule about markup finds nothing
       // there, which is correct — and a real (stripped) document for a
       // file, matching what the corpus audit hands the same rule.
-      for (const found of mod.check(text, node, language)) {
+      for (const found of mod.check(text, { kind: 'html', node, language })) {
         violations.push(`${path}: ${found.message ?? found.excerpt}`)
       }
       for (const comment of comments) {
-        for (const found of mod.check(comment, undefined, language)) {
+        for (const found of mod.check(comment, { kind: 'javascript/comment', node: undefined, language })) {
           violations.push(`${path}: ${found.message ?? found.excerpt}`)
         }
       }
@@ -777,6 +777,16 @@
       "",
       `Reply with ONLY a JSON object mapping each ${noun}'s number (as a string key) to its corrected text, for example {"0": "corrected text", "3": "corrected text"}. Every number above must appear as a key. No markdown fences, no explanation, nothing outside the JSON object.`,
     ].join("\n")
+  }
+
+  // An autofix region's own kind names where the text came from; a rule's
+  // scope names the same thing in the language's vocabulary. A comment region
+  // is judged as an inline comment rather than a doc block, because autofix
+  // rewrites prose and a doc block's wording is the roster's output.
+  function regionKind(region) {
+    if (region.kind === "comment") return "javascript/comment"
+    if (region.kind === "markdown") return "markdown"
+    return "html"
   }
 
   function runAutofixBatch(items: AutofixItem[]): Map<number, string> {
@@ -981,7 +991,7 @@
         // region.node is undefined for a comment (no markup to check),
         // and the stripped <p> for a markdown paragraph — the only change
         // needed for the two node-dependent rules to reach markdown at all.
-        hits: rules.map((rule) => ({ rule, found: rule.check(region.text, region.node, language) })).filter(({ found }) => found.length > 0),
+        hits: rules.map((rule) => ({ rule, found: rule.check(region.text, { kind: regionKind(region), node: region.node, language }) })).filter(({ found }) => found.length > 0),
       }))
       .filter(({ hits }) => hits.length > 0)
 
@@ -1112,7 +1122,7 @@
         }
 
         const stillBroken = structurallyOk
-          ? p.candidate.hits.filter(({ rule }) => rule.check(checkText, checkNode, language).length > 0)
+          ? p.candidate.hits.filter(({ rule }) => rule.check(checkText, { kind: regionKind(p.candidate.region), node: checkNode, language }).length > 0)
           : p.candidate.hits
 
         if (stillBroken.length === 0 && structurallyOk) {
@@ -1430,7 +1440,7 @@
       const kind = comment.raw.trimStart().startsWith('/**') ? 'javascript/jsdoc' : 'javascript/comment'
       for (const rule of rules) {
         if (!appliesTo(rule, kind)) continue
-        for (const found of rule.check(comment.text, undefined, language)) {
+        for (const found of rule.check(comment.text, { kind, node: comment.subject, language })) {
           violations.push(`${path}: ${found.message}`)
         }
       }
@@ -1457,6 +1467,11 @@
       }
     }
 
+    // A rule's own examples are checked as the first kind it declares. A rule
+    // about comments writes comment examples, and checking those as document
+    // prose would hand it markup it never meets in the field.
+    const exampleKind = (rule) => (rule.validates[0] === 'all' ? 'html' : rule.validates[0])
+
     // A rule runs against its own two examples first. The passing one must come
     // back clean and the failing one must not, so we catch a check that cannot
     // decide its own examples before it ever reaches the corpus.
@@ -1468,8 +1483,20 @@
       // same pair the corpus pass supplies. A rule about markup would find
       // nothing in a bare string and would report that it cannot decide its
       // own examples, which says more about the harness than the rule.
-      if (rule.check(pass?.textContent ?? '', pass, language).length > 0) violations.push(`${rule.path}: flags its own passing example`)
-      if (rule.check(fail?.textContent ?? '', fail, language).length === 0) violations.push(`${rule.path}: does not flag its own failing example`)
+      //
+      // A rule about code gets its examples parsed as code instead, because
+      // what it asks about is a declaration and a DOM element is not one.
+      // So an example for such a rule is a snippet, and the rule sees the first
+      // comment in it, carrying the real declaration below.
+      const asExample = (el) => {
+        const kind = exampleKind(rule)
+        const text = el?.textContent ?? ''
+        if (!kind.startsWith('javascript')) return [text, { kind, node: el, language }]
+        const first = commentRanges(text)[0]
+        return [first?.text ?? text, { kind, node: first?.subject, language }]
+      }
+      if (rule.check(...asExample(pass)).length > 0) violations.push(`${rule.path}: flags its own passing example`)
+      if (rule.check(...asExample(fail)).length === 0) violations.push(`${rule.path}: does not flag its own failing example`)
     }
 
     for (const path of fs.list('docs', { ext: '.html' })) {
@@ -1490,7 +1517,8 @@
         // paragraph opener, say — cannot see anything in a string, and would
         // otherwise have to leave the family and become an audit, which would
         // put one rule in two homes.
-        for (const found of rule.check(text, visible, language)) violations.push(`${path}: ${found.message}`)
+        if (!appliesTo(rule, 'html')) continue
+      for (const found of rule.check(text, { kind: 'html', node: visible, language })) violations.push(`${path}: ${found.message}`)
       }
 
       // Every script this document embeds, whatever its type — a command, an
@@ -1513,7 +1541,8 @@
       const body = stripProtected(document.querySelector('body'))
       const text = extractProse(body)
       for (const rule of rules) {
-        for (const found of rule.check(text, body, language)) violations.push(`${path}: ${found.message}`)
+        if (!appliesTo(rule, 'markdown')) continue
+      for (const found of rule.check(text, { kind: 'markdown', node: body, language })) violations.push(`${path}: ${found.message}`)
       }
     }
 

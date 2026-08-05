@@ -121,6 +121,34 @@ export interface CommentRange {
   end: number
   raw: string
   text: string
+  // What the comment sits above, when it sits above anything. A rule asking
+  // whether prose documents a declaration would otherwise need the compiler
+  // itself, and a rule is a short script in a document rather than a program
+  // that can carry a parser. So this reports the answer instead of the tree:
+  // `declares` names the kind, `name` names the thing.
+  subject: CommentSubject
+}
+
+export interface CommentSubject {
+  declares: string | null
+  name: string | null
+}
+
+// Which node kinds count as a declaration a comment can document. A comment
+// above an `if` or a `return` describes a step, and one above a function or a
+// constant describes a named thing — the distinction the whole doc-block
+// question rests on.
+function describe(node: ts.Node | undefined): CommentSubject {
+  if (!node) return { declares: null, name: null }
+  const named = (kind: string, id?: ts.Node) => ({ declares: kind, name: id && ts.isIdentifier(id as any) ? (id as ts.Identifier).text : null })
+  if (ts.isFunctionDeclaration(node)) return named("function", node.name)
+  if (ts.isClassDeclaration(node)) return named("class", node.name)
+  if (ts.isInterfaceDeclaration(node)) return named("interface", node.name)
+  if (ts.isTypeAliasDeclaration(node)) return named("type", node.name)
+  if (ts.isEnumDeclaration(node)) return named("enum", node.name)
+  if (ts.isMethodDeclaration(node) || ts.isPropertyDeclaration(node)) return named("member", node.name as ts.Node)
+  if (ts.isVariableStatement(node)) return named("variable", node.declarationList.declarations[0]?.name)
+  return { declares: null, name: null }
 }
 
 // Every logical comment in a JS/TS/JSX/TSX source, with the source range it
@@ -130,16 +158,20 @@ export interface CommentRange {
 export function commentRanges(source: string): CommentRange[] {
   const sourceFile = ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
   const seen = new Set<number>()
-  const found: { pos: number; end: number; kind: ts.SyntaxKind; raw: string }[] = []
+  const found: { pos: number; end: number; kind: ts.SyntaxKind; raw: string; leads?: ts.Node }[] = []
 
-  function record(pos: number, end: number, kind: ts.SyntaxKind) {
+  function record(pos: number, end: number, kind: ts.SyntaxKind, leads?: ts.Node) {
     if (seen.has(pos)) return
     seen.add(pos)
-    found.push({ pos, end, kind, raw: source.slice(pos, end) })
+    found.push({ pos, end, kind, raw: source.slice(pos, end), leads })
   }
 
   function visit(node: ts.Node) {
-    ts.forEachLeadingCommentRange(source, node.getFullStart(), record)
+    // Only a LEADING range gets the node: a comment before something introduces
+    // it, and a comment after something on the same line is an aside about the
+    // line it trails. Handing the node to both would report a trailing note as
+    // documentation of whatever came before it.
+    ts.forEachLeadingCommentRange(source, node.getFullStart(), (pos, end, kind) => record(pos, end, kind, node))
     ts.forEachTrailingCommentRange(source, node.getEnd(), record)
     node.forEachChild(visit)
   }
@@ -154,22 +186,28 @@ export function commentRanges(source: string): CommentRange[] {
   // as its own separate range. Merged here whenever nothing but a single
   // line break sits between one and the next, so a sentence this project
   // wrapped across two // lines gets checked as the one sentence it is.
-  const merged: { pos: number; end: number; raw: string }[] = []
-  let block: { pos: number; end: number; parts: string[] } | null = null
+  // A merged run of // lines takes the subject of its LAST line, since that is
+  // the one actually touching the declaration. Taking the first would report
+  // the run as introducing whatever the first line happened to precede.
+  const merged: { pos: number; end: number; raw: string; leads?: ts.Node }[] = []
+  let block: { pos: number; end: number; parts: string[]; leads?: ts.Node } | null = null
   for (const c of found) {
     const continuesBlock = block && c.kind === ts.SyntaxKind.SingleLineCommentTrivia && /^\n[ \t]*$/.test(source.slice(block.end, c.pos))
     if (continuesBlock) {
       block!.parts.push(c.raw)
       block!.end = c.end
+      block!.leads = c.leads
       continue
     }
-    if (block) merged.push({ pos: block.pos, end: block.end, raw: block.parts.join("\n") })
-    block = c.kind === ts.SyntaxKind.SingleLineCommentTrivia ? { pos: c.pos, end: c.end, parts: [c.raw] } : null
-    if (!block) merged.push({ pos: c.pos, end: c.end, raw: c.raw })
+    if (block) merged.push({ pos: block.pos, end: block.end, raw: block.parts.join("\n"), leads: block.leads })
+    block = c.kind === ts.SyntaxKind.SingleLineCommentTrivia ? { pos: c.pos, end: c.end, parts: [c.raw], leads: c.leads } : null
+    if (!block) merged.push({ pos: c.pos, end: c.end, raw: c.raw, leads: c.leads })
   }
-  if (block) merged.push({ pos: block.pos, end: block.end, raw: block.parts.join("\n") })
+  if (block) merged.push({ pos: block.pos, end: block.end, raw: block.parts.join("\n"), leads: block.leads })
 
-  return merged.map((m) => ({ ...m, text: formatCodeComment(m.raw) })).filter((m) => m.text)
+  return merged
+    .map(({ leads, ...m }) => ({ ...m, text: formatCodeComment(m.raw), subject: describe(leads) }))
+    .filter((m) => m.text)
 }
 
 export function extractComments(source: string): string[] {

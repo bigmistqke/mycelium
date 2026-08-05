@@ -15,7 +15,8 @@
   <script>const LIMIT = 4
 
 // Paragraphs, so this needs the markup rather than the string.
-export function check(text, node) {
+export function check(text, context) {
+  const node = context?.node
   if (!node) return []
   const violations = []
   for (const p of Array.from(node.querySelectorAll?.('p') ?? [])) {

@@ -15,7 +15,8 @@
   <script type="mycelium/rule">// Reads the vocabulary rather than carrying a list. The third argument is the
 // language this rule belongs to, so nothing here needs updating when a term
 // gains or loses a word it replaces.
-export function check(text, node, language) {
+export function check(text, context) {
+  const language = context?.language
   const violations = []
   for (const [word, instead] of language?.replaces ?? []) {
     for (const m of text.matchAll(new RegExp(`\\b${word}\\b`, 'gi'))) {

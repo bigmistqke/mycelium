@@ -15,7 +15,8 @@
   <script type="mycelium/rule">// Markup, not text, so this reads the document rather than the string. A
 // paragraph whose first element child is bold and starts the paragraph is
 // the mini-headline shape. Bold later in a paragraph is emphasis and fine.
-export function check(text, doc) {
+export function check(text, context) {
+  const doc = context?.node
   if (!doc) return []
   const violations = []
   for (const p of Array.from(doc.querySelectorAll('p'))) {
