@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Variance between derivation runs measures how thin the record is</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>Variance between derivation runs measures how thin the record is</knowledge-title>
+  <knowledge-confidence>72</knowledge-confidence>
+  <knowledge-detail><p>Loss makes the evidence thin. Thin evidence fits more than one reconstruction.
+So the same repository yields a different graph on each run.</p>
+<p>Non-determinism is the symptom and loss is the cause. The two are one claim
+rather than two.</p>
+<p>The consequence worth having: variance measures loss. Where independent
+readings agree, the record sufficed. Where they diverge, the record was thin. So a
+variance map is a map of where a project documented itself badly, which is a claim
+about the history rather than about the tool.</p>
+<p>This predicts something checkable.
+<a href="./2026-08-05-retroactive-forensics-is-permanently-lossy.observation.html">The loss runs
+biased toward fast, uncontested work nobody wrote up</a>, so high-variance regions
+should line up with exactly that. If variance instead clusters on the parts a team
+argued about at length, the reader is careless and the evidence is not thin.</p>
+<p>Do not merge the runs. Union gives noise and intersection gives the obvious.
+The disagreement has to survive as disagreement.</p>
+<p>Judgement belongs only where the machine could not resolve. So the real output
+of a derivation is a map of what it could not decide, and the graph is the
+byproduct.</p>
+<p>This also gives confidence something real to mean. Agreement across independent
+readings is a quantity. A single number one model picks is not.</p>
+<p>A little variance survives even at zero loss. Turning a complete history into
+twenty claims is a compression, and what you drop is a choice, so two readers with
+the same full record still summarise differently. That part is second-order and
+does not change the mechanism.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-05-retroactive-forensics-is-permanently-lossy.observation.html">non-determinism is what this lossiness looks like from the derivation side</a>
+  <a data-rel="supports" href="./2026-08-05-the-deliverable-is-the-question-set.observation.html">disagreement between runs is where the questions come from</a>
+</knowledge-observation>
+</body></html>
