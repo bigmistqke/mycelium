@@ -71,13 +71,39 @@
     })
   }
 
-  // Back edges run in a gutter down the left of the figure, outside every
-  // column. Sending them out the right of their source ran the wire through
-  // whatever sat in the next column along, so "re-enters" was not overlapping
-  // the css box by bad luck — its wire crossed that box. The stylesheet
-  // reserves the gutter as padding, so nothing else can be there.
-  var GUTTER = 22
-  var GUTTER_STEP = 13
+  // data-columns names each column in order, so a figure can reserve one for
+  // edges: "edge node node node node". A bare count still means that many node
+  // columns, which is what every figure written so far says.
+  //
+  // Node columns are what data-at counts, so reserving an edge column does not
+  // renumber anything a figure already declared.
+  function columnKinds(graph) {
+    var raw = (graph.getAttribute("data-columns") || "").trim()
+    if (!raw) return []
+    if (/^\d+$/.test(raw)) {
+      var kinds = []
+      for (var i = 0; i < Number(raw); i++) kinds.push("node")
+      return kinds
+    }
+    return raw.split(/\s+/)
+  }
+
+  // Where each node column lands once the edge columns are counted in.
+  function nodeColumnMap(kinds) {
+    var map = []
+    kinds.forEach(function (kind, i) {
+      if (kind !== "edge") map.push(i + 1)
+    })
+    return map
+  }
+
+  // The rows an edge travels, so its label can span them and centre itself over
+  // the whole run rather than sitting at one end of it.
+  function rowSpan(from, to) {
+    var rows = [cellOf(from), cellOf(to)].filter(Boolean).map(function (c) { return c.row })
+    if (rows.length < 2) return "auto"
+    return Math.min.apply(null, rows) + " / " + (Math.max.apply(null, rows) + 1)
+  }
 
   function routeForward(e) {
     e.d = "M" + e.a.midX + "," + e.a.bottom + " L" + e.a.midX + "," + e.lane +
@@ -87,16 +113,15 @@
     e.labelAt = { x: e.b.midX, y: (e.lane + e.b.top) / 2 }
   }
 
-  function routeBack(e, index) {
-    var x = GUTTER + index * GUTTER_STEP
+  // A back edge runs down the middle of its own column, and its label already
+  // sits there as a grid item, so the wire follows the label rather than the
+  // label chasing the wire. The grid sizes the column to whatever the label
+  // needs, which is why no length of text can push one outside the figure.
+  function routeBack(e) {
+    var x = e.marker.midX
     e.d = "M" + e.a.left + "," + e.a.midY + " L" + x + "," + e.a.midY +
           " L" + x + "," + e.b.midY + " L" + e.b.left + "," + e.b.midY
-    // Right of the wire rather than across it. The gutter sits at the figure's
-    // edge, so a centred chip hangs half of itself outside the border, and the
-    // inside is the only side there is. A chip beside a long vertical still
-    // reads as its label; the earlier version that looked detached sat beside a
-    // short segment crowded by boxes.
-    e.labelAt = { x: x, y: (e.a.midY + e.b.midY) / 2, side: "right" }
+    e.labelAt = null
   }
 
   var SVG = "http://www.w3.org/2000/svg"
@@ -139,6 +164,8 @@
       if (!from || !to) return
       edges.push({
         fromId: edge.getAttribute("from"),
+        fromNode: from,
+        toNode: to,
         a: boxOf(from, origin),
         b: boxOf(to, origin),
         // Read, not measured. Comparing box positions would let a
@@ -151,10 +178,35 @@
       })
     })
 
-    assignLanes(edges)
+    // A back edge's label goes into an edge column first, as an ordinary grid
+    // item, and the grid then sizes that column to hold it. Measuring comes
+    // after, so the wire can follow the label. Doing it the other way round is
+    // what made a label's own width my problem, and a longer one always found
+    // the edge of the figure.
+    var kinds = columnKinds(graph)
+    var edgeColumns = []
+    kinds.forEach(function (kind, i) { if (kind === "edge") edgeColumns.push(i + 1) })
     var backSeen = 0
     edges.forEach(function (e) {
-      if (e.back) routeBack(e, backSeen++)
+      if (!e.back) return
+      var column = edgeColumns[backSeen % Math.max(edgeColumns.length, 1)] || 1
+      backSeen++
+      var slot = document.createElement("div")
+      slot.className = "figure-label"
+      slot.setAttribute("data-in-column", "")
+      slot.setAttribute("data-kind", "back")
+      slot.textContent = e.text
+      if (!e.text) slot.setAttribute("data-empty", "")
+      slot.style.gridColumn = String(column)
+      slot.style.gridRow = rowSpan(e.fromNode, e.toNode)
+      graph.appendChild(slot)
+      e.slot = slot
+    })
+    edges.forEach(function (e) { if (e.slot) e.marker = boxOf(e.slot, graph.getBoundingClientRect()) })
+
+    assignLanes(edges)
+    edges.forEach(function (e) {
+      if (e.back) routeBack(e)
       else routeForward(e)
     })
 
@@ -185,7 +237,7 @@
     // already a positioned ancestor, a half-size translate centres the chip on
     // its anchor whatever width the text turns out to be, and the border and
     // the rounding are ordinary CSS rather than attributes computed here.
-    labels.forEach(function (item) {
+    labels.filter(function (item) { return item.at }).forEach(function (item) {
       var chip = document.createElement("div")
       chip.className = "figure-label"
       chip.style.left = item.at.x + "px"
@@ -193,7 +245,6 @@
       // The same kind the wire carries, so the stylesheet can give a label the
       // colour of the line it names rather than a border of its own.
       if (item.back) chip.setAttribute("data-kind", "back")
-      if (item.at.side) chip.setAttribute("data-side", item.at.side)
       chip.textContent = item.text
       graph.appendChild(chip)
     })
@@ -208,15 +259,25 @@
 
   FigureGraph.prototype.connectedCallback = function () {
     var graph = this
-    var columns = graph.getAttribute("data-columns")
-    // minmax(0, …), for the reason the stylesheet gives on grid-auto-columns.
-    if (columns) graph.style.gridTemplateColumns = "repeat(" + columns + ", minmax(0, 1fr))"
+    // A node column shares the width evenly, with minmax(0, …) for the reason
+    // the stylesheet gives on grid-auto-columns. An edge column takes only what
+    // the label inside it needs, which is what stops a long label reaching past
+    // the figure however wide the text turns out to be.
+    var kinds = columnKinds(graph)
+    if (kinds.length) {
+      graph.style.gridTemplateColumns = kinds
+        .map(function (kind) { return kind === "edge" ? "auto" : "minmax(0, 1fr)" })
+        .join(" ")
+    }
+    var nodeColumns = nodeColumnMap(kinds)
 
     Array.prototype.forEach.call(graph.querySelectorAll("figure-node"), function (node) {
       var cell = cellOf(node)
       if (!cell) return
       node.style.gridRow = String(cell.row)
-      node.style.gridColumn = String(cell.column)
+      // data-at counts node columns, so an edge column reserved beside them
+      // never renumbers what a figure already declared.
+      node.style.gridColumn = String(nodeColumns[cell.column - 1] || cell.column)
     })
 
     // Drawn after layout, redrawn whenever the box sizes change. A figure that

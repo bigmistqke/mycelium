@@ -79,7 +79,7 @@
 <h2>Shape</h2>
 
 <template id="figure-graph">
-  <figure-graph data-columns="^[0-9]+$">
+  <figure-graph data-columns="^([0-9]+|(node|edge)( +(node|edge))*)$">
     <figure-node></figure-node>
     <figure-edge></figure-edge>
   </figure-graph>
@@ -126,6 +126,26 @@
   The gap belongs to the schema rather than to this family.
   <a href="../knowledge/2026-08-05-schema-checks-only-the-first-child.observation.html">Eleven plan
   documents lose the same way</a>, and nothing reported it, because a check that never runs is silent.
+</p>
+
+<h2>Two kinds of column</h2>
+<p>
+  <code>data-columns</code> names each column in order, and a column is either a <code>node</code> column
+  or an <code>edge</code> column: <code>data-columns="edge node node node node"</code>. A bare count still
+  reads as that many node columns.
+</p>
+<p>
+  An edge column carries no boxes. A back edge runs down the middle of one, and its label sits there as an
+  ordinary grid item, so the grid sizes that column to whatever the label needs.
+</p>
+<p>
+  That is the point of making it a column rather than a margin. Every earlier version positioned the label
+  itself, which made the label's width something this code had to worry about, and a long enough one
+  always reached past the figure. A grid column has a width the grid manages, so no length of text can.
+</p>
+<p>
+  <code>data-at</code> counts node columns only, so reserving an edge column never renumbers what a figure
+  already declared.
 </p>
 
 <h2>A back edge says so, rather than being noticed</h2>

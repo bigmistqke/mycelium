@@ -12,10 +12,7 @@ figure-graph {
      another column inherited the space and its own edges came out longer than
      its neighbours' for no reason a reader could see. */
   gap: 2.75rem 1.25rem;
-  /* Wider on the left: that strip is the gutter every back edge runs down, kept
-     outside the columns so a feedback wire never crosses a box. The element's
-     GUTTER constant has to sit inside it. */
-  padding: 1.5rem 1.5rem 1.5rem 3.5rem;
+  padding: 1.5rem;
   margin: 1.5rem 0;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -124,11 +121,23 @@ figure-graph > svg.figure-wires path.wire[data-kind="back"] {
 .figure-label[data-kind="back"] {
   border-color: var(--accent);
 }
-/* Beside its wire, for a wire running down the gutter. That gutter is at the
-   figure's edge, so a centred chip would hang half of itself outside the
-   border and the inside is the only side available. */
-.figure-label[data-side="right"] {
-  transform: translate(10px, -50%);
+/* A label belonging to an edge column is an ordinary grid item, not a floating
+   chip. The grid sizes that column to hold it, so no length of text can reach
+   past the figure — which every version that positioned the label itself
+   eventually did, because a chip's width was mine to worry about. */
+.figure-label[data-in-column] {
+  position: relative;
+  transform: none;
+  align-self: center;
+  justify-self: center;
+}
+/* A back edge with nothing to say still needs its column to have a width, so
+   the wire has a middle to run down. */
+.figure-label[data-empty] {
+  border: none;
+  background: none;
+  padding: 0;
+  width: 1.25rem;
 }
 
 
