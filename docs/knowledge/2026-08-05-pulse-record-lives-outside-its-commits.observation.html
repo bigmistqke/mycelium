@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A subject whose record lives outside its commits cannot test a held-out design</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>A subject whose record lives outside its commits cannot test a held-out design</knowledge-title>
+  <knowledge-confidence>86</knowledge-confidence>
+  <knowledge-detail><p>pulse holds 291,605 words of documentation against 3,523 lines of source, across
+88 files. It is a documentation project with a small implementation inside it.</p>
+<p>Holding the documents directory out therefore removes most of the record rather
+than isolating an answer key. The readings work from a minority channel.</p>
+<p>Worse for the design, the agent writing those commit messages had the documents
+in view. So the messages compress the documents, and reading them is reading the
+documents once removed.</p>
+<p>That is the concrete form of the false-agreement risk. Three lenses agreeing
+proves little when every channel descends from one source.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-05-run-three-readings-over-pulse.action.html">why this subject cannot settle what the pass set out to test</a>
+  <a data-rel="supports" href="./2026-08-05-fidelity-depends-on-when-not-who.observation.html">the concrete case of channels that all descend from one source</a>
+</knowledge-observation>
+</body></html>
