@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Architecture report: repl</title>
 <link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/figure.template.css">
 <style>
   .lane-label { font: 500 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: var(--fg); }
   .axis-label { font: 500 10px ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--muted); }
@@ -100,6 +101,43 @@ graph TD
   Caller --> Bind
   Get --> Frame(["blob: URL in an iframe"])
 </pre>
+
+<h4 style="margin-top:2rem">The same graph as a figure-graph</h4>
+
+<figure-graph data-columns="4">
+  <figure-node id="caller" data-at="1,2">the caller's <code>readFile(path)</code></figure-node>
+
+  <figure-node id="system" data-at="2,2" data-role="spine">createFileUrlSystem</figure-node>
+  <figure-node id="tmp" data-at="3,1">transformModulePaths</figure-node>
+  <figure-node id="th" data-at="3,2">transformHtml<br>transformHtmlWorker</figure-node>
+  <figure-node id="css" data-at="3,3" data-role="aside">css &mdash; no transform</figure-node>
+  <figure-node id="blob" data-at="4,2" data-role="spine">createFileUrl &rarr; Blob</figure-node>
+  <figure-node id="get" data-at="5,2" data-role="out">get(path)</figure-node>
+  <figure-node id="frame" data-at="6,2">blob: URL in an iframe</figure-node>
+
+  <figure-node id="bind" data-at="2,4" data-role="aside">bindMonacoToFileSystem</figure-node>
+  <figure-node id="loader" data-at="3,4" data-role="aside">createMonacoTypeDownloader</figure-node>
+  <figure-node id="dl" data-at="4,4" data-role="aside">downloadTypesFromUrl</figure-node>
+  <figure-node id="rpe" data-at="5,4" data-role="aside">resolvePackageEntries</figure-node>
+
+  <figure-edge from="caller" to="system"></figure-edge>
+  <figure-edge from="caller" to="bind"></figure-edge>
+  <figure-edge from="system" to="tmp">js ts tsx</figure-edge>
+  <figure-edge from="system" to="th">html</figure-edge>
+  <figure-edge from="system" to="css">css</figure-edge>
+  <figure-edge from="tmp" to="blob"></figure-edge>
+  <figure-edge from="th" to="blob"></figure-edge>
+  <figure-edge from="css" to="blob"></figure-edge>
+  <figure-edge from="blob" to="get"></figure-edge>
+  <figure-edge from="get" to="frame"></figure-edge>
+  <figure-edge from="get" to="system">re-enters</figure-edge>
+  <figure-edge from="loader" to="dl"></figure-edge>
+  <figure-edge from="dl" to="rpe"></figure-edge>
+</figure-graph>
+
+<p>Both forms say the same thing, so the comparison is about what each costs to
+keep true. The figure names twelve nodes and thirteen edges, and an audit checks
+that every edge finds both its ends.</p>
 
 <p>Two halves, and they never touch. Nothing outside <code>src/core/</code> imports
 the URL system, and the URL system imports nothing from the editor side. Both take
@@ -408,5 +446,7 @@ person can answer.</p>
     theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'
   })
 </script>
+
+<script src="../templates/figure.element.js"></script>
 
 </body></html>

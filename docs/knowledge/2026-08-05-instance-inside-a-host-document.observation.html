@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A figure is the first instance that lives inside another document rather than being one</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>A figure is the first instance that lives inside another document rather than being one</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-detail><p>Every family so far is one document per instance. A knowledge node is a file, a
+spec is a file, a language entry is a file. A figure sits inside a report that is
+not a figure.</p>
+<p>So the embedded figure carries no <code>data-conforms-to</code>, and the
+validator never checks it against the template that declares it. The audit still
+runs, because it walks for <code>figure-graph</code> elements rather than for
+instances.</p>
+<p>Declaring conformance would likely break
+<a href="../templates/template.template.html">the nothing-outside-the-type
+audit</a>, which expects an instance to keep its content inside its declared type.
+A report is mostly prose around the figure.</p>
+<p>That is the open design question this spike found. Either the vocabulary of
+conformance grows a notion of an instance inside a host, or a figure stays
+unvalidated markup that only an audit sees.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-05-figure-spike-result.outcome.html">the question the spike could not close</a>
+</knowledge-observation>
+</body></html>

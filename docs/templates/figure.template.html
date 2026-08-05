@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template: figure-graph</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="./figure.template.css">
+</head>
+<body>
+
+<h1>Template: figure-graph</h1>
+<div class="meta">
+  <div><b>Types:</b> <code>figure-graph</code>, <code>figure-node</code>, <code>figure-edge</code></div>
+  <div><b>Purpose:</b> a diagram that stays a document. Nodes and edges are elements, so a reader can
+    read the structure out of the markup and a stylesheet decides the look.</div>
+  <div><b>Behaviour:</b> <code>./figure.element.js</code>, a classic script that registers the elements
+    and draws the connectors</div>
+  <div><b>Styling:</b> <code>./figure.template.css</code>, plus the shared <code>../theme.css</code></div>
+</div>
+
+<h2>Why this template exists</h2>
+<p>
+  Two forms of diagram went into <a href="../reports/2026-08-05-repl.report.html">the repl report</a> and
+  neither is right. Markup with every box placed by hand looked better and nobody could read it back,
+  because its meaning lived in coordinates rather than in a list of nodes and edges. Mermaid reads back
+  and gives up the styling.
+</p>
+<p>
+  The split between them is not really styling. It is whether the picture is still a document once you
+  have it.
+</p>
+
+<h2>What this form buys that mermaid cannot</h2>
+<p>
+  A node is a real element, so it can hold anything markup can hold. A box in a diagram can link to the
+  source file it names, or to the node arguing about it. A mermaid node is a string and a dead end.
+</p>
+<p>
+  An edge names its two ends, so an audit can check that both resolve. Mistype a name in mermaid and it
+  invents a node, rendering a diagram that looks right and lies. That failure mode is the one this
+  project cares about most, and closing it is most of the reason to build anything here.
+</p>
+
+<h2>Coordinates are measured, never written</h2>
+<p>
+  A node declares which row and column it occupies, and CSS grid places it. Nothing in the document says
+  where anything is in pixels.
+</p>
+<p>
+  The connectors come from measuring the real layout after the browser has done it. So the geometry never
+  reaches the file at all, not even generated. That is the difference from the hand-placed version: the
+  problem there was never that numbers existed, it was that a person had to keep them true.
+</p>
+
+<h2>Why a classic script, with no mycelium type</h2>
+<p>
+  Every script type this project invented keeps the browser from running the script.
+  <code>mycelium/command</code>, <code>mycelium/rule</code> and <code>mycelium/audit</code> all rely on the
+  browser skipping an unknown type. An element script is the first one that has to run in the browser, so
+  it carries no type at all.
+</p>
+<p>
+  It also cannot be a module. A document here opens over <code>file://</code>, module scripts are
+  CORS-checked, and that origin cannot satisfy the check — the same constraint
+  <a href="../specs/2026-07-24-mycelium-remove-runtime-js.spec.html">the spec that deleted the shared
+  runtime</a> describes.
+</p>
+<p>
+  That reads like a workaround and is not one. <code>customElements</code> is a global registry, so
+  registering an element is a global side effect whichever way the script arrives. There is no
+  module-scoped version of this to give up.
+</p>
+
+<h2>Shape</h2>
+
+<template id="figure-graph">
+  <figure-graph data-columns="^[0-9]+$">
+  </figure-graph>
+</template>
+
+<template id="figure-node">
+  <figure-node id=".+" data-at="^[0-9]+,[0-9]+$">
+  </figure-node>
+</template>
+
+<template id="figure-edge">
+  <figure-edge from=".+" to=".+">
+  </figure-edge>
+</template>
+
+<pre><code>&lt;figure-graph data-columns="3"&gt;
+  &lt;figure-node id="system" data-at="1,1"&gt;
+    &lt;a href="../../src/core.ts"&gt;createFileUrlSystem&lt;/a&gt;
+  &lt;/figure-node&gt;
+  &lt;figure-node id="blob" data-at="2,1"&gt;createFileUrl&lt;/figure-node&gt;
+  &lt;figure-edge from="system" to="blob"&gt;js &middot; ts&lt;/figure-edge&gt;
+&lt;/figure-graph&gt;</code></pre>
+
+<p>
+  <code>data-at</code> is <code>row,column</code>, both counting from one. The attribute constraints on
+  those placeholders are the reserved-word form
+  <a href="../knowledge/2026-08-05-rule-declares-what-it-validates.decision.html">the schema grew
+  today</a>: a value is a pattern the instance must match, so a figure declaring
+  <code>data-at="middle"</code> fails validation rather than rendering somewhere surprising.
+</p>
+
+<h2>The audit</h2>
+<p>
+  One check, and it is the whole reason this beats a string-based diagram: every edge points at a node
+  that exists, in the same figure.
+</p>
+
+<script type="mycelium/audit" data-audits="figure-edges-resolve" data-touches="figure-edge">
+  import type { AuditFs } from "../../src/api.ts"
+
+  /**
+   * Every figure-edge names two nodes that exist in its own figure.
+   *
+   * The failure this closes: a diagram renders, looks correct, and claims a
+   * relationship between something and nothing. Mermaid invents a node for an
+   * unknown name, so its diagrams cannot fail this way — they just quietly say
+   * something untrue.
+   */
+  export async function check(fs: AuditFs) {
+    const violations = []
+    for (const path of fs.list("docs", { ext: ".html" })) {
+      const doc = fs.parse(path)
+      for (const graph of Array.from(doc.querySelectorAll("figure-graph"))) {
+        const ids = new Set(Array.from(graph.querySelectorAll("figure-node")).map((n) => n.getAttribute("id")))
+        for (const edge of Array.from(graph.querySelectorAll("figure-edge"))) {
+          for (const end of ["from", "to"]) {
+            const name = edge.getAttribute(end)
+            if (!ids.has(name)) violations.push(`${path}: figure-edge ${end}="${name}" names no node in its figure`)
+          }
+        }
+      }
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<h2>What this pass does not do</h2>
+<p>
+  No layout engine. A node says which cell it sits in, and a figure whose shape does not suit a grid has
+  no answer here yet. The repl diagram suits one, which is why it is the subject.
+</p>
+<p>
+  No routing. A connector runs from one box to another as a straight line with an elbow, and two
+  connectors crossing stay crossed.
+</p>
+<p>
+  No authoring command. Writing a figure means writing the markup, which is the state
+  <code>knowledge</code> and <code>language</code> both started in.
+</p>
+
+</body>
+</html>

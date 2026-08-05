@@ -1,0 +1,86 @@
+/* The figure-* vocabulary: a graph drawn as real elements on a CSS grid, with
+   connectors measured from the layout rather than written into the document.
+   Every tag is hyphenated and scoped under its own family, so these rules
+   cannot leak onto another template's same-named tags. */
+
+figure-graph {
+  display: grid;
+  position: relative;
+  gap: 1.75rem 1.25rem;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-bg);
+  grid-auto-columns: 1fr;
+  justify-items: stretch;
+  align-items: start;
+}
+
+figure-node {
+  display: block;
+  position: relative;
+  z-index: 1;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
+/* A node holding a link is the point of the whole family, so the link should
+   not look like an afterthought pasted into a box. */
+figure-node a {
+  color: var(--fg);
+  text-decoration-color: var(--accent);
+  text-underline-offset: 3px;
+}
+figure-node a:hover { color: var(--accent); }
+
+/* Three roles, so a figure can say which boxes carry the argument. Anything
+   without a role is an ordinary box. */
+figure-node[data-role="spine"] { border-color: var(--accent); border-width: 1.5px; }
+figure-node[data-role="out"] { border-color: var(--pass); border-width: 1.5px; }
+figure-node[data-role="aside"] { border-style: dashed; color: var(--muted); }
+
+/* An edge is data, not display. The script reads these and draws into the
+   overlay it inserts; nothing here should ever be visible on its own. */
+figure-edge { display: none; }
+
+/* The overlay the element inserts, holding every connector. It sits under the
+   boxes so a line never crosses a label. */
+figure-graph > svg.figure-wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+figure-graph > svg.figure-wires path {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.2;
+}
+figure-graph > svg.figure-wires path[data-kind="back"] {
+  stroke: var(--accent);
+  stroke-dasharray: 4 3;
+}
+figure-graph > svg.figure-wires text {
+  font: 500 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  fill: var(--muted);
+  paint-order: stroke;
+  stroke: var(--code-bg);
+  stroke-width: 3px;
+}
+
+/* A grid of boxes stacks into a column on a narrow screen. The connectors
+   redraw from the new positions, since nothing about them was stored. */
+@media (max-width: 620px) {
+  figure-graph { display: block; }
+  figure-node { margin: 0.5rem 0; }
+  figure-graph > svg.figure-wires { display: none; }
+}
