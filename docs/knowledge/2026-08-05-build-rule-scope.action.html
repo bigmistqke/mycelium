@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Build attribute constraints in the schema, and scope every rule to the prose it validates</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Build attribute constraints in the schema, and scope every rule to the prose it validates</knowledge-title>
+  <knowledge-confidence>86</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Four pieces. <code>validateFromTemplate</code> now reads attributes on a
+placeholder, root or field, treating <code>required</code>, <code>pattern</code>
+and <code>enum</code> as its own words and any other attribute as one the instance
+must carry, with a value meaning a pattern to match.</p>
+<p><code>language-rule</code> declares <code>data-validates</code> with a pattern
+closing its vocabulary. <code>add</code> and <code>update</code> take
+<code>--validates</code>, <code>show</code> prints it, and all six existing rules
+now state their scope.</p>
+<p>The audit routes on it by prefix, and <code>checkComments</code> reads
+<code>commentRanges</code> instead of <code>extractComments</code> so a doc block
+and an inline comment separate on their raw text.</p>
+<p>A probe rule confirmed the routing: scoped to
+<code>javascript/jsdoc</code> it fired once against a file holding both kinds,
+scoped to <code>javascript</code> twice, and scoped to <code>html</code> not at
+all.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-05-rule-declares-what-it-validates.decision.html">the decision this implements</a>
+</knowledge-action>
+</body></html>

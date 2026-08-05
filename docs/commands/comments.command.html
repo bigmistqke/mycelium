@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commands: comments</title>
+<link rel="stylesheet" href="../theme.css">
+</head>
+<body>
+
+<h1>Commands: comments</h1>
+<div class="meta">
+  <div><b>Purpose:</b> decide whether each comment in a file earns its place, and delete the ones
+    that do not. The standard it judges against lives in
+    <code><a href="../language/guides/comment-earns-its-place.guide.html">comment-earns-its-place.guide.html</a></code>,
+    not in this file.</div>
+  <div><b>Not a template:</b> like <code>explore.command.html</code> and
+    <code>validate.command.html</code>, this document declares no <code>&lt;template id="…"&gt;</code>
+    and nothing conforms to it. It has commands and no type, which is what the
+    <code>.command.html</code> suffix means.</div>
+</div>
+
+<h2>Why this is not a language rule</h2>
+<p>
+  Every rule in <code>language.template.html</code> takes text and returns matches. Passive voice,
+  sentence length and a bare number sign each decide from the string alone. Whether a comment deserves
+  to exist decides from the comment against the code beneath it, and no regular expression reads that.
+</p>
+<p>
+  A rule also runs inside <code>validate</code>, which gates the whole corpus and walks every document.
+  A model call per comment makes that gate slow and non-deterministic, and a gate whose verdict moves
+  between runs teaches people to ignore it. So this lives beside <code>validate</code> rather than
+  inside it, and fails on its own.
+</p>
+
+<h2>Why the standard is a guide and not a string in this file</h2>
+<p>
+  The criteria are rationale. Writing them into a prompt inside this script would be the same mistake
+  the guide itself names: putting a decision somewhere nothing can query. As a
+  <code>language-guide</code> the standard is a document — <code>language show
+  comment-earns-its-place.guide.html</code> prints it, <code>language update</code> edits it, and
+  changing what counts as clutter never means touching this command.
+</p>
+<p>
+  A guide is defined in <code>language.template.html</code> as something stated and not enforced,
+  because it carries no <code>&lt;script&gt;</code>. That is exactly right here. The check that enforces
+  this one is not a function the guide could hold.
+</p>
+
+<h2>The three verdicts</h2>
+<p>
+  A comment gets <code>keep</code>, <code>cut</code> or <code>promote</code>. Two verdicts would be
+  enough to delete clutter, and would delete the wrong thing. A comment recording a rejected
+  alternative is not clutter and is also not where that rationale belongs, so a checker offering only
+  those two either keeps it in the wrong place or destroys it.
+</p>
+<p>
+  <code>promote</code> is the answer to that. The comment stays exactly where it is, and the command
+  prints the <code>knowledge add</code> line that moves it into the graph. So <code>autofix</code>
+  never destroys rationale: it only ever deletes what all of a comment's own content is already
+  visible in the code.
+</p>
+
+<h2>Commands</h2>
+<script type="mycelium/command">
+  import type { CommandContext } from "../../src/api.ts"
+  import { commentRanges } from "../templates/code-comments.ts"
+  import { readFileSync, writeFileSync } from "node:fs"
+  import { resolve as resolvePath } from "node:path"
+  import { spawnSync } from "node:child_process"
+  import { tmpdir } from "node:os"
+
+  // The same model language autofix uses. A verdict on one comment against the
+  // code under it is the same size of judgment as a one-shot rewrite.
+  const MODEL = "claude-haiku-4-5-20251001"
+
+  // Lines of code shown after each comment. A comment justifies itself against
+  // what it introduces, and twelve lines covers a function signature and the
+  // start of a body without turning one file into one enormous prompt.
+  const CONTEXT_LINES = 12
+
+  const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"]
+
+  const GUIDE = "language/guides/comment-earns-its-place.guide.html"
+
+  interface Candidate {
+    id: number
+    pos: number
+    end: number
+    raw: string
+    text: string
+    context: string
+    line: number
+  }
+
+  interface Verdict {
+    verdict: "keep" | "cut" | "promote"
+    reason: string
+  }
+
+  // Reads the standard out of the corpus. A missing guide throws rather than
+  // falling back to a built-in default: a silent default is a second copy of
+  // the criteria that nobody can find and nobody edits.
+  function readGuide({ fs }: CommandContext): string {
+    let doc
+    try {
+      doc = fs.get(GUIDE)
+    } catch {
+      throw new Error(`${GUIDE} is missing; this command judges against that guide and has no built-in standard`)
+    }
+    const el = doc.querySelector("language-guide")
+    if (!el) throw new Error(`${GUIDE} is not a language-guide`)
+    const field = (tag) => el.querySelector(tag)?.textContent?.trim() ?? ""
+    return [
+      field("language-title"),
+      "",
+      field("language-detail"),
+      "",
+      `A comment like this earns its place:\n${field("language-pass")}`,
+      "",
+      `A comment like this does not:\n${field("language-fail")}`,
+    ].join("\n")
+  }
+
+  // An .html file's comments come from each <script> it embeds, offset by
+  // where that script's text starts in the outer file. This is the same walk
+  // language autofix does, and for the same reason: this project keeps most of
+  // its code inside templates.
+  function candidates(source: string, target: string, cli): Candidate[] {
+    const found: { pos: number; end: number; raw: string; text: string }[] = []
+    if (SOURCE_EXTENSIONS.some((ext) => target.endsWith(ext))) {
+      found.push(...commentRanges(source))
+    } else if (target.endsWith(".html")) {
+      const { document } = cli.parseHTML(source)
+      let searchFrom = 0
+      for (const script of Array.from(document.querySelectorAll("script")) as any[]) {
+        const scriptText = script.textContent ?? ""
+        const offset = source.indexOf(scriptText, searchFrom)
+        if (offset === -1) continue
+        searchFrom = offset + scriptText.length
+        for (const r of commentRanges(scriptText)) {
+          found.push({ pos: offset + r.pos, end: offset + r.end, raw: r.raw, text: r.text })
+        }
+      }
+    } else {
+      throw new Error(`comments understands ${SOURCE_EXTENSIONS.join(", ")} and .html, not ${target}`)
+    }
+
+    return found.map((c, id) => ({
+      ...c,
+      id,
+      line: source.slice(0, c.pos).split("\n").length,
+      context: source.slice(c.end, c.end + 2000).split("\n").slice(0, CONTEXT_LINES + 1).join("\n"),
+    }))
+  }
+
+  function verdictPrompt(guide: string, items: Candidate[]): string {
+    const sections = items
+      .map((c) => `### comment ${c.id}\n"""\n${c.text}\n"""\n\nThe code it introduces:\n"""\n${c.context}\n"""`)
+      .join("\n\n")
+    return [
+      "You are judging whether each comment below earns its place in the code it sits above.",
+      "",
+      "The standard, which is a document in this project and the only standard that applies:",
+      "",
+      guide,
+      "",
+      "Answer for each comment with one of three verdicts.",
+      '"keep" — it says something the code cannot.',
+      '"cut" — everything it says is already visible in the code beneath it, or it narrates, or it explains the language itself, or it is a working note.',
+      '"promote" — it records a rejected alternative, a decision, or a constraint that argues with something. It is not clutter, and it belongs in this project\'s knowledge graph rather than in a comment.',
+      "",
+      "Prefer keep when torn. Deleting a comment that was carrying something is worse than leaving one that repeats itself.",
+      "",
+      sections,
+      "",
+      'Reply with ONLY a JSON object mapping each comment\'s number (as a string key) to {"verdict": "keep"|"cut"|"promote", "reason": "one short sentence"}. Every number above must appear as a key. No markdown fences, no explanation, nothing outside the JSON object.',
+    ].join("\n")
+  }
+
+  function judge(guide: string, items: Candidate[]): Map<number, Verdict> {
+    // Runs from the OS temp dir with no MCP servers, the same as language
+    // autofix. This project's own CLAUDE.md would otherwise load into a call
+    // that needs none of it.
+    const result = spawnSync("claude", ["-p", "--model", MODEL, "--strict-mcp-config"], {
+      input: verdictPrompt(guide, items),
+      encoding: "utf8",
+      maxBuffer: 16 * 1024 * 1024,
+      timeout: 4 * 60 * 1000,
+      cwd: tmpdir(),
+    })
+    if (result.error) throw new Error(`claude -p could not run: ${result.error.message}`)
+    if (result.status !== 0) throw new Error(`claude -p exited ${result.status}: ${(result.stderr ?? "").trim() || "(no stderr)"}`)
+    const cleaned = result.stdout.trim().replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "")
+    const out = new Map<number, Verdict>()
+    for (const [id, v] of Object.entries(JSON.parse(cleaned))) {
+      if (v && typeof v === "object" && "verdict" in (v as any)) out.set(Number(id), v as Verdict)
+    }
+    return out
+  }
+
+  // A comment opening with this tag is a working note: useful while someone
+  // writes the code, and never part of what the file ships. It needs no model to
+  // recognise, so it never reaches one — the tag is the author saying the
+  // verdict out loud, and asking anyway would let a model overrule them.
+  const WORKING_NOTE = /^\s*WIP\b:?/
+
+  // A doc comment on an exported function is not documentation about the code,
+  // it IS the code's output: `mycelium --help` prints the roster by reading
+  // these. Cutting one silently empties a command's description, and no gate
+  // catches it, because nothing validates the roster against anything.
+  //
+  // So these never reach the model at all. Asking whether they earn their place
+  // is asking the wrong question — an unread doc comment is still the only
+  // source of a line the tool prints. A first run of this command flagged three
+  // of them, including this command's own.
+  function isRosterDoc(c: { raw: string; context: string }): boolean {
+    return c.raw.trimStart().startsWith("/**") && /^\s*export\b/.test(c.context)
+  }
+
+  // One call for the whole file, not one per comment and not one per batch.
+  // Comments in a file argue with each other: three that each look defensible
+  // alone can be one point made three times, and only a reader holding all of
+  // them at once can say so. Splitting the file hides exactly that.
+  function judgeAll(guide: string, items: Candidate[]): { verdicts: Map<number, Verdict>; protectedCount: number } {
+    const verdicts = new Map<number, Verdict>()
+    const toJudge: Candidate[] = []
+    let protectedCount = 0
+    for (const c of items) {
+      if (isRosterDoc(c)) {
+        verdicts.set(c.id, { verdict: "keep", reason: "doc comment on an export; the roster prints it" })
+        protectedCount++
+      } else if (WORKING_NOTE.test(c.text)) {
+        verdicts.set(c.id, { verdict: "cut", reason: "working note, tagged WIP" })
+      } else {
+        toJudge.push(c)
+      }
+    }
+    if (toJudge.length) for (const [id, v] of judge(guide, toJudge)) verdicts.set(id, v)
+    return { verdicts, protectedCount }
+  }
+
+  // What to remove for a cut. The comment's own range stops at its last
+  // character, so deleting exactly that leaves the blank indented line it sat
+  // on. Widen to the start of its line when only whitespace precedes it, and
+  // through the newline that ends it, so the line goes with the comment.
+  function cutRange(source: string, c: Candidate): { pos: number; end: number } {
+    let pos = c.pos
+    const lineStart = source.lastIndexOf("\n", pos - 1) + 1
+    if (!source.slice(lineStart, pos).trim()) pos = lineStart
+    let end = c.end
+    const rest = source.slice(end)
+    const trailing = /^[ \t]*\r?\n/.exec(rest)
+    if (trailing) end += trailing[0].length
+    return { pos, end }
+  }
+
+  function loadCandidates({ fs, args, cli }: CommandContext) {
+    const target = args._[0]
+    if (!target) throw new Error("usage: mycelium comments check|autofix <file> [--diff]")
+    const absPath = resolvePath(process.cwd(), target)
+    const source = readFileSync(absPath, "utf8")
+    return { target, absPath, source, items: candidates(source, target, cli) }
+  }
+
+  function promoteHint(c: Candidate): string {
+    return `      pnpm mycelium knowledge add decision --title "…" --confidence NN --status completed --detail - --file <slug>   # from the comment at line ${c.line}`
+  }
+
+  /**
+   * Report a verdict on every comment in a file, and fail if any is clutter.
+   *
+   *   mycelium comments check <file>
+   *
+   * Judges .ts, .tsx, .js and .jsx files directly, and the <script> blocks
+   * inside .html files, since this project keeps most of its code in templates.
+   *
+   * Exits non-zero when it finds a comment to cut, so a hook can run it. It
+   * stays out of `validate` all the same: that gate walks the whole corpus and
+   * must give the same answer twice, and a model does not.
+   *
+   * The count at the end is the number worth reading. Every comment here can
+   * look defensible one at a time while the file as a whole exhausts a reader,
+   * and only the ratio shows that.
+   */
+  export function check(ctx: CommandContext) {
+    const { target, source, items } = loadCandidates(ctx)
+    if (!items.length) {
+      console.log(`${target}: no comments`)
+      return
+    }
+
+    const { verdicts, protectedCount } = judgeAll(readGuide(ctx), items)
+    const counts = { keep: 0, cut: 0, promote: 0 }
+    const promoted: Candidate[] = []
+
+    for (const c of items) {
+      const v = verdicts.get(c.id)
+      if (!v) continue
+      counts[v.verdict] = (counts[v.verdict] ?? 0) + 1
+      if (v.verdict === "promote") promoted.push(c)
+      if (v.verdict === "keep") continue
+      console.log(`${target}:${c.line}  ${v.verdict}\t${v.reason}`)
+      console.log(`    ${c.text.split("\n")[0].slice(0, 100)}`)
+    }
+
+    if (promoted.length) {
+      console.log(`\n${promoted.length} carry rationale that belongs in the graph. To move one:`)
+      for (const c of promoted) console.log(promoteHint(c))
+    }
+
+    const protectedNote = protectedCount ? `, ${protectedCount} of those never judged because the roster prints them` : ""
+    console.log(`\n${items.length} comments, ${counts.keep} earn their place, ${counts.cut} to cut, ${counts.promote} to promote${protectedNote}`)
+    if (counts.cut) process.exitCode = 1
+  }
+
+  /**
+   * Delete the comments that earn no place, and leave every other one alone.
+   *
+   *   mycelium comments autofix <file> [--diff]
+   *
+   * Applies by default and previews with --diff, the same way language autofix
+   * does, and for the reason that command settled on: a fix you have to run
+   * twice is a fix most people run once and forget.
+   *
+   * Only a `cut` is deleted. A `promote` stays exactly where it is and prints
+   * the knowledge add line that would move it. So this command can never
+   * destroy a rejected alternative or a constraint: the only comments it
+   * removes are ones the code beneath them already says in full.
+   *
+   * Ranges splice back to front. Cutting front to back shifts every later
+   * position by what the earlier cut removed.
+   */
+  export function autofix(ctx: CommandContext) {
+    const { target, absPath, source, items } = loadCandidates(ctx)
+    if (!items.length) {
+      console.log(`${target}: no comments`)
+      return
+    }
+
+    const { verdicts } = judgeAll(readGuide(ctx), items)
+    const cuts = items.filter((c) => verdicts.get(c.id)?.verdict === "cut")
+    const promoted = items.filter((c) => verdicts.get(c.id)?.verdict === "promote")
+
+    if (!cuts.length) {
+      console.log(`${target}: nothing to cut, ${items.length} comments all earn their place`)
+    }
+
+    if (ctx.args.diff) {
+      for (const c of cuts) {
+        console.log(`\n${target}:${c.line}  ${verdicts.get(c.id)?.reason}`)
+        console.log(c.raw.split("\n").map((l) => `-${l}`).join("\n"))
+      }
+    } else if (cuts.length) {
+      let next = source
+      for (const c of [...cuts].sort((a, b) => b.pos - a.pos)) {
+        const { pos, end } = cutRange(source, c)
+        next = next.slice(0, pos) + next.slice(end)
+      }
+      writeFileSync(absPath, next)
+      console.log(`wrote    ${target}  (${cuts.length} cut, ${items.length - cuts.length} kept)`)
+    }
+
+    if (promoted.length) {
+      console.log(`\n${promoted.length} left in place, carrying rationale that belongs in the graph:`)
+      for (const c of promoted) {
+        console.log(`  ${target}:${c.line}  ${verdicts.get(c.id)?.reason}`)
+        console.log(promoteHint(c))
+      }
+    }
+  }
+</script>
+
+</body>
+</html>

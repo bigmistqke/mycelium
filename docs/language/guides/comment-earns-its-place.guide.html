@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide: A comment earns its place by saying what the code cannot.</title>
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../../templates/language.template.css">
+</head>
+<body>
+<language-guide data-conforms-to="../../templates/language.template.html#language-guide">
+  <language-title>A comment earns its place by saying what the code cannot.</language-title>
+  <language-pass>// Runs from the OS temp dir, not this repository. Loading the project's CLAUDE.md and its MCP servers is most of what made an early version take 14s per call instead of 3s.</language-pass>
+  <language-fail>// Apply edits in reverse order. First we collect the ranges, then we loop backwards over them, then we return the result.</language-fail>
+  <language-detail><p>Code already says what it does. A comment repeating that costs a reader twice:
+once to read it, and again to check whether it still matches.</p>
+<p>Four things earn the space. An alternative someone rejected, and why. A
+constraint from outside the file, such as a format another tool demands. A reason
+the obvious change breaks something.</p>
+<p>A consequence a reader cannot see from here earns it too.</p>
+<p>Four things do not. Restating the line below. Narrating the order of
+operations. Explaining a language feature.</p>
+<p>The fourth is leaking the reasoning that helped whoever wrote the code and
+helps nobody reading it. That one is the common failure and the hardest to spot,
+because it felt useful at the moment of writing. A working note is not
+documentation.</p>
+<p>Some clutter is not clutter but a decision in the wrong place. A comment naming
+a rejected alternative is a
+<a href="../../templates/knowledge.template.html#knowledge-decision">knowledge-decision</a>
+that nothing can query, and moving it beats deleting it.</p>
+</language-detail>
+</language-guide>
+</body></html>

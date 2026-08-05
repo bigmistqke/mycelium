@@ -118,7 +118,7 @@
 &lt;/language-term&gt;</code></pre>
 
 <template id="language-rule">
-  <language-rule>
+  <language-rule data-validates="^(all|html|markdown|javascript(/(comment|jsdoc))?)( +(all|html|markdown|javascript(/(comment|jsdoc))?))*$">
     <language-title required></language-title>
     <language-pass required></language-pass>
     <language-fail required></language-fail>
@@ -135,7 +135,7 @@
     <language-detail></language-detail>
   </language-guide>
 </template>
-<pre><code>&lt;language-rule&gt;
+<pre><code>&lt;language-rule data-validates="html markdown"&gt;
   &lt;language-title&gt;&hellip; the rule, in one line &hellip;&lt;/language-title&gt;
   &lt;language-pass&gt;&hellip; an example that passes &hellip;&lt;/language-pass&gt;
   &lt;language-fail&gt;&hellip; an example that fails &hellip;&lt;/language-fail&gt;
@@ -225,7 +225,7 @@
       <a data-rel="alternative_to" href="../language/terms/harness.term.html">harness</a>
     </language-term>
 
-    <language-rule data-conforms-to="../templates/language.template.html#language-rule">
+    <language-rule data-validates="all" data-conforms-to="../templates/language.template.html#language-rule">
       <language-title>Spell every term out; do not abbreviate.</language-title>
       <language-pass>The generic validator reads the schema attributes on the template.</language-pass>
       <language-fail>The generic validator reads the schema attrs on the tmpl.</language-fail>
@@ -378,6 +378,29 @@
     }
   }
 
+  // Which prose a rule applies to, written on the root element rather than as a
+  // child field. The audit dispatches on it, the same way it already dispatches
+  // on data-audits and data-touches, and those live as attributes for the same
+  // reason: the engine reads them to decide what to run, and a reader reads the
+  // fields.
+  //
+  // A rule with no such attribute would be claiming to apply everywhere, and
+  // two of the six rules here cannot — they need markup, so they never fire on
+  // a comment whatever they say. Requiring the attribute turns that accident
+  // into a statement, which is why "all" is a value rather than an absence.
+  const VALIDATES = /^(all|html|markdown|javascript(\/(comment|jsdoc))?)( +(all|html|markdown|javascript(\/(comment|jsdoc))?))*$/
+  function applyValidates(type, root, args) {
+    if (args.validates === undefined) {
+      if (type === 'rule') throw new Error('--validates is required on a rule: all, html, markdown, javascript, javascript/comment, javascript/jsdoc')
+      return
+    }
+    if (type !== 'rule') throw new Error(`--validates is not a field of language-${type}; only a rule declares what it validates.`)
+    if (!VALIDATES.test(args.validates.trim())) {
+      throw new Error(`--validates must be a space-separated list of: all, html, markdown, javascript, javascript/comment, javascript/jsdoc — got "${args.validates}"`)
+    }
+    root.setAttribute('data-validates', args.validates.trim())
+  }
+
   /**
    * Create a new language-term, language-rule or language-guide file.
    *
@@ -464,6 +487,7 @@
     doc.querySelector('title').textContent = `${label}: ${args.title}`
 
     const root = doc.querySelector(`language-${type}`)
+    applyValidates(type, root, args)
     for (const tag of FIELD_ORDER[type]) {
       const value = values[tag]
       if (value === undefined || value === '') continue
@@ -506,6 +530,9 @@
     const doc = fs.get(path)
     const root = doc.querySelector('[data-conforms-to]')
     const type = root.tagName.toLowerCase().replace('language-', '')
+    // Unlike add, an omitted --validates here leaves whatever the file already
+    // carries, the same as every other field on update.
+    if (args.validates !== undefined) applyValidates(type, root, args)
 
     const values = fieldValues(args)
     rejectForeignFields(type, values)
@@ -1252,6 +1279,7 @@
     }
 
     console.log(`${pathFor(file)}\n${type}\t${field('language-title') ?? ''}`)
+    section('validates', el.getAttribute('data-validates'))
 
     if (type === 'term') {
       section('part of speech', field('language-part-of-speech'))
@@ -1304,7 +1332,7 @@
   import { loadModule, parseHTML } from "../../src/utils.ts"
   import { resolve as resolvePath } from "node:path"
   import { PROTECTED_TAGS, extractProse, stripProtected, markdownToHtmlFragment } from "./language-prose.ts"
-  import { extractComments } from "./code-comments.ts"
+  import { commentRanges } from "./code-comments.ts"
   /**
    * Prose in the corpus obeys every rule that carries a check.
    *
@@ -1339,17 +1367,28 @@
   // other embedded script, so a rule can import and can be TypeScript. An
   // AuditFs is rooted one level above docs/, which is why the paths it lists
   // start with "docs/" and are resolved against that root here.
+  // Which kinds of prose a rule applies to, read off the root element. Both
+  // "all" and a bare "javascript" cover narrower kinds, so this is a prefix
+  // match rather than equality. A rule declaring javascript fires on a doc
+  // block and on an inline comment; one declaring javascript/jsdoc fires on
+  // only the first.
+  function appliesTo(rule, kind) {
+    return rule.validates.some((scope) => scope === 'all' || kind === scope || kind.startsWith(scope + '/'))
+  }
+
   async function loadRules(fs) {
     const rules = []
     for (const path of fs.list('docs/language', { ext: '.rule.html' })) {
+      const root = fs.parse(path).querySelector('language-rule')
       const script = fs.parse(path).querySelector('language-rule > script')
       if (!script) continue
+      const validates = (root?.getAttribute('data-validates') ?? 'all').trim().split(/\s+/)
       // Loaded through the engine's own loader rather than a data: URL. A
       // data: URL has no base to resolve anything against, so a rule wanting a
       // library could not have one. A real file URL is what lets a rule import
       // by bare name.
       const mod = await loadModule(resolvePath(fs.root, path), script)
-      if (typeof mod.check === 'function') rules.push({ path, check: mod.check })
+      if (typeof mod.check === 'function') rules.push({ path, check: mod.check, validates })
     }
     return rules
   }
@@ -1375,12 +1414,23 @@
 
   // A comment carries no markup of its own — it is not a paragraph, it has
   // no bolded opener to have — so it gets no second argument, the same as
-  // stdin text in lint's own mode. Only a rule that reads plain text can
-  // fire here, which is the correct half of the vocabulary for a comment.
+  // stdin text in lint's own mode.
+  //
+  // That absence used to decide which rules fire. A rule needing markup
+  // returned nothing here, so it skipped comments without ever saying so.
+  // data-validates makes the same split a declaration, and a rule now has to
+  // name javascript to reach this at all.
+  //
+  // commentRanges rather than extractComments, because the two kinds differ
+  // and only the raw text tells them apart. A doc block documents a
+  // declaration; an inline comment explains a position inside a body. Rules
+  // about one are wrong about the other.
   function checkComments(path, source, rules, language, violations) {
-    for (const comment of extractComments(source)) {
+    for (const comment of commentRanges(source)) {
+      const kind = comment.raw.trimStart().startsWith('/**') ? 'javascript/jsdoc' : 'javascript/comment'
       for (const rule of rules) {
-        for (const found of rule.check(comment, undefined, language)) {
+        if (!appliesTo(rule, kind)) continue
+        for (const found of rule.check(comment.text, undefined, language)) {
           violations.push(`${path}: ${found.message}`)
         }
       }

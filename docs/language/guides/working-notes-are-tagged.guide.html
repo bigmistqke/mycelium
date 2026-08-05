@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide: Tag a working note WIP, and do not let it survive the work.</title>
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../../templates/language.template.css">
+</head>
+<body>
+<language-guide data-conforms-to="../../templates/language.template.html#language-guide">
+  <language-title>Tag a working note WIP, and do not let it survive the work.</language-title>
+  <language-pass>// WIP: the second branch double-counts when the range is empty, check before merging</language-pass>
+  <language-fail>// the second branch double-counts when the range is empty, check before merging</language-fail>
+  <language-detail><p>A note to yourself while writing code is worth having. It holds what you have
+not settled yet, and deleting it to keep the file tidy loses the thing you were
+about to come back to.</p>
+<p>It stops being worth having the moment the work lands. Nobody reading the file
+later can tell an unresolved question from a description of how the code works,
+so an untagged note reads as documentation and outlives its usefulness.</p>
+<p>Open one with <code>WIP:</code>. The tag says which kind of comment it is, and
+says it in a form both a reader and a command can see.</p>
+<p><a href="../../commands/comments.command.html">The comments command</a> cuts a
+tagged note without asking a model, since the tag already carries the verdict. So
+this guide is the convention, and that command is what happens when someone
+forgets it.</p>
+</language-detail>
+</language-guide>
+</body></html>
