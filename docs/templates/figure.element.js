@@ -33,40 +33,55 @@
     }
   }
 
-  // Where a connector leaves one box and meets the next, and where its label
-  // belongs. The label anchor comes back with the path because it has to sit ON
-  // the path: an earlier version averaged the two boxes' centres, which put the
-  // back edge's label a hundred pixels from the line it named.
-  //
-  // Downward is the common case and gets a vertical elbow. Several edges
-  // leaving one box would share an elbow height and overprint each other, so
-  // each drops into its own lane, and the label goes just above its target
-  // where the columns already separate them.
-  function route(a, b, lane) {
-    if (b.top >= a.bottom - 1) {
-      var gap = b.top - a.bottom
-      var y = a.bottom + gap / 2 + lane * 6
-      return {
-        d: "M" + a.midX + "," + a.bottom + " L" + a.midX + "," + y +
-           " L" + b.midX + "," + y + " L" + b.midX + "," + b.top,
-        // On the vertical drop, halfway between the elbow and the box. Sitting
-        // it just above the target put it on the arrowhead, where the label and
-        // the thing it points at fight for the same few pixels.
-        label: { x: b.midX, y: (y + b.top) / 2 },
-      }
-    }
-    // Anything not going downward leaves sideways, so a line back up the figure
-    // does not run through the boxes between.
-    // Far enough out that a label centred on the line still clears the boxes
-    // this route passes. Hugging them and nudging the label aside instead was
-    // worse: a chip beside a wire stops reading as that wire's label, and the
-    // overlap it avoided was the route's fault rather than the label's.
-    var side = a.right + 56 + lane * 12
-    return {
-      d: "M" + a.right + "," + a.midY + " L" + side + "," + a.midY +
-         " L" + side + "," + b.midY + " L" + b.right + "," + b.midY,
-      label: { x: side, y: (a.midY + b.midY) / 2 },
-    }
+  // How much of the gap between two rows the horizontal runs may use. Lanes
+  // live in the top of it and labels in the rest, so a label can never land on
+  // another edge's run — which is what put "html" on the line out to "css".
+  // Separating the two by band is a rule; nudging either one is not.
+  var LANE_BAND = 0.45
+
+  // Forward edges sharing a gap, each given its own height inside the lane
+  // band. The widest run takes the lane nearest the source, so a long
+  // horizontal crosses above the short ones rather than through them.
+  function assignLanes(edges) {
+    var channels = {}
+    edges.forEach(function (e) {
+      if (e.back) return
+      var key = Math.round(e.a.bottom) + ":" + Math.round(e.b.top)
+      ;(channels[key] = channels[key] || []).push(e)
+    })
+    Object.keys(channels).forEach(function (key) {
+      var group = channels[key]
+      group.sort(function (p, q) {
+        return Math.abs(q.b.midX - q.a.midX) - Math.abs(p.b.midX - p.a.midX)
+      })
+      group.forEach(function (e, i) {
+        var band = (e.b.top - e.a.bottom) * LANE_BAND
+        e.lane = e.a.bottom + (band * (i + 1)) / (group.length + 1)
+      })
+    })
+  }
+
+  // Back edges run in a gutter down the left of the figure, outside every
+  // column. Sending them out the right of their source ran the wire through
+  // whatever sat in the next column along, so "re-enters" was not overlapping
+  // the css box by bad luck — its wire crossed that box. The stylesheet
+  // reserves the gutter as padding, so nothing else can be there.
+  var GUTTER = 22
+  var GUTTER_STEP = 13
+
+  function routeForward(e) {
+    e.d = "M" + e.a.midX + "," + e.a.bottom + " L" + e.a.midX + "," + e.lane +
+          " L" + e.b.midX + "," + e.lane + " L" + e.b.midX + "," + e.b.top
+    // Below every lane, on the drop into its own target. Two labels cannot
+    // meet there either, since each target owns its own column.
+    e.labelAt = { x: e.b.midX, y: (e.lane + e.b.top) / 2 }
+  }
+
+  function routeBack(e, index) {
+    var x = GUTTER + index * GUTTER_STEP
+    e.d = "M" + e.a.left + "," + e.a.midY + " L" + x + "," + e.a.midY +
+          " L" + x + "," + e.b.midY + " L" + e.b.left + "," + e.b.midY
+    e.labelAt = { x: x, y: (e.a.midY + e.b.midY) / 2 }
   }
 
   var SVG = "http://www.w3.org/2000/svg"
@@ -96,46 +111,52 @@
     defs.appendChild(marker)
     svg.appendChild(defs)
 
-    // Which lane an edge takes, counted per source box. Two edges leaving the
-    // same node would otherwise draw the same elbow twice.
-    var lanes = {}
-    var labels = []
-
-    // Every wire first, before any label. SVG paints in document order, so a
-    // label drawn during its own edge's turn still ends up under the wires of
-    // every edge after it. That struck through two of the three labels in the
-    // first render: the third edge's horizontal lane ran at exactly the height
-    // the first two had put their text.
+    // Collect every edge with the boxes it joins, before routing any of them.
+    // Routing one at a time is what made lanes an offset per source rather than
+    // an allocation per channel, and an offset cannot know what else is in the
+    // gap it is crossing.
+    var edges = []
     Array.prototype.forEach.call(graph.querySelectorAll("figure-edge"), function (edge) {
-      var fromName = edge.getAttribute("from")
-      var from = graph.querySelector('figure-node[id="' + fromName + '"]')
+      var from = graph.querySelector('figure-node[id="' + edge.getAttribute("from") + '"]')
       var to = graph.querySelector('figure-node[id="' + edge.getAttribute("to") + '"]')
       // The audit catches a name that resolves to nothing, so skipping here
       // only covers a page opened without validation having run.
       if (!from || !to) return
+      edges.push({
+        a: boxOf(from, origin),
+        b: boxOf(to, origin),
+        // Read, not measured. Comparing box positions would let a
+        // rearrangement restyle an edge with nothing in the document changing,
+        // and an inference from measured state always has a wrong answer
+        // available to it. The audit checks the declaration against the rows,
+        // so a lie fails the build rather than rendering.
+        back: edge.hasAttribute("data-back"),
+        text: edge.textContent.trim(),
+      })
+    })
 
-      var a = boxOf(from, origin)
-      var b = boxOf(to, origin)
-      lanes[fromName] = (lanes[fromName] || 0) + 1
-      var wire = route(a, b, lanes[fromName] - 1)
+    assignLanes(edges)
+    var backSeen = 0
+    edges.forEach(function (e) {
+      if (e.back) routeBack(e, backSeen++)
+      else routeForward(e)
+    })
 
-      // Read, not measured. Comparing box positions would let a rearrangement
-      // restyle an edge with nothing in the document changing, and an inference
-      // from measured state always has a wrong answer available to it. The
-      // audit checks the declaration against the rows, so a lie fails the build
-      // rather than rendering.
-      var back = edge.hasAttribute("data-back")
-
+    // Every wire first, before any label. SVG paints in document order, so a
+    // label drawn during its own edge's turn would end up under the wires of
+    // every edge after it.
+    edges.forEach(function (e) {
       var path = document.createElementNS(SVG, "path")
       path.setAttribute("class", "wire")
-      path.setAttribute("d", wire.d)
+      path.setAttribute("d", e.d)
       path.setAttribute("marker-end", "url(#" + marker.getAttribute("id") + ")")
-      if (back) path.setAttribute("data-kind", "back")
+      if (e.back) path.setAttribute("data-kind", "back")
       svg.appendChild(path)
-
-      var label = edge.textContent.trim()
-      if (label) labels.push({ text: label, at: wire.label, back: back })
     })
+
+    var labels = edges
+      .filter(function (e) { return e.text })
+      .map(function (e) { return { text: e.text, at: e.labelAt, back: e.back } })
 
     graph.insertBefore(svg, graph.firstChild)
 

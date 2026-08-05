@@ -12,7 +12,10 @@ figure-graph {
      another column inherited the space and its own edges came out longer than
      its neighbours' for no reason a reader could see. */
   gap: 2.75rem 1.25rem;
-  padding: 1.5rem;
+  /* Wider on the left: that strip is the gutter every back edge runs down, kept
+     outside the columns so a feedback wire never crosses a box. The element's
+     GUTTER constant has to sit inside it. */
+  padding: 1.5rem 1.5rem 1.5rem 3.5rem;
   margin: 1.5rem 0;
   border: 1px solid var(--border);
   border-radius: 8px;
