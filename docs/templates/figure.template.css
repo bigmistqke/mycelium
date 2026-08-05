@@ -60,21 +60,28 @@ figure-graph > svg.figure-wires {
   pointer-events: none;
   overflow: visible;
 }
-figure-graph > svg.figure-wires path {
+/* Wires only. The arrowhead lives in a <marker> and is also a path, so this
+   has to name the wires rather than every path in the overlay — an earlier
+   version filled nothing and drew hollow arrowheads. */
+figure-graph > svg.figure-wires path.wire {
   fill: none;
   stroke: var(--muted);
   stroke-width: 1.2;
 }
-figure-graph > svg.figure-wires path[data-kind="back"] {
+figure-graph > svg.figure-wires path.wire[data-kind="back"] {
   stroke: var(--accent);
   stroke-dasharray: 4 3;
+}
+/* A label sits on its own wire, so it needs to knock a hole in the line rather
+   than overprint it. The rect does that; a text halo left the wire showing
+   through the word gaps, which read as underscores. */
+figure-graph > svg.figure-wires rect.label-bed {
+  fill: var(--code-bg);
 }
 figure-graph > svg.figure-wires text {
   font: 500 10px ui-monospace, SFMono-Regular, Menlo, monospace;
   fill: var(--muted);
-  paint-order: stroke;
-  stroke: var(--code-bg);
-  stroke-width: 3px;
+  dominant-baseline: middle;
 }
 
 /* A grid of boxes stacks into a column on a narrow screen. The connectors

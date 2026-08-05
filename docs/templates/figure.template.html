@@ -76,6 +76,8 @@
 
 <template id="figure-graph">
   <figure-graph data-columns="^[0-9]+$">
+    <figure-node></figure-node>
+    <figure-edge></figure-edge>
   </figure-graph>
 </template>
 
@@ -103,6 +105,23 @@
   <a href="../knowledge/2026-08-05-rule-declares-what-it-validates.decision.html">the schema grew
   today</a>: a value is a pattern the instance must match, so a figure declaring
   <code>data-at="middle"</code> fails validation rather than rendering somewhere surprising.
+</p>
+
+<h2>What the schema cannot check yet</h2>
+<p>
+  A figure holds many nodes and many edges. The schema declares each child once, which permits every
+  occurrence, and then reads one of them. So a figure with twelve nodes has one node checked and eleven
+  ignored.
+</p>
+<p>
+  That is why the constraints above sit on the placeholders and still do not bite. The
+  <a href="../knowledge/2026-08-05-schema-checks-lists.goal.html">follow-up that would fix it</a> adds two
+  reserved words, and until then this family carries an audit doing work a schema should do.
+</p>
+<p>
+  The gap belongs to the schema rather than to this family.
+  <a href="../knowledge/2026-08-05-schema-checks-only-the-first-child.observation.html">Eleven plan
+  documents lose the same way</a>, and nothing reported it, because a check that never runs is silent.
 </p>
 
 <h2>The audit</h2>

@@ -33,18 +33,33 @@
     }
   }
 
-  // Where a connector leaves one box and meets the next. Downward is the
-  // common case and gets a vertical elbow; anything else leaves sideways, so a
-  // line back up the figure does not run through the boxes between.
-  function route(a, b) {
+  // Where a connector leaves one box and meets the next, and where its label
+  // belongs. The label anchor comes back with the path because it has to sit ON
+  // the path: an earlier version averaged the two boxes' centres, which put the
+  // back edge's label a hundred pixels from the line it named.
+  //
+  // Downward is the common case and gets a vertical elbow. Several edges
+  // leaving one box would share an elbow height and overprint each other, so
+  // each drops into its own lane, and the label goes just above its target
+  // where the columns already separate them.
+  function route(a, b, lane) {
     if (b.top >= a.bottom - 1) {
-      var midY = (a.bottom + b.top) / 2
-      return "M" + a.midX + "," + a.bottom + " L" + a.midX + "," + midY +
-             " L" + b.midX + "," + midY + " L" + b.midX + "," + b.top
+      var gap = b.top - a.bottom
+      var y = a.bottom + Math.min(10 + lane * 6, gap * 0.75)
+      return {
+        d: "M" + a.midX + "," + a.bottom + " L" + a.midX + "," + y +
+           " L" + b.midX + "," + y + " L" + b.midX + "," + b.top,
+        label: { x: b.midX, y: b.top - 9 },
+      }
     }
-    var side = a.right + 18
-    return "M" + a.right + "," + a.midY + " L" + side + "," + a.midY +
-           " L" + side + "," + b.midY + " L" + b.right + "," + b.midY
+    // Anything not going downward leaves sideways, so a line back up the figure
+    // does not run through the boxes between.
+    var side = a.right + 18 + lane * 10
+    return {
+      d: "M" + a.right + "," + a.midY + " L" + side + "," + a.midY +
+         " L" + side + "," + b.midY + " L" + b.right + "," + b.midY,
+      label: { x: side, y: (a.midY + b.midY) / 2 },
+    }
   }
 
   var SVG = "http://www.w3.org/2000/svg"
@@ -73,29 +88,48 @@
     defs.appendChild(marker)
     svg.appendChild(defs)
 
+    // Which lane an edge takes, counted per source box. Two edges leaving the
+    // same node would otherwise draw the same elbow twice.
+    var lanes = {}
+
     Array.prototype.forEach.call(graph.querySelectorAll("figure-edge"), function (edge) {
-      var from = graph.querySelector('figure-node[id="' + edge.getAttribute("from") + '"]')
+      var fromName = edge.getAttribute("from")
+      var from = graph.querySelector('figure-node[id="' + fromName + '"]')
       var to = graph.querySelector('figure-node[id="' + edge.getAttribute("to") + '"]')
       // The audit catches a name that resolves to nothing, so skipping here
       // only covers a page opened without validation having run.
       if (!from || !to) return
 
-      var a = boxOf(from, origin)
-      var b = boxOf(to, origin)
+      lanes[fromName] = (lanes[fromName] || 0) + 1
+      var wire = route(boxOf(from, origin), boxOf(to, origin), lanes[fromName] - 1)
+
       var path = document.createElementNS(SVG, "path")
-      path.setAttribute("d", route(a, b))
+      path.setAttribute("class", "wire")
+      path.setAttribute("d", wire.d)
       path.setAttribute("marker-end", "url(#" + marker.getAttribute("id") + ")")
-      if (b.top < a.top) path.setAttribute("data-kind", "back")
+      if (boxOf(to, origin).top < boxOf(from, origin).top) path.setAttribute("data-kind", "back")
       svg.appendChild(path)
 
       var label = edge.textContent.trim()
       if (!label) return
+      // A rect behind the text, sized from the glyphs once they exist. A stroke
+      // halo left the wire showing through the gaps between words, so "js ts
+      // tsx" read as one underscored word.
       var text = document.createElementNS(SVG, "text")
-      text.setAttribute("x", (a.midX + b.midX) / 2 + 6)
-      text.setAttribute("y", (a.midY + b.midY) / 2)
+      text.setAttribute("x", wire.label.x)
+      text.setAttribute("y", wire.label.y)
       text.setAttribute("text-anchor", "middle")
       text.textContent = label
       svg.appendChild(text)
+
+      var box = text.getBBox()
+      var bed = document.createElementNS(SVG, "rect")
+      bed.setAttribute("class", "label-bed")
+      bed.setAttribute("x", box.x - 3)
+      bed.setAttribute("y", box.y - 1)
+      bed.setAttribute("width", box.width + 6)
+      bed.setAttribute("height", box.height + 2)
+      svg.insertBefore(bed, text)
     })
 
     graph.insertBefore(svg, graph.firstChild)
