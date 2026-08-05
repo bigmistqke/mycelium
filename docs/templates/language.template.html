@@ -1200,6 +1200,90 @@
       console.log(`${path}\t${type}\t${title}`)
     }
   }
+
+  /**
+   * Print one entry in full, including a rule's check.
+   *
+   *   mycelium language show <file>
+   *
+   * <file> is a whole existing filename including its .term.html, .rule.html or
+   * .guide.html suffix — the same argument update, link and unlink take, and
+   * contrast add, whose --file is a slug you choose.
+   *
+   * list answers which entries exist. This answers what one of them demands,
+   * and the split is deliberate: folding the second into the first makes the
+   * roster unreadable when all you wanted was the names.
+   *
+   * A rule's title is an aspiration and its check is the contract, so the check
+   * prints verbatim rather than described. The two can differ by a lot.
+   * Take the rule titled "Refer only to things a reader of this repository can
+   * open". Its check matches a bare number sign followed by digits and nothing
+   * else, which is far narrower than the title suggests.
+   * Now take "Keep a paragraph under five sentences". Its check rejects a
+   * paragraph of exactly five, which is stricter than the title suggests.
+   * Reading either title alone leads a writer wrong, in opposite directions.
+   *
+   * The pass and fail examples print for the same reason. A rule declares both,
+   * because every reader reads a rule without them differently — and until now
+   * nothing printed them, so the examples existed and no command reached them.
+   *
+   * A guide prints the same way and says so where the check would be. That a
+   * guide carries no check is the whole distinction between the two types, and
+   * a reader consulting one deserves to see it stated rather than inferred from
+   * an absence.
+   */
+  export function show({ fs, args }: CommandContext) {
+    const file = args._[0]
+    requireArgs([file, '<file>'])
+
+    const doc = fs.get(pathFor(file))
+    const el = doc.querySelector('[data-conforms-to]')
+    if (!el) throw new Error(`${file} declares no conformance, so it is not a language entry`)
+    const type = el.tagName.toLowerCase().replace('language-', '')
+
+    // textContent, not innerHTML. A pass example wraps the wording it
+    // demonstrates in markup so the rule's own audit skips it, and a reader
+    // consulting the rule wants the wording rather than the wrapper.
+    const field = (tag) => el.querySelector(tag)?.textContent?.trim()
+    const section = (label, value) => {
+      if (!value) return
+      console.log(`\n${label}`)
+      for (const line of value.split('\n')) console.log(`  ${line.trim()}`)
+    }
+
+    console.log(`${pathFor(file)}\n${type}\t${field('language-title') ?? ''}`)
+
+    if (type === 'term') {
+      section('part of speech', field('language-part-of-speech'))
+      section('means', field('language-meaning'))
+      section('written instead of', field('language-avoid'))
+    } else {
+      section('passes', field('language-pass'))
+      section('fails', field('language-fail'))
+    }
+    section('detail', field('language-detail'))
+
+    if (type === 'term') return
+
+    // The script decides whether an entry is enforced, so its absence is the
+    // answer to a question rather than a field that happens to be empty. A
+    // guide is stated and not checked, and printing nothing would leave a
+    // reader unable to tell that from a display bug.
+    const check = el.querySelector('script')?.textContent
+    if (check?.trim()) {
+      // Strip the indentation the file gave the whole block, and no more. A
+      // fixed number of spaces flattens the check's own nesting in any file
+      // that indents differently. Files here do differ: a check opening on the
+      // same line as <script> starts flush left, and one opening on its own
+      // line does not.
+      const lines = check.replace(/^\n/, '').trimEnd().split('\n')
+      const shared = Math.min(...lines.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length))
+      console.log('\ncheck')
+      for (const line of lines) console.log(`  ${line.slice(shared)}`)
+    } else {
+      console.log('\ncheck\n  none — this is guidance, stated and not enforced')
+    }
+  }
 </script>
 
 <h2>The audit that runs the rules</h2>

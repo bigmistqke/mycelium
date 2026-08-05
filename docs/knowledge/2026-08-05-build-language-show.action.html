@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Add language show, a per-entry read that prints the pass and fail examples and the check verbatim</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Add language show, a per-entry read that prints the pass and fail examples and the check verbatim</knowledge-title>
+  <knowledge-confidence>88</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>One new export on
+<a href="../templates/language.template.html">language.template.html</a>'s command
+script, beside <code>list</code>. It takes the whole filename, the way
+<code>update</code> and <code>link</code> do, and prints the entry's fields
+followed by its check.</p>
+<p>A term prints its part of speech, its meaning and the words it replaces. A rule
+or guide prints the passing example, the failing example, and then either the check
+source or a line saying that guidance carries no check.</p>
+<p>The roster picks the command up from its own doc comment, so nothing else needed
+editing. CLAUDE.md documents the knowledge and spec commands only, and never
+listed this family, so it stays as it is.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-05-language-show-command.goal.html">the gap this command closes</a>
+  <a data-rel="leads_to" href="./2026-08-05-dedent-needs-two-files.outcome.html">what running it against a second file found</a>
+</knowledge-action>
+</body></html>
