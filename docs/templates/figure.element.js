@@ -145,7 +145,8 @@
   FigureGraph.prototype.connectedCallback = function () {
     var graph = this
     var columns = graph.getAttribute("data-columns")
-    if (columns) graph.style.gridTemplateColumns = "repeat(" + columns + ", 1fr)"
+    // minmax(0, …), for the reason the stylesheet gives on grid-auto-columns.
+    if (columns) graph.style.gridTemplateColumns = "repeat(" + columns + ", minmax(0, 1fr))"
 
     Array.prototype.forEach.call(graph.querySelectorAll("figure-node"), function (node) {
       var cell = cellOf(node)

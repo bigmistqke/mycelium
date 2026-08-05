@@ -12,7 +12,11 @@ figure-graph {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--code-bg);
-  grid-auto-columns: 1fr;
+  /* minmax(0, …) rather than a bare 1fr. A bare fraction is minmax(auto, 1fr),
+     so a track refuses to shrink under the widest unbreakable word inside it,
+     and one long identifier pushes the whole grid past the padding and out
+     through the border. */
+  grid-auto-columns: minmax(0, 1fr);
   justify-items: stretch;
   align-items: start;
 }
@@ -21,6 +25,10 @@ figure-node {
   display: block;
   position: relative;
   z-index: 1;
+  /* A grid item's own floor is its min-content width, so a long identifier
+     needs permission to break before the track can be narrow. */
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: 0.55rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: 6px;
