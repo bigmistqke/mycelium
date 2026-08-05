@@ -38,6 +38,12 @@
     <code>&lt;language-rule data-validates="^(all|html|…)$"&gt;</code> makes that attribute required and
     closes its vocabulary. The cost is that a misspelt schema word becomes a requirement for an attribute
     of that name, which fails loudly rather than silently.</li>
+  <li>A leading <code>?</code> on that value marks the attribute optional, and whatever follows is still
+    the pattern. <code>data-back="?"</code> says an instance may carry <code>data-back</code> and puts no
+    constraint on it; <code>data-back="?^(soft|hard)$"</code> says it may carry one and closes the values
+    if it does. Nothing is ambiguous here, because a regular expression cannot begin with <code>?</code> —
+    it quantifies nothing and throws. Without the marker every declared attribute is mandatory, so a
+    schema could not describe a flag only some instances carry.</li>
   <li><code>enum</code> — a whitespace-separated list of the only exact values the field's trimmed text may
     take.</li>
 </ul>
@@ -187,13 +193,20 @@
     function checkAttributes(placeholder, target, label) {
       for (const attr of Array.from(placeholder.attributes)) {
         if (SCHEMA_WORDS.has(attr.name)) continue
+        // A leading ? marks the attribute optional, and the rest is still the
+        // pattern. There is no ambiguity to worry about: a regular expression
+        // cannot begin with ?, which quantifies nothing and throws. Without
+        // this every declared attribute is mandatory, so a schema could not
+        // describe a flag that only some instances carry.
+        const optional = attr.value.startsWith('?')
+        const pattern = optional ? attr.value.slice(1) : attr.value
         if (!target.hasAttribute(attr.name)) {
-          errors.push(`${label} must carry ${attr.name}`)
+          if (!optional) errors.push(`${label} must carry ${attr.name}`)
           continue
         }
         const value = target.getAttribute(attr.name).trim()
-        if (attr.value && !new RegExp(attr.value).test(value)) {
-          errors.push(`${label}'s ${attr.name} must match ${attr.value}, got "${value}"`)
+        if (pattern && !new RegExp(pattern).test(value)) {
+          errors.push(`${label}'s ${attr.name} must match ${pattern}, got "${value}"`)
         }
       }
     }

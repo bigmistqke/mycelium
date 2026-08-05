@@ -119,15 +119,22 @@
       lanes[fromName] = (lanes[fromName] || 0) + 1
       var wire = route(a, b, lanes[fromName] - 1)
 
+      // Read, not measured. Comparing box positions would let a rearrangement
+      // restyle an edge with nothing in the document changing, and an inference
+      // from measured state always has a wrong answer available to it. The
+      // audit checks the declaration against the rows, so a lie fails the build
+      // rather than rendering.
+      var back = edge.hasAttribute("data-back")
+
       var path = document.createElementNS(SVG, "path")
       path.setAttribute("class", "wire")
       path.setAttribute("d", wire.d)
       path.setAttribute("marker-end", "url(#" + marker.getAttribute("id") + ")")
-      if (b.top < a.top) path.setAttribute("data-kind", "back")
+      if (back) path.setAttribute("data-kind", "back")
       svg.appendChild(path)
 
       var label = edge.textContent.trim()
-      if (label) labels.push({ text: label, at: wire.label, back: b.top < a.top })
+      if (label) labels.push({ text: label, at: wire.label, back: back })
     })
 
     graph.insertBefore(svg, graph.firstChild)

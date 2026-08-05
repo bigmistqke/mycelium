@@ -91,7 +91,7 @@
 </template>
 
 <template id="figure-edge">
-  <figure-edge from=".+" to=".+">
+  <figure-edge from=".+" to=".+" data-back="?">
   </figure-edge>
 </template>
 
@@ -128,10 +128,26 @@
   documents lose the same way</a>, and nothing reported it, because a check that never runs is silent.
 </p>
 
-<h2>The audit</h2>
+<h2>A back edge says so, rather than being noticed</h2>
 <p>
-  One check, and it is the whole reason this beats a string-based diagram: every edge points at a node
-  that exists, in the same figure.
+  An edge that runs against the flow carries <code>data-back</code>. It is the only edge that carries
+  anything, since a forward edge is the ordinary case and says nothing.
+</p>
+<p>
+  The element used to work this out by comparing box positions while drawing. That let a rearrangement
+  restyle an edge with nothing in the document changing, and an inference from measured state always has
+  a wrong answer available to it. The declaration replaces the measurement, and the audit below checks the
+  declaration against the rows, so a wrong one fails the build rather than rendering.
+</p>
+<p>
+  Declaring it in the shape needed the optional marker, since every other attribute a placeholder names is
+  one an instance must carry. <code>data-back="?"</code> is the whole use of that marker so far.
+</p>
+
+<h2>The audits</h2>
+<p>
+  Two checks. Every edge points at a node that exists in the same figure, and every edge runs the
+  direction it claims.
 </p>
 
 <script type="mycelium/audit" data-audits="figure-edges-resolve" data-touches="figure-edge">
@@ -155,6 +171,51 @@
           for (const end of ["from", "to"]) {
             const name = edge.getAttribute(end)
             if (!ids.has(name)) violations.push(`${path}: figure-edge ${end}="${name}" names no node in its figure`)
+          }
+        }
+      }
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<script type="mycelium/audit" data-audits="figure-edges-run-the-way-they-claim" data-touches="figure-edge">
+  import type { AuditFs } from "../../src/api.ts"
+
+  /**
+   * Every figure-edge runs the direction it claims, measured in grid rows.
+   *
+   * A plain edge must reach a row below the one it leaves. A data-back edge
+   * must reach one above. The first catches a node placed over something it
+   * feeds. The second catches a back edge that stopped being one when someone
+   * rearranged the figure, which is worse, because the declaration is then a
+   * lie that still draws.
+   *
+   * Skips a node with no data-at, since there is nothing to compare. Skips an
+   * edge inside one row too, which nothing writes yet and which has no channel
+   * to route through.
+   */
+  export async function check(fs: AuditFs) {
+    const violations = []
+    for (const path of fs.list("docs", { ext: ".html" })) {
+      const doc = fs.parse(path)
+      for (const graph of Array.from(doc.querySelectorAll("figure-graph"))) {
+        const rowOf = (name) => {
+          const node = graph.querySelector('figure-node[id="' + name + '"]')
+          const at = node?.getAttribute("data-at")
+          return at ? Number(at.split(",")[0]) : null
+        }
+        for (const edge of Array.from(graph.querySelectorAll("figure-edge"))) {
+          const from = rowOf(edge.getAttribute("from"))
+          const to = rowOf(edge.getAttribute("to"))
+          if (from === null || to === null || from === to) continue
+          const back = edge.hasAttribute("data-back")
+          const label = `${edge.getAttribute("from")} to ${edge.getAttribute("to")}`
+          if (back && to > from) {
+            violations.push(`${path}: ${label} carries data-back and runs down the figure`)
+          }
+          if (!back && to < from) {
+            violations.push(`${path}: ${label} runs up the figure without data-back`)
           }
         }
       }
