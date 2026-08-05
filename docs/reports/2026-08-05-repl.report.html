@@ -66,6 +66,66 @@ package does not ship.</p>
 <code>{ path, source, fileUrls }</code> to a string. That is the entire protocol a
 caller has to implement against.</p>
 
+<h3>How the pieces fit</h3>
+
+<pre class="mermaid">
+graph TD
+  Caller(["the caller's readFile(path)"])
+
+  subgraph pipeline["the URL pipeline &mdash; 12% of the source"]
+    System["createFileUrlSystem"]
+    TMP["transformModulePaths"]
+    TH["transformHtml<br/>transformHtmlWorker"]
+    Blob["createFileUrl &rarr; Blob"]
+    Get["get(path)"]
+    System -->|"js &middot; ts &middot; tsx"| TMP
+    System -->|"html"| TH
+    System -->|"css &mdash; no transform"| Blob
+    TMP --> Blob
+    TH --> Blob
+    Blob --> Get
+    Get -.->|"each relative import re-enters"| System
+  end
+
+  subgraph editor["editor tooling &mdash; 28% of the source"]
+    Bind["bindMonacoToFileSystem"]
+    Loader["createMonacoTypeDownloader"]
+    DL["downloadTypesFromUrl"]
+    RPE["resolvePackageEntries"]
+    Loader --> DL
+    DL --> RPE
+  end
+
+  Caller --> System
+  Caller --> Bind
+  Get --> Frame(["blob: URL in an iframe"])
+</pre>
+
+<p>Two halves, and they never touch. Nothing outside <code>src/core/</code> imports
+the URL system, and the URL system imports nothing from the editor side. Both take
+a <code>readFile</code> from the caller, so the caller is the only thing joining
+them.</p>
+
+<p>They do share a floor. <code>PathUtils</code>, <code>createAsync</code>,
+<code>ReactiveRefCount</code> and <code>getModulePathRanges</code> sit under both,
+and the diagram leaves those edges out because every box would reach them. Sharing
+a floor is not the same as connecting.</p>
+
+<p>Three exports appear in neither half. <code>getModuleDependencies</code> walks
+an import tree and runs outside a browser, with a demo under <code>node/</code>.
+<code>babelTransform</code> and the frame helpers hang off nothing at all.</p>
+
+<p>The loop in the middle is the mechanism the file list hides. A JavaScript
+file's transform rewrites each relative import by calling
+<code>fileUrls.get()</code> for the resolved path, which enters the same system
+again for that file. An HTML file does the same for every <code>src</code> and
+<code>href</code>, and hands its inline module scripts to the JavaScript
+transform.</p>
+
+<p>So one call for an entry file pulls its whole import graph through the pipeline,
+and Solid's dependency tracking is what makes that a graph rather than a loop.
+Editing one file invalidates only the URLs that read it.</p>
+
 <h2>2. The principles</h2>
 
 <p>Six principles hold in the current code. Each one appears below with what
@@ -340,5 +400,13 @@ this kind of reading recovers mechanism and misses intent</a> predicts exactly t
 shape above: six principles stated with confidence, six questions that only a
 person can answer.</p>
 </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'
+  })
+</script>
 
 </body></html>
