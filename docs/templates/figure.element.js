@@ -39,24 +39,34 @@
   // Separating the two by band is a rule; nudging either one is not.
   var LANE_BAND = 0.45
 
-  // Forward edges sharing a gap, each given its own height inside the lane
-  // band. The widest run takes the lane nearest the source, so a long
-  // horizontal crosses above the short ones rather than through them.
+  // Every edge leaving one box for one row shares a lane, which is what makes
+  // them read as a fork. Their trunks then coincide at the source and their
+  // horizontals merge into one bus, instead of each edge dropping to a height
+  // of its own and splitting the same junction into three near-parallel lines.
+  //
+  // Forks crossing the same gap still need separate lanes, and the widest takes
+  // the one nearest the source, so a long run crosses above the short ones
+  // rather than through them.
   function assignLanes(edges) {
     var channels = {}
     edges.forEach(function (e) {
       if (e.back) return
-      var key = Math.round(e.a.bottom) + ":" + Math.round(e.b.top)
-      ;(channels[key] = channels[key] || []).push(e)
+      var channel = Math.round(e.a.bottom) + ":" + Math.round(e.b.top)
+      var fork = channel + ":" + e.fromId
+      channels[channel] = channels[channel] || {}
+      ;(channels[channel][fork] = channels[channel][fork] || []).push(e)
     })
-    Object.keys(channels).forEach(function (key) {
-      var group = channels[key]
-      group.sort(function (p, q) {
-        return Math.abs(q.b.midX - q.a.midX) - Math.abs(p.b.midX - p.a.midX)
-      })
-      group.forEach(function (e, i) {
-        var band = (e.b.top - e.a.bottom) * LANE_BAND
-        e.lane = e.a.bottom + (band * (i + 1)) / (group.length + 1)
+    Object.keys(channels).forEach(function (channel) {
+      var forks = Object.keys(channels[channel]).map(function (key) { return channels[channel][key] })
+      var widthOf = function (fork) {
+        return Math.max.apply(null, fork.map(function (e) { return Math.abs(e.b.midX - e.a.midX) }))
+      }
+      forks.sort(function (p, q) { return widthOf(q) - widthOf(p) })
+      forks.forEach(function (fork, i) {
+        fork.forEach(function (e) {
+          var band = (e.b.top - e.a.bottom) * LANE_BAND
+          e.lane = e.a.bottom + (band * (i + 1)) / (forks.length + 1)
+        })
       })
     })
   }
@@ -81,7 +91,12 @@
     var x = GUTTER + index * GUTTER_STEP
     e.d = "M" + e.a.left + "," + e.a.midY + " L" + x + "," + e.a.midY +
           " L" + x + "," + e.b.midY + " L" + e.b.left + "," + e.b.midY
-    e.labelAt = { x: x, y: (e.a.midY + e.b.midY) / 2 }
+    // Right of the wire rather than across it. The gutter sits at the figure's
+    // edge, so a centred chip hangs half of itself outside the border, and the
+    // inside is the only side there is. A chip beside a long vertical still
+    // reads as its label; the earlier version that looked detached sat beside a
+    // short segment crowded by boxes.
+    e.labelAt = { x: x, y: (e.a.midY + e.b.midY) / 2, side: "right" }
   }
 
   var SVG = "http://www.w3.org/2000/svg"
@@ -123,6 +138,7 @@
       // only covers a page opened without validation having run.
       if (!from || !to) return
       edges.push({
+        fromId: edge.getAttribute("from"),
         a: boxOf(from, origin),
         b: boxOf(to, origin),
         // Read, not measured. Comparing box positions would let a
@@ -177,6 +193,7 @@
       // The same kind the wire carries, so the stylesheet can give a label the
       // colour of the line it names rather than a border of its own.
       if (item.back) chip.setAttribute("data-kind", "back")
+      if (item.at.side) chip.setAttribute("data-side", item.at.side)
       chip.textContent = item.text
       graph.appendChild(chip)
     })

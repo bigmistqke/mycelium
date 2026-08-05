@@ -124,6 +124,12 @@ figure-graph > svg.figure-wires path.wire[data-kind="back"] {
 .figure-label[data-kind="back"] {
   border-color: var(--accent);
 }
+/* Beside its wire, for a wire running down the gutter. That gutter is at the
+   figure's edge, so a centred chip would hang half of itself outside the
+   border and the inside is the only side available. */
+.figure-label[data-side="right"] {
+  transform: translate(10px, -50%);
+}
 
 
 /* A grid of boxes stacks into a column on a narrow screen. The connectors
