@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option: Put the diagram at whatever level the project's arguments happen to be about</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-option data-conforms-to="../templates/knowledge.template.html#knowledge-option">
+  <knowledge-title>Put the diagram at whatever level the project's arguments happen to be about</knowledge-title>
+  <knowledge-confidence>30</knowledge-confidence>
+  <knowledge-detail><p>Rather than picking modules or services up front, cluster the attachment
+points of every derived node and put the boxes where they pile up. The level
+lands wherever a given project's design tension actually sits, which varies a
+lot: one project argues about which service owns what, another about which layer
+validates, another about a single directory boundary.</p>
+<p>Rejected, for two reasons that point the same way. Argument density measures
+contention, not importance. Bikeshedding is dense, and a load-bearing piece that
+everyone agreed on in one line leaves almost no trace, so it shrinks to nothing.
+The same bias shows up again in
+<a href="./2026-08-05-retroactive-forensics-is-permanently-lossy.observation.html">what survives to be
+derived at all</a>, which suggests it is a property of the source material rather
+than of this one proposal.</p>
+<p>It stays useful as a way to find where to look. It is a bad way to decide what
+matters once you are there.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-05-architecture-is-a-depth-slice-of-the-intent-graph.decision.html">putting the boxes where the arguments are, rejected because contention is not importance</a>
+</knowledge-option>
+</body></html>

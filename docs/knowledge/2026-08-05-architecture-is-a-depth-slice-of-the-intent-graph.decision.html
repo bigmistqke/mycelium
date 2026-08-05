@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Architecture is a depth-slice of the intent-to-implementation graph, not a grouping of code</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Architecture is a depth-slice of the intent-to-implementation graph, not a grouping of code</knowledge-title>
+  <knowledge-confidence>72</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-detail><p>The question was how to get a picture of a system's architecture out of a
+derived graph. Two attempts failed before this one.</p>
+<p>What works instead: the graph runs from intent at the top to implementation
+at the bottom, and it passes through every level of abstraction on the way down.
+A chain might read "users must not lose data", then "writes are durable before
+we acknowledge", then "fsync before responding", then a function. Four levels,
+linked.</p>
+<p>So altitude stops being a choice you make before drawing and becomes a
+parameter. The picture at depth two and the picture at depth three are the same
+object, cut in two places. The question "what level should this diagram be at"
+does not need an answer.</p>
+<p>The edge vocabulary this needs is already named in the graph:
+<a href="./2026-01-24-cross-layer-edges.observation.html">implements, achieves and
+derives_from</a>, relations that connect abstraction levels rather than sitting
+inside one.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-05-retroactive-knowledge-graph-from-existing-project.goal.html">the shape a derived graph has to take for the querying half of the goal to work</a>
+  <a data-rel="depends_on" href="./2026-01-24-cross-layer-edges.observation.html">implements, achieves and derives_from are the edges a depth-slice cuts across</a>
+  <a data-rel="depends_on" href="./2026-01-24-introspection-is-git-blame-for-intent.observation.html">the upward walk, from a line of code to the intent above it</a>
+  <a data-rel="depends_on" href="./2026-01-24-reverse-introspection-impact-analysis.observation.html">the downward walk, from an intent to everything that exists because of it</a>
+</knowledge-decision>
+</body></html>
