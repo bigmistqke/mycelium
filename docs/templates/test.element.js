@@ -7,13 +7,37 @@
 // or the CLI driving a browser over WebDriver. There is no second harness to
 // keep in step with this one, which is the point of putting the runner in the
 // page rather than in the tool.
+//
+// Typed through JSDoc, and checked by the line below. This file runs in a
+// browser, so it may not be TypeScript, and the directive turns checking on for
+// it alone rather than through the config. See figure.element.js, which carries
+// the same arrangement for the same reason.
+// @ts-check
 ;(function () {
   "use strict"
 
+  /**
+   * What a case's body is handed. `settle` waits until an element stops
+   * changing, and `assert` throws when its first argument is false, which is
+   * the whole failure protocol.
+   *
+   * @typedef {object} Tools
+   * @property {(ok: unknown, text?: string) => void} assert
+   * @property {(el?: Element | null, frames?: number) => Promise<Element>} settle
+   */
+
+  /**
+   * @param {Element} testCase
+   * @returns {Element | null}
+   */
   function statusOf(testCase) {
     return testCase.querySelector("test-status")
   }
 
+  /**
+   * @param {Element} testCase
+   * @returns {string}
+   */
   function verdictOf(testCase) {
     var el = statusOf(testCase)
     return el ? (el.textContent || "").trim() : ""
@@ -22,11 +46,16 @@
   // A message field exists only once something has to go in it. The schema
   // rejects an empty field, so a document on disk carries none, and the runner
   // adds one at the moment a case has something to say.
+  /**
+   * @param {Element} testCase
+   * @param {string} text
+   */
   function say(testCase, text) {
     var el = testCase.querySelector("test-message")
     if (!el) {
-      el = document.createElement("test-message")
       var status = statusOf(testCase)
+      if (!status || !status.parentNode) return
+      el = document.createElement("test-message")
       status.parentNode.insertBefore(el, status.nextSibling)
     }
     el.textContent = text
@@ -36,6 +65,11 @@
   // both read, and into data-verdict as well, because CSS cannot select on
   // text. One call writes both, so the two can never disagree. Neither reaches
   // a file: an audit holds every committed status at PENDING.
+  /**
+   * @param {Element} testCase
+   * @param {string} verdict
+   * @param {string} [text]
+   */
   function write(testCase, verdict, text) {
     var el = statusOf(testCase)
     if (el) {
@@ -53,9 +87,15 @@
   // One animation frame is not enough. An engine draws in one frame and a
   // ResizeObserver can redraw in the next, so a single frame reports on a
   // figure that is still moving.
+  /**
+   * @param {Element | null} [el]
+   * @param {number} [frames]
+   * @returns {Promise<Element>}
+   */
   function settle(el, frames) {
     var target = el || document.body
     var left = frames || 60
+    /** @type {string | null} */
     var last = null
     return new Promise(function (resolve, reject) {
       function tick() {
@@ -69,6 +109,11 @@
     })
   }
 
+  /**
+   * @param {unknown} ok
+   * @param {string} [text]
+   * @returns {void}
+   */
   function assert(ok, text) {
     if (!ok) throw new Error(text || "assertion failed")
   }
@@ -77,6 +122,13 @@
   // derived from one set of boxes still differ in the last bits once a browser
   // has rounded a layout, so comparing measured numbers needs a tolerance to
   // mean anything at all.
+  /**
+   * @param {number} a
+   * @param {number} b
+   * @param {number} [tolerance]
+   * @param {string} [text]
+   * @returns {void}
+   */
   assert.near = function (a, b, tolerance, text) {
     var slack = tolerance === undefined ? 0.5 : tolerance
     if (!(Math.abs(a - b) <= slack)) {
@@ -84,6 +136,21 @@
     }
   }
 
+  // A case may throw anything at all, and one that threw a string still has to
+  // say something useful in its message field.
+  /**
+   * @param {unknown} err
+   * @returns {string}
+   */
+  function reason(err) {
+    if (err instanceof Error) return err.message
+    return String(err)
+  }
+
+  /**
+   * @param {Element} testCase
+   * @returns {Promise<void>}
+   */
   function run(testCase) {
     var script = testCase.querySelector('script[type="text/mycelium-test"]')
     if (!script) {
@@ -96,7 +163,7 @@
       made = new Function("fixture", "settle", "assert",
         '"use strict";return (async function () {\n' + script.textContent + "\n})()")
     } catch (err) {
-      write(testCase, "FAILURE", "this case does not parse: " + err.message)
+      write(testCase, "FAILURE", "this case does not parse: " + reason(err))
       return Promise.resolve()
     }
     var fixture = testCase.querySelector("test-fixture")
@@ -104,15 +171,17 @@
     try {
       started = made(fixture, settle, assert)
     } catch (err) {
-      write(testCase, "FAILURE", (err && err.message) || String(err))
+      write(testCase, "FAILURE", reason(err))
       return Promise.resolve()
     }
     return started.then(
       function () { write(testCase, "SUCCESS") },
-      function (err) { write(testCase, "FAILURE", (err && err.message) || String(err)) }
+      /** @param {unknown} err */
+      function (err) { write(testCase, "FAILURE", reason(err)) }
     )
   }
 
+  /** @returns {Element[]} */
   function cases() {
     return Array.prototype.slice.call(document.querySelectorAll("test-case"))
   }
@@ -152,6 +221,7 @@
   // reading PENDING is a casualty of that. Saying so beats leaving a document
   // that looks like it is still working, and it turns a run that would hang at
   // the deadline into one that reports a reason.
+  /** @param {string} text */
   function derail(text) {
     cases().forEach(function (testCase) {
       if (verdictOf(testCase) === "PENDING") write(testCase, "FAILURE", text)
@@ -164,6 +234,10 @@
   // through: the remaining notifications arrive in the next frame. It
   // reaches window.onerror all the same, and failing every pending case over it
   // would report a broken page whenever a figure grew a row to fit its labels.
+  /**
+   * @param {string} message
+   * @returns {boolean}
+   */
   function benign(message) {
     return /ResizeObserver loop/.test(message || "")
   }

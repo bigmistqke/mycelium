@@ -48,6 +48,18 @@ function formatCodeComment(raw: string): string {
       return
     }
     if (!(isBlock && i === 0) && /^\s/.test(stripped)) return
+    // A JSDoc tag line declares a type, and a type is not prose. Left in, a
+    // @typedef listing eight properties reads to a rule as one sixty-word
+    // sentence, and a @returns naming something thrown reads as passive voice.
+    // Neither is a sentence anybody wrote or can reword.
+    //
+    // A tag ends the paragraph before it as well. Prose above a tag block is
+    // ordinary prose and stays checked; the tags below it are a separate thing
+    // and do not join on to it.
+    if (/^@\w/.test(stripped.trim())) {
+      flush()
+      return
+    }
     current.push(stripped.trim())
   })
   flush()

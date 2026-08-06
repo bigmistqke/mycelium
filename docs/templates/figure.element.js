@@ -6,11 +6,85 @@
 // Reading this as a workaround gets it backwards. customElements is a global
 // registry, so registering an element is a global side effect however the
 // script arrives, and there is no module-scoped version of that to give up.
+//
+// Typed through JSDoc, and checked by the line below. TypeScript is what a
+// mycelium/* script may use, and this file is browser code, so its types have
+// to live somewhere a browser will not choke on. The directive turns checking
+// on for this file alone: the config leaves checkJs off, because a script
+// written for a browser should hand its types to an importer without being
+// linted against a config it was never written for.
+// @ts-check
 ;(function () {
   "use strict"
 
+  /**
+   * @typedef {{ row: number, column: number }} Cell
+   * @typedef {{ left: number, top: number, right: number, bottom: number, midX: number, midY: number }} Box
+   * @typedef {{ left: number, top: number }} Origin
+   * @typedef {{ top: number, bottom: number }} Span
+   * @typedef {{ x: number, y: number }} Point
+   */
+
+  /**
+   * One edge, gathered before anything routes it. The fields after `text` are
+   * filled in as the passes run: boxes, then landings, then a lane, then the
+   * path itself and where its label may go.
+   *
+   * @typedef {object} Edge
+   * @property {string | null} fromId
+   * @property {string | null} toId
+   * @property {Element} fromNode
+   * @property {Element} toNode
+   * @property {boolean} back
+   * @property {boolean} peer
+   * @property {string} text
+   * @property {Box} [a]
+   * @property {Box} [b]
+   * @property {Box} [marker]
+   * @property {HTMLElement} [slot]
+   * @property {number} [arriveX]
+   * @property {number} [lane]
+   * @property {number} [laneIndex]
+   * @property {string} [d]
+   * @property {Point | null} [labelAt]
+   * @property {Span | null} [labelBand]
+   * @property {Span | null} [labelGap]
+   */
+
+  /**
+   * An edge whose two boxes have been measured, which is every edge once the
+   * measuring pass has run. Spelling the stages as separate types keeps the
+   * arithmetic free of checks for fields that are always there by then.
+   *
+   * @typedef {Edge & { a: Box, b: Box }} Measured
+   */
+
+  /**
+   * A label on its way to a position.
+   *
+   * `w` and `h` come from measuring the chip, which is the only way to know how
+   * wide a word renders. The measuring happens once, the moment the chip joins
+   * the document, rather than again in every pass that wants it. `cx` starts at
+   * the anchor and ends wherever the figure's own edges allow.
+   *
+   * @typedef {object} Chip
+   * @property {HTMLElement} chip
+   * @property {number} x
+   * @property {number} y
+   * @property {number} w
+   * @property {number} h
+   * @property {number} cx
+   * @property {Span} band
+   * @property {Span | null} gap
+   * @property {string | null} toId
+   */
+
   // Which cell a node occupies, as row,column counting from one. The template
   // constrains the shape, so anything reaching here already matched.
+  /**
+   * @param {Element} node
+   * @returns {Cell | null}
+   */
   function cellOf(node) {
     var at = node.getAttribute("data-at")
     if (!at) return null
@@ -21,6 +95,11 @@
   // A box's rectangle in the figure's own coordinates. Measured after the
   // browser has laid the grid out, which is why no position is ever written
   // into the document.
+  /**
+   * @param {Element} node
+   * @param {Origin} origin
+   * @returns {Box}
+   */
   function boxOf(node, origin) {
     var r = node.getBoundingClientRect()
     return {
@@ -41,9 +120,25 @@
 
   // The stretch of a gap an edge travels sideways along, which is the part of
   // its lane another edge can run into.
+  /**
+   * @param {Measured} e
+   * @returns {{ lo: number, hi: number }}
+   */
   function runOf(e) {
     var arrive = e.arriveX === undefined ? e.b.midX : e.arriveX
     return { lo: Math.min(e.a.midX, arrive), hi: Math.max(e.a.midX, arrive) }
+  }
+
+  // Present by the time it is asked for, or the passes ran out of order.
+  /**
+   * @template T
+   * @param {T | undefined} value
+   * @param {string} what
+   * @returns {T}
+   */
+  function must(value, what) {
+    if (value === undefined) throw new Error("a figure was drawn before its " + what + " was worked out")
+    return value
   }
 
   // Whether two edges crossing one gap may share a lane.
@@ -64,6 +159,11 @@
   // third, the third shares a target with a fourth. A chain like that sweeps
   // every edge in the gap into one lane, however little its ends have in
   // common.
+  /**
+   * @param {Measured} p
+   * @param {Measured} q
+   * @returns {boolean}
+   */
   function canShareLane(p, q) {
     if (p.fromId === q.fromId || p.toId === q.toId) return true
     var a = runOf(p)
@@ -73,13 +173,20 @@
 
   // Whether two nodes sit in one row, read off the cells they declare. A node
   // with no data-at answers no, since it has no row to share.
+  /**
+   * @param {Element} from
+   * @param {Element} to
+   * @returns {boolean}
+   */
   function sameRow(from, to) {
     var a = cellOf(from)
     var b = cellOf(to)
     return !!(a && b && a.row === b.row)
   }
 
+  /** @param {Measured[]} edges */
   function assignLanes(edges) {
+    /** @type {Record<string, Measured[]>} */
     var channels = {}
     edges.forEach(function (e) {
       // A peer edge crosses no gap, so it has no channel to take a lane in.
@@ -97,10 +204,11 @@
       var list = channels[channel]
       // Widest first, so a long run takes the lane nearest the source and
       // crosses above the short ones rather than through them.
-      var widthOf = function (e) { var r = runOf(e); return r.hi - r.lo }
+      var widthOf = /** @param {Measured} e */ function (e) { var r = runOf(e); return r.hi - r.lo }
       list = list.slice().sort(function (p, q) { return widthOf(q) - widthOf(p) })
 
       // Each edge takes the first lane holding nothing it must stay clear of.
+      /** @type {Measured[][]} */
       var lanes = []
       list.forEach(function (e) {
         var free = 0
@@ -112,7 +220,7 @@
 
       list.forEach(function (e) {
         var band = (e.b.top - e.a.bottom) * LANE_BAND
-        e.lane = e.a.bottom + (band * (e.laneIndex + 1)) / (lanes.length + 1)
+        e.lane = e.a.bottom + (band * (must(e.laneIndex, "lane order") + 1)) / (lanes.length + 1)
       })
     })
   }
@@ -123,10 +231,15 @@
   //
   // Node columns are what data-at counts, so reserving an edge column does not
   // renumber anything a figure already declared.
+  /**
+   * @param {Element} graph
+   * @returns {string[]}
+   */
   function columnKinds(graph) {
     var raw = (graph.getAttribute("data-columns") || "").trim()
     if (!raw) return []
     if (/^\d+$/.test(raw)) {
+      /** @type {string[]} */
       var kinds = []
       for (var i = 0; i < Number(raw); i++) kinds.push("node")
       return kinds
@@ -135,7 +248,12 @@
   }
 
   // Where each node column lands once the edge columns are counted in.
+  /**
+   * @param {string[]} kinds
+   * @returns {number[]}
+   */
   function nodeColumnMap(kinds) {
+    /** @type {number[]} */
     var map = []
     kinds.forEach(function (kind, i) {
       if (kind !== "edge") map.push(i + 1)
@@ -145,8 +263,15 @@
 
   // The rows an edge travels, so its label can span them and centre itself over
   // the whole run rather than sitting at one end of it.
+  /**
+   * @param {Element} from
+   * @param {Element} to
+   * @returns {string}
+   */
   function rowSpan(from, to) {
-    var rows = [cellOf(from), cellOf(to)].filter(Boolean).map(function (c) { return c.row })
+    var rows = [cellOf(from), cellOf(to)]
+      .filter(function (c) { return c !== null })
+      .map(function (c) { return c.row })
     if (rows.length < 2) return "auto"
     return Math.min.apply(null, rows) + " / " + (Math.max.apply(null, rows) + 1)
   }
@@ -167,10 +292,15 @@
   //
   // Sorted by where each line comes from, so spreading them out never makes two
   // lines cross on the way in.
+  /**
+   * @param {Measured[]} edges
+   * @returns {Measured[][]}
+   */
   function arrivalGroups(edges) {
+    /** @type {Record<string, Measured[]>} */
     var byTarget = {}
     edges.forEach(function (e) {
-      if (e.back || e.peer) return
+      if (e.back || e.peer || !e.toId) return
       ;(byTarget[e.toId] = byTarget[e.toId] || []).push(e)
     })
     return Object.keys(byTarget)
@@ -178,6 +308,10 @@
       .filter(function (group) { return group.length > 1 })
   }
 
+  /**
+   * @param {Measured[]} edges
+   * @param {number} spacing
+   */
   function spreadArrivals(edges, spacing) {
     arrivalGroups(edges).forEach(function (group) {
       group.sort(function (p, q) { return p.a.midX - q.a.midX })
@@ -191,13 +325,15 @@
     })
   }
 
+  /** @param {Measured} e */
   function routeForward(e) {
     var arrive = e.arriveX === undefined ? e.b.midX : e.arriveX
-    e.d = "M" + e.a.midX + "," + e.a.bottom + " L" + e.a.midX + "," + e.lane +
-          " L" + arrive + "," + e.lane + " L" + arrive + "," + e.b.top
+    var lane = must(e.lane, "lane")
+    e.d = "M" + e.a.midX + "," + e.a.bottom + " L" + e.a.midX + "," + lane +
+          " L" + arrive + "," + lane + " L" + arrive + "," + e.b.top
     // On the drop into its own target, which is a segment this edge does not
     // share, now that each edge lands at a point of its own.
-    e.labelAt = { x: arrive, y: (e.lane + e.b.top) / 2 }
+    e.labelAt = { x: arrive, y: (lane + e.b.top) / 2 }
   }
 
   // A peer edge joins two boxes in one row, so it runs straight across the gap
@@ -210,6 +346,7 @@
   // and a chip is wider than that: on the line it covered the whole edge
   // including the arrowhead, so the figure stopped saying which way the
   // relation ran. The band decides how far above it lands.
+  /** @param {Measured} e */
   function routePeer(e) {
     var rightwards = e.b.midX > e.a.midX
     var start = rightwards ? e.a.right : e.a.left
@@ -223,8 +360,9 @@
   // sits there as a grid item, so the wire follows the label rather than the
   // label chasing the wire. The grid sizes the column to whatever the label
   // needs, which is why no length of text can push one outside the figure.
+  /** @param {Measured} e */
   function routeBack(e) {
-    var x = e.marker.midX
+    var x = must(e.marker, "gutter label").midX
     e.d = "M" + e.a.left + "," + e.a.midY + " L" + x + "," + e.a.midY +
           " L" + x + "," + e.b.midY + " L" + e.b.left + "," + e.b.midY
     e.labelAt = null
@@ -232,6 +370,31 @@
 
   var SVG = "http://www.w3.org/2000/svg"
 
+  // What a figure carries from one draw to the next: the landing spacing its
+  // labels turned out to need, and the row gap it last asked for. Both come
+  // from measuring, so the pass that measures them cannot also use them, and a
+  // redraw has to find them again.
+  //
+  // In a map beside the element rather than as properties on it. An element is
+  // the document's, and hanging private state off one puts this code's
+  // workings somewhere a reader of the page can trip over.
+  /** @type {WeakMap<Element, { arrivalSpacing?: number, askedGap?: number }>} */
+  var memory = new WeakMap()
+
+  /**
+   * @param {Element} graph
+   * @returns {{ arrivalSpacing?: number, askedGap?: number }}
+   */
+  function remembered(graph) {
+    var found = memory.get(graph)
+    if (!found) {
+      found = {}
+      memory.set(graph, found)
+    }
+    return found
+  }
+
+  /** @param {HTMLElement} graph */
   function draw(graph) {
     var old = graph.querySelector("svg.figure-wires")
     if (old) old.remove()
@@ -260,14 +423,15 @@
     // Routing one at a time is what made lanes an offset per source rather than
     // an allocation per channel, and an offset cannot know what else is in the
     // gap it is crossing.
-    var edges = []
-    Array.prototype.forEach.call(graph.querySelectorAll("figure-edge"), function (edge) {
+    /** @type {Edge[]} */
+    var collected = []
+    Array.prototype.forEach.call(graph.querySelectorAll("figure-edge"), function (/** @type {Element} */ edge) {
       var from = graph.querySelector('figure-node[id="' + edge.getAttribute("from") + '"]')
       var to = graph.querySelector('figure-node[id="' + edge.getAttribute("to") + '"]')
       // The audit catches a name that resolves to nothing, so skipping here
       // only covers a page opened without validation having run.
       if (!from || !to) return
-      edges.push({
+      collected.push({
         fromId: edge.getAttribute("from"),
         toId: edge.getAttribute("to"),
         fromNode: from,
@@ -285,7 +449,7 @@
         // rearrangement that moves a node to another row changes the document,
         // so nothing can shift underneath this without the file changing too.
         peer: sameRow(from, to),
-        text: edge.textContent.trim(),
+        text: (edge.textContent || "").trim(),
       })
     })
 
@@ -294,10 +458,11 @@
     // way round made a label's own width this code's problem, and a longer one
     // always found the edge of the figure.
     var kinds = columnKinds(graph)
+    /** @type {number[]} */
     var edgeColumns = []
     kinds.forEach(function (kind, i) { if (kind === "edge") edgeColumns.push(i + 1) })
     var backSeen = 0
-    edges.forEach(function (e) {
+    collected.forEach(function (e) {
       if (!e.back) return
       var column = edgeColumns[backSeen % Math.max(edgeColumns.length, 1)] || 1
       backSeen++
@@ -329,7 +494,7 @@
       left: frame.left + parseFloat(borders.borderLeftWidth || "0"),
       top: frame.top + parseFloat(borders.borderTopWidth || "0"),
     }
-    edges.forEach(function (e) {
+    collected.forEach(function (e) {
       e.a = boxOf(e.fromNode, placed)
       e.b = boxOf(e.toNode, placed)
       if (e.slot) e.marker = boxOf(e.slot, placed)
@@ -338,18 +503,26 @@
     // The bottom of the nearest row above a given line, or the top of the
     // figure when nothing is above it. A peer edge's label goes in that space,
     // since its own row is solid boxes from side to side.
+    /**
+     * @param {number} top
+     * @returns {number}
+     */
     function rowAbove(top) {
       var found = 0
-      Array.prototype.forEach.call(graph.querySelectorAll("figure-node"), function (node) {
+      Array.prototype.forEach.call(graph.querySelectorAll("figure-node"), function (/** @type {Element} */ node) {
         var bottom = boxOf(node, placed).bottom
         if (bottom <= top + 0.5) found = Math.max(found, bottom)
       })
       return found
     }
 
+    // Measured, from here on. The loop above gave every edge both its boxes,
+    // which is the one thing the passes below all assume.
+    var edges = /** @type {Measured[]} */ (collected)
+
     // Arrivals first. A lane depends on where each run begins and ends, and
     // spreading the landings is what decides where a run ends.
-    spreadArrivals(edges, graph.__arrivalSpacing || ARRIVAL_SPACING)
+    spreadArrivals(edges, remembered(graph).arrivalSpacing || ARRIVAL_SPACING)
     assignLanes(edges)
     edges.forEach(function (e) {
       if (e.back) routeBack(e)
@@ -365,7 +538,7 @@
       // this edge's alone, now that each edge lands at a point of its own.
       e.labelBand = e.back ? null
         : e.peer ? { top: rowAbove(e.a.top), bottom: e.a.top }
-        : { top: e.lane, bottom: e.b.top }
+        : { top: must(e.lane, "lane"), bottom: e.b.top }
       // The whole gap the edge crosses, which is wider than the band and is
       // what decides whether two labels have to fit past each other. Two edges
       // into one box can take different lanes when a third crossing the gap
@@ -381,7 +554,7 @@
     edges.forEach(function (e) {
       var path = document.createElementNS(SVG, "path")
       path.setAttribute("class", "wire")
-      path.setAttribute("d", e.d)
+      path.setAttribute("d", must(e.d, "path"))
       path.setAttribute("marker-end", "url(#" + marker.getAttribute("id") + ")")
       if (e.back) path.setAttribute("data-kind", "back")
       else if (e.peer) path.setAttribute("data-kind", "peer")
@@ -408,21 +581,31 @@
     // already a positioned ancestor, a half-size translate centres the chip on
     // its anchor whatever width the text turns out to be, and the border and
     // the rounding are ordinary CSS rather than attributes computed here.
-    var chips = labels.filter(function (item) { return item.at }).map(function (item) {
+    // A back edge is the one with nowhere to float: its label is already a grid
+    // item in an edge column, so it has no anchor and no band, and it is not a
+    // chip at all.
+    /** @type {Chip[]} */
+    var chips = []
+    labels.forEach(function (item) {
+      var at = item.at
+      var band = item.band
+      if (!at || !band) return
       var chip = document.createElement("div")
       chip.className = "figure-label"
-      chip.style.left = item.at.x + "px"
-      chip.style.top = item.at.y + "px"
+      chip.style.left = at.x + "px"
+      chip.style.top = at.y + "px"
       // The same kind the wire carries, so the stylesheet can give a label the
       // colour of the line it names rather than a border of its own.
       if (item.back) chip.setAttribute("data-kind", "back")
       else if (item.peer) chip.setAttribute("data-kind", "peer")
       chip.textContent = item.text
       graph.appendChild(chip)
-      return {
-        chip: chip, x: item.at.x, y: item.at.y,
-        band: item.band, gap: item.gap, toId: item.toId,
-      }
+      var size = chip.getBoundingClientRect()
+      chips.push({
+        chip: chip, x: at.x, y: at.y, cx: at.x,
+        w: size.width, h: size.height,
+        band: band, gap: item.gap || null, toId: item.toId,
+      })
     })
 
     // A gap too shallow for the labels crossing it grows until they fit, and
@@ -446,17 +629,17 @@
     // A chip is centred on its own landing, so half of it is what reaches
     // towards the next one. Widths only exist once the chips do, so this asks
     // for the room it turns out to need and the figure draws again.
-    var spacing = graph.__arrivalSpacing || ARRIVAL_SPACING
+    var spacing = remembered(graph).arrivalSpacing || ARRIVAL_SPACING
     var widest = neededArrivalSpacing(chips, edges)
     if (widest > spacing + 0.5) {
-      graph.__arrivalSpacing = widest
+      remembered(graph).arrivalSpacing = widest
       requestAnimationFrame(function () { draw(graph) })
       return
     }
 
     var present = parseFloat(getComputedStyle(graph).rowGap) || 0
     var wanted = neededRowGap(chips, present)
-    if (wanted > present + 0.5 && graph.__askedGap !== wanted) {
+    if (wanted > present + 0.5 && remembered(graph).askedGap !== wanted) {
       // Asked for in a later frame, and never here. A redraw often comes from
       // the ResizeObserver, and changing a style inside that callback resizes
       // the thing being observed while it is still being delivered, which the
@@ -464,7 +647,7 @@
       //
       // Remembering what was asked for stops a figure that cannot be satisfied
       // from asking again every frame.
-      graph.__askedGap = wanted
+      remembered(graph).askedGap = wanted
       requestAnimationFrame(function () { graph.style.rowGap = wanted + "px" })
       return
     }
@@ -480,16 +663,22 @@
   // chip is centred on its own landing and only half of it reaches towards the
   // next. A box narrower than that caps the spread on its own, in
   // spreadArrivals, so this asks rather than demands.
+  /**
+   * @param {Chip[]} chips
+   * @param {Measured[]} edges
+   * @returns {number}
+   */
   function neededArrivalSpacing(chips, edges) {
+    /** @type {Record<string, number>} */
     var widthByTarget = {}
     chips.forEach(function (entry) {
       if (!entry.toId) return
-      var width = entry.chip.getBoundingClientRect().width
-      widthByTarget[entry.toId] = Math.max(widthByTarget[entry.toId] || 0, width)
+      widthByTarget[entry.toId] = Math.max(widthByTarget[entry.toId] || 0, entry.w)
     })
     var needed = ARRIVAL_SPACING
     arrivalGroups(edges).forEach(function (group) {
-      var width = widthByTarget[group[0].toId]
+      var target = group[0].toId
+      var width = target ? widthByTarget[target] : 0
       if (width) needed = Math.max(needed, width / 2 + 6)
     })
     return needed
@@ -505,13 +694,12 @@
   // Every label is measured first, because a chip is sized by its own text,
   // then grouped the way placeLabels groups them: labels that overlap left to
   // right are the ones that have to stack.
+  /**
+   * @param {Chip[]} chips
+   * @param {number} present
+   * @returns {number}
+   */
   function neededRowGap(chips, present) {
-    chips.forEach(function (entry) {
-      var rect = entry.chip.getBoundingClientRect()
-      entry.w = rect.width
-      entry.h = rect.height
-      entry.cx = entry.x
-    })
     var shortfall = 0
     // Grouped by the gap an edge crosses rather than by the lane it took. Two
     // edges into one box can end up in different lanes, when a third crossing
@@ -522,7 +710,7 @@
         var tallest = Math.max.apply(null, run.map(function (entry) { return entry.h }))
         var wants = run.length * (tallest + LABEL_GUTTER) + LABEL_GUTTER
         // The tightest band in the run, since that is the one with no room.
-        var has = Math.min.apply(null, run.map(function (entry) {
+        var has = Math.min.apply(null, run.map(function (/** @type {Chip} */ entry) {
           return entry.band.bottom - entry.band.top
         }))
         shortfall = Math.max(shortfall, wants - has)
@@ -546,12 +734,12 @@
   //
   // Measuring is the only way to do any of it. A chip is sized by its own text
   // and nothing here knows how wide a word renders.
+  /**
+   * @param {Chip[]} chips
+   * @param {{ width: number, height: number }} inner
+   */
   function placeLabels(chips, inner) {
     chips.forEach(function (entry) {
-      var rect = entry.chip.getBoundingClientRect()
-      entry.w = rect.width
-      entry.h = rect.height
-      entry.band = entry.band || { top: 0, bottom: inner.height }
       // Inside the figure. A long label near either side hung out past the
       // border, because a chip is centred on its anchor and half of it can
       // reach further than the anchor does.
@@ -576,8 +764,10 @@
   // and no place left is far enough from it, even when the two would have fitted
   // at either end. So a run starts at the top of what it may use and comes down
   // from there.
+  /** @param {Chip[]} run */
   function pack(run) {
     var ordered = run.slice().sort(function (p, q) { return p.y - q.y })
+    /** @type {number | null} */
     var below = null
     ordered.forEach(function (entry) {
       var half = entry.h / 2
@@ -597,19 +787,32 @@
     })
   }
 
+  /**
+   * @param {Chip[]} chips
+   * @returns {Chip[][]}
+   */
   function byGap(chips) {
+    /** @type {Record<string, Chip[]>} */
     var groups = {}
     chips.forEach(function (entry) {
-      var key = Math.round(entry.gap.top) + ":" + Math.round(entry.gap.bottom)
+      var gap = entry.gap
+      if (!gap) return
+      var key = Math.round(gap.top) + ":" + Math.round(gap.bottom)
       ;(groups[key] = groups[key] || []).push(entry)
     })
     return Object.keys(groups).map(function (key) { return groups[key] })
   }
 
   // Runs of labels that overlap left to right, found by sweeping across.
+  /**
+   * @param {Chip[]} group
+   * @returns {Chip[][]}
+   */
   function cluster(group) {
     var sorted = group.slice().sort(function (p, q) { return (p.cx - p.w / 2) - (q.cx - q.w / 2) })
+    /** @type {Chip[][]} */
     var runs = []
+    /** @type {Chip[] | null} */
     var current = null
     var reach = 0
     sorted.forEach(function (entry) {
@@ -632,6 +835,7 @@
   FigureGraph.prototype.constructor = FigureGraph
   Object.setPrototypeOf(FigureGraph, HTMLElement)
 
+  /** @param {HTMLElement} graph */
   function place(graph) {
     // A node column shares the width evenly, with minmax(0, …) for the reason
     // the stylesheet gives on grid-auto-columns. An edge column takes only what
@@ -664,7 +868,7 @@
   }
 
   FigureGraph.prototype.connectedCallback = function () {
-    var graph = this
+    var graph = /** @type {HTMLElement} */ (/** @type {unknown} */ (this))
     // A figure upgrades the moment the parser reaches its start tag, and its own
     // nodes do not exist yet at that point. Placing them then finds nothing, so
     // every node falls into grid auto-placement and the cells a figure declared
@@ -681,5 +885,11 @@
     }
   }
 
-  if (!customElements.get("figure-graph")) customElements.define("figure-graph", FigureGraph)
+  // Cast because the constructor is hand-rolled rather than a class. It has to
+  // be: a class compiles to syntax older browsers reject, and this file ships
+  // as written. Reflect.construct gives the same prototype chain, and the
+  // registry only ever sees a real element.
+  if (!customElements.get("figure-graph")) {
+    customElements.define("figure-graph", /** @type {CustomElementConstructor} */ (/** @type {unknown} */ (FigureGraph)))
+  }
 })()

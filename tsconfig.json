@@ -42,5 +42,16 @@
   // Only src/. The other 2,042 lines of this project live inside
   // <script type="mycelium/*"> blocks in docs/, which the TypeScript compiler
   // cannot read at all — that is the language server's job, not tsconfig's.
-  "include": ["src/**/*.ts", "editor/**/*.ts", "docs/**/*.html"]
+  //
+  // The *.element.js files are the exception, because they are real files
+  // rather than blocks inside a document. They run in a browser, so they may
+  // not be TypeScript, and they carry their types as JSDoc instead. Each one
+  // opts in with its own `// @ts-check`: listing them here only lets the
+  // compiler see them, and checkJs stays off for the reason above.
+  "include": [
+    "src/**/*.ts",
+    "editor/**/*.ts",
+    "docs/**/*.html",
+    "docs/templates/*.element.js"
+  ]
 }

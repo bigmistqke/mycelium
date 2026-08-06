@@ -53,6 +53,38 @@ export interface CommandContext {
   cli: Cli
 }
 
+// A documents tree of a node test's own, thrown away when the case ends. The
+// templates of the real repository are linked into it, because a command lives
+// inside a template and a tree without them has no command to run.
+export interface TestSandbox {
+  // Absolute path to the tree. `docs` sits inside it, and every path below is
+  // relative to that.
+  readonly dir: string
+  // Runs the real command line against this tree, in its own process. Slower
+  // than calling the exported function, and it covers what calling it would
+  // miss: how arguments parse, which path a command picks, how a document
+  // serializes, and the exit code that comes back.
+  mycelium(...argv: string[]): { ok: boolean; status: number | null; stdout: string; stderr: string }
+  read(path: string): string
+  exists(path: string): boolean
+  write(path: string, text: string): void
+}
+
+// Throws when its first argument is false, which is the whole failure protocol
+// a test case has. `near` compares two measured numbers with a tolerance.
+export interface TestAssert {
+  (ok: unknown, text?: string): void
+  near(a: number, b: number, tolerance?: number, text?: string): void
+}
+
+// What a node test's default export is handed. The browser kind gets its own
+// three names in the page instead, from test.element.js, since nothing under
+// Node is there to hand it anything.
+export interface TestContext {
+  assert: TestAssert
+  sandbox: TestSandbox
+}
+
 // What an audit is handed. Read-only, and rooted one level above the docs
 // directory so src/ is reachable. A rule about language applies to a
 // comment in a source file as much as to prose in a document, and an
