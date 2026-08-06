@@ -110,7 +110,7 @@
     &lt;test-fixture&gt;
       &lt;figure-graph data-columns="2"&gt;…&lt;/figure-graph&gt;
     &lt;/test-fixture&gt;
-    &lt;script type="mycelium/test"&gt;
+    &lt;script type="text/mycelium-test"&gt;
       await settle(fixture)
       assert.near(laneOf(wires[0]), laneOf(wires[1]), 0.5, "the fork took two lanes")
     &lt;/script&gt;
@@ -127,10 +127,32 @@
   of markup in markup.
 </p>
 
+<h2>Why the case script is not a mycelium type</h2>
+<p>
+  <code>mycelium/*</code> marks a script inside a document that only ever loads under Node, and that is
+  exactly what lets one hold TypeScript. <code>src/script-hooks.ts</code> tells Node to strip types from any
+  script carrying the prefix, and the editor reads the same prefix to decide it is looking at
+  <code>.ts</code>.
+</p>
+<p>
+  A case script is the opposite. It runs in the browser, so it has to stay valid JavaScript, and giving it
+  the prefix would let an author write a type annotation with a clean editor and a clean
+  <code>pnpm typecheck</code> behind them. The failure arrives much later, as a syntax error inside the
+  page, saying nothing about types.
+</p>
+<p>
+  So the type is <code>text/mycelium-test</code>. It sits outside the prefix, which keeps both tools
+  treating it as JavaScript, and the browser skips it anyway because it does not recognise the type.
+</p>
+<p>
+  <code>mycelium/test</code> stays free for a node-test's script, where TypeScript is right and the prefix
+  means what it says.
+</p>
+
 <h2>What a case script gets</h2>
 <p>
-  A <code>&lt;script type="mycelium/test"&gt;</code> carries the body of the test. The browser skips it,
-  because the type is unknown to it, and the runner evaluates it as the body of an async function.
+  A <code>&lt;script type="text/mycelium-test"&gt;</code> carries the body of the test. The browser skips
+  it, and the runner evaluates it as the body of an async function.
 </p>
 <p>
   Three names come in. <code>fixture</code> is the case's own <code>test-fixture</code> element,
@@ -208,8 +230,8 @@
       const doc = fs.parse(path)
       if (doc.querySelector("template[id]")) continue
       for (const testCase of Array.from(doc.querySelectorAll("test-case"))) {
-        if (testCase.querySelector('script[type="mycelium/test"]')) continue
-        violations.push(`${path}: test-case ${testCase.getAttribute("id")} carries no mycelium/test script`)
+        if (testCase.querySelector('script[type="text/mycelium-test"]')) continue
+        violations.push(`${path}: test-case ${testCase.getAttribute("id")} carries no text/mycelium-test script`)
       }
     }
     return { ok: violations.length === 0, violations }

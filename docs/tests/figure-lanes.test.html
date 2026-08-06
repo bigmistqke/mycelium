@@ -30,7 +30,7 @@
         <figure-edge from="c" to="sink"></figure-edge>
       </figure-graph>
     </test-fixture>
-    <script type="mycelium/test">
+    <script type="text/mycelium-test">
       // Three sources, one target. Grouping edges by their source gives this
       // three lanes and draws three near-parallel lines into one box, which is
       // what grouping by connected component exists to fix. A fork would pass
@@ -61,7 +61,7 @@
         <figure-edge from="bottom" to="top" data-back>re-enters</figure-edge>
       </figure-graph>
     </test-fixture>
-    <script type="mycelium/test">
+    <script type="text/mycelium-test">
       // The gutter is a grid column, so the grid sizes it to the label and no
       // length of text can push the wire out of the figure. Both halves of that
       // claim are measurable: the wire runs left of every box, and the label

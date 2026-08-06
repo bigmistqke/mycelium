@@ -85,9 +85,9 @@
   }
 
   function run(testCase) {
-    var script = testCase.querySelector('script[type="mycelium/test"]')
+    var script = testCase.querySelector('script[type="text/mycelium-test"]')
     if (!script) {
-      write(testCase, "FAILURE", "this case carries no <script type=\"mycelium/test\">")
+      write(testCase, "FAILURE", "this case carries no <script type=\"text/mycelium-test\">")
       return Promise.resolve()
     }
     var made
