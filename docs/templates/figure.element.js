@@ -288,8 +288,7 @@
   FigureGraph.prototype.constructor = FigureGraph
   Object.setPrototypeOf(FigureGraph, HTMLElement)
 
-  FigureGraph.prototype.connectedCallback = function () {
-    var graph = this
+  function place(graph) {
     // A node column shares the width evenly, with minmax(0, …) for the reason
     // the stylesheet gives on grid-auto-columns. An edge column takes only what
     // the label inside it needs, which is what stops a long label reaching past
@@ -317,6 +316,24 @@
     requestAnimationFrame(function () { draw(graph) })
     if (typeof ResizeObserver === "function") {
       new ResizeObserver(function () { draw(graph) }).observe(graph)
+    }
+  }
+
+  FigureGraph.prototype.connectedCallback = function () {
+    var graph = this
+    // A figure upgrades the moment the parser reaches its start tag, and its own
+    // nodes do not exist yet at that point. Placing them then finds nothing, so
+    // every node falls into grid auto-placement and the cells a figure declared
+    // do nothing at all.
+    //
+    // Only a script loaded at the end of the body avoided this, because by then
+    // the parser had already built every figure. Waiting for the document to
+    // finish costs one event and stops the script's position in the page from
+    // deciding whether data-at means anything.
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", function () { place(graph) })
+    } else {
+      place(graph)
     }
   }
 
