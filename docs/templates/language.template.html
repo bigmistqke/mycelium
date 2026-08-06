@@ -372,6 +372,25 @@
     return `language/${match[1]}s/${file}`
   }
 
+  // What show accepts, which is looser than what the write commands take. A
+  // reader consulting an entry knows its name and not its type: list prints a
+  // path, one rule cites another by slug, and prose names one in passing.
+  // Guessing costs nothing here, so a bare slug tries all three directories and
+  // an ambiguous one names every match instead of choosing.
+  function resolveEntry(fs, name) {
+    const bare = name.replace(/^language\/(terms|rules|guides)\//, '')
+    if (/\.(term|rule|guide)\.html$/.test(bare)) return pathFor(bare)
+    const slug = bare.replace(/\.html$/, '')
+    const suffix = /^[\w-]+$/.test(slug) ? slug : null
+    if (!suffix) throw new Error(`"${name}" is neither a slug nor a language filename`)
+    const found = fs.list('language')
+      .map((entry) => entry.path)
+      .filter((path) => new RegExp(`/${suffix}\\.(term|rule|guide)\\.html$`).test(path))
+    if (found.length === 1) return found[0]
+    if (found.length > 1) throw new Error(`"${slug}" names more than one entry: ${found.join(', ')}`)
+    throw new Error(`no language entry named "${slug}" — run mycelium language list to see them`)
+  }
+
   function requireArgs(...checks) {
     for (const [value, label] of checks) {
       if (value === undefined) throw new Error(`missing required argument: ${label}`)
@@ -1241,11 +1260,16 @@
   /**
    * Print one entry in full, including a rule's check.
    *
-   *   mycelium language show <file>
+   *   mycelium language show <entry>
    *
-   * <file> is a whole existing filename including its .term.html, .rule.html or
-   * .guide.html suffix — the same argument update, link and unlink take, and
-   * contrast add, whose --file is a slug you choose.
+   * <entry> is a slug, so `mycelium language show passive-voice` finds the rule.
+   * A whole filename works too, and so does a path pasted straight out of list.
+   * A bare slug could in principle name an entry in any of the three
+   * directories, so this reports every match rather than picking one.
+   *
+   * Reading stays loose where writing stays strict. update, link and unlink
+   * still take a whole filename, because a wrong guess there edits the wrong
+   * entry. A wrong guess here prints the wrong entry and costs one more command.
    *
    * list answers which entries exist. This answers what one of them demands,
    * and the split is deliberate: folding the second into the first makes the
@@ -1271,9 +1295,10 @@
    */
   export function show({ fs, args }: CommandContext) {
     const file = args._[0]
-    requireArgs([file, '<file>'])
+    requireArgs([file, '<entry>'])
 
-    const doc = fs.get(pathFor(file))
+    const path = resolveEntry(fs, file)
+    const doc = fs.get(path)
     const el = doc.querySelector('[data-conforms-to]')
     if (!el) throw new Error(`${file} declares no conformance, so it is not a language entry`)
     const type = el.tagName.toLowerCase().replace('language-', '')
@@ -1288,7 +1313,7 @@
       for (const line of value.split('\n')) console.log(`  ${line.trim()}`)
     }
 
-    console.log(`${pathFor(file)}\n${type}\t${field('language-title') ?? ''}`)
+    console.log(`${path}\n${type}\t${field('language-title') ?? ''}`)
     section('validates', el.getAttribute('data-validates'))
 
     if (type === 'term') {
