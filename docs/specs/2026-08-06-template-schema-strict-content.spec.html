@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Strict content in the template schema: closing the root and the fields</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Strict content in the template schema: closing the root and the fields</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-06</spec-date>
+  <spec-problem>
+<p>The generic validator checks two things about a conforming element. It looks
+up each declared field among the direct children, and it rejects an undeclared
+child whose tag carries the family prefix. Everything else passes.</p>
+<p>Two holes follow, one at each level.</p>
+<p>At the root, a tag without the family prefix meets nothing. A
+<code>&lt;div&gt;</code> and a <code>&lt;blink&gt;</code> added to a knowledge
+node validate clean. A census over the 903 instances finds 550
+<code>&lt;a data-rel&gt;</code> edges and 22 <code>&lt;script&gt;</code>
+elements sitting there, and nothing else. So the whole graph structure lives
+outside the schema, and two live edges carry relations
+(<code>produced</code>, <code>resolves</code>) that no vocabulary lists.</p>
+<p>Inside a field, nothing looks at all. The walk reads
+<code>textContent</code> for a pattern or an enum and stops. A
+<code>&lt;b&gt;</code> inside a title is invisible, because
+<code>textContent</code> flattens it. Every field is unstructured, whether or
+not that suits it.</p>
+<p>Underneath both sits the same cause. Every placeholder in every template is
+empty, so the shape a template declares is one level deep, and the validator
+reads <code>shape.children</code> once. Nothing decided against declaring a
+grandchild; the machinery simply never grew.</p>
+</spec-problem>
+  <spec-design>
+<p>Turn the default around. A conforming element may hold only what its
+template declares, at the root and inside every field alike. The prefix guard
+goes away, and <code>!allowed.includes(tag)</code> becomes the whole check.</p>
+<p>This depends on
+<a href="./2026-08-06-template-schema-cardinality.spec.html">the cardinality
+spec</a>, whose <code>repeatable</code> declaration is what lets a template
+say that a field may hold many of something.</p>
+<h4 id="three-content-models">Three kinds of content, measured</h4>
+<p>A census over the corpus splits every declared field three ways.</p>
+<p>25 fields hold text and never anything else, among them
+<code>knowledge-title</code> at 471 instances,
+<code>knowledge-confidence</code> at 471 and <code>plan-status</code> at 275.
+These need no declaration. An empty placeholder already means text.</p>
+<p>A second group holds prose that varies: <code>knowledge-detail</code> across
+381 instances holds paragraphs, lists, headings, a blockquote and a table, and
+<code>spec-design</code> holds eight different tags. Listing those is busywork
+that would need revisiting whenever someone writes a document slightly
+differently.</p>
+<p>A third group holds a nested type rather than content.
+<code>plan-step</code> holds a title, a status, a detail and a check;
+<code>test-case</code> holds a name, a status, a script and a fixture. These
+are the most rigid of the three and the schema currently says the least about
+them.</p>
+<h4 id="the-markup-opt-out">The opt-out, for open prose</h4>
+<p>A placeholder carrying <code>markup</code> may hold any elements at all. It
+is a permission, and the word says what it permits rather than what it gives
+up, which is how <code>required</code>, <code>pattern</code> and
+<code>enum</code> already read.</p>
+<pre><code>&lt;knowledge-detail markup&gt;&lt;/knowledge-detail&gt;</code></pre>
+<p>Seven fields take it: <code>knowledge-detail</code>,
+<code>plan-detail</code>, the four rich fields of a spec, and
+<code>test-fixture</code>, whose content is whatever the test happens to
+need.</p>
+<h4 id="declaring-a-small-vocabulary">Declaring a small vocabulary instead</h4>
+<p>Where a field holds a fixed and short list of tags, declaring them beats the
+opt-out. <code>language-meaning</code> holds 32 links across 22 instances and
+nothing else. <code>test-subject</code> holds 5 links and nothing else.</p>
+<pre><code>&lt;language-meaning required&gt;
+  &lt;a repeatable href=".+"&gt;&lt;/a&gt;
+&lt;/language-meaning&gt;</code></pre>
+<p>Mixed content needs no rule of its own. The walk iterates elements, so text
+sitting between them never reaches a check, and a sentence with a link inside
+it validates as a sentence with a link inside it.</p>
+<p>The same form closes the root. Declaring the edge uses the
+attribute-value-as-pattern rule the schema already has, so one declaration both
+admits edges and closes the relation vocabulary.</p>
+<pre><code>&lt;a repeatable href=".+"
+   data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"&gt;
+&lt;/a&gt;</code></pre>
+<p><code>test.template.html</code> declares its script the same way, copying
+<code>language-rule</code>, which already carries
+<code>&lt;script required&gt;&lt;/script&gt;</code> and proves the form
+works.</p>
+<h4 id="naming-a-nested-type">Naming a nested type</h4>
+<p>For the third group, a placeholder names the template its content follows.</p>
+<pre><code>&lt;plan-task repeatable conforms-to="#plan-task"&gt;&lt;/plan-task&gt;
+&lt;figure-node required repeatable conforms-to="#figure-node"&gt;&lt;/figure-node&gt;</code></pre>
+<p>A parent then pulls its children into validation. This says the thing
+<a href="../templates/plan.template.html">plan.template.html</a> currently
+records as a limit: that a parent's template <q>can't reach into that child's
+own internal shape</q>.</p>
+<p>It also closes a gap in the figure family. No
+<code>figure-graph</code> in the corpus declares conformance, so no figure has
+ever met the generic validator, and a node placed at <code>nowhere</code>
+validates clean. One graph declaring conformance now brings twelve nodes with
+it, and no node needs an attribute of its own. See
+<a href="../knowledge/2026-08-05-instance-inside-a-host-document.observation.html">the
+observation about an instance living inside a host document</a> for the
+question that leaves open.</p>
+<h4 id="cost">What it costs</h4>
+<p>No document changes at all. Every text-only field already holds text in
+every instance, every prose field gets the opt-out, and every small vocabulary
+gets a declaration covering what the corpus already contains.</p>
+<p>The work lands entirely in the templates: seven <code>markup</code> markers,
+eight small vocabularies, four <code>conforms-to</code> declarations, an
+<code>&lt;a&gt;</code> in four templates and a <code>&lt;script&gt;</code> in
+one.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Anything about how many edges of which relation a given type should carry.
+This spec makes a template able to say that a node holds edges and which
+relations exist. Whether a decision must carry an outgoing edge stays a
+question for an audit, which sees the whole corpus.</p>
+<p>Text-level constraints inside a field, such as forbidding a link in a title
+while allowing bold. An empty placeholder means text and that is the whole of
+it.</p>
+<p>Repairing the two edges carrying unlisted relations. They fail on the first
+run after this lands, and fixing them is a separate step with its own
+judgment about which relation each one meant.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>A census records what the corpus holds, not what it should allow. Marking
+<code>knowledge-title</code> text-only forbids a code span in a title forever,
+and declaring <code>&lt;p&gt;</code> alone inside
+<code>language-detail</code> forbids a bullet list there. Nobody has wanted
+either yet, so each of those is a decision taken from evidence of habit rather
+than from evidence of need.</p>
+<p>Whether <code>markup</code> should constrain anything at all. It currently
+permits every tag, including a <code>&lt;script&gt;</code> inside a detail
+field, which would run in a browser.</p>
+<p>Whether <code>conforms-to</code> on a placeholder should accept a reference
+into another template file. <code>test-fixture</code> holds a
+<code>figure-graph</code> in twelve instances, which is a nested type from
+another family, and this spec covers it with <code>markup</code> instead.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>

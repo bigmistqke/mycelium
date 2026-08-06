@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: The whole knowledge graph sits outside the schema, and two edges use unrecorded relations</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>The whole knowledge graph sits outside the schema, and two edges use unrecorded relations</knowledge-title>
+  <knowledge-confidence>95</knowledge-confidence>
+  <knowledge-detail><p>The unexpected-child check in
+<a href="../templates/template.template.html">the generic validator</a> reads
+<code>tag.startsWith(familyPrefix) &amp;&amp; !allowed.includes(tag)</code>. A tag
+without the family prefix meets nothing. A <code>&lt;div&gt;</code> and a
+<code>&lt;blink&gt;</code> added as direct children of a knowledge node validate
+clean.</p>
+<p>A census over the 903 instances counts what sits there. 550
+<code>&lt;a data-rel&gt;</code> edges and 22 <code>&lt;script&gt;</code>
+elements, and nothing else at all. So the entire graph structure lives outside
+the schema: no template says a node may carry edges, how many, or which
+relations hold.</p>
+<p>Two live edges use labels that appear in no vocabulary.
+<code>2026-07-23-template-series-built.outcome.html</code> carries
+<code>data-rel="produced"</code> and
+<code>2026-07-25-plan-template-html-complete.outcome.html</code> carries
+<code>data-rel="resolves"</code>. CLAUDE.md names six labels plus
+<code>specifies</code> and <code>elaborates</code> as deliberate mints, and
+neither of these appears in either list. Meanwhile <code>blocks</code> is
+declared and never used once.</p>
+<p>That costs more than tidiness, because <code>link</code> upserts on the pair
+of relation and target. A mistyped relation cannot correct an edge; it adds a
+second one beside the right one, which CLAUDE.md already warns about and nothing
+catches.</p>
+<p>The scripts are not clutter either. Eleven belong to a
+<code>test-case</code> and six to a <code>language-rule</code>, where the script
+is the test or the check itself. The schema cannot see the load-bearing part of
+either type.</p>
+<p>Closing this needs no new vocabulary. Declaring
+<code>&lt;a repeatable data-rel="^(depends_on|…)$"&gt;</code> in each template
+uses the attribute-value-as-pattern rule the schema already has, together with
+the repeatable declaration
+<a href="../specs/2026-08-06-template-schema-cardinality.spec.html">the
+cardinality spec</a> adds. The check then drops its prefix guard.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-06-schema-cardinality-grammar.goal.html">the second hole the same check leaves open</a>
+  <a data-rel="elaborates" href="./../specs/2026-08-06-template-schema-strict-content.spec.html">the spec that closes both holes</a>
+</knowledge-observation>
+</body></html>
