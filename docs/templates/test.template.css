@@ -1,0 +1,98 @@
+/* The test-* vocabulary: a test document that reports on itself. Every tag is
+   hyphenated and scoped under its own family, so these rules cannot leak onto
+   another template's same-named tags. */
+
+test-doc {
+  display: block;
+}
+
+test-doc > test-title {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+test-doc > test-subject {
+  display: block;
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+test-case {
+  display: block;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+}
+
+test-name {
+  display: block;
+  font-weight: 600;
+}
+
+/* The verdict reads as a chip, and its colour comes from the text inside it
+   rather than from a class the runner has to remember to swap. One place
+   writes the word; nothing else has to stay in step with it. */
+test-status {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+
+/* CSS cannot select on text, and the verdict lives in the text because that is
+   what a reader and the CLI both read. So the runner writes the word and mirrors
+   it into data-verdict, and only the stylesheet uses the attribute. A document
+   on disk carries neither, which an audit enforces: a committed test states
+   PENDING and claims no result. */
+test-status[data-verdict="SUCCESS"] {
+  color: var(--pass);
+  border-color: var(--pass);
+}
+
+test-status[data-verdict="FAILURE"] {
+  color: var(--fail);
+  border-color: var(--fail);
+}
+
+test-case:has(test-status[data-verdict="SUCCESS"]) { border-left-color: var(--pass); }
+test-case:has(test-status[data-verdict="FAILURE"]) { border-left-color: var(--fail); }
+
+test-message {
+  display: block;
+  margin-top: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  background: var(--code-bg);
+  color: var(--fail);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+}
+
+test-fixture {
+  display: block;
+  margin-top: 0.75rem;
+}
+
+.test-summary {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  background: var(--code-bg);
+}
+
+.test-summary[data-verdict="SUCCESS"] { color: var(--pass); }
+.test-summary[data-verdict="FAILURE"] { color: var(--fail); }

@@ -158,6 +158,36 @@ No hand-authoring gap remains for either family. Full design:
 rich fields at once, and the date-prefixed-filename convention both
 families now share).
 
+### Browser tests
+
+`test.template.html` holds a family whose instances are tests. A test
+document lives in `docs/tests/<slug>.test.html`, carries no date, and
+reports on itself: open it in a browser and each `<test-status>` goes from
+PENDING to SUCCESS or FAILURE.
+
+```bash
+pnpm mycelium test run [<file>] [--show] [--timeout MS] [--port N]
+pnpm mycelium test list
+```
+`run` opens each document in a headless Chrome over W3C WebDriver, waits for
+no status to read PENDING, and exits non-zero if any case failed. It
+downloads a chromedriver matching the installed Chrome on first use and
+caches it under `node_modules/.cache/`; CI uses the one the runner already
+has. `--show` runs a visible browser. Every failing case leaves a
+screenshot of its fixture beside the document.
+
+There is **no `add`**. A test's substance is a fixture and a script, and
+neither fits on a flag, so writing one means writing the markup — the state
+`figure` is also in. This is the one family where hand-authoring is correct.
+
+PENDING is the only verdict a file may hold, and the schema enforces it. A
+result belongs to a run, so nothing commits one. Do not "helpfully" write
+SUCCESS into a document.
+
+`validate` cannot test the figure engine, and no audit ever will: it parses
+with happy-dom, which computes no layout, so every rect is zero. See
+`docs/knowledge/2026-08-05-happy-dom-computes-no-layout.observation.html`.
+
 ### The Core Rule
 
 ```

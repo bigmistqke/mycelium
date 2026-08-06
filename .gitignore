@@ -15,4 +15,8 @@ dist/
 # Derived from the documents, so it is not a source file.
 docs/index.html
 
+# Written by `mycelium test run` beside a test document, one per failing case.
+# A picture of a run, not of the repository, and the next run replaces it.
+docs/tests/*.failure.png
+
 editor/vscode/node_modules/

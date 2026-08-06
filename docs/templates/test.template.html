@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template: test-doc</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="./test.template.css">
+</head>
+<body>
+
+<h1>Template: test-doc</h1>
+<div class="meta">
+  <div><b>Types:</b> <code>test-doc</code>, <code>test-case</code></div>
+  <div><b>Purpose:</b> a test that is a document. Open it and the verdicts fill themselves in; point the
+    command at it and a headless browser reads the same verdicts out of the same fields.</div>
+  <div><b>Behaviour:</b> <code>./test.element.js</code>, a classic script that runs every case in the page
+    and writes what happened</div>
+  <div><b>Styling:</b> <code>./test.template.css</code>, plus the shared <code>../theme.css</code></div>
+</div>
+
+<h2>Why this template exists</h2>
+<p>
+  The figure layout engine reads measured boxes for every decision it makes. Which edges share a connected
+  component, how many lanes a gap needs, where a back edge's gutter runs — all of it comes from
+  <code>getBoundingClientRect</code>.
+</p>
+<p>
+  <a href="../knowledge/2026-08-05-happy-dom-computes-no-layout.observation.html">happy-dom computes no
+  layout</a>, so the engine cannot be tested where <code>validate</code> already runs. Every rect comes back
+  zero, which collapses every figure to one case and passes every check.
+</p>
+<p>
+  Two ways out looked plausible. Split the engine so its decisions take boxes and return lanes, then drive
+  that with synthetic boxes. Or bring in a real browser and a test framework with it.
+</p>
+<p>
+  This is the third. The test is a document, the page runs itself, and a browser only opens it.
+</p>
+
+<h2>One page, two readers</h2>
+<p>
+  A person opens the file and watches each <code>test-status</code> go from PENDING to SUCCESS or FAILURE.
+  The command opens the same file in a headless browser, waits for the same fields to stop reading PENDING,
+  and reads them out.
+</p>
+<p>
+  Nothing in the document knows which of the two is looking at it. That is the property worth having: the
+  page a person debugs and the page a build gates on run identical code, so the two cannot drift.
+</p>
+<p>
+  Waiting on the statuses also carries asynchrony for free. A figure case waits for an animation frame and
+  then for a <code>ResizeObserver</code>, and no case ever declares itself async or hands a promise to a
+  harness.
+</p>
+
+<h2>PENDING is the only verdict a file may hold</h2>
+<p>
+  <code>test-status</code> takes exactly one value on disk, and the schema says so. A result belongs to a
+  run, not to the repository, and a committed SUCCESS is a claim somebody typed rather than something that
+  happened.
+</p>
+<p>
+  The runner writes the other two words into the live page, where no validator ever looks. It mirrors each
+  one into <code>data-verdict</code> at the same time, because CSS cannot select on text and the verdict has
+  to stay in the text for a reader and the command to agree on it.
+</p>
+
+<h2>Two kinds of test, split by what they touch</h2>
+<p>
+  A browser-test reaches a rendered page, and whether a person or the command opened that page changes
+  nothing about it. This template describes that kind.
+</p>
+<p>
+  A node-test reaches the filesystem, spawns commands and imports from <code>../../src/api.ts</code>. No
+  browser can host one, so it needs a different runner and it is not in this pass.
+</p>
+<p>
+  The split is about what a test touches rather than about what it needs to measure. An earlier framing
+  divided them by whether a case needed real layout, which stopped meaning anything once a real browser
+  became available.
+</p>
+
+<h2>Shape</h2>
+
+<template id="test-doc">
+  <test-doc>
+    <test-title required></test-title>
+    <test-subject required></test-subject>
+    <test-case></test-case>
+  </test-doc>
+</template>
+
+<template id="test-case">
+  <test-case id=".+">
+    <test-name required></test-name>
+    <test-status required enum="PENDING"></test-status>
+    <test-message></test-message>
+    <test-fixture></test-fixture>
+  </test-case>
+</template>
+
+<pre><code>&lt;test-doc data-conforms-to="../templates/test.template.html#test-doc"&gt;
+  &lt;test-title&gt;The figure engine allocates lanes per channel&lt;/test-title&gt;
+  &lt;test-subject&gt;&lt;a href="../templates/figure.element.js"&gt;figure.element.js&lt;/a&gt;&lt;/test-subject&gt;
+
+  &lt;test-case id="fork-shares-a-lane" data-conforms-to="../templates/test.template.html#test-case"&gt;
+    &lt;test-name&gt;Two edges out of one node share a single lane&lt;/test-name&gt;
+    &lt;test-status&gt;PENDING&lt;/test-status&gt;
+    &lt;test-fixture&gt;
+      &lt;figure-graph data-columns="2"&gt;…&lt;/figure-graph&gt;
+    &lt;/test-fixture&gt;
+    &lt;script type="mycelium/test"&gt;
+      await settle(fixture)
+      assert.near(laneOf(wires[0]), laneOf(wires[1]), 0.5, "the fork took two lanes")
+    &lt;/script&gt;
+  &lt;/test-case&gt;
+&lt;/test-doc&gt;</code></pre>
+
+<p>
+  <code>test-message</code> holds why a case failed, and a document on disk carries none. The schema rejects
+  an empty field, so the runner creates one at the moment it has something to put there.
+</p>
+<p>
+  <code>test-fixture</code> holds ordinary markup, live in the page rather than cloned into it. A figure
+  inside one upgrades and draws exactly as it would anywhere else, which is the whole reason to write a test
+  of markup in markup.
+</p>
+
+<h2>What a case script gets</h2>
+<p>
+  A <code>&lt;script type="mycelium/test"&gt;</code> carries the body of the test. The browser skips it,
+  because the type is unknown to it, and the runner evaluates it as the body of an async function.
+</p>
+<p>
+  Three names come in. <code>fixture</code> is the case's own <code>test-fixture</code> element,
+  <code>settle</code> waits until an element stops changing, and <code>assert</code> throws when its first
+  argument is false.
+</p>
+<p>
+  Throwing is the whole failure protocol. A case that returns has passed, and the message on whatever it
+  threw lands in <code>test-message</code>.
+</p>
+<p>
+  <code>assert.near</code> compares two measured numbers with a tolerance. Geometry rarely lands on a whole
+  number, so exact equality on anything a browser rounded is a flake waiting to happen.
+</p>
+
+<h2>Why the runner lives in the page</h2>
+<p>
+  Putting it in the command instead would mean two implementations of what a case is: one the browser runs
+  when a person opens the file, one the tool runs in CI. Those drift, and the drift shows up as a test that
+  passes in one place and fails in the other.
+</p>
+<p>
+  So the command knows nothing about cases, fixtures or assertions. It opens a URL, waits for no field to
+  read PENDING, and reads the fields. Everything else is the document's business.
+</p>
+<p>
+  <code>test.element.js</code> is a classic script and not a module, for the reason
+  <a href="./figure.template.html">figure.template.html</a> gives about <code>file://</code> and the CORS
+  check on module scripts.
+</p>
+
+<h2>How a run ends</h2>
+<p>
+  The command sends the wait as an asynchronous script and lets the driver enforce the script timeout. Past
+  the deadline a case still reading PENDING has failed, because a thrown error already writes FAILURE, so
+  PENDING at the end means the script hung or the page never loaded its subject.
+</p>
+<p>
+  There is no TIMEOUT in the enum for the same reason. PENDING already means "nothing has answered", which
+  is exactly what happened.
+</p>
+<p>
+  A page-level error short-circuits that wait. The runner listens for one, marks every case still reading
+  PENDING as FAILURE, and puts the error in each message — so a missing subject script reports a reason
+  rather than costing a full deadline.
+</p>
+
+<h2>The audits</h2>
+<p>
+  Two checks, both reading the document rather than its rendering. A case carries a script, and a test
+  document loads the runner.
+</p>
+<p>
+  Both catch an authoring mistake whose only other symptom arrives late. A case with no script fails at run
+  time, and a document that never loads the runner leaves every case pending until the deadline.
+</p>
+
+<script type="mycelium/audit" data-audits="test-cases-carry-a-script" data-touches="test-case">
+  import type { AuditFs } from "../../src/api.ts"
+
+  /**
+   * Every test-case carries a script for the runner to evaluate.
+   *
+   * A case without one can never pass. The runner reports it, but only once
+   * somebody runs the document, and the whole point of a check here is to say
+   * so before that.
+   *
+   * Skips a document that declares a template, which is documentation about
+   * this type rather than an instance of it — the same rule
+   * nothing-outside-the-type uses to tell the two apart.
+   */
+  export async function check(fs: AuditFs) {
+    const violations = []
+    for (const path of fs.list("docs", { ext: ".html" })) {
+      const doc = fs.parse(path)
+      if (doc.querySelector("template[id]")) continue
+      for (const testCase of Array.from(doc.querySelectorAll("test-case"))) {
+        if (testCase.querySelector('script[type="mycelium/test"]')) continue
+        violations.push(`${path}: test-case ${testCase.getAttribute("id")} carries no mycelium/test script`)
+      }
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<script type="mycelium/audit" data-audits="test-documents-load-the-runner" data-touches="test-doc">
+  import type { AuditFs } from "../../src/api.ts"
+
+  /**
+   * Every test-doc loads test.element.js, so something in the page runs it.
+   *
+   * Without the runner a document renders as a list of cases that all read
+   * PENDING and always will. A person sees a page that looks like it is still
+   * working, and the command waits out its whole deadline before saying the
+   * same thing.
+   *
+   * Matches on the filename rather than the exact path, since a document's
+   * depth below the documents directory decides how many steps up it writes.
+   */
+  export async function check(fs: AuditFs) {
+    const violations = []
+    for (const path of fs.list("docs", { ext: ".html" })) {
+      const doc = fs.parse(path)
+      if (doc.querySelector("template[id]")) continue
+      if (!doc.querySelector("test-doc")) continue
+      const scripts = Array.from(doc.querySelectorAll("script[src]"))
+      if (scripts.some((s) => (s.getAttribute("src") ?? "").endsWith("test.element.js"))) continue
+      violations.push(`${path}: a test-doc that never loads test.element.js, so no case can run`)
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<h2>The command</h2>
+<p>
+  <code>run</code> opens each test document in a headless browser and reports what the page decided.
+  <code>list</code> prints what exists without running anything.
+</p>
+<p>
+  The driver provisions itself. Chrome for Testing publishes a chromedriver per platform as a plain zip, one
+  per build number that an installed Chrome reports, so a first run downloads a matching driver and caches
+  it. On a machine that already has one, <code>CHROMEWEBDRIVER</code> points at it and nothing downloads.
+</p>
+
+<script type="mycelium/command">
+  import type { CommandContext } from "../../src/api.ts"
+  import { spawn, execFileSync } from "node:child_process"
+  import { existsSync, mkdirSync, writeFileSync, chmodSync, rmSync } from "node:fs"
+  import { dirname, join, resolve } from "node:path"
+
+  // W3C's fixed key for a web element reference. Every conforming driver
+  // returns this exact string, which is why it can be a constant here.
+  const ELEMENT = "element-6066-11e4-a52e-4f735466cecf"
+  const BUILDS = "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json"
+
+  // Where a run looks for Chrome when CHROME_PATH says nothing. Ordered by
+  // platform, and a miss here is a clear error rather than a guess: the command
+  // names the variable to set.
+  const CHROME_GUESSES = {
+    darwin: [
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    ],
+    linux: ["/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/chromium", "/usr/bin/chromium-browser"],
+    win32: ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"],
+  }
+
+  const PLATFORMS = {
+    "darwin-arm64": "mac-arm64",
+    "darwin-x64": "mac-x64",
+    "linux-x64": "linux64",
+    "win32-x64": "win64",
+  }
+
+  function sleep(ms) {
+    return new Promise((done) => setTimeout(done, ms))
+  }
+
+  function chromePath() {
+    if (process.env.CHROME_PATH) return process.env.CHROME_PATH
+    for (const guess of CHROME_GUESSES[process.platform] ?? []) {
+      if (existsSync(guess)) return guess
+    }
+    throw new Error("no Chrome found — set CHROME_PATH to the browser binary")
+  }
+
+  // The build number, which is the version without its patch. A driver matches
+  // Chrome by build, so 150.0.7871.124 drives 150.0.7871.189 and the exact
+  // patch never has to line up.
+  function chromeBuild(binary) {
+    const printed = execFileSync(binary, ["--version"], { encoding: "utf8" })
+    const found = /(\d+\.\d+\.\d+)\.\d+/.exec(printed)
+    if (!found) throw new Error(`could not read a version out of "${printed.trim()}"`)
+    return found[1]
+  }
+
+  function unpack(zip, into) {
+    // Node ships no zip reader, so this borrows one. unzip covers macOS and
+    // every CI image; bsdtar reads zip too and covers Windows.
+    try {
+      execFileSync("unzip", ["-oq", zip, "-d", into], { stdio: "ignore" })
+    } catch {
+      execFileSync("tar", ["-xf", zip, "-C", into], { stdio: "ignore" })
+    }
+  }
+
+  // A driver matching the installed Chrome, downloaded once and kept. Under
+  // node_modules so the cache is already ignored by git and already something a
+  // clean checkout expects to rebuild.
+  async function chromedriver(root) {
+    if (process.env.CHROMEWEBDRIVER) {
+      const given = join(process.env.CHROMEWEBDRIVER, "chromedriver")
+      if (existsSync(given)) return given
+    }
+    const build = chromeBuild(chromePath())
+    const platform = PLATFORMS[`${process.platform}-${process.arch}`]
+    if (!platform) throw new Error(`Chrome for Testing publishes no driver for ${process.platform}-${process.arch}`)
+
+    const cache = join(root, "node_modules", ".cache", "mycelium", `chromedriver-${build}-${platform}`)
+    const binary = join(cache, `chromedriver-${platform}`, process.platform === "win32" ? "chromedriver.exe" : "chromedriver")
+    if (existsSync(binary)) return binary
+
+    const catalogue = await (await fetch(BUILDS)).json()
+    const downloads = catalogue.builds?.[build]?.downloads?.chromedriver
+    const match = (downloads ?? []).find((entry) => entry.platform === platform)
+    if (!match) throw new Error(`Chrome for Testing lists no ${platform} driver for build ${build}`)
+
+    console.log(`downloading chromedriver ${build} for ${platform}`)
+    mkdirSync(cache, { recursive: true })
+    const zip = join(cache, "chromedriver.zip")
+    writeFileSync(zip, Buffer.from(await (await fetch(match.url)).arrayBuffer()))
+    unpack(zip, cache)
+    rmSync(zip, { force: true })
+    if (!existsSync(binary)) throw new Error(`the driver archive held no ${binary}`)
+    chmodSync(binary, 0o755)
+    return binary
+  }
+
+  // A thin WebDriver client. Six endpoints cover a whole run, so this is the
+  // whole protocol layer and there is no library under it.
+  function session(base) {
+    async function call(method, path, body) {
+      const response = await fetch(base + path, {
+        method,
+        headers: body ? { "content-type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      })
+      const payload = await response.json()
+      if (!response.ok) {
+        const value = payload.value ?? {}
+        throw new Error(`${value.error ?? "webdriver error"}: ${(value.message ?? "").split("\n")[0]}`)
+      }
+      return payload.value
+    }
+    return call
+  }
+
+  // What the page gets asked. It resolves the moment no case reads PENDING,
+  // which is also how a person reading the page knows the run has finished.
+  const WAIT = `
+    const done = arguments[arguments.length - 1]
+    const read = () => Array.from(document.querySelectorAll("test-case")).map((el) => ({
+      id: el.getAttribute("id"),
+      name: (el.querySelector("test-name") || {}).textContent?.trim() ?? "",
+      status: ((el.querySelector("test-status") || {}).textContent || "").trim(),
+      message: ((el.querySelector("test-message") || {}).textContent || "").trim(),
+    }))
+    const tick = () => {
+      const cases = read()
+      if (!cases.length || cases.every((one) => one.status !== "PENDING")) return done(cases)
+      setTimeout(tick, 50)
+    }
+    tick()
+  `
+
+  function testDocuments(fs, only) {
+    const found = fs.list("tests")
+      .map((entry) => entry.path)
+      .filter((path) => path.endsWith(".test.html"))
+      .sort()
+    if (!only) return found
+    const matched = found.filter((path) => path === only || path.endsWith(`/${only}`) || path.endsWith(`/${only}.test.html`))
+    if (!matched.length) throw new Error(`no test document matching "${only}" under tests/`)
+    return matched
+  }
+
+  /**
+   * Open every test document in a headless browser and report what it decided.
+   *
+   *   mycelium test run [<file>] [--show] [--timeout MS] [--port N]
+   *
+   * <file> narrows the run to one document, by path or by slug. Without it
+   * every tests/*.test.html runs.
+   *
+   * The command opens a page, waits for no test-status to read PENDING, and
+   * reads the statuses out. It knows nothing about cases, fixtures or
+   * assertions: test.element.js runs those in the page, so the document a
+   * person opens and the document this opens behave identically.
+   *
+   * Past --timeout (30000 by default) the driver gives up on the wait, and a
+   * case still reading PENDING counts as failed. A thrown assertion already
+   * writes FAILURE, so PENDING at the end means the case hung or the page never
+   * loaded its subject.
+   *
+   * Every failing case leaves a screenshot of its own fixture next to the
+   * document, named for the case. The window opens large enough that a tall
+   * figure fits, because a driver captures the part of an element that fits the
+   * viewport and silently crops the rest.
+   *
+   * --show runs a visible browser instead of a headless one, for watching a
+   * case that only misbehaves under the command.
+   *
+   * Exits nonzero if any case failed, so a build can gate on it.
+   */
+  export async function run({ fs, args }: CommandContext) {
+    const root = dirname(fs.root)
+    const paths = testDocuments(fs, args._[0])
+    if (!paths.length) {
+      console.log("no test documents under tests/")
+      return
+    }
+
+    const port = Number(args.port ?? 9515)
+    const timeout = Number(args.timeout ?? 30000)
+    const driver = await chromedriver(root)
+    const server = spawn(driver, [`--port=${port}`], { stdio: "ignore" })
+    const call = session(`http://127.0.0.1:${port}`)
+
+    let failures = 0
+    let total = 0
+    try {
+      for (let i = 0; i < 100; i++) {
+        try { if ((await call("GET", "/status")).ready) break } catch {}
+        await sleep(50)
+      }
+
+      const options = ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
+      if (args.show === undefined) options.push("--headless")
+      const opened = await call("POST", "/session", {
+        capabilities: { alwaysMatch: { browserName: "chrome", "goog:chromeOptions": { args: options } } },
+      })
+      const at = `/session/${opened.sessionId}`
+
+      try {
+        // Large enough that an element screenshot of a tall figure is whole.
+        await call("POST", `${at}/window/rect`, { width: 1400, height: 2200 })
+        await call("POST", `${at}/timeouts`, { script: timeout })
+
+        for (const path of paths) {
+          const full = resolve(fs.root, path)
+          console.log(`\n${path}`)
+          let cases
+          try {
+            await call("POST", `${at}/url`, { url: `file://${full}` })
+            cases = await call("POST", `${at}/execute/async`, { script: WAIT, args: [] })
+          } catch (err) {
+            failures++
+            console.log(`  FAILURE  the page never finished — ${err.message}`)
+            continue
+          }
+          if (!cases.length) console.log("  no cases in this document")
+          for (const one of cases) {
+            total++
+            const pending = one.status === "PENDING"
+            const failed = pending || one.status === "FAILURE"
+            const verdict = pending ? "PENDING" : one.status
+            console.log(`  ${verdict.padEnd(8)} ${one.name}`)
+            if (!failed) continue
+            failures++
+            if (one.message) console.log(`           ${one.message}`)
+            if (pending) console.log(`           nothing answered before the ${timeout}ms deadline`)
+            await capture(call, at, path, one.id, full)
+          }
+        }
+      } finally {
+        await call("DELETE", at).catch(() => {})
+      }
+    } finally {
+      server.kill()
+    }
+
+    console.log(`\n${total} cases, ${failures} failed`)
+    if (failures) throw new Error(`${failures} of ${total} cases failed`)
+  }
+
+  // A picture of the case that failed, written beside its document. Not through
+  // the document filesystem, which serializes HTML — a screenshot is not a
+  // document and has no business going through that path.
+  async function capture(call, at, path, id, full) {
+    if (!id) return
+    try {
+      const found = await call("POST", `${at}/element`, { using: "css selector", value: `test-case[id="${id}"] test-fixture` })
+      const encoded = await call("GET", `${at}/element/${found[ELEMENT]}/screenshot`)
+      const png = `${full.replace(/\.test\.html$/, "")}.${id}.failure.png`
+      writeFileSync(png, Buffer.from(encoded, "base64"))
+      console.log(`           wrote ${png.slice(full.length - path.length)}`)
+    } catch {
+      // A case can fail before it ever renders anything, and a missing picture
+      // is not itself a failure worth reporting over the one that caused it.
+    }
+  }
+
+  /**
+   * Print every test document and the cases in it, without running anything.
+   *
+   *   mycelium test list
+   *
+   * Reports what is on disk, which is every status reading PENDING. For a
+   * verdict, use run — the repository never holds one, on purpose.
+   */
+  export function list({ fs }: CommandContext) {
+    for (const { path, doc } of fs.list("tests")) {
+      if (!path.endsWith(".test.html")) continue
+      const title = doc.querySelector("test-title")?.textContent?.trim() ?? ""
+      console.log(`${path}\t${title}`)
+      for (const one of Array.from(doc.querySelectorAll("test-case"))) {
+        const name = one.querySelector("test-name")?.textContent?.trim() ?? ""
+        console.log(`  ${one.getAttribute("id")}\t${name}`)
+      }
+    }
+  }
+</script>
+
+<h2>What this pass does not do</h2>
+<p>
+  No node-tests. The runner is a page, so a test of the command layer has nowhere to live yet.
+</p>
+<p>
+  No authoring command. A test's substance is a fixture and a script, and neither fits on a flag, so writing
+  one means writing the markup — the state <code>figure</code> is still in.
+</p>
+<p>
+  No second browser. WebDriver is the reason Firefox stays reachable, but nothing here asks for it yet.
+</p>
+
+</body>
+</html>
