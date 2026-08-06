@@ -158,23 +158,44 @@ No hand-authoring gap remains for either family. Full design:
 rich fields at once, and the date-prefixed-filename convention both
 families now share).
 
-### Browser tests
+### Tests
 
 `test.template.html` holds a family whose instances are tests. A test
-document lives in `docs/tests/<slug>.test.html`, carries no date, and
-reports on itself: open it in a browser and each `<test-status>` goes from
-PENDING to SUCCESS or FAILURE.
+document lives in `docs/tests/<slug>.test.html` and carries no date.
 
 ```bash
 pnpm mycelium test run [<file>] [--show] [--timeout MS] [--port N]
 pnpm mycelium test list
 ```
-`run` opens each document in a headless Chrome over W3C WebDriver, waits for
-no status to read PENDING, and exits non-zero if any case failed. It
-downloads a chromedriver matching the installed Chrome on first use and
-caches it under `node_modules/.cache/`; CI uses the one the runner already
-has. `--show` runs a visible browser. Every failing case leaves a
+
+The script type on a case decides which runner opens it. Nothing else
+declares the split, because `mycelium/*` already means "loads only under
+Node" for every script in the project:
+
+- `<script type="mycelium/test">` — a **node case**. TypeScript, exports
+  `check({ assert, sandbox })`. `sandbox` is a throwaway documents tree with
+  the real templates linked in; `sandbox.mycelium(...argv)` runs the real
+  command line against it and `read`/`exists`/`write` reach the files. One
+  fresh sandbox per case.
+- `<script type="text/mycelium-test">` — a **browser case**. Plain
+  JavaScript, an async function body, given `fixture`, `settle` and
+  `assert`. It must NOT use the `mycelium/` prefix: that would make the
+  editor and `script-hooks.ts` treat browser code as TypeScript, and a type
+  annotation would then fail only at run time in the page.
+
+Throwing fails a case, either way. A document may not mix the two kinds —
+an audit checks this.
+
+Node documents run first and alone, so a run with no browser cases never
+starts Chrome. Browser documents open in headless Chrome over W3C
+WebDriver; a chromedriver matching the installed Chrome downloads on first
+use into `node_modules/.cache/`, and CI uses the one the runner already
+has. `--show` runs a visible browser. Every failing browser case leaves a
 screenshot of its fixture beside the document.
+
+Only a browser document is its own report. Open it and watch each
+`<test-status>` go from PENDING to SUCCESS or FAILURE. A node document has
+no rendering, so its verdicts go to the command's output.
 
 There is **no `add`**. A test's substance is a fixture and a script, and
 neither fits on a flag, so writing one means writing the markup — the state

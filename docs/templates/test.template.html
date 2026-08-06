@@ -69,16 +69,42 @@
 <h2>Two kinds of test, split by what they touch</h2>
 <p>
   A browser-test reaches a rendered page, and whether a person or the command opened that page changes
-  nothing about it. This template describes that kind.
+  nothing about it. A node-test reaches the filesystem and the command line. Both are the same document,
+  and the type on a case's script says which one it is.
 </p>
 <p>
-  A node-test reaches the filesystem, spawns commands and imports from <code>../../src/api.ts</code>. No
-  browser can host one, so it needs a different runner and it is not in this pass.
+  Nothing else declares the split, because a script type already carries exactly this meaning everywhere
+  else here. <code>mycelium/*</code> marks a script that only ever loads under Node, so
+  <code>mycelium/test</code> is a node case and <code>text/mycelium-test</code> is a browser one.
 </p>
 <p>
   The split is about what a test touches rather than about what it needs to measure. An earlier framing
   divided them by whether a case needed real layout, which stopped meaning anything once a real browser
   became available.
+</p>
+<p>
+  One property does not carry across. A browser document is its own report, and a node document is not:
+  nothing renders it, so its verdicts go to the command's output and never into the file.
+</p>
+
+<h2>What a node case gets</h2>
+<p>
+  A node case exports <code>check</code>, the same shape an audit uses, and receives
+  <code>assert</code> and a <code>sandbox</code>. Throwing fails the case, exactly as in a page.
+</p>
+<p>
+  The sandbox is a documents tree of its own, thrown away afterwards, with this repository's templates
+  linked into it. <code>sandbox.mycelium(…)</code> runs the real command line against that tree and returns
+  its output and exit status, and <code>read</code>, <code>exists</code> and <code>write</code> reach the
+  files.
+</p>
+<p>
+  Spawning the real command costs more than calling the function would, and it buys what calling it would
+  miss: how arguments parse, which path a command chooses, how a document serializes, and what exit code
+  comes back.
+</p>
+<p>
+  Each case gets a fresh sandbox, so no test can see what another one wrote.
 </p>
 
 <h2>Shape</h2>
@@ -202,21 +228,26 @@
 
 <h2>The audits</h2>
 <p>
-  Two checks, both reading the document rather than its rendering. A case carries a script, and a test
-  document loads the runner.
+  Three checks, all reading the document rather than its rendering. A case carries a script, a browser
+  document loads the page runner, and no document mixes the two kinds of case.
 </p>
 <p>
-  Both catch an authoring mistake whose only other symptom arrives late. A case with no script fails at run
-  time, and a document that never loads the runner leaves every case pending until the deadline.
+  Each catches an authoring mistake whose only other symptom arrives late. A case with no script fails at
+  run time, a browser document that never loads the runner leaves every case pending until the deadline,
+  and a mixed document silently runs only half of itself while still reporting a complete result.
 </p>
 
 <script type="mycelium/audit" data-audits="test-cases-carry-a-script" data-touches="test-case">
   import type { AuditFs } from "../../src/api.ts"
 
   /**
-   * Every test-case carries a script for the runner to evaluate.
+   * Every test-case carries a script for a runner to evaluate.
    *
-   * A case without one can never pass. The runner reports it, but only once
+   * Either type counts. A mycelium/test script runs under Node and may be
+   * TypeScript; a text/mycelium-test script runs in a browser and may not.
+   * Which one a case carries is also what decides the runner that opens it.
+   *
+   * A case without either can never pass. The runner reports it, but only once
    * somebody runs the document, and the whole point of a check here is to say
    * so before that.
    *
@@ -230,8 +261,8 @@
       const doc = fs.parse(path)
       if (doc.querySelector("template[id]")) continue
       for (const testCase of Array.from(doc.querySelectorAll("test-case"))) {
-        if (testCase.querySelector('script[type="text/mycelium-test"]')) continue
-        violations.push(`${path}: test-case ${testCase.getAttribute("id")} carries no text/mycelium-test script`)
+        if (testCase.querySelector('script[type="mycelium/test"], script[type="text/mycelium-test"]')) continue
+        violations.push(`${path}: test-case ${testCase.getAttribute("id")} carries neither a mycelium/test nor a text/mycelium-test script`)
       }
     }
     return { ok: violations.length === 0, violations }
@@ -242,12 +273,16 @@
   import type { AuditFs } from "../../src/api.ts"
 
   /**
-   * Every test-doc loads test.element.js, so something in the page runs it.
+   * Every browser test document loads test.element.js, so something in the
+   * page runs it.
    *
    * Without the runner a document renders as a list of cases that all read
    * PENDING and always will. A person sees a page that looks like it is still
    * working, and the command waits out its whole deadline before saying the
    * same thing.
+   *
+   * A node document is exempt, and needs to be: nothing opens it in a browser,
+   * so a page runner in it would be dead weight that also never runs.
    *
    * Matches on the filename rather than the exact path, since a document's
    * depth below the documents directory decides how many steps up it writes.
@@ -258,9 +293,38 @@
       const doc = fs.parse(path)
       if (doc.querySelector("template[id]")) continue
       if (!doc.querySelector("test-doc")) continue
+      if (!doc.querySelector('script[type="text/mycelium-test"]')) continue
       const scripts = Array.from(doc.querySelectorAll("script[src]"))
       if (scripts.some((s) => (s.getAttribute("src") ?? "").endsWith("test.element.js"))) continue
-      violations.push(`${path}: a test-doc that never loads test.element.js, so no case can run`)
+      violations.push(`${path}: a browser test document that never loads test.element.js, so no case can run`)
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<script type="mycelium/audit" data-audits="test-documents-pick-one-runner" data-touches="test-doc">
+  import type { AuditFs } from "../../src/api.ts"
+
+  /**
+   * A test document's cases all run in the same place.
+   *
+   * The command reads a document's kind off the script type its cases carry,
+   * and opens the whole document one way or the other. A document holding both
+   * kinds has no single answer, so half its cases would never run and the
+   * report would still look complete.
+   *
+   * Splitting them costs nothing. A node case and a browser case share no
+   * fixture and no state, because each one gets its own sandbox or its own
+   * page.
+   */
+  export async function check(fs: AuditFs) {
+    const violations = []
+    for (const path of fs.list("docs", { ext: ".html" })) {
+      const doc = fs.parse(path)
+      if (doc.querySelector("template[id]")) continue
+      if (!doc.querySelector('script[type="mycelium/test"]')) continue
+      if (!doc.querySelector('script[type="text/mycelium-test"]')) continue
+      violations.push(`${path}: holds both node and browser cases, so no single runner covers it`)
     }
     return { ok: violations.length === 0, violations }
   }
@@ -279,9 +343,111 @@
 
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
-  import { spawn, execFileSync } from "node:child_process"
-  import { existsSync, mkdirSync, writeFileSync, chmodSync, rmSync } from "node:fs"
+  import { spawn, spawnSync, execFileSync } from "node:child_process"
+  import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync, chmodSync, rmSync } from "node:fs"
+  import { tmpdir } from "node:os"
   import { dirname, join, resolve } from "node:path"
+  import { pathToFileURL } from "node:url"
+
+  // A case's script type says which runtime can host it, which is the rule the
+  // engine already applies to every script inside a document. A mycelium/* type
+  // loads under Node and may be TypeScript. Anything else has to stay valid in
+  // a browser. So nothing extra has to be declared: the type a case already
+  // carries is the whole answer to which runner opens it.
+  const NODE_CASE = 'script[type="mycelium/test"]'
+  const BROWSER_CASE = 'script[type="text/mycelium-test"]'
+
+  function kindOf(doc) {
+    if (doc.querySelector(NODE_CASE)) return "node"
+    if (doc.querySelector(BROWSER_CASE)) return "browser"
+    return "empty"
+  }
+
+  function assert(ok, text) {
+    if (!ok) throw new Error(text || "assertion failed")
+  }
+
+  // The same tolerance the browser runner offers, so one contract covers both.
+  assert.near = function (a, b, tolerance, text) {
+    const slack = tolerance === undefined ? 0.5 : tolerance
+    if (!(Math.abs(a - b) <= slack)) {
+      throw new Error(`${text || "expected these to match"}: ${a} and ${b} differ by more than ${slack}`)
+    }
+  }
+
+  // A throwaway documents tree, one per case, so no test can see what another
+  // one wrote. The templates arrive as a symlink rather than a copy. A command
+  // lives inside a template, so a sandbox without them has no command to run,
+  // and a copy would let a test pass against a stale duplicate of the thing it
+  // is testing.
+  //
+  // Every real import in a command script is either a node builtin or a sibling
+  // in the templates directory. The one import that reaches outside is a type
+  // import, which erases, so nothing needs the rest of the repository present.
+  function sandboxFor(root) {
+    const dir = mkdtempSync(join(tmpdir(), "mycelium-test-"))
+    const docs = join(dir, "docs")
+    mkdirSync(docs, { recursive: true })
+    symlinkSync(join(root, "docs", "templates"), join(docs, "templates"))
+    return {
+      dir,
+      // The real command, in a real process, against this tree. Slower than
+      // calling the function would be, and it covers what calling it would
+      // miss: argument parsing, the path a command chooses, how a document
+      // serializes, and the exit code.
+      mycelium(...argv) {
+        const done = spawnSync(process.execPath, [join(root, "src", "run.ts"), ...argv], { cwd: dir, encoding: "utf8" })
+        return { ok: done.status === 0, status: done.status, stdout: done.stdout ?? "", stderr: done.stderr ?? "" }
+      },
+      read: (path) => readFileSync(join(docs, path), "utf8"),
+      exists: (path) => existsSync(join(docs, path)),
+      write(path, text) {
+        mkdirSync(dirname(join(docs, path)), { recursive: true })
+        writeFileSync(join(docs, path), text)
+      },
+      remove: () => rmSync(dir, { recursive: true, force: true }),
+    }
+  }
+
+  // Loads one case's script as a real module, addressed by its file and its
+  // locator within that file. The same form the engine uses for a command or an
+  // audit, written out here rather than imported, so a document keeps depending
+  // on the contract instead of on the engine.
+  async function caseModule(full, doc, script) {
+    const id = script.getAttribute("id")
+    const locator = id || `@${Array.from(doc.querySelectorAll("script")).indexOf(script)}`
+    return await import(`${pathToFileURL(full).href}#${encodeURIComponent(locator)}`)
+  }
+
+  // A node document runs here rather than in a page. It gets the same fields and
+  // the same words, but nothing writes them into the file: a node test has no
+  // rendering to look at, so the report is what the command prints. Only a
+  // browser document is also its own report.
+  async function runNodeDocument(entry, root, fsRoot) {
+    const full = resolve(fsRoot, entry.path)
+    const results = []
+    for (const testCase of Array.from(entry.doc.querySelectorAll("test-case"))) {
+      const id = testCase.getAttribute("id")
+      const name = testCase.querySelector("test-name")?.textContent?.trim() ?? ""
+      const script = testCase.querySelector(NODE_CASE)
+      if (!script) {
+        results.push({ id, name, status: "FAILURE", message: "this case carries no mycelium/test script" })
+        continue
+      }
+      const sandbox = sandboxFor(root)
+      try {
+        const mod = await caseModule(full, entry.doc, script)
+        if (typeof mod.check !== "function") throw new Error("this case exports no check function")
+        await mod.check({ assert, sandbox })
+        results.push({ id, name, status: "SUCCESS", message: "" })
+      } catch (err) {
+        results.push({ id, name, status: "FAILURE", message: err?.message ?? String(err) })
+      } finally {
+        sandbox.remove()
+      }
+    }
+    return results
+  }
 
   // W3C's fixed key for a web element reference. Every conforming driver
   // returns this exact string, which is why it can be a constant here.
@@ -410,27 +576,53 @@
 
   function testDocuments(fs, only) {
     const found = fs.list("tests")
-      .map((entry) => entry.path)
-      .filter((path) => path.endsWith(".test.html"))
-      .sort()
+      .filter((entry) => entry.path.endsWith(".test.html"))
+      .sort((a, b) => a.path.localeCompare(b.path))
     if (!only) return found
-    const matched = found.filter((path) => path === only || path.endsWith(`/${only}`) || path.endsWith(`/${only}.test.html`))
+    const matched = found.filter(({ path }) => path === only || path.endsWith(`/${only}`) || path.endsWith(`/${only}.test.html`))
     if (!matched.length) throw new Error(`no test document matching "${only}" under tests/`)
     return matched
   }
 
+  // One line per case, in the order the document declares them. A case still
+  // reading PENDING failed: a thrown assertion already writes FAILURE, so
+  // PENDING at the end means nothing ever answered.
+  function report(results, deadline) {
+    let failed = 0
+    if (!results.length) console.log("  no cases in this document")
+    for (const one of results) {
+      const pending = one.status === "PENDING"
+      console.log(`  ${one.status.padEnd(8)} ${one.name}`)
+      if (!pending && one.status !== "FAILURE") continue
+      failed++
+      if (one.message) console.log(`           ${one.message}`)
+      if (pending) console.log(`           nothing answered before the ${deadline}ms deadline`)
+    }
+    return failed
+  }
+
   /**
-   * Open every test document in a headless browser and report what it decided.
+   * Run every test document and report what it decided.
    *
    *   mycelium test run [<file>] [--show] [--timeout MS] [--port N]
    *
    * <file> narrows the run to one document, by path or by slug. Without it
    * every tests/*.test.html runs.
    *
-   * The command opens a page, waits for no test-status to read PENDING, and
-   * reads the statuses out. It knows nothing about cases, fixtures or
-   * assertions: test.element.js runs those in the page, so the document a
+   * A document's cases say which runner opens it, through the type on their
+   * scripts. Nothing else declares it, because a script type already means
+   * exactly this everywhere else in the project.
+   *
+   * A mycelium/test case runs here, under Node, with its own throwaway
+   * documents tree and the real command line pointed at it. A
+   * text/mycelium-test case runs in a page: the command opens it in a headless
+   * browser, waits for no test-status to read PENDING, and reads the statuses
+   * out. In that second case it knows nothing about cases, fixtures or
+   * assertions, since test.element.js runs those in the page, so the document a
    * person opens and the document this opens behave identically.
+   *
+   * Node documents go first and on their own, so a repository whose tests all
+   * run there never starts a browser and never fetches a driver.
    *
    * Past --timeout (30000 by default) the driver gives up on the wait, and a
    * case still reading PENDING counts as failed. A thrown assertion already
@@ -449,20 +641,37 @@
    */
   export async function run({ fs, args }: CommandContext) {
     const root = dirname(fs.root)
-    const paths = testDocuments(fs, args._[0])
-    if (!paths.length) {
+    const entries = testDocuments(fs, args._[0])
+    if (!entries.length) {
       console.log("no test documents under tests/")
       return
     }
 
     const port = Number(args.port ?? 9515)
     const timeout = Number(args.timeout ?? 30000)
+    let failures = 0
+    let total = 0
+
+    // Node documents first, and on their own. A repository whose tests all run
+    // here never starts a browser and never fetches a driver.
+    for (const entry of entries.filter((one) => kindOf(one.doc) === "node")) {
+      console.log(`\n${entry.path}`)
+      const results = await runNodeDocument(entry, root, fs.root)
+      total += results.length
+      failures += report(results, timeout)
+    }
+
+    const paths = entries.filter((one) => kindOf(one.doc) === "browser").map((one) => one.path)
+    if (!paths.length) {
+      console.log(`\n${total} cases, ${failures} failed`)
+      if (failures) throw new Error(`${failures} of ${total} cases failed`)
+      return
+    }
+
     const driver = await chromedriver(root)
     const server = spawn(driver, [`--port=${port}`], { stdio: "ignore" })
     const call = session(`http://127.0.0.1:${port}`)
 
-    let failures = 0
-    let total = 0
     try {
       for (let i = 0; i < 100; i++) {
         try { if ((await call("GET", "/status")).ready) break } catch {}
@@ -493,17 +702,10 @@
             console.log(`  FAILURE  the page never finished — ${err.message}`)
             continue
           }
-          if (!cases.length) console.log("  no cases in this document")
+          total += cases.length
+          failures += report(cases, timeout)
           for (const one of cases) {
-            total++
-            const pending = one.status === "PENDING"
-            const failed = pending || one.status === "FAILURE"
-            const verdict = pending ? "PENDING" : one.status
-            console.log(`  ${verdict.padEnd(8)} ${one.name}`)
-            if (!failed) continue
-            failures++
-            if (one.message) console.log(`           ${one.message}`)
-            if (pending) console.log(`           nothing answered before the ${timeout}ms deadline`)
+            if (one.status === "SUCCESS") continue
             await capture(call, at, path, one.id, full)
           }
         }
@@ -557,9 +759,6 @@
 </script>
 
 <h2>What this pass does not do</h2>
-<p>
-  No node-tests. The runner is a page, so a test of the command layer has nowhere to live yet.
-</p>
 <p>
   No authoring command. A test's substance is a fixture and a script, and neither fits on a flag, so writing
   one means writing the markup — the state <code>figure</code> is still in.
