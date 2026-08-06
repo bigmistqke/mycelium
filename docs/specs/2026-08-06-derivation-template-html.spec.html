@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: derivation.template.html: axioms, specifications, and a chain a checker can walk</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>derivation.template.html: axioms, specifications, and a chain a checker can walk</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-06</spec-date>
+  <spec-problem>
+<p>This project can say what shape a document takes and whether its prose obeys
+the rules. It cannot say why the system took the shape it has, nor whether the
+code answers to anything.</p>
+<p>Two gaps sit under that. The graph has held options and decisions since
+January without ever holding the criterion that settles them, so a rationale
+lives in prose inside a decision or it lives nowhere. And no document states
+what the system does in a form a test can cite, so nothing connects a running
+test to a claim about behaviour.</p>
+<p>A methodology already exists for this, and another project applied it by
+hand: a chain running from an axiom, to a specification of behaviour, to a test,
+to an implementation. That project also found that an agent does not hold to
+such a discipline on trust, and made the citations structured text so a checker
+could answer whether the protocol held. The
+<a href="../knowledge/2026-08-02-rg-structured-links-made-protocol-accountable.observation.html">observation
+recording that</a> is what this design responds to.</p>
+</spec-problem>
+  <spec-design>
+<h2>Two types in one family file</h2>
+<p><code>docs/templates/derivation.template.html</code> declares
+<code>derivation-axiom</code> and <code>derivation-specification</code>, with
+<code>derivation-behaviour</code> nested inside the second. One file, because the
+types only mean anything together, which is the same reason six knowledge types
+and four plan types each share a file. The
+<a href="../knowledge/2026-08-06-one-derivation-family-file.decision.html">decision
+recording this</a> carries the alternatives it beat.</p>
+<p>The name is not new. <a href="../knowledge/2026-07-25-tests-cite-not-modeled-as-nodes.decision.html">Tests
+cite, they are not nodes</a> refers to a hypothetical <code>derivation-*</code>
+family, so the family had a name in July and gets a file now.</p>
+<h2>Instances carry no date</h2>
+<p>Both types describe what holds now. An axiom that stops being true gets
+revised or retired, and a specification that no longer matches the system is a
+bug in one of the two. Neither belongs to the exploration that produced it, which
+is the argument
+<a href="../templates/language.template.html">language.template.html</a> already
+made when it dropped the date prefix its siblings carry.</p>
+<p>So <code>docs/derivation/axioms/&lt;slug&gt;.axiom.html</code> and
+<code>docs/derivation/specifications/&lt;slug&gt;.specification.html</code>, and
+<code>add</code> takes no <code>--date</code> flag.</p>
+<h2>What an axiom is for</h2>
+<p>An axiom decides which options are good. It is the standing criterion someone
+appeals to when two designs both work and one of them is right, which is a job
+nothing in this corpus does today.</p>
+<p>Axioms compose by refinement. A subsystem's axiom links up to the general one
+it narrows, and that edge is the whole mechanism — no region names, no scope
+attribute, no cascade. Asking which axioms govern a subsystem is a walk upward
+from its own.</p>
+<p>What this gives up, and the
+<a href="../knowledge/2026-08-06-how-subsystem-axioms-inherit.decision.html">decision</a>
+says so: a broad axiom nobody has read down into a given subsystem reaches
+nothing in it, and no check separates that from an axiom that does not apply
+there. Writing that reading is the work, and a mechanism that asks for it is a
+mechanism that gets it written.</p>
+<h2>What a specification is for</h2>
+<p>A specification states what one subsystem does, as a list of behaviours that
+each carry an id. The id is the point. A test cites one behaviour, and a
+behaviour without an address can only be cited as part of a whole document, which
+is not enough for anything downstream to count.</p>
+<p>A behaviour marks itself as a requirement or as context, the way RFC 2119
+keywords do in a standards document. That answers what counts as a behaviour by a
+word in the prose rather than by anyone's judgement, and a countable list is what
+exhaustiveness needs before it means anything.</p>
+<p>Each specification links up to the axioms it serves. Each behaviour sits
+inside a specification and inherits that.</p>
+<h2>Tests and implementations stay in source</h2>
+<p>The chain runs axiom, then specification behaviour, then test, then
+implementation, and the last two get no document.
+<a href="../knowledge/2026-07-25-tests-cite-not-modeled-as-nodes.decision.html">Tests
+cite, they are not nodes</a> settled that in July: a test is a citation target
+read out of real source, the way a commit is a field rather than a re-hosted
+node.</p>
+<p>A citation from source is an href in a file that is not HTML, written as a
+comment. This corpus already reaches into <code>src/</code> — the audit filesystem
+is rooted one level above <code>docs/</code> for exactly this reason, and both the
+comments command and the prose audit read source today.</p>
+<h2>The order of work, which the rungs also describe</h2>
+<p>Read downward the chain says what the system is, at whichever altitude you cut
+it. Read forward it says what to do next: state the behaviour, stub the
+implementation so the types check, write tests against that stub and watch every
+one fail, then fill the implementation in until they pass.</p>
+<p>The bottom rung arrives twice, its shape before the tests and its body after.
+So a gate cannot ask whether the rung above is finished. It asks a narrower
+question: a signature before a test is the method working, and a body before a
+test is the method skipped.</p>
+<h2>What gets checked</h2>
+<p>Three audits, and the first of them is a repair to something that already
+exists.</p>
+<ul>
+  <li><strong>Fragments resolve.</strong> The current
+    <code>every-link-resolves</code> drops the fragment before testing a path, so
+    a citation to <code>#behaviour-3</code> passes whether or not anything carries
+    that id. Every citation in this chain is a fragment citation, so this audit is
+    the ground the rest stands on.</li>
+  <li><strong>Grounded.</strong> Every axiom reaches a behaviour, and every
+    behaviour reaches a test. An axiom with nothing under it is a belief nobody
+    acted on.</li>
+  <li><strong>Exhaustive.</strong> Every behaviour marked as a requirement has a
+    test citing it. This runs opposite to the citations: a link proves one test
+    exists, and the method wants none missing.</li>
+</ul>
+<p>None of the three names a rung inside <code>src/</code>. The engine learns the
+chain by reading this family's own declarations, because a checker that hardcodes
+its ontology is the
+<a href="../knowledge/2026-07-27-rg-derivation-checker-hardcodes-ontology.observation.html">divergence
+already recorded</a> from the way this project works.</p>
+</spec-design>
+  <spec-out-of-scope>
+<h3>The entailed check</h3>
+<p>Whether each step follows from the one above it is a judgement, and nothing
+here runs a model inside an audit. It stays something a person asks for.</p>
+<h3>Coverage as evidence</h3>
+<p>A citation from an implementation up to a test is a claim someone wrote, and a
+run could corroborate it. Wiring a coverage report into the chain is a later
+question.</p>
+<h3>Folding the design document into the plan family</h3>
+<p>A spec and its plan state the same design twice, carry two notions of status,
+and pair only by filename. That migration would free the shorter word, and it is
+<a href="../knowledge/2026-08-06-spec-and-plan-duplicate-each-other.observation.html">recorded</a>
+rather than done. Until then this design writes the long word everywhere.</p>
+<h3>Retrofitting this repository</h3>
+<p>Mycelium's own axioms and specifications are the point of the exercise, but
+writing them is work that follows the family existing.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Which keyword vocabulary marks a requirement, and whether the language family
+should hold those words as terms the way it holds the rest of this project's
+vocabulary.</p>
+<p>What a citation from source looks like exactly, and whether a comment tag or a
+plain href in a comment carries it.</p>
+<p>Whether a behaviour id has to survive an edit to the behaviour's wording, the
+way a standards body treats an anchor as permanent, and what enforces that here.</p>
+<p>Whether one specification maps to one subsystem, and what names a subsystem
+given that this project refused a topic vocabulary once already.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
