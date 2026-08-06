@@ -182,7 +182,7 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
-  import { todayDate } from "./shared.ts"
+  import { todayDate, declaredOrders, placeField } from "./shared.ts"
   import { spawnSync } from "node:child_process"
 
   function requireArgs(...checks) {
@@ -193,6 +193,16 @@
 
   function directChild(root, tag) {
     return Array.from(root.children).find((c) => c.tagName.toLowerCase() === tag)
+  }
+
+  // Every plan type's declared field order, read once per run by whichever
+  // command is about to write. Four types share one `field` helper across
+  // twenty-odd call sites, so threading the order through each of them would
+  // cost more than it explains. One process runs one command, so nothing here
+  // outlives the write it serves.
+  let ORDERS = new Map()
+  function primeOrders(fs) {
+    if (ORDERS.size === 0) ORDERS = declaredOrders(fs.get("templates/plan.template.html"))
   }
 
   function field(doc, root, tag, text) {
@@ -206,7 +216,7 @@
     else {
       const el = doc.createElement(tag)
       el.textContent = text
-      root.appendChild(el)
+      placeField(root, el, ORDERS.get(root.tagName.toLowerCase()) ?? [])
     }
   }
 
@@ -230,6 +240,7 @@
   }
 
   async function addDoc({ fs, args, cli }) {
+    primeOrders(fs)
     requireArgs([args.title, "--title"], [args.file, "--file"], [args.goal, "--goal"], [args.architecture, "--architecture"])
     // --date defaults to today and you should leave it alone when authoring. It
     // exists for converting plans you authored earlier in another format, so
@@ -271,6 +282,7 @@
   }
 
   async function updateDoc({ fs, args, cli }) {
+    primeOrders(fs)
     requireArgs([args._[1], "<file>"])
     const path = `plans/${args._[1]}`
     const doc = getPlanFile(fs, path)
@@ -289,6 +301,7 @@
   }
 
   async function addTask({ fs, args, cli }) {
+    primeOrders(fs)
     requireArgs([args._[1], "<file>"], [args.title, "--title"], [args.files, "--files"])
     const path = `plans/${args._[1]}`
     const doc = getPlanFile(fs, path)
@@ -305,7 +318,7 @@
     field(doc, task, "plan-files", args.files)
     field(doc, task, "plan-interfaces", args.interfaces)
 
-    planDoc.appendChild(task)
+    placeField(planDoc, task, ORDERS.get("plan-doc") ?? [])
 
     const result = await cli.validate(task, path)
     if (!result.ok) throw new Error(result.errors.join("\n"))
@@ -314,6 +327,7 @@
   }
 
   async function updateTask({ fs, args, cli }) {
+    primeOrders(fs)
     requireArgs([args._[1], "<file>"], [args._[2], "<task-id>"])
     const path = `plans/${args._[1]}`
     const doc = getPlanFile(fs, path)
@@ -339,6 +353,7 @@
   }
 
   async function addStep({ fs, args, cli }) {
+    primeOrders(fs)
     requireArgs([args._[1], "<file>"], [args._[2], "<task-id>"], [args.title, "--title"])
     const path = `plans/${args._[1]}`
     const doc = getPlanFile(fs, path)
@@ -357,16 +372,16 @@
     if (detail) {
       const el = doc.createElement("plan-detail")
       el.innerHTML = detail
-      step.appendChild(el)
+      placeField(step, el, ORDERS.get("plan-step") ?? [])
     }
 
     let check = null
     if (args["check-command"]) {
       check = buildCheck(doc, args["check-command"], args["expected-success"], args["expected-output"])
-      step.appendChild(check)
+      placeField(step, check, ORDERS.get("plan-step") ?? [])
     }
 
-    task.appendChild(step)
+    placeField(task, step, ORDERS.get("plan-task") ?? [])
 
     const stepResult = await cli.validate(step, path)
     if (!stepResult.ok) throw new Error(stepResult.errors.join("\n"))
@@ -379,6 +394,7 @@
   }
 
   async function updateStep({ fs, args, cli }) {
+    primeOrders(fs)
     requireArgs([args._[1], "<file>"], [args._[2], "<step-id>"])
     const path = `plans/${args._[1]}`
     const doc = getPlanFile(fs, path)
@@ -396,7 +412,7 @@
       else {
         const el = doc.createElement("plan-detail")
         el.innerHTML = detail
-        step.appendChild(el)
+        placeField(step, el, ORDERS.get("plan-step") ?? [])
       }
     }
 
@@ -406,7 +422,7 @@
       check = null
     } else if (args["check-command"] !== undefined && !check) {
       check = buildCheck(doc, args["check-command"], args["expected-success"], args["expected-output"])
-      step.appendChild(check)
+      placeField(step, check, ORDERS.get("plan-step") ?? [])
     } else if (check) {
       field(doc, check, "plan-check-command", args["check-command"])
       field(doc, check, "plan-check-success", args["expected-success"])

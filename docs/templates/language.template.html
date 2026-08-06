@@ -283,15 +283,25 @@
   import { tmpdir } from "node:os"
   import { stripProtected, extractProse, markdownToHtmlFragment, markdownParagraphRanges, htmlLeafElementRanges, BLOCK_TAGS } from "./language-prose.ts"
   import { extractComments, commentRanges, parseComment, formatAsComment } from "./code-comments.ts"
+  import { declaredOrders, placeField } from "./shared.ts"
   const TYPES = ['term', 'rule', 'guide']
 
   // Fields in the order they should appear in a written document, per type. The
   // validator does not care about order; a reader does, and laying out every
   // instance the same way makes forty of them skimmable.
-  const FIELD_ORDER = {
-    term: ['language-title', 'language-part-of-speech', 'language-meaning', 'language-avoid', 'language-detail'],
-    rule: ['language-title', 'language-pass', 'language-fail', 'language-detail', 'script'],
-    guide: ['language-title', 'language-pass', 'language-fail', 'language-detail'],
+  // Each type's fields, in the order its own template declares them. This
+  // used to be a hand-written copy of the three shapes, which is two places
+  // saying one thing: adding a field to a template needed a second edit here,
+  // and forgetting it left the new field nameable by no flag.
+  //
+  // Read once per run, since one process runs one command.
+  let FIELD_ORDER = null
+  function primeFieldOrder(fs) {
+    if (FIELD_ORDER) return
+    const orders = declaredOrders(fs.get('templates/language.template.html'))
+    FIELD_ORDER = Object.fromEntries(
+      TYPES.map((type) => [type, orders.get(`language-${type}`) ?? []]),
+    )
   }
 
   // Fields whose value is free-form markup rather than plain text. Kept as
@@ -479,6 +489,7 @@
       )
     }
 
+    primeFieldOrder(fs)
     const values = fieldValues(args)
     rejectForeignFields(type, values)
     await resolveStdin(values, cli)
@@ -517,7 +528,7 @@
       if (tag === 'script') el.setAttribute('type', 'mycelium/rule')
       if (RICH_FIELDS.has(tag)) el.innerHTML = value
       else el.textContent = value
-      root.appendChild(el)
+      placeField(root, el, FIELD_ORDER[type])
     }
 
     const result = await cli.validate(root, path)
@@ -553,6 +564,7 @@
     // carries, the same as every other field on update.
     if (args.validates !== undefined) applyValidates(type, root, args)
 
+    primeFieldOrder(fs)
     const values = fieldValues(args)
     rejectForeignFields(type, values)
     await resolveStdin(values, cli)
@@ -584,7 +596,7 @@
       if (tag === 'script') el.setAttribute('type', 'mycelium/rule')
       if (RICH_FIELDS.has(tag)) el.innerHTML = value
       else el.textContent = value
-      root.appendChild(el)
+      placeField(root, el, FIELD_ORDER[type])
     }
 
     const result = await cli.validate(root, path)

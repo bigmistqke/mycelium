@@ -514,7 +514,7 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
-  import { todayDate } from "./shared.ts"
+  import { todayDate, declaredOrder, placeField } from "./shared.ts"
   import { extractGraph } from "./extract-graph.ts"
   import { tmpdir } from "node:os"
   import { join, resolve as resolvePath } from "node:path"
@@ -619,11 +619,12 @@
     doc.querySelector('title').textContent = pageTitle
 
     const root = doc.querySelector(`knowledge-${type}`)
+    const order = declaredOrder(fs.get('templates/knowledge.template.html'), `knowledge-${type}`)
     const field = (tag, text) => {
       if (!text) return
       const el = doc.createElement(tag)
       el.textContent = text
-      root.appendChild(el)
+      placeField(root, el, order)
     }
 
     field('knowledge-title', args.title)
@@ -633,7 +634,7 @@
     if (detail) {
       const el = doc.createElement('knowledge-detail')
       el.innerHTML = detail
-      root.appendChild(el)
+      placeField(root, el, order)
     }
     field('knowledge-commit', args.commit)
     field('knowledge-files', args.files)
@@ -752,6 +753,10 @@
     const path = `knowledge/${args._[0]}`
     const doc = fs.get(path)
     const root = doc.querySelector('[data-conforms-to]')
+    const order = declaredOrder(
+      fs.get('templates/knowledge.template.html'),
+      root.tagName.toLowerCase(),
+    )
 
     const field = (tag, text) => {
       if (text === undefined) return
@@ -764,7 +769,7 @@
       else {
         const el = doc.createElement(tag)
         el.textContent = text
-        root.appendChild(el)
+        placeField(root, el, order)
       }
     }
 
@@ -791,7 +796,7 @@
       } else {
         const el = doc.createElement('knowledge-detail')
         el.innerHTML = detail
-        root.appendChild(el)
+        placeField(root, el, order)
       }
     }
     field('knowledge-commit', args.commit)

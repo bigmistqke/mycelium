@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Place a new field where its template declares it, in all four families</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Place a new field where its template declares it, in all four families</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Second of the three steps
+<a href="../specs/2026-08-06-template-schema-cardinality.spec.html">the
+cardinality spec</a> sets out. Every family's writer appended a new field, so a
+node's field order recorded which flag arrived when, and 31 nodes drifted that
+way one <code>update</code> at a time.</p>
+<p><code>shared.ts</code> gains three functions: <code>declaredOrder</code>
+reads a type's field sequence off its own template,
+<code>declaredOrders</code> does that for every type a template file declares,
+and <code>placeField</code> inserts an element before the first sibling the
+template ranks after it. A tag the template never declares keeps its place, so
+an edge or a script never moves.</p>
+<p>All four families use it. <code>language</code> also loses its
+<code>FIELD_ORDER</code> constant, which was a hand-written copy of the three
+shapes its own templates already declare.</p>
+<p>Checked by writing each family's fields in reverse: four separate
+<code>knowledge update</code> calls, a <code>plan-tech-stack</code> added after
+a task existed, a <code>language-avoid</code> added after a detail, and two spec
+sections added back to front. Each landed in template order.</p>
+<p>The 31 drifted nodes stay drifted. Repairing them is the third step, and it
+needed this one first, or the next <code>update</code> would undo it.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-06-update-appends-fields-out-of-order.observation.html">the drift this stops</a>
+</knowledge-action>
+</body></html>

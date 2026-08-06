@@ -168,7 +168,7 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
-  import { todayDate } from "./shared.ts"
+  import { todayDate, declaredOrder, placeField } from "./shared.ts"
 
   // Still local on purpose, unlike todayDate above: two lines, one call
   // site each in this file, not worth a shared import for. See
@@ -263,11 +263,12 @@
     doc.querySelector('title').textContent = `Spec: ${args.title}`
 
     const root = doc.querySelector('spec-doc')
+    const order = declaredOrder(fs.get('templates/spec.template.html'), 'spec-doc')
     const field = (tag, text) => {
       if (!text) return
       const el = doc.createElement(tag)
       el.textContent = text
-      root.appendChild(el)
+      placeField(root, el, order)
     }
 
     field('spec-title', args.title)
@@ -277,7 +278,7 @@
       if (!sections[tag]) continue
       const el = doc.createElement(tag)
       el.innerHTML = sections[tag]
-      root.appendChild(el)
+      placeField(root, el, order)
     }
 
     const result = await cli.validate(root, path)
@@ -306,6 +307,7 @@
     const path = `specs/${args._[0]}`
     const doc = fs.get(path)
     const root = doc.querySelector('[data-conforms-to]')
+    const order = declaredOrder(fs.get('templates/spec.template.html'), 'spec-doc')
 
     const field = (tag, text) => {
       if (text === undefined) return
@@ -318,7 +320,7 @@
       else {
         const el = doc.createElement(tag)
         el.textContent = text
-        root.appendChild(el)
+        placeField(root, el, order)
       }
     }
 
@@ -339,7 +341,7 @@
         } else {
           const el = doc.createElement(tag)
           el.innerHTML = content
-          root.appendChild(el)
+          placeField(root, el, order)
         }
       }
     }
