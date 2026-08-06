@@ -56,6 +56,12 @@
   The connectors carry no numbers at all. They come from measuring the real layout after the browser has
   done it, so nothing about the geometry reaches the file, not even generated.
 </p>
+<p>
+  Those measurements are relative to the figure's padding box. The overlay the wires go into sits
+  <code>inset: 0</code> inside the border, and a label is positioned the same way, so both land against the
+  padding box while <code>getBoundingClientRect</code> answers for the border box. Measuring against the
+  wrong one drew every wire one border-width away from the box it had just measured.
+</p>
 
 <h2>Why a classic script, with no mycelium type</h2>
 <p>
@@ -164,6 +170,24 @@
   one an instance must carry. <code>data-back="?"</code> is the whole use of that marker so far.
 </p>
 
+<h2>Edges into one box land at points of their own</h2>
+<p>
+  Several edges reaching the same box share a lane, and that stays: giving each its own lane made three
+  edges into one box arrive as three near-parallel lines. Sharing the drop as well is what went wrong. The
+  lines became one before they landed, so a reader could not count them, and every label anchored to that
+  one drop and stacked on top of itself.
+</p>
+<p>
+  They now land at separate points along the target's top edge, ordered by where each line comes from so
+  spreading them never makes two cross on the way in.
+</p>
+<p>
+  How far apart depends on the labels rather than on a fixed distance. A chip masks the line behind it,
+  which is the point for the line it names and wrong for anyone else's: a covered drop reads as an edge that
+  stops in mid-air. A chip is centred on its own landing, so half of it is what reaches towards the next
+  one, and the landings sit at least that far apart. A box too narrow for that caps the spread instead.
+</p>
+
 <h2>An edge inside one row</h2>
 <p>
   Two boxes in the same row are peers, and an edge between them travels sideways rather than down. It runs
@@ -185,10 +209,32 @@
   column two holds nothing in that row.
 </p>
 <p>
-  Its label sits above the line rather than on it, which no other label does. Two neighbours leave only the
-  column gap to run in, around twenty pixels, and a chip is wider than that. Centred the usual way, the
-  label covered the whole edge including the arrowhead, so the picture stopped saying which way the
-  relation ran.
+  Its label goes in the space above its row, which no other label does. Two neighbours leave only the
+  column gap to run in, around twenty pixels, and a chip is wider than that. Sitting on the line, the label
+  covered the whole edge including the arrowhead, so the picture stopped saying which way the relation ran.
+</p>
+
+<h2>Where a label may go</h2>
+<p>
+  Every label lives in the gap its own edge crosses, and never over a box. A gap between two rows holds no
+  boxes at any width, so a label kept inside one cannot cover a name the figure exists to show. A peer edge
+  crosses no gap, so its label takes the space above its row instead.
+</p>
+<p>
+  A label also stays inside the figure. A chip is centred on its anchor, so half of it reaches further out
+  than the anchor does, and a long one in the first or last column hung out through the border.
+</p>
+<p>
+  Labels that would cover each other share the height of their gap. Only labels whose widths overlap count
+  as competing: two in different columns of one gap keep the height their own edges gave them. The run is
+  arranged in one pass rather than one label at a time, because nudging each away from the last let the
+  first claim the spot nearest its own edge and leave the second nowhere legal, in a gap that had room for
+  both.
+</p>
+<p>
+  A gap fits two labels. A third has to share, and the three then overlap each other while all staying off
+  the boxes. Covering a box is the failure worth preventing; crowding is a figure asking for more labels
+  than it has room for.
 </p>
 
 <h2>The audits</h2>
@@ -332,7 +378,8 @@
 </p>
 <p>
   No routing. A connector runs from one box to another as a straight line with an elbow, and two
-  connectors crossing stay crossed.
+  connectors crossing stay crossed. Two edges that share no box no longer share a lane, so they cross
+  rather than meeting, but nothing steers either of them around the other.
 </p>
 <p>
   No authoring command. Writing a figure means writing the markup, which is the state

@@ -72,7 +72,14 @@
       const back = graph.querySelector('svg.figure-wires path.wire[data-kind="back"]')
       assert(back, "no back edge was drawn")
 
-      const origin = graph.getBoundingClientRect()
+      // Every coordinate the element writes is relative to the padding box,
+      // because the overlay it draws into sits inset:0 inside the border.
+      const frame = graph.getBoundingClientRect()
+      const inset = getComputedStyle(graph)
+      const origin = {
+        left: frame.left + parseFloat(inset.borderLeftWidth),
+        top: frame.top + parseFloat(inset.borderTopWidth),
+      }
       const leftmostBox = Math.min(...Array.from(graph.querySelectorAll("figure-node"))
         .map((node) => node.getBoundingClientRect().left - origin.left))
 

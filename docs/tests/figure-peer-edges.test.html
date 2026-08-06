@@ -43,7 +43,14 @@
       assert(points.length === 2, `a peer edge should be one straight line, got ${points.length} points`)
       assert.near(points[0].y, points[1].y, 0.5, "the peer edge is not level")
 
-      const origin = graph.getBoundingClientRect()
+      // Every coordinate the element writes is relative to the padding box,
+      // because the overlay it draws into sits inset:0 inside the border.
+      const frame = graph.getBoundingClientRect()
+      const inset = getComputedStyle(graph)
+      const origin = {
+        left: frame.left + parseFloat(inset.borderLeftWidth),
+        top: frame.top + parseFloat(inset.borderTopWidth),
+      }
       const left = graph.querySelector('figure-node[id="left"]').getBoundingClientRect()
       const right = graph.querySelector('figure-node[id="right"]').getBoundingClientRect()
 
@@ -78,7 +85,14 @@
         .map((step) => Number(step.replace(/^[ML]/, "").split(",")[0]))
       assert(xs[1] < xs[0], `the line runs from ${xs[0].toFixed(1)} to ${xs[1].toFixed(1)}, which is not leftwards`)
 
-      const origin = graph.getBoundingClientRect()
+      // Every coordinate the element writes is relative to the padding box,
+      // because the overlay it draws into sits inset:0 inside the border.
+      const frame = graph.getBoundingClientRect()
+      const inset = getComputedStyle(graph)
+      const origin = {
+        left: frame.left + parseFloat(inset.borderLeftWidth),
+        top: frame.top + parseFloat(inset.borderTopWidth),
+      }
       const near = graph.querySelector('figure-node[id="near"]').getBoundingClientRect()
       const far = graph.querySelector('figure-node[id="far"]').getBoundingClientRect()
 
@@ -111,7 +125,14 @@
       assert(wire, "no peer edge was drawn")
       assert(chip, "the peer edge's label was not drawn")
 
-      const origin = graph.getBoundingClientRect()
+      // Every coordinate the element writes is relative to the padding box,
+      // because the overlay it draws into sits inset:0 inside the border.
+      const frame = graph.getBoundingClientRect()
+      const inset = getComputedStyle(graph)
+      const origin = {
+        left: frame.left + parseFloat(inset.borderLeftWidth),
+        top: frame.top + parseFloat(inset.borderTopWidth),
+      }
       const lineY = Number(wire.getAttribute("d").trim().split(/\s+/)[0].replace(/^M/, "").split(",")[1])
       const box = chip.getBoundingClientRect()
 
@@ -143,7 +164,14 @@
       const wire = graph.querySelector('svg.figure-wires path.wire[data-kind="peer"]')
       assert(wire, "no peer edge was drawn")
 
-      const origin = graph.getBoundingClientRect()
+      // Every coordinate the element writes is relative to the padding box,
+      // because the overlay it draws into sits inset:0 inside the border.
+      const frame = graph.getBoundingClientRect()
+      const inset = getComputedStyle(graph)
+      const origin = {
+        left: frame.left + parseFloat(inset.borderLeftWidth),
+        top: frame.top + parseFloat(inset.borderTopWidth),
+      }
       const one = graph.querySelector('figure-node[id="one"]').getBoundingClientRect()
       const three = graph.querySelector('figure-node[id="three"]').getBoundingClientRect()
       const below = graph.querySelector('figure-node[id="middle-below"]').getBoundingClientRect()
