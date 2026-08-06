@@ -349,11 +349,16 @@
 
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
+  // Loading a case's script means turning a file and a script tag into a
+  // module, and the rule for addressing one lives in script-hooks.ts. Writing
+  // that rule out again here would be a second copy to keep in step, so this
+  // imports the one the engine uses, the way language.template.html already
+  // does for its rules.
+  import { loadModule } from "../../src/utils.ts"
   import { spawn, spawnSync, execFileSync } from "node:child_process"
   import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync, chmodSync, rmSync } from "node:fs"
   import { tmpdir } from "node:os"
   import { dirname, join, resolve } from "node:path"
-  import { pathToFileURL } from "node:url"
 
   // A case's script type says which runtime can host it, which is the rule the
   // engine already applies to every script inside a document. A mycelium/* type
@@ -415,16 +420,6 @@
     }
   }
 
-  // Loads one case's script as a real module, addressed by its file and its
-  // locator within that file. The same form the engine uses for a command or an
-  // audit, written out here rather than imported, so a document keeps depending
-  // on the contract instead of on the engine.
-  async function caseModule(full, doc, script) {
-    const id = script.getAttribute("id")
-    const locator = id || `@${Array.from(doc.querySelectorAll("script")).indexOf(script)}`
-    return await import(`${pathToFileURL(full).href}#${encodeURIComponent(locator)}`)
-  }
-
   // A node document runs here rather than in a page. It gets the same fields and
   // the same words, but nothing writes them into the file: a node test has no
   // rendering to look at, so the report is what the command prints. Only a
@@ -442,7 +437,7 @@
       }
       const sandbox = sandboxFor(root)
       try {
-        const mod = await caseModule(full, entry.doc, script)
+        const mod = await loadModule(full, script)
         if (typeof mod.default !== "function") throw new Error("this case exports no default function")
         await mod.default({ assert, sandbox })
         results.push({ id, name, status: "SUCCESS", message: "" })

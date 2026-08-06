@@ -12,11 +12,21 @@
   <knowledge-confidence>90</knowledge-confidence>
   <knowledge-status>completed</knowledge-status>
   <knowledge-detail><p>
-  A node case exports <code>check</code>, the shape an audit already uses, and
-  receives <code>assert</code> and a sandbox. The runner loads it through the same
-  file-plus-locator import the engine uses for a command, written out in the
-  command rather than imported, so a document keeps depending on the contract
-  instead of on the engine.
+  A node case exports one default function and receives <code>assert</code> and a
+  sandbox. The runner loads it with <code>loadModule</code>, the same function the
+  engine uses for a command or an audit, so the rule for turning a file and a
+  script tag into a module lives in one place.
+</p>
+<p>
+  An earlier pass wrote that rule out again inside the command, on the reasoning
+  that a document should depend on the contract rather than on the engine. That
+  reasoning does not hold here.
+  <a href="../templates/language.template.html">language.template.html</a> already
+  imports the same function for its rules, and a second copy of a rule that has to
+  match <code>src/script-hooks.ts</code> is exactly the drift this project names.
+  The rule about importing only types applies to
+  <a href="../templates/template.template.html">the contract</a>, not to every
+  helper the engine exports.
 </p>
 <p>
   The sandbox is a documents tree of its own under the temporary directory, with
