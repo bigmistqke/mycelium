@@ -72,10 +72,25 @@
     return Object.keys(groups).map(function (key) { return groups[key] })
   }
 
+  // Whether two nodes sit in one row, read off the cells they declare. A node
+  // with no data-at answers no, since it has no row to share.
+  function sameRow(from, to) {
+    var a = cellOf(from)
+    var b = cellOf(to)
+    return !!(a && b && a.row === b.row)
+  }
+
   function assignLanes(edges) {
     var channels = {}
     edges.forEach(function (e) {
-      if (e.back) return
+      // A peer edge crosses no gap, so it has no channel to take a lane in.
+      //
+      // Nothing visible depends on this yet. Its key would be its own row's
+      // bottom and top, which no edge leaving that row for another can match,
+      // so it would sit alone in a channel of its own, and routePeer never
+      // reads a lane anyway. The guard is here because a lane is a position
+      // inside a gap, and this edge has no gap to hold a position in.
+      if (e.back || e.peer) return
       var channel = Math.round(e.a.bottom) + ":" + Math.round(e.b.top)
       ;(channels[channel] = channels[channel] || []).push(e)
     })
@@ -134,6 +149,29 @@
     // Below every lane, on the drop into its own target. Two labels cannot
     // meet there either, since each target owns its own column.
     e.labelAt = { x: e.b.midX, y: (e.lane + e.b.top) / 2 }
+  }
+
+  // How far a peer edge's label sits above its own line, in pixels. Enough to
+  // clear a chip's height, so the line and the arrowhead on it stay visible
+  // underneath.
+  //
+  // Every other label sits on the wire it names and masks the line behind it,
+  // which is fine where the run is long. A peer edge between two neighbours has
+  // only the column gap to run in, around twenty pixels, and a chip is wider
+  // than that. Centred, it hid the whole edge including which way it pointed.
+  var PEER_LABEL_LIFT = 12
+
+  // A peer edge joins two boxes in one row, so it runs straight across the gap
+  // between their facing sides. No elbow and no lane: both boxes share a row, a
+  // row is as tall as its tallest box, and the line between their middles is
+  // already level.
+  function routePeer(e) {
+    var rightwards = e.b.midX > e.a.midX
+    var start = rightwards ? e.a.right : e.a.left
+    var end = rightwards ? e.b.left : e.b.right
+    var y = (e.a.midY + e.b.midY) / 2
+    e.d = "M" + start + "," + y + " L" + end + "," + y
+    e.labelAt = { x: (start + end) / 2, y: y - PEER_LABEL_LIFT }
   }
 
   // A back edge runs down the middle of its own column, and its label already
@@ -195,6 +233,13 @@
         // available to it. The audit checks the declaration against the rows,
         // so a lie fails the build rather than rendering.
         back: edge.hasAttribute("data-back"),
+        // Two boxes in one row, so the edge travels sideways and never crosses
+        // a gap between rows. Worked out from data-at rather than declared,
+        // which is not the inference data-back replaced: that one compared
+        // measured boxes, and this reads two numbers the figure wrote down. A
+        // rearrangement that moves a node to another row changes the document,
+        // so nothing can shift underneath this without the file changing too.
+        peer: sameRow(from, to),
         text: edge.textContent.trim(),
       })
     })
@@ -238,6 +283,7 @@
     assignLanes(edges)
     edges.forEach(function (e) {
       if (e.back) routeBack(e)
+      else if (e.peer) routePeer(e)
       else routeForward(e)
     })
 
@@ -250,12 +296,13 @@
       path.setAttribute("d", e.d)
       path.setAttribute("marker-end", "url(#" + marker.getAttribute("id") + ")")
       if (e.back) path.setAttribute("data-kind", "back")
+      else if (e.peer) path.setAttribute("data-kind", "peer")
       svg.appendChild(path)
     })
 
     var labels = edges
       .filter(function (e) { return e.text })
-      .map(function (e) { return { text: e.text, at: e.labelAt, back: e.back } })
+      .map(function (e) { return { text: e.text, at: e.labelAt, back: e.back, peer: e.peer } })
 
     graph.insertBefore(svg, graph.firstChild)
 
@@ -276,6 +323,7 @@
       // The same kind the wire carries, so the stylesheet can give a label the
       // colour of the line it names rather than a border of its own.
       if (item.back) chip.setAttribute("data-kind", "back")
+      else if (item.peer) chip.setAttribute("data-kind", "peer")
       chip.textContent = item.text
       graph.appendChild(chip)
     })

@@ -94,6 +94,14 @@ figure-graph > svg.figure-wires path.wire[data-kind="back"] {
   stroke: var(--accent);
   stroke-dasharray: 4 3;
 }
+/* A peer edge joins two boxes in one row and carries no direction down the
+   figure, so it reads as a relation between siblings rather than as a step in
+   the flow. Dotted rather than dashed, to stay distinct from a back edge at a
+   glance. */
+figure-graph > svg.figure-wires path.wire[data-kind="peer"] {
+  stroke-dasharray: 1 3;
+  stroke-linecap: round;
+}
 /* A label sits on its own wire, so it needs to knock a hole in the line rather
    than overprint it. The rect does that; a text halo left the wire showing
    through the word gaps, which read as underscores. */
@@ -113,8 +121,9 @@ figure-graph > svg.figure-wires path.wire[data-kind="back"] {
   pointer-events: none;
   /* Bordered in the colour of the wire it names, so a label reads as belonging
      to one line rather than as a box that happens to sit near it. The two
-     values below track the two wire rules above; a third kind of wire needs a
-     third pair here. */
+     values below track the wire rules above, and a kind that changes stroke
+     needs a pair of its own. A peer edge needs none: it keeps the default
+     stroke and differs only in its dashes, so this border already matches it. */
   border: 1px solid var(--muted);
   color: var(--muted);
 }

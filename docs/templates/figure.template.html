@@ -164,10 +164,37 @@
   one an instance must carry. <code>data-back="?"</code> is the whole use of that marker so far.
 </p>
 
+<h2>An edge inside one row</h2>
+<p>
+  Two boxes in the same row are peers, and an edge between them travels sideways rather than down. It runs
+  straight across the column gap, from one box's facing side to the other's, with no elbow and no lane.
+</p>
+<p>
+  The element works this out from <code>data-at</code> rather than from an attribute on the edge. That is
+  not the inference <code>data-back</code> replaced: that one compared measured boxes, and this reads two
+  numbers the figure already wrote down. Moving a node to another row edits the document, so nothing can
+  shift under a peer edge without the file changing too.
+</p>
+<p>
+  A peer edge crosses no gap between rows, so <code>assignLanes</code> leaves it alone. Passing one through
+  there worked a lane out from a negative gap, which turned the wire back through the boxes it joined.
+</p>
+<p>
+  Nothing steers it, so a box standing between its two ends is a box the line goes through. The audit below
+  rejects that. Emptiness rather than adjacency is the test: columns one and three may join, as long as
+  column two holds nothing in that row.
+</p>
+<p>
+  Its label sits above the line rather than on it, which no other label does. Two neighbours leave only the
+  column gap to run in, around twenty pixels, and a chip is wider than that. Centred the usual way, the
+  label covered the whole edge including the arrowhead, so the picture stopped saying which way the
+  relation ran.
+</p>
+
 <h2>The audits</h2>
 <p>
-  Two checks. Every edge points at a node that exists in the same figure, and every edge runs the
-  direction it claims.
+  Three checks. Every edge points at a node that exists in the same figure, every edge runs the direction it
+  claims, and a peer edge reaches its neighbour without crossing a box.
 </p>
 
 <script type="mycelium/audit" data-audits="figure-edges-resolve" data-touches="figure-edge">
@@ -211,9 +238,12 @@
    * rearranged the figure, which is worse, because the declaration is then a
    * lie that still draws.
    *
-   * Skips a node with no data-at, since there is nothing to compare. Skips an
-   * edge inside one row too, which nothing writes yet and which has no channel
-   * to route through.
+   * Skips a node with no data-at, since there is nothing to compare.
+   *
+   * An edge inside one row is a peer edge, and it runs sideways rather than
+   * down, so neither direction applies to it. It may not carry data-back
+   * either: that word names a direction the figure does not travel here, and
+   * the element would route the edge across the row whatever it said.
    */
   export default async function (fs: AuditFs) {
     const violations = []
@@ -228,15 +258,66 @@
         for (const edge of Array.from(graph.querySelectorAll("figure-edge"))) {
           const from = rowOf(edge.getAttribute("from"))
           const to = rowOf(edge.getAttribute("to"))
-          if (from === null || to === null || from === to) continue
+          if (from === null || to === null) continue
           const back = edge.hasAttribute("data-back")
           const label = `${edge.getAttribute("from")} to ${edge.getAttribute("to")}`
+          if (from === to) {
+            if (back) violations.push(`${path}: ${label} stays in one row and carries data-back`)
+            continue
+          }
           if (back && to > from) {
             violations.push(`${path}: ${label} carries data-back and runs down the figure`)
           }
           if (!back && to < from) {
             violations.push(`${path}: ${label} runs up the figure without data-back`)
           }
+        }
+      }
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<script type="mycelium/audit" data-audits="figure-peer-edges-span-no-box" data-touches="figure-edge">
+  import type { AuditFs } from "../../src/api.ts"
+
+  /**
+   * A peer edge reaches its neighbour without crossing a box between them.
+   *
+   * An edge inside one row runs straight across, from one box's side to the
+   * other's. Nothing steers it, so a node standing between the two ends is a
+   * node the line goes through, and the figure then draws a relation passing
+   * over something it has nothing to do with.
+   *
+   * Emptiness is what matters rather than adjacency. Two boxes in columns one
+   * and three may join, so long as column two holds nothing in that row.
+   */
+  export default async function (fs: AuditFs) {
+    const violations = []
+    for (const path of fs.list("docs", { ext: ".html" })) {
+      const doc = fs.parse(path)
+      for (const graph of Array.from(doc.querySelectorAll("figure-graph"))) {
+        const cells = new Map()
+        for (const node of Array.from(graph.querySelectorAll("figure-node"))) {
+          const at = node.getAttribute("data-at")
+          if (!at) continue
+          const [row, column] = at.split(",").map(Number)
+          cells.set(node.getAttribute("id"), { row, column })
+        }
+        for (const edge of Array.from(graph.querySelectorAll("figure-edge"))) {
+          const a = cells.get(edge.getAttribute("from"))
+          const b = cells.get(edge.getAttribute("to"))
+          if (!a || !b || a.row !== b.row) continue
+          const low = Math.min(a.column, b.column)
+          const high = Math.max(a.column, b.column)
+          const between = Array.from(cells.entries()).filter(
+            ([, cell]) => cell.row === a.row && cell.column > low && cell.column < high,
+          )
+          if (!between.length) continue
+          const names = between.map(([id]) => id).join(", ")
+          violations.push(
+            `${path}: ${edge.getAttribute("from")} to ${edge.getAttribute("to")} runs across ${names} in the same row`,
+          )
         }
       }
     }
