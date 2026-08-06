@@ -24,15 +24,21 @@
 <h2>The vocabulary</h2>
 <p>
   Every type's <code>&lt;template id="…"&gt;</code> already contains one empty placeholder element per
-  field, for documentation/copy-paste. Three optional attributes on those placeholders turn that skeleton
+  field, for documentation/copy-paste. Four optional attributes on those placeholders turn that skeleton
   into a schema, without adding any new wrapper elements:
 </p>
 <ul>
   <li><code>required</code> — boolean attribute (no value). The field must be present with non-empty text.
     Absent entirely, or present but only whitespace, both fail the same way: "missing or empty".</li>
+  <li><code>repeatable</code> — boolean attribute. The child may appear more than once, and every
+    occurrence meets the same checks. Without it a second child of that tag fails, which is what a
+    first-match lookup used to swallow: a duplicate title left one copy live and the other unreachable.
+    Paired with <code>required</code> the two cover four cases — at most one, exactly one, zero or more,
+    one or more.</li>
   <li><code>pattern</code> — a JS regular expression source, tested against the field's trimmed text
     content.</li>
-  <li><code>required</code>, <code>pattern</code> and <code>enum</code> are the schema's own words.
+  <li><code>required</code>, <code>repeatable</code>, <code>pattern</code> and <code>enum</code> are the
+    schema's own words.
     Any <em>other</em> attribute on a placeholder — root or field — is one the instance must carry, and a
     value on it is a regular expression the instance's value must match. So
     <code>&lt;language-rule data-validates="^(all|html|…)$"&gt;</code> makes that attribute required and
@@ -48,11 +54,18 @@
     take.</li>
 </ul>
 <p>
-  A field with none of the three is optional and free-form: any content is allowed, or the field may be
+  A field with none of these is optional and free-form: any content is allowed, or the field may be
   omitted entirely — but if it's present at all, it still can't be empty (present-but-whitespace-only is
   always rejected, required or not, with "present but empty — omit it instead"). The full set of field tags
   declared inside a type's <code>&lt;template&gt;</code> is also its <em>allowed</em> set: any same-family
   field on a real instance that isn't among them is rejected as unexpected.
+</p>
+<p>
+  A placeholder that declares an attribute of its own is the exception to the empty rule. Such an element
+  holds its meaning in its attributes, so empty content is correct for it:
+  <code>&lt;figure-edge from="a" to="b"&gt;&lt;/figure-edge&gt;</code> is an edge with no label, and there
+  is nothing missing about it. A placeholder declaring no attributes, such as
+  <code>&lt;knowledge-title required&gt;</code>, still has to carry text.
 </p>
 <pre><code>&lt;template id="knowledge-goal"&gt;
   &lt;knowledge-goal&gt;
@@ -177,7 +190,6 @@
     if (!el) return { ok: false, errors: [`missing <${rootTag}> element`] }
 
     const familyPrefix = rootTag.split('-')[0] + '-'
-    const allowed = []
     const errors = []
 
     // Attribute constraints, in the reserved-word form the deferred decision
@@ -189,7 +201,7 @@
     // data-validates is it. Its cost is the one that decision named too: a
     // misspelt schema word becomes a requirement for an attribute of that name,
     // which fails loudly rather than silently.
-    const SCHEMA_WORDS = new Set(['required', 'pattern', 'enum'])
+    const SCHEMA_WORDS = new Set(['required', 'pattern', 'enum', 'repeatable'])
     function checkAttributes(placeholder, target, label) {
       for (const attr of Array.from(placeholder.attributes)) {
         if (SCHEMA_WORDS.has(attr.name)) continue
@@ -212,11 +224,23 @@
     }
     checkAttributes(shape, el, `<${rootTag}>`)
 
-    for (const field of Array.from(shape.children)) {
-      const tag = field.tagName.toLowerCase()
-      allowed.push(tag)
-      const required = field.hasAttribute('required')
-      const node = Array.from(el.children).find((c) => c.tagName.toLowerCase() === tag)
+    // One slot per placeholder. `repeatable` says the child may appear more
+    // than once; without it a second one is an error rather than the silence
+    // a first-match lookup used to give. Together with `required` that covers
+    // at most one, exactly one, zero or more, and one or more.
+    const slots = Array.from(shape.children).map((placeholder) => ({
+      tag: placeholder.tagName.toLowerCase(),
+      placeholder,
+      required: placeholder.hasAttribute('required'),
+      repeatable: placeholder.hasAttribute('repeatable'),
+      // An element carrying declared attributes holds its meaning there, so
+      // empty content is correct for it. An edge with no label is still an
+      // edge, and its two ends live in `from` and `to`.
+      attributeBorne: Array.from(placeholder.attributes).some((a) => !SCHEMA_WORDS.has(a.name)),
+    }))
+    const byTag = new Map(slots.map((slot) => [slot.tag, slot]))
+
+    function checkField(slot, node) {
       // Collapsed, not just trimmed. A field's value must not depend on how
       // its source happens to be wrapped: a title written across three
       // indented lines carries newlines and leading spaces into its text,
@@ -225,34 +249,54 @@
       // Whitespace
       // between words is formatting, so it is normalised to one space
       // before anything reads the value.
-      const text = node?.textContent.replace(/\s+/g, ' ').trim() ?? ''
-
-      if (!node) {
-        if (required) errors.push(`missing or empty <${tag}>`)
-        continue
-      }
+      const text = node.textContent.replace(/\s+/g, ' ').trim()
       if (!text) {
-        errors.push(required ? `missing or empty <${tag}>` : `<${tag}> present but empty — omit it instead`)
-        continue
+        if (slot.attributeBorne) return
+        errors.push(
+          slot.required
+            ? `missing or empty <${slot.tag}>`
+            : `<${slot.tag}> present but empty — omit it instead`,
+        )
+        return
       }
-
-      const pattern = field.getAttribute('pattern')
+      const pattern = slot.placeholder.getAttribute('pattern')
       if (pattern && !new RegExp(pattern).test(text)) {
-        errors.push(`<${tag}> must match ${pattern}, got "${text}"`)
+        errors.push(`<${slot.tag}> must match ${pattern}, got "${text}"`)
       }
-      const enumAttr = field.getAttribute('enum')
+      const enumAttr = slot.placeholder.getAttribute('enum')
       if (enumAttr) {
         const values = enumAttr.trim().split(/\s+/)
-        if (!values.includes(text)) errors.push(`<${tag}> must be ${values.join('|')}, got "${text}"`)
+        if (!values.includes(text)) errors.push(`<${slot.tag}> must be ${values.join('|')}, got "${text}"`)
       }
-      checkAttributes(field, node, `<${tag}>`)
+      checkAttributes(slot.placeholder, node, `<${slot.tag}>`)
     }
 
+    // Gather first, check second, so the errors come out in the order the
+    // template declares its fields rather than the order the instance happens
+    // to write them.
+    const found = new Map()
     for (const child of Array.from(el.children)) {
       const tag = child.tagName.toLowerCase()
-      if (tag.startsWith(familyPrefix) && !allowed.includes(tag)) {
-        errors.push(`unexpected <${tag}> on ${rootTag}`)
+      if (!byTag.has(tag)) {
+        if (tag.startsWith(familyPrefix)) errors.push(`unexpected <${tag}> on ${rootTag}`)
+        continue
       }
+      if (!found.has(tag)) found.set(tag, [])
+      found.get(tag).push(child)
+    }
+
+    for (const slot of slots) {
+      const nodes = found.get(slot.tag) ?? []
+      if (nodes.length === 0) {
+        if (slot.required) errors.push(`missing or empty <${slot.tag}>`)
+        continue
+      }
+      if (nodes.length > 1 && !slot.repeatable) {
+        errors.push(`<${slot.tag}> appears ${nodes.length} times; the template declares one`)
+      }
+      // Every occurrence, not just the first. A figure with twelve nodes gets
+      // twelve placements checked.
+      for (const node of nodes) checkField(slot, node)
     }
 
     return { ok: errors.length === 0, errors }

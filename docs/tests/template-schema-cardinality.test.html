@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: what the repeatable declaration accepts and refuses</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/test.template.css">
+</head>
+<body>
+
+<test-doc data-conforms-to="../templates/test.template.html#test-doc">
+  <test-title>The schema counts children, and checks every one of them</test-title>
+  <test-subject><a href="../templates/template.template.html">template.template.html</a></test-subject>
+
+  <test-case id="duplicate-field-fails" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a second copy of a field the template declares once fails</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // The lookup this replaces took the first match, so a duplicate left one
+      // copy live and the other unreachable: no field held it and no query
+      // found it. That is the shape nothing-outside-the-type catches at the
+      // level of the document body, one level down.
+      //
+      // These cases call the generic validator itself rather than the command
+      // line. A sandbox links the templates directory and nothing else, so it
+      // holds no host for validate, and the thing under test here is one
+      // exported function anyway.
+      import type { TestContext } from "../../src/api.ts"
+      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import { fileURLToPath } from "node:url"
+      import { dirname, resolve } from "node:path"
+
+      const docs = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+      export default async function ({ assert }: TestContext) {
+        const check = await loadGenericValidator(docs)
+        const { document } = parseHTML(`<body>
+          <template id="sample">
+            <sample-doc>
+              <sample-title required></sample-title>
+            </sample-doc>
+          </template>
+          <sample-doc>
+            <sample-title>The title a reader sees</sample-title>
+            <sample-title>The title nobody reaches</sample-title>
+          </sample-doc>
+        </body>`)
+
+        const result = check(
+          document.querySelector("template")!,
+          document.querySelector("sample-doc")!,
+        )
+        assert(!result.ok, "two titles passed as one")
+        assert(
+          result.errors.some((e) => e.includes("<sample-title> appears 2 times")),
+          `no duplicate reported; got ${JSON.stringify(result.errors)}`,
+        )
+      }
+    </script>
+  </test-case>
+
+  <test-case id="repeatable-child-may-repeat" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a repeatable child may appear many times</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // Three children against a placeholder written once. Without the
+      // declaration this same markup fails as a duplicate, which is the point
+      // of the word.
+      import type { TestContext } from "../../src/api.ts"
+      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import { fileURLToPath } from "node:url"
+      import { dirname, resolve } from "node:path"
+
+      const docs = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+      export default async function ({ assert }: TestContext) {
+        const check = await loadGenericValidator(docs)
+        const { document } = parseHTML(`<body>
+          <template id="sample">
+            <sample-doc>
+              <sample-item repeatable></sample-item>
+            </sample-doc>
+          </template>
+          <sample-doc>
+            <sample-item>first</sample-item>
+            <sample-item>second</sample-item>
+            <sample-item>third</sample-item>
+          </sample-doc>
+        </body>`)
+
+        const result = check(
+          document.querySelector("template")!,
+          document.querySelector("sample-doc")!,
+        )
+        assert(result.ok, `three items refused: ${JSON.stringify(result.errors)}`)
+      }
+    </script>
+  </test-case>
+
+  <test-case id="every-occurrence-is-checked" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a repeatable child fails on its second occurrence, not only its first</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // The regression this change exists for. Only the first child of a kind
+      // ever met a check, so a figure with twelve nodes had one placement
+      // checked and eleven ignored. The first item here is sound and the
+      // second one is not.
+      import type { TestContext } from "../../src/api.ts"
+      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import { fileURLToPath } from "node:url"
+      import { dirname, resolve } from "node:path"
+
+      const docs = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+      export default async function ({ assert }: TestContext) {
+        const check = await loadGenericValidator(docs)
+        const { document } = parseHTML(`<body>
+          <template id="sample">
+            <sample-doc>
+              <sample-item repeatable data-at="^[0-9]+,[0-9]+$"></sample-item>
+            </sample-doc>
+          </template>
+          <sample-doc>
+            <sample-item data-at="1,1">placed properly</sample-item>
+            <sample-item data-at="middle">placed nowhere</sample-item>
+          </sample-doc>
+        </body>`)
+
+        const result = check(
+          document.querySelector("template")!,
+          document.querySelector("sample-doc")!,
+        )
+        assert(!result.ok, "a second child placed at \"middle\" passed")
+        assert(
+          result.errors.some((e) => e.includes("middle")),
+          `the failure names something else: ${JSON.stringify(result.errors)}`,
+        )
+      }
+    </script>
+  </test-case>
+
+  <test-case id="attribute-borne-element-may-be-empty" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>an element declaring attributes may hold no text</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // An edge with no label still has two ends, so its meaning survives an
+      // empty body. A placeholder declaring no attributes keeps the older
+      // rule and still has to carry text, which the second half checks.
+      import type { TestContext } from "../../src/api.ts"
+      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import { fileURLToPath } from "node:url"
+      import { dirname, resolve } from "node:path"
+
+      const docs = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+      export default async function ({ assert }: TestContext) {
+        const check = await loadGenericValidator(docs)
+        const { document } = parseHTML(`<body>
+          <template id="sample">
+            <sample-doc>
+              <sample-edge from=".+" to=".+"></sample-edge>
+              <sample-note></sample-note>
+            </sample-doc>
+          </template>
+          <sample-doc>
+            <sample-edge from="a" to="b"></sample-edge>
+            <sample-note></sample-note>
+          </sample-doc>
+        </body>`)
+
+        const result = check(
+          document.querySelector("template")!,
+          document.querySelector("sample-doc")!,
+        )
+        assert(
+          !result.errors.some((e) => e.includes("sample-edge")),
+          `an unlabelled edge was refused: ${JSON.stringify(result.errors)}`,
+        )
+        assert(
+          result.errors.some((e) => e.includes("<sample-note> present but empty")),
+          `an empty plain field passed: ${JSON.stringify(result.errors)}`,
+        )
+      }
+    </script>
+  </test-case>
+
+</test-doc>
+
+</body>
+</html>
