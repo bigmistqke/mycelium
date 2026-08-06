@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: A test is a document, and a headless browser renders it rather than framing it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>A test is a document, and a headless browser renders it rather than framing it</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-detail><p>
+  A test document runs its own cases. The browser only renders. It opens the file
+  over <code>file://</code>, the page fills in its own results, and the CLI reads
+  them out of the same <code>test-status</code> fields a person reads. The protocol
+  is the document.
+</p>
+<p>
+  The harness this replaces had two of everything. A person opening a figure test
+  and a build checking one would run different code, and the two drift apart. Here
+  they open the same page.
+</p>
+<p>
+  Waiting until no <code>test-status</code> reads PENDING also carries async for
+  free. A figure case waits for a frame and then for ResizeObserver, and no case
+  ever declares itself async or hands a promise to a harness.
+</p>
+<p>
+  Past a deadline, a case still reading PENDING has failed. A thrown error writes
+  FAILURE, so PENDING at the end means the script hung or the page never loaded its
+  subject. The enum keeps three values and TIMEOUT never joins it.
+</p>
+<p>
+  The two kinds of test then divide by what each one touches, not by what it needs
+  to measure. A node-test reaches the filesystem, spawns commands and imports
+  <code>src/*.ts</code>, so no browser can host it. A browser-test reaches a rendered
+  page, and whether a person or the CLI opened that page changes nothing about it.
+  happy-dom leaves the test story and stays what it already is: how
+  <code>validate</code> parses documents.
+</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-06-test-template-html.goal.html">how the goal's two kinds of test actually run</a>
+</knowledge-decision>
+</body></html>

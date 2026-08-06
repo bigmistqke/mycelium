@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Probe whether headless Chrome fires requestAnimationFrame and measures a figure's grid</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Probe whether headless Chrome fires requestAnimationFrame and measures a figure's grid</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>
+  Every browser-test of the figure engine rests on one assumption nobody has
+  checked: that headless Chrome runs the same layout a visible one does.
+  <code>figure.element.js</code> draws inside a <code>requestAnimationFrame</code>
+  callback and redraws from a <code>ResizeObserver</code>, and it reads every
+  coordinate from <code>getBoundingClientRect</code>.
+</p>
+<p>
+  The probe needs no driver. The engine writes its measurements into the document
+  as an SVG path's <code>d</code> attribute, so a dump of the DOM after load
+  separates the two answers on its own. Zero rects give
+  <code>M0,0 L0,0 L0,0 L0,0</code>, the same shape happy-dom produced. Real layout
+  gives real coordinates.
+</p>
+<p>
+  This is the same probe that settled the happy-dom question, pointed at the other
+  candidate venue.
+</p>
+</knowledge-detail>
+  <a data-rel="leads_to" href="./2026-08-06-headless-chrome-measures-figures.outcome.html">what the probe found</a>
+  <a data-rel="depends_on" href="./2026-08-06-test-document-browser-renders-it.decision.html">checks the assumption the decision rests on</a>
+</knowledge-action>
+</body></html>
