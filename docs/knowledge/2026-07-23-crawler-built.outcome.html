@@ -10,10 +10,6 @@
 <knowledge-outcome data-conforms-to="../templates/knowledge.template.html#knowledge-outcome">
   <knowledge-title>mycelium v4 crawler runs for real against the docs/ corpus: all 24 instances pass, both audits fire</knowledge-title>
   <knowledge-confidence>90</knowledge-confidence>
-  <knowledge-commit>b6c4e3a</knowledge-commit>
-  <knowledge-branch>main</knowledge-branch>
-  <a data-rel="leads_to" href="./2026-07-23-reverse-runtime-to-globalthis.decision.html">led to reconsidering the
-    shared-runtime approach itself</a>
   <knowledge-detail><p>Building the crawler and running it for real against the actual <code>docs/</code> corpus, not against fixtures, worked: <strong>24 real instances all pass their validators</strong>, and <strong>both audits correctly flag real violations</strong>.</p>
 <p>
   The two audit failures in that run are real and correct, not bugs: they flag
@@ -24,5 +20,9 @@
   than a hand-typed fixture or local sample markup.
 </p>
 </knowledge-detail>
+  <knowledge-commit>b6c4e3a</knowledge-commit>
+  <a data-rel="leads_to" href="./2026-07-23-reverse-runtime-to-globalthis.decision.html">led to reconsidering the
+    shared-runtime approach itself</a>
+  <knowledge-branch>main</knowledge-branch>
 </knowledge-outcome>
 </body></html>

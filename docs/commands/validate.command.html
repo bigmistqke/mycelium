@@ -312,6 +312,74 @@
     await runValidate(args.dir ? resolvePath(args.dir as string) : fs.root)
   }
 
+  /**
+   * Sort every instance's fields into the order its template declares.
+   *
+   *   mycelium validate autofix
+   *
+   * Moves declared fields relative to each other and touches nothing else.
+   * A tag no template declares — an edge, an embedded script — keeps the
+   * position it already holds, and no text moves, so a diff shows lines
+   * changing places and nothing more.
+   *
+   * A separate command rather than a flag on check. A gate that repairs
+   * what it measures reports nothing, which is the same split
+   * `comments check` and `comments autofix` already make.
+   *
+   * Writes through the engine like every other command, so each document it
+   * touches gets the same indentation as one an authoring command wrote.
+   * That is also why this takes no --dir: the engine writes what it opened.
+   *
+   * Prints one line per document it changed, then a count.
+   */
+  export async function autofix({ fs }: CommandContext) {
+    const documents = fs.list(".").map(({ path, doc }) => ({
+      path: resolvePath(fs.root, path),
+      dom: doc,
+    }))
+    const { templates } = discoverTemplatesAndAudits(documents)
+    const changed: string[] = []
+
+    for (const { path, dom } of documents) {
+      let touched = false
+      for (const el of Array.from(dom.querySelectorAll("[data-conforms-to]"))) {
+        const template = templates.get(resolveTemplateRef(path, el.getAttribute("data-conforms-to")!))
+        const shape = (template?.element as HTMLTemplateElement | undefined)?.content?.firstElementChild
+        if (!shape) continue
+        const order = Array.from(shape.children).map((c) => c.tagName.toLowerCase())
+
+        // The seats the declared fields already occupy, and the fields
+        // themselves. Sorting the occupants and putting them back into those
+        // same seats leaves every other child where it was, which is what
+        // keeps an edge between two fields between those two fields.
+        const seats = Array.from(el.children).filter((c) => order.includes(c.tagName.toLowerCase()))
+        if (seats.length < 2) continue
+        const sorted = seats
+          .map((c, i) => ({ c, i, rank: order.indexOf(c.tagName.toLowerCase()) }))
+          // Stable, so a repeated child keeps the order its author chose.
+          // That order is content, and nothing here may rewrite content.
+          .sort((a, b) => a.rank - b.rank || a.i - b.i)
+          .map((entry) => entry.c)
+        if (sorted.every((c, i) => c === seats[i])) continue
+
+        // A marker per seat, so every move lands against a fixed point rather
+        // than against a sibling that another move has already shifted.
+        const markers = seats.map((seat) => {
+          const marker = dom.createElement("span")
+          el.insertBefore(marker, seat)
+          return marker
+        })
+        for (let i = 0; i < markers.length; i++) el.insertBefore(sorted[i], markers[i])
+        for (const marker of markers) marker.remove()
+        touched = true
+      }
+      if (touched) changed.push(relative(fs.root, path))
+    }
+
+    for (const path of changed) console.log(`sorted  ${path}`)
+    console.log(`${changed.length} document(s) sorted`)
+  }
+
   export default check
 </script>
 

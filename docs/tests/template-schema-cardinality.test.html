@@ -185,6 +185,89 @@
     </script>
   </test-case>
 
+  <test-case id="declared-order-binds" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a field placed before one the template ranks earlier fails</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // Thirty one nodes drifted this way before anything checked it, one
+      // update at a time, because adding a field appended it. Nothing read
+      // them wrongly, but two documents saying the same thing serialized
+      // differently, and the order stopped meaning anything.
+      import type { TestContext } from "../../src/api.ts"
+      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import { fileURLToPath } from "node:url"
+      import { dirname, resolve } from "node:path"
+
+      const docs = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+      export default async function ({ assert }: TestContext) {
+        const check = await loadGenericValidator(docs)
+        const { document } = parseHTML(`<body>
+          <template id="sample">
+            <sample-doc>
+              <sample-title required></sample-title>
+              <sample-note></sample-note>
+            </sample-doc>
+          </template>
+          <sample-doc>
+            <sample-note>out in front</sample-note>
+            <sample-title>where the title belongs</sample-title>
+          </sample-doc>
+        </body>`)
+
+        const result = check(
+          document.querySelector("template")!,
+          document.querySelector("sample-doc")!,
+        )
+        assert(!result.ok, "a note before the title passed")
+        assert(
+          result.errors.some((e) => e.includes("the template declares it before")),
+          `the failure names something else: ${JSON.stringify(result.errors)}`,
+        )
+      }
+    </script>
+  </test-case>
+
+  <test-case id="a-run-stays-contiguous" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>another tag may not interrupt a repeatable run</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // Contiguity costs no check of its own. A cursor that only moves
+      // forward has already passed the run's slot by the time the run
+      // resumes, so the same rule that catches a field out of order catches
+      // a split run.
+      import type { TestContext } from "../../src/api.ts"
+      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import { fileURLToPath } from "node:url"
+      import { dirname, resolve } from "node:path"
+
+      const docs = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+      export default async function ({ assert }: TestContext) {
+        const check = await loadGenericValidator(docs)
+        const { document } = parseHTML(`<body>
+          <template id="sample">
+            <sample-doc>
+              <sample-item repeatable></sample-item>
+              <sample-note></sample-note>
+            </sample-doc>
+          </template>
+          <sample-doc>
+            <sample-item>first</sample-item>
+            <sample-note>in the middle of the run</sample-note>
+            <sample-item>second</sample-item>
+          </sample-doc>
+        </body>`)
+
+        const result = check(
+          document.querySelector("template")!,
+          document.querySelector("sample-doc")!,
+        )
+        assert(!result.ok, "a note splitting a run passed")
+      }
+    </script>
+  </test-case>
+
 </test-doc>
 
 </body>

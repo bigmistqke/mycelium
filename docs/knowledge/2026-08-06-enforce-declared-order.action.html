@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Enforce the declared order, after sorting the corpus into it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Enforce the declared order, after sorting the corpus into it</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Third of the three steps
+<a href="../specs/2026-08-06-template-schema-cardinality.spec.html">the
+cardinality spec</a> sets out, and the one that needed the other two first.</p>
+<p><code>validate</code> gains an <code>autofix</code> beside its
+<code>check</code>. It sorts each instance's declared fields into template
+order by collecting the seats they already occupy, sorting the occupants and
+putting them back into those same seats. Anything the template never declares
+keeps its place, so an edge sitting between two fields stays between those two
+fields. The sort is stable, so a repeated child keeps the order its author
+chose.</p>
+<p>A separate command rather than a flag, because a gate that repairs what it
+measures reports nothing. <code>comments check</code> and
+<code>comments autofix</code> already split this way.</p>
+<p>It sorted 31 documents. Every one holds the same lines as before in a
+different order, checked by comparing the sorted line sets on both sides: the
+only file in the change carrying different content is the command that does
+the sorting.</p>
+<p>The validator then grew a cursor that only moves forward. A tag ranked
+behind it sits out of order, and a run split by another tag trips the same
+check, so contiguity costs no code of its own. Order inside a run stays
+untouched, since that is content.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-06-place-fields-by-declared-order.action.html">the step this needed first</a>
+</knowledge-action>
+</body></html>

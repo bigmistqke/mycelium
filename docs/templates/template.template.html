@@ -67,6 +67,31 @@
   is nothing missing about it. A placeholder declaring no attributes, such as
   <code>&lt;knowledge-title required&gt;</code>, still has to carry text.
 </p>
+
+<h2>The order of the placeholders is the content model</h2>
+<p>
+  A template lists its placeholders in an order, and that order binds. An instance writing a field before
+  one the template ranks earlier fails, the same way one missing a required field fails. There is no word
+  to relax this: a document that does not match its declared shape is wrong, and the schema has no reason
+  to negotiate.
+</p>
+<p>
+  Contiguity comes free with it. The cursor reading an instance only moves forward, so by the time a run
+  resumes after some other tag it has already passed that run's placeholder, and the same check catches it.
+  A repeatable child therefore appears as one unbroken run.
+</p>
+<p>
+  What this does <em>not</em> constrain is the order <em>inside</em> a run. Which task comes second is
+  whatever its author chose, and no schema can say otherwise. That split is why cardinality needed one new
+  word and order needed none: order between placeholders is structure, order within a run is content.
+</p>
+<p>
+  Nothing enforced this until every instance already matched. 31 nodes had drifted, all of them knowledge
+  nodes and all in the tail, because adding a field appended it — so a node's field order recorded which
+  flag arrived when. <code>mycelium validate autofix</code> sorted them once, and every family's writer now
+  places a new field where its template puts it. Turning the check on before either of those would have
+  failed documents nobody had touched.
+</p>
 <pre><code>&lt;template id="knowledge-goal"&gt;
   &lt;knowledge-goal&gt;
     &lt;knowledge-title required&gt;&lt;/knowledge-title&gt;
@@ -274,12 +299,26 @@
     // Gather first, check second, so the errors come out in the order the
     // template declares its fields rather than the order the instance happens
     // to write them.
+    //
+    // The order of the placeholders is the content model, and it always
+    // binds: a document that does not match its declared shape is wrong
+    // the same way one missing a required field is wrong. A cursor that only
+    // moves forward reports both ways of breaking it. A tag ranked behind the
+    // cursor sits out of order, and a run split by another tag trips the same
+    // check, since the cursor has already passed it.
     const found = new Map()
+    let cursor = 0
     for (const child of Array.from(el.children)) {
       const tag = child.tagName.toLowerCase()
       if (!byTag.has(tag)) {
         if (tag.startsWith(familyPrefix)) errors.push(`unexpected <${tag}> on ${rootTag}`)
         continue
+      }
+      const rank = slots.findIndex((slot) => slot.tag === tag)
+      if (rank < cursor) {
+        errors.push(`<${tag}> comes after <${slots[cursor].tag}>; the template declares it before`)
+      } else {
+        cursor = rank
       }
       if (!found.has(tag)) found.set(tag, [])
       found.get(tag).push(child)

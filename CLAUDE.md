@@ -386,6 +386,20 @@ the four graph-wide audits. It **exits non-zero on failure** — true only
 since 2026-07-30; before that it printed failures and exited 0, so no audit
 had ever actually gated anything.
 
+The order a template lists its placeholders in now binds, so a field written
+before one the template ranks earlier fails validation. You should never hit
+this: every authoring command places a new field where its template puts it.
+
+If you hand-edit a document and get it wrong, `pnpm mycelium validate autofix`
+sorts every instance's fields back into declared order. It moves declared
+fields relative to each other and nothing else — an edge or an embedded
+script keeps its place, and a diff shows lines changing places and no
+content.
+
+It lives beside the gate rather than inside it, the same way `comments check`
+and `comments autofix` split, because a gate that repairs what it measures
+reports nothing.
+
 For a plain enumeration rather than a verdict, use `mycelium knowledge list
 nodes` and `list edges`.
 
