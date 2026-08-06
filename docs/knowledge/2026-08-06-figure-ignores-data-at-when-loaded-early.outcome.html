@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outcome: The first test document found a real bug: a figure loaded from the head placed nothing</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-outcome data-conforms-to="../templates/knowledge.template.html#knowledge-outcome">
+  <knowledge-title>The first test document found a real bug: a figure loaded from the head placed nothing</knowledge-title>
+  <knowledge-confidence>95</knowledge-confidence>
+  <knowledge-detail><p>
+  <code>figure.element.js</code> placed its nodes inside
+  <code>connectedCallback</code>. A custom element upgrades the moment the parser
+  reaches its start tag, so a figure ran that code before any of its own
+  <code>figure-node</code> children existed. The query found nothing, no node
+  received a <code>grid-row</code> or a <code>grid-column</code>, and every one of
+  them fell into grid auto-placement.
+</p>
+<p>
+  Only the load position hid it. <a href="../reports/2026-08-05-repl.report.html">The
+  repl report</a> loads the script at the end of the body, where the parser has
+  already built every figure, so its own diagram placed correctly and nothing looked
+  wrong. The first test document put the script in the head, which is where a script
+  usually goes, and its figures collapsed into one row.
+</p>
+<p>
+  The reading of <code>data-at</code> was never wrong. A figure simply ignored it,
+  and drew a plausible diagram anyway, which is the failure mode this whole family
+  exists to catch: a picture that renders, looks deliberate, and says something
+  untrue.
+</p>
+<p>
+  <code>connectedCallback</code> now waits for <code>DOMContentLoaded</code> when the
+  document is still parsing, so a script's position in the page stops deciding
+  whether cells mean anything.
+  <code>tests/figure-placement.test.html</code> pins it: three nodes in two rows,
+  which auto-placement flattens into one.
+</p>
+<p>
+  No audit could have found this. It is a claim about a rendering, and the whole
+  reason the corpus checks could not reach the engine.
+</p>
+</knowledge-detail>
+  <knowledge-commit>791afa8</knowledge-commit>
+  <knowledge-branch>figure-template</knowledge-branch>
+</knowledge-outcome>
+</body></html>
