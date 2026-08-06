@@ -159,7 +159,17 @@
     summarise()
   }
 
+  // A browser reports this one when something resizes an element while resize
+  // notifications for it are still going out. Nothing threw and nothing fell
+  // through: the remaining notifications arrive in the next frame. It
+  // reaches window.onerror all the same, and failing every pending case over it
+  // would report a broken page whenever a figure grew a row to fit its labels.
+  function benign(message) {
+    return /ResizeObserver loop/.test(message || "")
+  }
+
   window.addEventListener("error", function (ev) {
+    if (benign(ev.message)) return
     derail("the page failed: " + (ev.message || "a resource did not load"))
   })
   window.addEventListener("unhandledrejection", function (ev) {

@@ -662,7 +662,7 @@
       failures += report(results, timeout)
     }
 
-    const paths = entries.filter((one) => kindOf(one.doc) === "browser").map((one) => one.path)
+    const paths = entries.filter((one) => kindOf(one.doc) === "browser")
     if (!paths.length) {
       console.log(`\n${total} cases, ${failures} failed`)
       if (failures) throw new Error(`${failures} of ${total} cases failed`)
@@ -691,7 +691,8 @@
         await call("POST", `${at}/window/rect`, { width: 1400, height: 2200 })
         await call("POST", `${at}/timeouts`, { script: timeout })
 
-        for (const path of paths) {
+        for (const entry of paths) {
+          const path = entry.path
           const full = resolve(fs.root, path)
           console.log(`\n${path}`)
           let cases
@@ -702,6 +703,14 @@
             failures++
             console.log(`  FAILURE  the page never finished — ${err.message}`)
             continue
+          }
+          // A page that answers with fewer cases than the file declares has not
+          // run them, it has lost them, and reporting nothing wrong would be a
+          // pass nobody earned.
+          const declared = entry.doc.querySelectorAll("test-case").length
+          if (cases.length !== declared) {
+            failures++
+            console.log(`  FAILURE  the document declares ${declared} cases and the page answered with ${cases.length}`)
           }
           total += cases.length
           failures += report(cases, timeout)
