@@ -268,6 +268,53 @@
     </script>
   </test-case>
 
+  <test-case id="the-root-is-closed" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a child of any name the template does not declare fails</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // The check used to compare only tags carrying the family prefix, so a
+      // div or a blink sat on a knowledge node and met nothing. Five hundred
+      // and fifty edges and twenty two scripts lived in that gap, which is
+      // the whole graph structure and the substance of every test case.
+      import type { TestContext } from "../../src/api.ts"
+      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import { fileURLToPath } from "node:url"
+      import { dirname, resolve } from "node:path"
+
+      const docs = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+      export default async function ({ assert }: TestContext) {
+        const check = await loadGenericValidator(docs)
+        const { document } = parseHTML(`<body>
+          <template id="sample">
+            <sample-doc>
+              <sample-title required></sample-title>
+              <a repeatable href=".+" data-rel=".+"></a>
+            </sample-doc>
+          </template>
+          <sample-doc>
+            <sample-title>A title</sample-title>
+            <div>nobody declared this</div>
+            <a data-rel="supports" href="./elsewhere.html">a declared edge</a>
+          </sample-doc>
+        </body>`)
+
+        const result = check(
+          document.querySelector("template")!,
+          document.querySelector("sample-doc")!,
+        )
+        assert(
+          result.errors.some((e) => e.includes("unexpected <div>")),
+          `an undeclared div passed: ${JSON.stringify(result.errors)}`,
+        )
+        assert(
+          !result.errors.some((e) => e.includes("<a>")),
+          `a declared edge was refused: ${JSON.stringify(result.errors)}`,
+        )
+      }
+    </script>
+  </test-case>
+
 </test-doc>
 
 </body>

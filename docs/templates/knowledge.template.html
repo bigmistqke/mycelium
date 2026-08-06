@@ -78,6 +78,7 @@
     <knowledge-status required enum="pending active completed rejected"></knowledge-status>
     <knowledge-prompt></knowledge-prompt>
     <knowledge-detail></knowledge-detail>
+    <a repeatable href=".+" data-rel=".+"></a>
   </knowledge-goal>
 </template>
 <pre><code>&lt;knowledge-goal data-conforms-to="./knowledge.template.html#knowledge-goal"&gt;
@@ -96,6 +97,7 @@
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-status required enum="pending active completed rejected"></knowledge-status>
     <knowledge-detail></knowledge-detail>
+    <a repeatable href=".+" data-rel=".+"></a>
   </knowledge-decision>
 </template>
 <pre><code>&lt;knowledge-decision data-conforms-to="./knowledge.template.html#knowledge-decision"&gt;
@@ -114,6 +116,7 @@
     <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-detail></knowledge-detail>
+    <a repeatable href=".+" data-rel=".+"></a>
   </knowledge-option>
 </template>
 <pre><code>&lt;knowledge-option data-conforms-to="./knowledge.template.html#knowledge-option"&gt;
@@ -135,6 +138,7 @@
     <knowledge-commit></knowledge-commit>
     <knowledge-files></knowledge-files>
     <knowledge-branch></knowledge-branch>
+    <a repeatable href=".+" data-rel=".+"></a>
   </knowledge-action>
 </template>
 <pre><code>&lt;knowledge-action data-conforms-to="./knowledge.template.html#knowledge-action"&gt;
@@ -157,6 +161,7 @@
     <knowledge-commit></knowledge-commit>
     <knowledge-files></knowledge-files>
     <knowledge-branch></knowledge-branch>
+    <a repeatable href=".+" data-rel=".+"></a>
   </knowledge-outcome>
 </template>
 <pre><code>&lt;knowledge-outcome data-conforms-to="./knowledge.template.html#knowledge-outcome"&gt;
@@ -173,6 +178,7 @@
     <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-detail></knowledge-detail>
+    <a repeatable href=".+" data-rel=".+"></a>
   </knowledge-observation>
 </template>
 <pre><code>&lt;knowledge-observation data-conforms-to="./knowledge.template.html#knowledge-observation"&gt;

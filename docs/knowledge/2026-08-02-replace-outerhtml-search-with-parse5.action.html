@@ -15,9 +15,9 @@
 <p>Removes the entire previous implementation from <code>autofix</code>: the <code>document.body.querySelectorAll</code> walk, the <code>el.closest</code>/<code>el.querySelector</code> leaf test run against a live happy-dom tree. Removes the search for each element's serialized <code>outerHTML</code> with an advancing cursor and the manual <code>indexOf('&gt;')</code>/<code>lastIndexOf</code> slicing of its opening and closing tags. <code>happy-dom</code> keeps doing everything else in this file exactly as before; only the position-finding step moved.</p>
 <p>Verified against a fixture carrying the same shapes as the earlier version's fixture, plus a bare <code>&amp;hellip;</code> entity in an unrelated sentence. <code>--diff</code> then apply produced the same two fixes as before. The entity, the <code>&lt;code&gt;</code> span, the link, the non-leaf list paragraph, and the blockquote all stayed untouched. <code>pnpm mycelium validate</code>: 811 checked, 0 fail. <code>pnpm typecheck</code>: clean.</p>
 </knowledge-detail>
-  <a data-rel="depends_on" href="./2026-08-02-parse5-alone-for-html-source-positions.decision.html">implements this decision</a>
-  <a data-rel="depends_on" href="./2026-08-02-extend-autofix-corpus-html-leaf-paragraphs.action.html">revises this action's implementation</a>
   <knowledge-commit>297e4c8</knowledge-commit>
   <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-08-02-parse5-alone-for-html-source-positions.decision.html">implements this decision</a>
+  <a data-rel="depends_on" href="./2026-08-02-extend-autofix-corpus-html-leaf-paragraphs.action.html">revises this action's implementation</a>
 </knowledge-action>
 </body></html>

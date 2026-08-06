@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Close the root: declare the edge and the script, drop the prefix guard</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Close the root: declare the edge and the script, drop the prefix guard</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>First step of
+<a href="../specs/2026-08-06-template-schema-strict-content.spec.html">the
+strict-content spec</a>. The unexpected-child check compared only tags carrying
+the family prefix, so a child of any other name met nothing at all.</p>
+<p>A census found exactly two things in that gap and nothing else: 550
+<code>&lt;a data-rel&gt;</code> edges and 22 <code>&lt;script&gt;</code>
+elements. Both are load-bearing. The edges are the structure of the graph, and
+a script is the substance of a test case and of a language rule.</p>
+<p>Each type now declares what it holds.
+<code>&lt;a repeatable href=".+" data-rel=".+"&gt;</code> goes on the six
+knowledge types and the three language ones, and
+<code>&lt;script required&gt;</code> on a test case, copying the
+<code>language-rule</code> that already declared its own. The check then drops
+its prefix condition.</p>
+<p>Declaring the edge gives it a rank, so order enforcement applied to it too:
+435 edges already sat after every declared field and 142 sat among them.
+<code>validate autofix</code> moved those 142. Of 112 changed files, 108 hold
+exactly the lines they held before in a different order, and the four with new
+content are the templates.</p>
+<p>The values a <code>data-rel</code> may take stay open. Closing them fails
+two edges carrying unlisted relations, and
+<a href="./2026-08-06-link-mangles-outside-targets.observation.html">link
+cannot retarget one of them</a>.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-06-edges-outside-the-schema.observation.html">the gap this closes</a>
+</knowledge-action>
+</body></html>

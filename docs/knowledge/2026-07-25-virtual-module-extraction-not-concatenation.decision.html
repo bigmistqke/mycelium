@@ -11,8 +11,6 @@
   <knowledge-title>Extract each template script block into its own virtual ES module, don't concatenate</knowledge-title>
   <knowledge-confidence>65</knowledge-confidence>
   <knowledge-status>pending</knowledge-status>
-  <a data-rel="depends_on" href="./2026-07-25-v4-for-rg-derivation-methodology.goal.html">the mechanism needed to let templates share code at all</a>
-  <a data-rel="alternative_to" href="./2026-07-24-duplicate-not-share-loadcheck.decision.html">same underlying question at a different scale — one shared function vs. a general-purpose sharing mechanism for many families</a>
   <knowledge-detail><p>Share code across template-embedded scripts by extracting each <code>&lt;script&gt;</code> block into its own virtual ES module, resolved via a custom loader that falls through to the real filesystem for ordinary specifiers.</p>
 <p>Rejected: concatenating a shared library's source into the script's text before eval, which would</p>
 <ul>
@@ -20,5 +18,7 @@
   <li>lose per-file stack-trace attribution.</li>
 </ul>
 </knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-25-v4-for-rg-derivation-methodology.goal.html">the mechanism needed to let templates share code at all</a>
+  <a data-rel="alternative_to" href="./2026-07-24-duplicate-not-share-loadcheck.decision.html">same underlying question at a different scale — one shared function vs. a general-purpose sharing mechanism for many families</a>
 </knowledge-decision>
 </body></html>
