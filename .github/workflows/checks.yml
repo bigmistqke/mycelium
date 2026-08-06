@@ -1,0 +1,71 @@
+name: Checks
+
+# Every branch, not only the one that publishes. Until this existed the sole
+# workflow ran on a push to main, so a branch could fail its own audits all the
+# way to a merge and only report it as a failed deploy afterwards.
+#
+# No paths filter either. The publish job has one because a change touching
+# nothing it serves need not redeploy, but a check has the opposite interest: a
+# rule lives in a template, a command lives in a document, and a change to
+# either can break something far from the file it edited.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# A later push to the same branch makes an earlier run pointless, so cancel it.
+# The publish job deliberately does the opposite, because a half-finished deploy
+# is worse than a slow one.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # A push and a pull request both fire for a branch in this repository, which
+    # would run everything twice. Pull requests are worth keeping for the ones
+    # that arrive from a fork, where no push event reaches this repository at
+    # all, so the duplicate is dropped here rather than by narrowing the trigger.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Every document against its own template, plus every audit that reads
+      # across documents. Exits non-zero on any failure.
+      - name: Validate the corpus
+        run: pnpm mycelium validate
+
+      # The figure engine decides everything from measured boxes, so no check
+      # running without a browser can reach it. These open each test document in
+      # the Chrome this image already carries. CHROMEWEBDRIVER points at a
+      # matching driver, so nothing downloads one.
+      - name: Run the browser tests
+        run: pnpm mycelium test run
+
+      # A failing layout test writes a picture of the fixture that failed. That
+      # picture is most of the value of testing a drawing, and it is unreachable
+      # from a log, so it comes back as an artifact.
+      - name: Keep the pictures of what failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-figures
+          path: docs/tests/*.failure.png
+          if-no-files-found: ignore
