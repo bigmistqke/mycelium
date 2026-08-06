@@ -103,9 +103,13 @@
   <language-term>
     <language-title required></language-title>
     <language-part-of-speech required enum="noun verb adjective adverb phrase"></language-part-of-speech>
-    <language-meaning required></language-meaning>
+    <language-meaning required>
+      <a repeatable href=".+"></a>
+    </language-meaning>
     <language-avoid></language-avoid>
-    <language-detail></language-detail>
+    <language-detail>
+      <p repeatable markup></p>
+    </language-detail>
     <a repeatable href=".+" data-rel=".+"></a>
   </language-term>
 </template>
@@ -121,9 +125,15 @@
 <template id="language-rule">
   <language-rule data-validates="^(all|html|markdown|javascript(/(comment|jsdoc))?)( +(all|html|markdown|javascript(/(comment|jsdoc))?))*$">
     <language-title required></language-title>
-    <language-pass required></language-pass>
-    <language-fail required></language-fail>
-    <language-detail></language-detail>
+    <language-pass required>
+      <p repeatable markup></p>
+    </language-pass>
+    <language-fail required>
+      <p repeatable markup></p>
+    </language-fail>
+    <language-detail>
+      <p repeatable markup></p>
+    </language-detail>
     <script required></script>
     <a repeatable href=".+" data-rel=".+"></a>
   </language-rule>
@@ -132,9 +142,15 @@
 <template id="language-guide">
   <language-guide>
     <language-title required></language-title>
-    <language-pass required></language-pass>
-    <language-fail required></language-fail>
-    <language-detail></language-detail>
+    <language-pass required>
+      <p repeatable markup></p>
+    </language-pass>
+    <language-fail required>
+      <p repeatable markup></p>
+    </language-fail>
+    <language-detail>
+      <p repeatable markup></p>
+    </language-detail>
     <a repeatable href=".+" data-rel=".+"></a>
   </language-guide>
 </template>

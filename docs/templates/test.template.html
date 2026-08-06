@@ -120,8 +120,10 @@
 <template id="test-doc">
   <test-doc>
     <test-title required></test-title>
-    <test-subject required></test-subject>
-    <test-case repeatable></test-case>
+    <test-subject required>
+      <a repeatable href=".+"></a>
+    </test-subject>
+    <test-case repeatable conforms-to="#test-case"></test-case>
   </test-doc>
 </template>
 
@@ -130,7 +132,7 @@
     <test-name required></test-name>
     <test-status required enum="PENDING"></test-status>
     <test-message></test-message>
-    <test-fixture></test-fixture>
+    <test-fixture markup></test-fixture>
     <script required></script>
   </test-case>
 </template>

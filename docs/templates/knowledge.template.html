@@ -77,7 +77,7 @@
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-status required enum="pending active completed rejected"></knowledge-status>
     <knowledge-prompt></knowledge-prompt>
-    <knowledge-detail></knowledge-detail>
+    <knowledge-detail markup></knowledge-detail>
     <a repeatable href=".+" data-rel=".+"></a>
   </knowledge-goal>
 </template>
@@ -96,7 +96,7 @@
     <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-status required enum="pending active completed rejected"></knowledge-status>
-    <knowledge-detail></knowledge-detail>
+    <knowledge-detail markup></knowledge-detail>
     <a repeatable href=".+" data-rel=".+"></a>
   </knowledge-decision>
 </template>
@@ -115,7 +115,7 @@
   <knowledge-option>
     <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
-    <knowledge-detail></knowledge-detail>
+    <knowledge-detail markup></knowledge-detail>
     <a repeatable href=".+" data-rel=".+"></a>
   </knowledge-option>
 </template>
@@ -134,7 +134,7 @@
     <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
     <knowledge-status required enum="pending active completed rejected"></knowledge-status>
-    <knowledge-detail></knowledge-detail>
+    <knowledge-detail markup></knowledge-detail>
     <knowledge-commit></knowledge-commit>
     <knowledge-files></knowledge-files>
     <knowledge-branch></knowledge-branch>
@@ -157,7 +157,7 @@
   <knowledge-outcome>
     <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
-    <knowledge-detail></knowledge-detail>
+    <knowledge-detail markup></knowledge-detail>
     <knowledge-commit></knowledge-commit>
     <knowledge-files></knowledge-files>
     <knowledge-branch></knowledge-branch>
@@ -177,7 +177,7 @@
   <knowledge-observation>
     <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
     <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
-    <knowledge-detail></knowledge-detail>
+    <knowledge-detail markup></knowledge-detail>
     <a repeatable href=".+" data-rel=".+"></a>
   </knowledge-observation>
 </template>

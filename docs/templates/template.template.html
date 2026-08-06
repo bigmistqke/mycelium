@@ -86,6 +86,40 @@
   <code>&lt;knowledge-title required&gt;</code>, still has to carry text.
 </p>
 
+<h2>A placeholder's children are its content model</h2>
+<p>
+  Nothing used to look inside a field. The walk read <code>textContent</code> for a pattern or an enum and
+  stopped there, so a <code>&lt;b&gt;</code> inside a title flattened into the string and passed unseen.
+  Every field was free-form whether that suited it or not.
+</p>
+<p>
+  A placeholder now says what its interior holds, in one of four ways, read the same at every depth:
+</p>
+<ul>
+  <li>Nothing declared — text, and no elements at all. This is the default, and it covers 25 fields that
+    already held nothing else, among them <code>knowledge-title</code> and <code>plan-status</code>.</li>
+  <li><code>markup</code> — any elements. For prose whose shape nobody should fix:
+    <code>knowledge-detail</code> holds paragraphs, lists, headings, a blockquote and a table across 381
+    instances, and listing those would only need revisiting the next time somebody writes a document
+    slightly differently.</li>
+  <li>Children declared — those tags and no others, each with its own cardinality and order. Between the
+    other two sits a field with a short fixed vocabulary: <code>language-meaning</code> holds links and
+    nothing else, so <code>&lt;a repeatable href=".+"&gt;</code> says so exactly.</li>
+  <li><code>conforms-to="#id"</code> — the type at that id, in this same template file. A parent then
+    carries its children into validation, which is what a schema could never say before: a
+    <code>&lt;template&gt;</code> reached one level and no further.</li>
+</ul>
+<p>
+  Mixed content needs no rule of its own. The walk reads elements, so text sitting between them never
+  meets a check, and a sentence with a link inside it validates as a sentence with a link inside it.
+</p>
+<p>
+  A child carrying its own <code>data-conforms-to</code> stops the recursion, because the crawler finds
+  that child by itself and checking it twice would report every fault twice. That is also what makes
+  <code>conforms-to</code> worth having: <code>plan-task</code> declares its own conformance and needs
+  none of this, while a figure's twelve nodes declare nothing and were never checked at all.
+</p>
+
 <h2>The order of the placeholders is the content model</h2>
 <p>
   A template lists its placeholders in an order, and that order binds. An instance writing a field before
@@ -245,7 +279,7 @@
     // data-validates is it. Its cost is the one that decision named too: a
     // misspelt schema word becomes a requirement for an attribute of that name,
     // which fails loudly rather than silently.
-    const SCHEMA_WORDS = new Set(['required', 'pattern', 'enum', 'repeatable'])
+    const SCHEMA_WORDS = new Set(['required', 'pattern', 'enum', 'repeatable', 'markup', 'conforms-to'])
     function checkAttributes(placeholder, target, label) {
       for (const attr of Array.from(placeholder.attributes)) {
         if (SCHEMA_WORDS.has(attr.name)) continue
@@ -268,22 +302,6 @@
     }
     checkAttributes(shape, el, `<${rootTag}>`)
 
-    // One slot per placeholder. `repeatable` says the child may appear more
-    // than once; without it a second one is an error rather than the silence
-    // a first-match lookup used to give. Together with `required` that covers
-    // at most one, exactly one, zero or more, and one or more.
-    const slots = Array.from(shape.children).map((placeholder) => ({
-      tag: placeholder.tagName.toLowerCase(),
-      placeholder,
-      required: placeholder.hasAttribute('required'),
-      repeatable: placeholder.hasAttribute('repeatable'),
-      // An element carrying declared attributes holds its meaning there, so
-      // empty content is correct for it. An edge with no label is still an
-      // edge, and its two ends live in `from` and `to`.
-      attributeBorne: Array.from(placeholder.attributes).some((a) => !SCHEMA_WORDS.has(a.name)),
-    }))
-    const byTag = new Map(slots.map((slot) => [slot.tag, slot]))
-
     function checkField(slot, node) {
       // Collapsed, not just trimmed. A field's value must not depend on how
       // its source happens to be wrapped: a title written across three
@@ -294,27 +312,76 @@
       // between words is formatting, so it is normalised to one space
       // before anything reads the value.
       const text = node.textContent.replace(/\s+/g, ' ').trim()
-      if (!text) {
-        if (slot.attributeBorne) return
-        errors.push(
-          slot.required
-            ? `missing or empty <${slot.tag}>`
-            : `<${slot.tag}> present but empty — omit it instead`,
-        )
-        return
-      }
-      const pattern = slot.placeholder.getAttribute('pattern')
-      if (pattern && !new RegExp(pattern).test(text)) {
-        errors.push(`<${slot.tag}> must match ${pattern}, got "${text}"`)
-      }
-      const enumAttr = slot.placeholder.getAttribute('enum')
-      if (enumAttr) {
-        const values = enumAttr.trim().split(/\s+/)
-        if (!values.includes(text)) errors.push(`<${slot.tag}> must be ${values.join('|')}, got "${text}"`)
+      if (text) {
+        const pattern = slot.placeholder.getAttribute('pattern')
+        if (pattern && !new RegExp(pattern).test(text)) {
+          errors.push(`<${slot.tag}> must match ${pattern}, got "${text}"`)
+        }
+        const enumAttr = slot.placeholder.getAttribute('enum')
+        if (enumAttr) {
+          const values = enumAttr.trim().split(/\s+/)
+          if (!values.includes(text)) errors.push(`<${slot.tag}> must be ${values.join('|')}, got "${text}"`)
+        }
+      } else if (!slot.attributeBorne) {
+        // Empty and required is missing, whatever else the placeholder says.
+        // Empty and optional is only worth reporting when text was the whole
+        // point: a placeholder with a content model has its own say about an
+        // empty body, and reporting both would name one fault twice.
+        if (slot.required) errors.push(`missing or empty <${slot.tag}>`)
+        else if (!slot.hasContentModel) errors.push(`<${slot.tag}> present but empty — omit it instead`)
       }
       checkAttributes(slot.placeholder, node, `<${slot.tag}>`)
+      checkContent(slot.placeholder, node, `<${slot.tag}>`)
     }
 
+    // What a placeholder says about its own interior. A placeholder's children
+    // are its content model, read the same way at every depth.
+    //
+    //   nothing declared  — text, and no elements at all
+    //   markup            — any elements, for prose whose shape nobody fixes
+    //   conforms-to="#id" — the type at that id, in this same template file
+    //   children declared — those tags, with their own cardinality and order
+    //
+    // Strict is the default because the opposite left every field unexamined:
+    // a bold tag inside a title flattens into textContent and nothing ever
+    // looked past it.
+    function checkContent(placeholder, node, label) {
+      if (placeholder.hasAttribute('markup')) return
+
+      const ref = placeholder.getAttribute('conforms-to')
+      if (ref) {
+        // A child declaring its own conformance is an instance in its own
+        // right, and the crawler already checks it. Checking it again here
+        // would report every fault twice.
+        if (node.hasAttribute('data-conforms-to')) return
+        const nested = placeholder.ownerDocument?.querySelector(`template${ref}`)
+        if (!nested) {
+          errors.push(`${label} names ${ref}, which this template file does not declare`)
+          return
+        }
+        const nestedShape = nested.content.firstElementChild
+        if (nestedShape) {
+          checkAttributes(nestedShape, node, label)
+          checkContent(nestedShape, node, label)
+        }
+        return
+      }
+
+      if (placeholder.children.length === 0) {
+        for (const child of Array.from(node.children)) {
+          errors.push(`${label} holds text only; <${child.tagName.toLowerCase()}> is not allowed in it`)
+        }
+        return
+      }
+
+      walkChildren(placeholder, node, label)
+    }
+
+    // One slot per placeholder. `repeatable` says the child may appear more
+    // than once; without it a second one is an error rather than the silence
+    // a first-match lookup used to give. Together with `required` that covers
+    // at most one, exactly one, zero or more, and one or more.
+    //
     // Gather first, check second, so the errors come out in the order the
     // template declares its fields rather than the order the instance happens
     // to write them.
@@ -325,37 +392,62 @@
     // moves forward reports both ways of breaking it. A tag ranked behind the
     // cursor sits out of order, and a run split by another tag trips the same
     // check, since the cursor has already passed it.
-    const found = new Map()
-    let cursor = 0
-    for (const child of Array.from(el.children)) {
-      const tag = child.tagName.toLowerCase()
-      if (!byTag.has(tag)) {
-        errors.push(`unexpected <${tag}> on ${rootTag}`)
-        continue
+    function walkChildren(container, target, label) {
+      const slots = Array.from(container.children).map((placeholder) => ({
+        tag: placeholder.tagName.toLowerCase(),
+        placeholder,
+        required: placeholder.hasAttribute('required'),
+        repeatable: placeholder.hasAttribute('repeatable'),
+        // An element carrying declared attributes holds its meaning there, so
+        // empty content is correct for it. An edge with no label is still an
+        // edge, and its two ends live in `from` and `to`.
+        attributeBorne: Array.from(placeholder.attributes).some((a) => !SCHEMA_WORDS.has(a.name)),
+        // Whether the placeholder says anything about its own interior. One
+        // that does decides for itself what an empty body means.
+        hasContentModel:
+          placeholder.hasAttribute('markup') ||
+          placeholder.hasAttribute('conforms-to') ||
+          placeholder.children.length > 0,
+      }))
+      const byTag = new Map(slots.map((slot) => [slot.tag, slot]))
+
+      const found = new Map()
+      let cursor = 0
+      for (const child of Array.from(target.children)) {
+        const tag = child.tagName.toLowerCase()
+        if (!byTag.has(tag)) {
+          errors.push(`unexpected <${tag}> on ${label}`)
+          continue
+        }
+        const rank = slots.findIndex((slot) => slot.tag === tag)
+        if (rank < cursor) {
+          errors.push(`<${tag}> comes after <${slots[cursor].tag}>; the template declares it before`)
+        } else {
+          cursor = rank
+        }
+        if (!found.has(tag)) found.set(tag, [])
+        found.get(tag).push(child)
       }
-      const rank = slots.findIndex((slot) => slot.tag === tag)
-      if (rank < cursor) {
-        errors.push(`<${tag}> comes after <${slots[cursor].tag}>; the template declares it before`)
-      } else {
-        cursor = rank
+
+      for (const slot of slots) {
+        const nodes = found.get(slot.tag) ?? []
+        if (nodes.length === 0) {
+          if (slot.required) errors.push(`missing or empty <${slot.tag}>`)
+          continue
+        }
+        if (nodes.length > 1 && !slot.repeatable) {
+          errors.push(`<${slot.tag}> appears ${nodes.length} times; the template declares one`)
+        }
+        // Every occurrence, not just the first. A figure with twelve nodes gets
+        // twelve placements checked.
+        for (const node of nodes) checkField(slot, node)
       }
-      if (!found.has(tag)) found.set(tag, [])
-      found.get(tag).push(child)
     }
 
-    for (const slot of slots) {
-      const nodes = found.get(slot.tag) ?? []
-      if (nodes.length === 0) {
-        if (slot.required) errors.push(`missing or empty <${slot.tag}>`)
-        continue
-      }
-      if (nodes.length > 1 && !slot.repeatable) {
-        errors.push(`<${slot.tag}> appears ${nodes.length} times; the template declares one`)
-      }
-      // Every occurrence, not just the first. A figure with twelve nodes gets
-      // twelve placements checked.
-      for (const node of nodes) checkField(slot, node)
-    }
+    // Through checkContent rather than straight into the walk, so a root shape
+    // reads the same as a placeholder: a type whose content is prose says
+    // `markup` once, wherever it appears.
+    checkContent(shape, el, rootTag)
 
     return { ok: errors.length === 0, errors }
   }

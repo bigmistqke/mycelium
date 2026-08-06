@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Make a field's interior strict, with markup and conforms-to as the two ways out</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Make a field's interior strict, with markup and conforms-to as the two ways out</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Second and third steps of
+<a href="../specs/2026-08-06-template-schema-strict-content.spec.html">the
+strict-content spec</a>, together, because the nested-type case forces it: a
+<code>&lt;plan-task&gt;</code> placeholder declaring no children would otherwise
+mean <q>text only</q> and reject every task in the corpus.</p>
+<p>A placeholder now says what its interior holds. Nothing declared means text
+and no elements. <code>markup</code> permits any element, for prose whose shape
+nobody should fix. Declared children permit those tags with their own
+cardinality and order. <code>conforms-to="#id"</code> names a type in the same
+template file, and the parent then carries its children into validation.</p>
+<p>The census decided each one. 25 fields hold text and never anything else, so
+they need no declaration. Seven take <code>markup</code>. Eight declare a short
+vocabulary, such as <code>language-meaning</code> holding 32 links across 22
+instances and nothing besides.</p>
+<p>Two things surfaced only by running it. A paragraph declared inside a field
+is prose, so <code>&lt;p repeatable markup&gt;</code> is where enumeration
+stops; declaring the paragraph without it rejected every <code>&lt;code&gt;</code>
+and <code>&lt;q&gt;</code> in the language family. And a test caught the empty-text
+check returning before the content model was ever read, so an empty element with
+a required child reported the wrong fault.</p>
+<p>Recursion stops at a child carrying its own <code>data-conforms-to</code>,
+since the crawler finds that child by itself. That is what makes the word worth
+having: <code>plan-task</code> declares conformance and needs none of this,
+while a figure's twelve nodes declare nothing.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-06-close-the-instance-root.action.html">the step this builds on</a>
+</knowledge-action>
+</body></html>

@@ -88,18 +88,18 @@
 
 <template id="figure-graph">
   <figure-graph data-columns="^([0-9]+|(node|edge)( +(node|edge))*)$">
-    <figure-node repeatable></figure-node>
-    <figure-edge repeatable></figure-edge>
+    <figure-node repeatable conforms-to="#figure-node"></figure-node>
+    <figure-edge repeatable conforms-to="#figure-edge"></figure-edge>
   </figure-graph>
 </template>
 
 <template id="figure-node">
-  <figure-node id=".+" data-at="^[0-9]+,[0-9]+$">
+  <figure-node id=".+" data-at="^[0-9]+,[0-9]+$" markup>
   </figure-node>
 </template>
 
 <template id="figure-edge">
-  <figure-edge from=".+" to=".+" data-back="?">
+  <figure-edge from=".+" to=".+" data-back="?" markup>
   </figure-edge>
 </template>
 
@@ -119,21 +119,27 @@
   <code>data-at="middle"</code> fails validation rather than rendering somewhere surprising.
 </p>
 
-<h2>What the schema cannot check yet</h2>
+<h2>What the schema checks, and what still escapes it</h2>
 <p>
-  A figure holds many nodes and many edges. The schema declares each child once, which permits every
-  occurrence, and then reads one of them. So a figure with twelve nodes has one node checked and eleven
-  ignored.
+  <code>repeatable</code> says a child may appear many times, and every occurrence meets the same checks.
+  <code>conforms-to</code> points a placeholder at the type its content follows, so a graph carries its
+  nodes and edges into validation without each one declaring conformance of its own. A figure with twelve
+  nodes now has twelve placements checked.
 </p>
 <p>
-  That is why the constraints above sit on the placeholders and still do not bite. The
-  <a href="../knowledge/2026-08-05-schema-checks-lists.goal.html">follow-up that would fix it</a> adds two
-  reserved words, and until then this family carries an audit doing work a schema should do.
+  None of it reaches a real figure yet, because no <code>figure-graph</code> in this repository declares
+  <code>data-conforms-to</code> at all. A figure lives inside a report or a design document rather than
+  being one, and
+  <a href="../knowledge/2026-08-05-instance-inside-a-host-document.observation.html">an instance inside a
+  host</a> is a question this family opened and has not closed. Until it does, the three audits below are
+  the only thing reading a figure.
 </p>
 <p>
-  The gap belongs to the schema rather than to this family.
-  <a href="../knowledge/2026-08-05-schema-checks-only-the-first-child.observation.html">Eleven plan
-  documents lose the same way</a>, and nothing reported it, because a check that never runs is silent.
+  Two claims this section used to make were wrong, and
+  <a href="../knowledge/2026-08-06-schema-has-no-cardinality.observation.html">measuring the corpus</a>
+  corrected both. Plan documents never lost anything this way, because every task, step and check carries
+  its own conformance and meets the validator on its own. And the first child of a kind was not the one
+  that got checked here: no figure was checked at all.
 </p>
 
 <h2>Two kinds of column</h2>

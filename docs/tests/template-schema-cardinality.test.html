@@ -315,6 +315,153 @@
     </script>
   </test-case>
 
+  <test-case id="a-plain-field-holds-text-only" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a placeholder declaring nothing holds text and no elements</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // Nothing looked inside a field before this. A bold tag in a title
+      // flattens into textContent, so a pattern tested the flattened string
+      // and the markup passed unseen. Strict is the default now, and a field
+      // whose content is genuinely open says markup.
+      import type { TestContext } from "../../src/api.ts"
+      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import { fileURLToPath } from "node:url"
+      import { dirname, resolve } from "node:path"
+
+      const docs = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+      export default async function ({ assert }: TestContext) {
+        const check = await loadGenericValidator(docs)
+        const { document } = parseHTML(`<body>
+          <template id="sample">
+            <sample-doc>
+              <sample-title required></sample-title>
+              <sample-prose markup></sample-prose>
+            </sample-doc>
+          </template>
+          <sample-doc>
+            <sample-title>a <b>bold</b> title</sample-title>
+            <sample-prose><p>a paragraph</p><ul><li>and a list</li></ul></sample-prose>
+          </sample-doc>
+        </body>`)
+
+        const result = check(
+          document.querySelector("template")!,
+          document.querySelector("sample-doc")!,
+        )
+        assert(
+          result.errors.some((e) => e.includes("<sample-title> holds text only")),
+          `markup in a plain field passed: ${JSON.stringify(result.errors)}`,
+        )
+        assert(
+          !result.errors.some((e) => e.includes("sample-prose")),
+          `a field declaring markup was refused: ${JSON.stringify(result.errors)}`,
+        )
+      }
+    </script>
+  </test-case>
+
+  <test-case id="a-field-may-declare-its-own-vocabulary" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a field declaring which tags it holds refuses any other</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // Between text-only and anything-goes sits a field with a short fixed
+      // vocabulary. A term's meaning holds links and nothing else, so saying
+      // so beats granting it every tag there is. Text between the elements
+      // never reaches a check, which is what makes mixed content work with no
+      // rule of its own.
+      import type { TestContext } from "../../src/api.ts"
+      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import { fileURLToPath } from "node:url"
+      import { dirname, resolve } from "node:path"
+
+      const docs = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+      export default async function ({ assert }: TestContext) {
+        const check = await loadGenericValidator(docs)
+        const { document } = parseHTML(`<body>
+          <template id="sample">
+            <sample-doc>
+              <sample-meaning required>
+                <a repeatable href=".+"></a>
+              </sample-meaning>
+            </sample-doc>
+          </template>
+          <sample-doc>
+            <sample-meaning>A check over the whole <a href="./corpus.html">corpus</a>, not one <em>document</em>.</sample-meaning>
+          </sample-doc>
+        </body>`)
+
+        const result = check(
+          document.querySelector("template")!,
+          document.querySelector("sample-doc")!,
+        )
+        assert(
+          result.errors.some((e) => e.includes("unexpected <em>")),
+          `an undeclared tag inside a field passed: ${JSON.stringify(result.errors)}`,
+        )
+        assert(
+          !result.errors.some((e) => e.includes("<a>")),
+          `the declared link was refused: ${JSON.stringify(result.errors)}`,
+        )
+      }
+    </script>
+  </test-case>
+
+  <test-case id="a-placeholder-may-name-a-nested-type" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a placeholder naming a type carries its children into validation</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // This is what reaches a figure. Twelve nodes inside one graph carry no
+      // conformance of their own, so nothing ever checked a placement. A
+      // parent naming the type its children follow pulls all twelve in.
+      //
+      // The second child here declares its own conformance, which the crawler
+      // checks separately, so this skips it rather than reporting every fault
+      // twice.
+      import type { TestContext } from "../../src/api.ts"
+      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import { fileURLToPath } from "node:url"
+      import { dirname, resolve } from "node:path"
+
+      const docs = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+      export default async function ({ assert }: TestContext) {
+        const check = await loadGenericValidator(docs)
+        const { document } = parseHTML(`<body>
+          <template id="sample">
+            <sample-doc>
+              <sample-item repeatable conforms-to="#sample-item"></sample-item>
+            </sample-doc>
+          </template>
+          <template id="sample-item">
+            <sample-item data-at="^[0-9]+,[0-9]+$">
+              <sample-label required></sample-label>
+            </sample-item>
+          </template>
+          <sample-doc>
+            <sample-item data-at="1,1"><sample-label>fine</sample-label></sample-item>
+            <sample-item data-at="nowhere" data-conforms-to="#sample-item"></sample-item>
+            <sample-item data-at="2,1"></sample-item>
+          </sample-doc>
+        </body>`)
+
+        const result = check(
+          document.querySelector('template[id="sample"]')!,
+          document.querySelector("sample-doc")!,
+        )
+        assert(
+          result.errors.some((e) => e.includes("missing or empty <sample-label>")),
+          `the third item's missing label went unreported: ${JSON.stringify(result.errors)}`,
+        )
+        assert(
+          !result.errors.some((e) => e.includes("nowhere")),
+          `an item declaring its own conformance was checked twice: ${JSON.stringify(result.errors)}`,
+        )
+      }
+    </script>
+  </test-case>
+
 </test-doc>
 
 </body>

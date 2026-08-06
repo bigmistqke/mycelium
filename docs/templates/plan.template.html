@@ -57,11 +57,15 @@
     <plan-title required></plan-title>
     <plan-status enum="rejected"></plan-status>
     <plan-date required></plan-date>
-    <plan-goal required></plan-goal>
-    <plan-architecture required></plan-architecture>
+    <plan-goal required>
+      <p repeatable markup></p>
+    </plan-goal>
+    <plan-architecture required>
+      <p repeatable markup></p>
+    </plan-architecture>
     <plan-tech-stack></plan-tech-stack>
     <plan-global-constraints></plan-global-constraints>
-    <plan-task repeatable></plan-task>
+    <plan-task repeatable conforms-to="#plan-task"></plan-task>
   </plan-doc>
 </template>
 <pre><code>&lt;plan-doc data-conforms-to="./plan.template.html#plan-doc"&gt;
@@ -81,8 +85,10 @@
     <plan-title required></plan-title>
     <plan-status enum="rejected"></plan-status>
     <plan-files required></plan-files>
-    <plan-interfaces></plan-interfaces>
-    <plan-step repeatable></plan-step>
+    <plan-interfaces>
+      <p repeatable markup></p>
+    </plan-interfaces>
+    <plan-step repeatable conforms-to="#plan-step"></plan-step>
   </plan-task>
 </template>
 <pre><code>&lt;plan-task id="task-1" data-conforms-to="./plan.template.html#plan-task"&gt;
@@ -99,8 +105,8 @@
   <plan-step>
     <plan-title required></plan-title>
     <plan-status required enum="pending completed"></plan-status>
-    <plan-detail></plan-detail>
-    <plan-check></plan-check>
+    <plan-detail markup></plan-detail>
+    <plan-check conforms-to="#plan-check"></plan-check>
   </plan-step>
 </template>
 <pre><code>&lt;plan-step id="task-1-step-1" data-conforms-to="./plan.template.html#plan-step"&gt;
