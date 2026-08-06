@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Tests owe the spec exhaustiveness, which no citation can show</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>Tests owe the spec exhaustiveness, which no citation can show</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-detail><p>A citation from a test up to a spec rule says one test exists for that rule.
+It says nothing about the rule's other behaviours, and a rule with six
+behaviours and one test satisfies every structural check you can write over
+links.</p>
+<p>What the method actually asks is the opposite direction: every behaviour a
+rule states has a test that reaches it. The spec is the list, and the tests have
+to exhaust it. Miss one and the implementation is free in that region, which is
+the region a bug lives in.</p>
+<p>This puts real weight on the spec. A rule written as one paragraph of prose
+has no countable behaviours, so nothing can say whether the tests exhausted it.
+The behaviours have to be separate, addressable things before exhaustiveness
+means anything at all.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-06-methodology-in-our-own-codebase.goal.html">the check the chain rests on, and what it demands of a spec</a>
+</knowledge-observation>
+</body></html>
