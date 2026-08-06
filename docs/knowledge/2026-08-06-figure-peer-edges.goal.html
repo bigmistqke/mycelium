@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Route a figure edge between two boxes in the same row</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal">
+  <knowledge-title>Route a figure edge between two boxes in the same row</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-prompt>Leave both, add peer-edge support as its own change -&gt; we will remove the mermaid diagrams once we are happy and rebase into main</knowledge-prompt>
+  <knowledge-detail><p>
+  The one mermaid diagram left unconverted is <code>DESIGN.html</code>'s shape of
+  the whole thing. It reads as three tiers: instance documents, then the templates
+  they conform to, then the scripts that validate them.
+</p>
+<p>
+  A layering by dependency does fit the engine today, and it destroys that reading:
+  templates end up scattered across two rows and scripts across three. Keeping the
+  tiers puts both instance documents in one row, and the
+  <code>leads_to</code> edge between them then runs inside that row.
+</p>
+<p>
+  Such an edge has no channel. <code>assignLanes</code> works a lane out from the
+  gap between two rows, and for one row that gap is negative, so the wire turns
+  back through the boxes it joins. The audit skips the case and the template names
+  it as unwritten.
+</p>
+<p>
+  Peer edges come first and on their own. Removing the mermaid diagrams waits until
+  the figures that replace them are worth the swap.
+</p>
+</knowledge-detail>
+</knowledge-goal>
+</body></html>
