@@ -52,6 +52,13 @@ jobs:
       - name: Validate the graph
         run: pnpm mycelium validate
 
+      # The figure engine decides everything from measured boxes, so no check
+      # that runs without a browser can reach it. These open each test document
+      # in the Chrome this image already carries. CHROMEWEBDRIVER points at a
+      # matching driver, so nothing downloads one.
+      - name: Run the browser tests
+        run: pnpm mycelium test run
+
       - name: Build the index
         run: node src/run.ts knowledge generate graph --out index.html
 
