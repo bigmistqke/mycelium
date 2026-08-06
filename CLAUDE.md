@@ -143,6 +143,23 @@ leaving a wrong claim standing. Concretely: `unlink` removes one edge, and
 it drops, because an incoming edge is something upstream resting on the
 node you just took away.
 
+### CRITICAL: the spec comes before the implementation
+
+Once a design settles, write its spec doc before you touch a source file.
+Not after, and not alongside.
+
+The reason is dogfooding, and it is the whole point rather than a nicety.
+This project builds authoring tooling for specs and for knowledge nodes, so
+the only way that tooling gets exercised on real input is by using it on
+this project's own work. Skip to the implementation and the commands only
+ever run on toy input, which is how `--detail` went undocumented for days
+while eight nodes stuffed their findings into the title instead.
+
+Expect the first draft to fail `prose-follows-the-language`. No paragraph
+opens with a bolded headline, four sentences per paragraph is the ceiling,
+and passive voice is out. Budget a rewrite pass rather than treating the
+failure as a surprise.
+
 Spec docs get the same treatment now too, via `spec.template.html`'s own
 `add`/`update`. There is no `link`, since a spec's cross-references live
 inside its own rich-field markup, not as separate edges, and no `list`

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Cardinality in the template schema: the repeatable declaration</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Cardinality in the template schema: the repeatable declaration</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-06</spec-date>
+  <spec-problem>
+<p>The schema vocabulary in
+<a href="../templates/template.template.html">template.template.html</a> has
+three words. <code>required</code> says a field must carry text,
+<code>pattern</code> constrains that text, and <code>enum</code> closes it to a
+fixed list. None of them says how many times a child may appear.</p>
+<p>So every placeholder means <q>at most one</q>, and the validator acts on that
+by finding each field with
+<code>Array.from(el.children).find(…)</code>. A second child of the same tag
+never reaches a check.</p>
+<p>Two things follow. A duplicate field passes: add a second
+<code>&lt;plan-title&gt;</code> to a step and validation stays clean, leaving
+one title live and the other as content that no field holds and no query
+reaches. That is the failure <code>nothing-outside-the-type</code> guards
+against at the level of the document body, one level down and unguarded.</p>
+<p>And a genuinely repeated child cannot declare itself. <code>plan-doc</code>
+holds many <code>plan-task</code> children and <code>figure-graph</code> holds
+many <code>figure-node</code> children, but each template can only write the
+placeholder once, where it reads as a single optional field. The prose in
+<a href="../templates/plan.template.html">plan.template.html</a> already says
+<q>optional (repeatable) plan-task children</q>, so the word exists in the
+documentation and nowhere in the schema.</p>
+<p>A third problem sits next to these and this spec does not solve it. No
+<code>figure-graph</code> in the corpus carries
+<code>data-conforms-to</code>, so no figure has ever met the generic validator
+at all. Cardinality changes nothing there until a figure declares conformance.
+See
+<a href="../knowledge/2026-08-05-instance-inside-a-host-document.observation.html">the
+observation about an instance living inside a host document</a>.</p>
+</spec-problem>
+  <spec-design>
+<p>Add one word. <code>repeatable</code> on a placeholder says the child may
+appear more than once. Its absence makes a second one an error rather than
+silence.</p>
+<pre><code>&lt;plan-title required&gt;           exactly one
+&lt;plan-status enum="rejected"&gt;   at most one
+&lt;plan-task repeatable&gt;          zero or more
+&lt;figure-node required repeatable&gt;  one or more</code></pre>
+<p>The order of the placeholders is the content model, and it always binds.
+There is no word to relax it. A document that does not match its declared shape
+is as wrong as one missing a required field, and the project has no reason to
+negotiate about that.</p>
+<h4 id="two-orders">Two orders, and only one of them is structure</h4>
+<p>Order <em>between</em> placeholders is structure. A title comes before a
+status, which comes before the run of tasks, because the template says so.</p>
+<p>Order <em>within</em> a run is content. Which task comes second is whatever
+the author chose. The schema says nothing about it, and it needs no word to stay
+silent, because nothing in the project sorts a run.</p>
+<p>That split is what keeps the vocabulary at one word. An earlier draft carried
+a second word saying whether a tool could sort a run, on the theory that a
+figure's nodes form a set and a plan's steps form a sequence. The distinction is
+real and it belongs nowhere in a schema, since the only thing it could gate is a
+rewrite that no command performs.</p>
+<h4 id="the-walk">The walk</h4>
+<p>One pass over the instance's children, with a cursor into the placeholder
+list. Every placeholder names a distinct tag, so a tag identifies its slot and
+nothing backtracks.</p>
+<pre><code>validate(shape, instance):
+    slots = [{tag, required, repeatable, seen: 0} for placeholder in shape]
+    at    = 0
+
+    for child in instance.children where tag starts with the family prefix:
+        if child.tag != slots[at].tag:
+            ahead = find child.tag in slots after at
+            if not ahead:
+                error (child.tag in slots before at) ? "out of declared order"
+                                                     : "unexpected &lt;child.tag&gt;"
+                continue
+            for skipped in slots[at+1 .. ahead-1]:
+                if skipped.required and skipped.seen == 0: error "missing"
+            at = ahead
+
+        slots[at].seen += 1
+        if slots[at].seen &gt; 1 and not slots[at].repeatable:
+            error "&lt;tag&gt; appears twice; the template declares one"
+        checkText(child, slots[at]); checkAttributes(child, slots[at])
+
+    for slot in slots[at ..]:
+        if slot.required and slot.seen == 0: error "missing &lt;slot.tag&gt;"</code></pre>
+<p>The cursor stays on a slot after matching it, which is what lets a run
+accumulate. It never moves backwards, so a run cannot have another tag in the
+middle of it. Contiguity costs no extra code.</p>
+<p>Every member of a run meets <code>checkText</code> and
+<code>checkAttributes</code>, so a figure with twelve nodes checks twelve
+<code>data-at</code> values rather than one.</p>
+<h4 id="what-the-corpus-says">What the corpus says about turning this on</h4>
+<p>A probe over all 903 instances maps each one's family-prefixed children onto
+its template's placeholder sequence. Two results, and they point opposite
+ways.</p>
+<p>Not one instance has a run that another tag interrupts. The repeat half
+therefore lands with nothing in the corpus to repair.</p>
+<p>31 instances sit out of their template's field order. All 31 are knowledge
+nodes and the disorder is always in the tail, because
+<code>field()</code> in <code>knowledge update</code> ends in
+<code>root.appendChild(el)</code>. A field that a later <code>update</code> adds
+lands last, so a node's field order records which flag arrived when.</p>
+<h4 id="order-of-work">The order of work</h4>
+<p>Three steps, and the sequence matters.</p>
+<p>First, <code>repeatable</code> and duplicate detection. This stands alone,
+closes the duplicate gap across every family, and needs no repair pass.</p>
+<p>Second, <code>field()</code> inserts at the position its template declares
+instead of appending. This means <code>knowledge update</code> has to resolve
+the <code>data-conforms-to</code> it already writes into every node, which it
+does not do today.</p>
+<p>Third, repair the 31 and turn the order half on. Doing this before the second
+step only postpones the drift to the next <code>update</code>. Doing it before
+the first step gains nothing.</p>
+<p>The repair belongs in a command beside the gate rather than inside it, the
+way <code>comments check</code> and <code>comments autofix</code> already split.
+A gate that repairs what it measures stops reporting.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>A wrapper element such as <code>&lt;template-list&gt;</code>.
+<a href="../templates/template.template.html">template.template.html</a> commits
+to turning the existing skeleton into a schema <q>without adding any new wrapper
+elements</q>, and cardinality belongs to a placeholder rather than to a container
+around it.</p>
+<p>A word saying whether a tool may sort a run. It would gate
+<code>autofix</code> and nothing else, and no command sorts a run.</p>
+<p>Uniqueness within a run. A figure with two nodes sharing an
+<code>id</code> stays valid here. That is a job for an audit, which can see the
+whole document, rather than for a placeholder.</p>
+<p>Conformance for a figure. Nothing in this spec reaches a figure until a
+<code>figure-graph</code> declares <code>data-conforms-to</code>, and the
+question of how an instance lives inside a host document is its own piece of
+work.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>A compositor that lets placeholders appear in any order relative to each
+other, the way XML Schema's <code>xs:all</code> sits beside its
+<code>xs:sequence</code>. The case for it is a figure that narrates its graph, a
+node and then the edge leaving it and then the node that edge arrives at, which
+strict sequence rejects. Every figure in the corpus groups its nodes before its
+edges, so nothing needs it yet.</p>
+<p>Links sit outside the schema entirely. The unexpected-child check only looks
+at tags carrying the family prefix, so an <code>&lt;a data-rel&gt;</code> edge
+inside a knowledge node meets no placeholder and no constraint. A template
+cannot say that a node may carry edges, how many, or which relations, and this
+work makes that absence easier to see rather than closing it.</p>
+<p>Whether <code>required</code> on a repeatable placeholder reads clearly as
+<q>one or more</q>. It composes correctly and it may still mislead someone
+scanning the template, since <code>required</code> everywhere else means exactly
+one.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
