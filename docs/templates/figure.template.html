@@ -181,7 +181,7 @@
    * unknown name, so its diagrams cannot fail this way — they just quietly say
    * something untrue.
    */
-  export async function check(fs: AuditFs) {
+  export default async function (fs: AuditFs) {
     const violations = []
     for (const path of fs.list("docs", { ext: ".html" })) {
       const doc = fs.parse(path)
@@ -215,7 +215,7 @@
    * edge inside one row too, which nothing writes yet and which has no channel
    * to route through.
    */
-  export async function check(fs: AuditFs) {
+  export default async function (fs: AuditFs) {
     const violations = []
     for (const path of fs.list("docs", { ext: ".html" })) {
       const doc = fs.parse(path)

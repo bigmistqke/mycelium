@@ -96,9 +96,17 @@ export async function loadModule(filePath: string, script: Element): Promise<Rec
   return await import(`${fileUrl}#${locator}`)
 }
 
+// An audit or a type's own validator is one function, and the script tag
+// holding it already says which — data-audits names the audit, data-validates
+// names the type. So the export carries no name of its own, the same way a
+// command host's default export saves `mycelium validate validate`.
+//
+// A language rule keeps a named `check`, and loads through loadModule rather
+// than through here. Its export name is a term the language family already
+// uses, so there it says something rather than repeating the tag.
 export async function loadCheck(filePath: string, script: Element): Promise<(...args: unknown[]) => unknown> {
   const mod = await loadModule(filePath, script)
-  return mod.check as (...args: unknown[]) => unknown
+  return mod.default as (...args: unknown[]) => unknown
 }
 
 // Imports the one generic validator shared by every type that doesn't

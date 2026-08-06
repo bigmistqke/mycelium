@@ -1472,7 +1472,7 @@
     }
   }
 
-  export async function check(fs: AuditFs) {
+  export default async function (fs: AuditFs) {
     const rules = await loadRules(fs)
     // The vocabulary, handed to every rule as its third argument. A rule about
     // words needs to know the words, and that is not reaching into the corpus:

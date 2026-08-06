@@ -261,7 +261,7 @@
    * this type rather than an instance of it — the same rule
    * nothing-outside-the-type uses to tell the two apart.
    */
-  export async function check(fs: AuditFs) {
+  export default async function (fs: AuditFs) {
     const violations = []
     for (const path of fs.list("docs", { ext: ".html" })) {
       const doc = fs.parse(path)
@@ -293,7 +293,7 @@
    * Matches on the filename rather than the exact path, since a document's
    * depth below the documents directory decides how many steps up it writes.
    */
-  export async function check(fs: AuditFs) {
+  export default async function (fs: AuditFs) {
     const violations = []
     for (const path of fs.list("docs", { ext: ".html" })) {
       const doc = fs.parse(path)
@@ -323,7 +323,7 @@
    * fixture and no state, because each one gets its own sandbox or its own
    * page.
    */
-  export async function check(fs: AuditFs) {
+  export default async function (fs: AuditFs) {
     const violations = []
     for (const path of fs.list("docs", { ext: ".html" })) {
       const doc = fs.parse(path)

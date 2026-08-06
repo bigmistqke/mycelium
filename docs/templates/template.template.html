@@ -88,7 +88,7 @@
   import { existsSync } from "node:fs"
   import { dirname, resolve } from "node:path"
 
-  export function check(fs: AuditFs) {
+  export default function (fs: AuditFs) {
     const violations = []
     for (const path of fs.list('docs', { ext: '.html' })) {
       const full = resolve(fs.root, path)
@@ -126,7 +126,7 @@
    * no query finds it. A document that declares a type is documentation about
    * that type, so its prose is the point and it is skipped.
    */
-  export function check(fs: AuditFs) {
+  export default function (fs: AuditFs) {
     const violations = []
     for (const path of fs.list('docs', { ext: '.html' })) {
       const doc = fs.parse(path)
@@ -268,6 +268,17 @@
   for it. None of this project's seven existing types need one any more; see
   <a data-rel="elaborates" href="../knowledge/2026-07-25-schema-first-then-optional-validator-function.decision.html">the
   decision record</a>.
+</p>
+<p>
+  Such a script exports one default function, and so does an audit. The tag already says which type a
+  validator answers for and which audit an audit is, so naming the export again would only repeat it. A
+  command host exports a default for the same reason, so that <code>mycelium validate</code> does not read
+  as <code>mycelium validate validate</code>.
+</p>
+<p>
+  A language rule is the exception, and keeps a named <code>check</code>. It loads through a different path,
+  and <q>check</q> is a word the language family already uses for what a rule carries, so there the name
+  says something instead of repeating the tag above it.
 </p>
 
 </body>

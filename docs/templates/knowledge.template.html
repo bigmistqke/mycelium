@@ -301,7 +301,7 @@
    */
   import { extractGraph } from "./extract-graph.ts"
 
-  export function check(fs: AuditFs) {
+  export default function (fs: AuditFs) {
     // An audit is handed a filesystem, not a document list, so this line is
     // what a check that wants documents does for itself. Written out rather
     // than imported from a helper: this same script also runs in the demo
@@ -337,7 +337,7 @@
    */
   import { extractGraph } from "./extract-graph.ts"
 
-  export function check(fs: AuditFs) {
+  export default function (fs: AuditFs) {
     // An audit is handed a filesystem, not a document list, so this line is
     // what a check that wants documents does for itself. Written out rather
     // than imported from a helper: this same script also runs in the demo
@@ -435,7 +435,7 @@
     return actions
   }
 
-  export function check(fs: AuditFs) {
+  export default function (fs: AuditFs) {
     // An audit is handed a filesystem, not a document list, so this line is
     // what a check that wants documents does for itself. Written out rather
     // than imported from a helper: this same script also runs in the demo
