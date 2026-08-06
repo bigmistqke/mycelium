@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: figure.template.html: a diagram that stays a document</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>figure.template.html: a diagram that stays a document</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-06</spec-date>
+  <spec-problem>
+  <p>
+    A report needed a diagram of how a system fits together, and two forms went in
+    before this one. Markup with every box placed by hand looked right and read
+    back as nothing: its meaning lived in coordinates, so no query could find a
+    node and no check could tell a real relation from a typo. Mermaid reads back
+    and gives up the styling, and it invents a node for a name that resolves to
+    nothing, so a diagram with a mistyped edge renders happily and lies.
+  </p>
+  <p>
+    That last failure is the one this project cares about most. A picture that
+    renders, looks deliberate and says something untrue is worse than no picture,
+    because nothing about it invites a second look.
+  </p>
+  <p>
+    The question is not which of the two is prettier. It is whether the picture is
+    still a document once you have it: whether a node can hold a link, whether an
+    edge names two things a check can resolve, and whether a reader can recover the
+    structure from the source.
+  </p>
+</spec-problem>
+  <spec-design>
+  <p>
+    A figure is elements. <code>figure-graph</code> holds <code>figure-node</code>
+    and <code>figure-edge</code>, a node declares the cell it occupies with
+    <code>data-at="row,column"</code>, and CSS grid places it. A cell is structure
+    and a pixel is not: <code>3,1</code> means the same thing at any width, font
+    size or theme, because the browser works out where that lands every time.
+  </p>
+  <p>
+    Connectors carry no numbers at all. <code>figure.element.js</code> measures the
+    laid-out grid and draws an overlay, so no geometry ever reaches the file, not
+    even generated. The script is a classic script rather than a module, because a
+    document here opens over <code>file://</code> and a module script cannot pass
+    the CORS check at that origin.
+  </p>
+  <p>
+    Three kinds of edge, and each says which it is rather than being guessed at. A
+    forward edge crosses the gap between two rows. A back edge carries
+    <code>data-back</code> and runs in a column reserved for it, sized by the grid
+    to hold its own label. A peer edge joins two boxes in one row, which the element
+    reads off <code>data-at</code>.
+  </p>
+  <p>
+    Edges crossing one gap take lanes. Two may share a lane when they share a box,
+    because a fork and a merge are one thing seen from either side, and otherwise
+    only when their sideways runs never overlap. Edges landing on one box arrive at
+    separate points along its top edge.
+  </p>
+  <p>
+    Labels live in the gap their own edge crosses and never over a box, stay inside
+    the figure, and stack clear of one another. A gap too shallow for the labels
+    crossing it grows until they fit, which is the rule an edge column already
+    follows for the label inside it.
+  </p>
+  <p>
+    Four audits carry what the schema cannot: an edge names nodes that exist, an
+    edge runs the direction it claims, and a peer edge reaches its neighbour without
+    crossing a box. Geometry is not a corpus claim, so the drawing is tested instead,
+    by documents in the <a href="../templates/test.template.html">test family</a>.
+  </p>
+</spec-design>
+  <spec-out-of-scope>
+  <p>
+    No layout engine. A node says which cell it sits in, and a figure whose shape
+    does not suit a grid has no answer here.
+  </p>
+  <p>
+    No routing. Two edges that share no box no longer share a lane, so they cross
+    rather than appearing to meet, but nothing steers either around the other.
+  </p>
+  <p>
+    No authoring command. A figure's substance is its markup, which is the state
+    <code>knowledge</code> and <code>language</code> both started in.
+  </p>
+</spec-out-of-scope>
+  <spec-open-questions>
+  <p>
+    The schema checks one child of each kind and ignores the rest, so a figure with
+    twelve nodes has one node checked. That gap belongs to the schema rather than to
+    this family, and eleven plan documents lose the same way.
+  </p>
+  <p>
+    A peer edge's label sits above its row rather than on its line, because two
+    neighbours leave only the column gap and a chip is wider than that. It reads as
+    detached.
+  </p>
+  <p>
+    Crossings stay crossed. Whether they should is the next question a denser figure
+    will ask.
+  </p>
+</spec-open-questions>
+</spec-doc>
+</body></html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: test.template.html: a test that is a document, and a browser that only opens it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>test.template.html: a test that is a document, and a browser that only opens it</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-06</spec-date>
+  <spec-problem>
+  <p>
+    The figure layout engine reads measured boxes for every decision it makes, and
+    nothing could test it. <code>validate</code> parses with happy-dom, which
+    implements the document model and computes no layout, so an absolutely
+    positioned element with an explicit width still reports a zero rectangle. Under
+    that, every figure collapses to one case and any check passes on all of them.
+  </p>
+  <p>
+    Two candidates went first and both were wrong. An audit collocated in the
+    figure template runs where <code>validate</code> runs, so it inherits the same
+    blindness. A new script type would too. The venue was the problem, not the
+    notation.
+  </p>
+  <p>
+    Splitting the engine so its decisions take boxes and return lanes, then driving
+    that with synthetic boxes, would have tested the arithmetic and missed what
+    actually broke. The first real bug found here was a figure ignoring every cell
+    it declared, because the script loaded from the head and the element placed its
+    nodes before those nodes existed. No pure function has that bug.
+  </p>
+</spec-problem>
+  <spec-design>
+  <p>
+    A test is a document. <code>test-doc</code> holds <code>test-case</code>, each
+    case carries a name, a status and a script, and a fixture is ordinary markup
+    live in the page. A figure inside one upgrades and draws exactly as it would
+    anywhere else, which is the whole reason to write a test of markup in markup.
+  </p>
+  <p>
+    PENDING is the only verdict the schema allows on disk. A result belongs to a
+    run, and a committed SUCCESS is a claim somebody typed rather than something
+    that happened. The runner writes the other two words into the live page, where
+    no validator looks.
+  </p>
+  <p>
+    The runner lives in the page, in <code>test.element.js</code>. Putting it in the
+    command instead would mean two implementations of what a case is, and the two
+    would drift until a test passed in one place and failed in the other. So the
+    command knows nothing about cases, fixtures or assertions: it opens a page,
+    waits for no field to read PENDING, and reads the fields.
+  </p>
+  <p>
+    Waiting on the statuses carries asynchrony for free. A figure case waits for an
+    animation frame and then for a resize observer, and hands no promise to anything.
+    Past a deadline a case still reading PENDING has failed, because a thrown error
+    already writes FAILURE — so PENDING at the end means it hung or the page never
+    loaded its subject. There is no TIMEOUT in the enum for that reason.
+  </p>
+  <p>
+    The script type on a case decides which runner opens it, and nothing else
+    declares the split, because a script type already carries that meaning
+    everywhere here. <code>mycelium/test</code> marks a node case: TypeScript,
+    loaded under Node, given a sandbox that is a documents tree of its own with the
+    real templates linked in. <code>text/mycelium-test</code> marks a browser case,
+    which must stay plain JavaScript.
+  </p>
+  <p>
+    A browser case runs over W3C WebDriver rather than the browser's own debugging
+    protocol. Six requests cover a whole run, and the standard needed less code than
+    the proprietary route, which also wanted a socket and a layer matching replies to
+    requests. A driver matching the installed Chrome downloads on first use.
+  </p>
+  <p>
+    Three audits read the document rather than its rendering, which is the only kind
+    of check that reaches this family: a case carries a script, a browser document
+    loads the page runner, and no document mixes the two kinds.
+  </p>
+</spec-design>
+  <spec-out-of-scope>
+  <p>
+    No authoring command. A test's substance is a fixture and a script, and neither
+    fits on a flag.
+  </p>
+  <p>
+    No second browser. WebDriver is why Firefox stays reachable, and nothing asks
+    for it yet.
+  </p>
+  <p>
+    A node document is not its own report. Nothing renders it, so its verdicts go to
+    the command's output and never into the file. Only a browser document keeps the
+    property that a person and a build read it the same way.
+  </p>
+</spec-out-of-scope>
+  <spec-open-questions>
+  <p>
+    A gap fits two labels before they must share height, so a figure asking for more
+    gets a crowded picture that no assertion catches. Crowding is legible and
+    covering a box is not, which is why only the second one fails.
+  </p>
+  <p>
+    A browser case's errors reach the runner as "Script error." when they come from
+    a script at another origin, which <code>file://</code> makes of every file. The
+    real message needs the browser log, which the command does not read yet.
+  </p>
+  <p>
+    Nothing measures what the tests cover. Every case here came after the behaviour
+    it pins, and each one earned its place by breaking the code and watching the
+    case fail, which is a practice rather than a gate.
+  </p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
