@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Add a node runner to the test family, and a sandbox for testing the command line</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Add a node runner to the test family, and a sandbox for testing the command line</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>
+  A node case exports <code>check</code>, the shape an audit already uses, and
+  receives <code>assert</code> and a sandbox. The runner loads it through the same
+  file-plus-locator import the engine uses for a command, written out in the
+  command rather than imported, so a document keeps depending on the contract
+  instead of on the engine.
+</p>
+<p>
+  The sandbox is a documents tree of its own under the temporary directory, with
+  this repository's templates linked into it. A symlink rather than a copy, for two
+  reasons: a command lives inside a template, so a sandbox without them has no
+  command to run, and a copy would let a test pass against a stale duplicate of its
+  own subject. Every real import in a command script is a node builtin or a sibling
+  in that directory, and the one import reaching further is a type import, which
+  erases.
+</p>
+<p>
+  <code>sandbox.mycelium(…)</code> spawns the real command line against that tree.
+  Slower than calling the exported function, and it covers what calling it would
+  miss: how arguments parse, which path a command picks, how a document serializes,
+  and the exit code. Each case gets a fresh tree.
+</p>
+<p>
+  Node documents run first and alone, so a repository whose tests all live there
+  never starts a browser and never fetches a driver.
+</p>
+<p>
+  The first node document tests three claims about the knowledge commands: that
+  <code>add</code> dates a bare slug, that it refuses a slug already carrying one,
+  and that <code>link</code> writes the edge into the file named first. That last
+  one is the direction the instructions warn about, and getting it backwards runs
+  without complaint.
+</p>
+</knowledge-detail>
+  <knowledge-files>docs/templates/test.template.html, docs/tests/knowledge-add.test.html</knowledge-files>
+  <a data-rel="depends_on" href="./2026-08-06-script-type-decides-the-test-runner.decision.html">how the runner tells the two kinds apart</a>
+  <knowledge-commit>c1a62e0</knowledge-commit>
+  <knowledge-branch>figure-template</knowledge-branch>
+</knowledge-action>
+</body></html>
