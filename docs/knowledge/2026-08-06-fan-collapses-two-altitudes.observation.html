@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A fan collapses two altitudes into one, so the chain stays a line</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>A fan collapses two altitudes into one, so the chain stays a line</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-detail><p>A fan was on the table: test and implementation both citing the spec rule
+above them, with the relation between the two derived through that shared
+parent rather than written down. It removes an edge that no checker can
+verify, which was the appeal.</p>
+<p>It also puts test and implementation at the same depth. Cutting the graph at
+that depth then returns both, and the two altitudes furthest apart in
+practice — the behaviour someone can observe, and the mechanism that
+produces it — arrive as one layer. The
+<a href="./2026-08-05-architecture-is-a-depth-slice-of-the-intent-graph.decision.html">depth-slice
+decision</a> rests on a descent that loses exactly one level per step, and its
+own example counts four of them.</p>
+<p>So the line holds: axiom, then spec rule, then test, then implementation. The
+edge that no citation can carry needs a different kind of evidence, not a
+different shape.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-06-methodology-in-our-own-codebase.goal.html">why the four rungs keep their order</a>
+</knowledge-observation>
+</body></html>
