@@ -89,8 +89,14 @@
 
 <h2>What a node case gets</h2>
 <p>
-  A node case exports <code>check</code>, the same shape an audit uses, and receives
-  <code>assert</code> and a <code>sandbox</code>. Throwing fails the case, exactly as in a page.
+  A node case exports one default function, receiving <code>assert</code> and a <code>sandbox</code>.
+  Throwing fails the case, exactly as in a page.
+</p>
+<p>
+  The export carries no name because its position already says everything a name would. A script inside a
+  <code>test-case</code> can only be that case's body, so naming it would repeat the tag above it. A command
+  host exports a default for the same reason, so that <code>mycelium validate</code> does not read as
+  <code>mycelium validate validate</code>.
 </p>
 <p>
   The sandbox is a documents tree of its own, thrown away afterwards, with this repository's templates
@@ -437,8 +443,8 @@
       const sandbox = sandboxFor(root)
       try {
         const mod = await caseModule(full, entry.doc, script)
-        if (typeof mod.check !== "function") throw new Error("this case exports no check function")
-        await mod.check({ assert, sandbox })
+        if (typeof mod.default !== "function") throw new Error("this case exports no default function")
+        await mod.default({ assert, sandbox })
         results.push({ id, name, status: "SUCCESS", message: "" })
       } catch (err) {
         results.push({ id, name, status: "FAILURE", message: err?.message ?? String(err) })

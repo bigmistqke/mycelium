@@ -20,7 +20,7 @@
       // The slug a caller passes carries no date, and the command supplies one.
       // That split is the reason add takes an undated slug while every other
       // command takes a whole filename.
-      export async function check({ assert, sandbox }) {
+      export default async function ({ assert, sandbox }) {
         const done = sandbox.mycelium(
           "knowledge", "add", "goal",
           "--title", "A sandboxed goal",
@@ -54,7 +54,7 @@
       // validates, so the only symptom was the name, and the surrounding prose
       // talks about dated filenames constantly enough that the mistake looks
       // like it is following the convention.
-      export async function check({ assert, sandbox }) {
+      export default async function ({ assert, sandbox }) {
         const done = sandbox.mycelium(
           "knowledge", "add", "observation",
           "--title", "Already dated",
@@ -78,7 +78,7 @@
       // without complaint. It leaves an edge pointing the wrong way for a later
       // audit to catch, or for nothing to catch when the relation happens to
       // satisfy none of them.
-      export async function check({ assert, sandbox }) {
+      export default async function ({ assert, sandbox }) {
         const today = new Date().toISOString().slice(0, 10)
         const make = (type, slug, extra) => {
           const done = sandbox.mycelium(

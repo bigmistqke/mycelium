@@ -172,8 +172,9 @@ The script type on a case decides which runner opens it. Nothing else
 declares the split, because `mycelium/*` already means "loads only under
 Node" for every script in the project:
 
-- `<script type="mycelium/test">` — a **node case**. TypeScript, exports
-  `check({ assert, sandbox })`. `sandbox` is a throwaway documents tree with
+- `<script type="mycelium/test">` — a **node case**. TypeScript, exports one
+  default function taking `{ assert, sandbox }`. `sandbox` is a throwaway
+  documents tree with
   the real templates linked in; `sandbox.mycelium(...argv)` runs the real
   command line against it and `read`/`exists`/`write` reach the files. One
   fresh sandbox per case.
