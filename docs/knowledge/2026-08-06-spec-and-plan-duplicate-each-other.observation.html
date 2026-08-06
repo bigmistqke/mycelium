@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A spec and its plan state the same design twice and pair only by filename</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>A spec and its plan state the same design twice and pair only by filename</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-detail><p>Nineteen specs and eleven plans sit in this corpus, and ten of the eleven
+plans have a spec carrying the same date and nearly the same slug. Nothing links
+a pair. The relation lives in the filename, where no audit reaches it.</p>
+<p>The two documents overlap in what they require, not only in when they appear.
+<code>spec-doc</code> requires <code>spec-design</code>. <code>plan-doc</code>
+requires <code>plan-goal</code> and <code>plan-architecture</code>. So one piece
+of work states its design twice, in two files, and nothing keeps the two
+readings in step.</p>
+<p>Status doubles up as well. <code>spec-status</code> takes draft, approved or
+implemented, while a plan's status folds up from its steps and the exit codes
+their checks return. Implemented and every-step-complete are the same claim, one
+of them asserted and the other derived.</p>
+<p>Three duplications for a pair of documents that arrive together and describe
+one piece of work.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-06-spec-means-two-things-here.observation.html">what happens to the word spec once the design folds into the plan</a>
+</knowledge-observation>
+</body></html>
