@@ -46,10 +46,18 @@ that way.
   "an option about which language to implement in". The description is what a
   reader needed anyway.
 
-More generally: **a node may only refer to things that exist in this
-repository.** Not a number in a deleted database, not an external tool, and not
-something recoverable from git history — git is not a place a reader of the
-graph can follow a link to.
+More generally: **a node may only refer to what a reader can open.** Not a
+number in a deleted database, and not something recoverable only from git
+history — git is not a place a reader of the graph can follow a link to.
+
+An external source is fine, and wanted, so long as the link is live. Prior art
+is cited that way already: nodes on IBIS, on truth-maintenance systems, and on
+the capture cost that killed earlier rationale systems all link straight out to
+the work they name. `no-outside-references.rule.html` has said this all along —
+"Refer only to things a reader of this repository can open" — and its check
+matches a bare `#349` and nothing else. This paragraph used to say "not an
+external tool" instead, which is the same rule copied by hand and
+[drifted](docs/language/terms/drift.term.html).
 
 Use the CLI to log, don't hand-author. The commands below exist and are
 tested working:
