@@ -91,12 +91,20 @@ mechanism that gets it written.</p>
 each carry an id. The id is the point. A test cites one behaviour, and a
 behaviour without an address can only be cited as part of a whole document, which
 is not enough for anything downstream to count.</p>
-<p>An id is an author-chosen slug, stable, and named for the behaviour rather
-than for its wording, so a copy-edit never touches one. Nothing can enforce
-permanence from a single snapshot, since that needs history and git is not
-somewhere this corpus may point. Fragments resolve does the work instead: rename
-an id and every citation to it fails, so a rename becomes deliberate and carries
-its citations with it.</p>
+<p>An id is an author-chosen slug, never a number, and named for the behaviour
+rather than for its wording, so a copy-edit never touches one. A number in an id
+rots the first time someone inserts a section above it, which the project that
+ran this methodology before learned from its own numbered axioms.</p>
+<p>Nothing can enforce permanence from a single snapshot, since that needs
+history and git is not somewhere this corpus may point. Fragments resolve does
+the work instead: rename an id and every citation to it fails, so a rename
+becomes deliberate and carries its citations with it.</p>
+<p>What that leaves open is the reword in place. An id surviving an edit is the
+point, and it also means someone can change what a behaviour says while every
+citation still resolves, so nothing tells the citing tests they now check
+something else. That is the failure the earlier project started from, an axiom
+re-described in a way that contradicted a rule two sections later, and a person
+reading the result caught it rather than any check.</p>
 <p>Each specification links up to the axioms it serves. Each behaviour sits
 inside a specification and inherits that.</p>
 <p>A specification does not name its subsystem, it points at one. It links to the
@@ -163,13 +171,28 @@ the time, and the audit reader already parses the second kind.</p>
 HTML. This corpus already reaches into <code>src/</code>: the audit filesystem is
 rooted one level above <code>docs/</code> for exactly this reason, and both the
 comments command and the prose audit read source today.</p>
-<p>The citation is a tagged line: <code>@derives</code>, then a path from the
-repository root, then a fragment, one target per line. A tag rather than a bare
-path, because <code>every-link-resolves</code> reads anchors only and skips
+<p>The citation is a tagged line: <code>@specification</code>, then a path from
+the repository root, then a fragment, one target per line. A tag rather than a
+bare path, because <code>every-link-resolves</code> reads anchors only and skips
 <q>text that happens to describe an href</q>, and a comment offers no anchor to
 parse. Repository-root paths rather than file-relative ones, since
 <code>src/</code> sits at a different depth from a script block inside
 <code>docs/</code>, and one target would otherwise need two spellings.</p>
+<p>The long word, for the reason this document writes it everywhere else.
+Another project running this methodology uses <code>@spec</code>, which reads
+well until a repository holds a spec family that means something different. Here
+<code>spec add</code> writes a design document, so <code>@spec</code> would name
+one family and point at another.</p>
+<p>A citation gets judged on where it lands, never on which tag carries it. The
+same project checked the tag name instead and let sixteen citations through that
+reached past a layer, each one a real gap that a rule got written to fill. So the
+audit resolves the fragment and asks what kind of thing sits there.</p>
+<p>Only a leaf test carries a citation. That project tried the enclosing group
+first and found it wrong from both sides: an outer group spans a whole file and
+has no single behaviour, so annotating it means inventing a link rather than
+recording one, and an inner group restates what each child already carries. A
+group is navigation, and the unit owing a behaviour is the test that asserts
+something.</p>
 <p>Extraction already exists. <code>docs/templates/code-comments.ts</code>
 exports <code>commentRanges</code>, which returns every comment in a TypeScript
 or JavaScript source alongside what it sits above, where

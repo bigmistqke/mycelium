@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Only a leaf test carries a citation, because a group is navigation</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>Only a leaf test carries a citation, because a group is navigation</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-detail><p>The unit owing a behaviour is the test that asserts something, not the block
+grouping several of them.</p>
+<p>The earlier project tried the enclosing group first and found it wrong from
+both sides. An outer group spans a whole file and answers to no single
+behaviour, so annotating one means picking a child's target arbitrarily, which
+invents a link rather than recording one. An inner group restates a citation
+every child already carries.</p>
+<p>This matters for counting. A citation on a group covers several assertions at
+once, so <q>does a test exist for this behaviour</q> stops having an answer, the
+same way a behaviour written as a paragraph rather than a sentence breaks the
+question from the other side.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-07-every-specification-item-has-a-test.decision.html">the other end of the same counting problem: one assertion cites one behaviour</a>
+</knowledge-observation>
+</body></html>
