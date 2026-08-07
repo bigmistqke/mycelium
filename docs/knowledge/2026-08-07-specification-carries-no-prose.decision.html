@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: A specification carries no prose, because every other kind of content has a family</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>A specification carries no prose, because every other kind of content has a family</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>A specification is a title, edges up to the axioms it serves, and a list of
+behaviours. No prose field, and no detail field either, though every other type
+in this corpus has one.</p>
+<p>What forces this: each kind of content that is not a behaviour already has a
+family. A criterion is an axiom. Something that happened is a knowledge
+observation or decision. A word's meaning is a language term, and the reasoning
+behind a design is the design document.</p>
+<p>Two examples that looked like prose and were not. <q>This gate only became
+real on 2026-07-30; before that it printed failures and exited 0</q> is an
+incident and belongs in the graph. <q>It exits non-zero rather than warning
+because a gate people ignore is not a gate</q> glues a behaviour to its
+criterion, and the halves separate into a behaviour and an axiom.</p>
+<p>A detail field is the hole both of those go through. The cost is that a
+specification reads as a list rather than an explanation, so a reader who wants
+to know why the subsystem took this shape reads the axioms above it and the
+design document beside it.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-07-every-specification-item-has-a-test.decision.html">with no exempt behaviour, prose has no remaining job in the document</a>
+  <a data-rel="depends_on" href="./2026-07-30-container-per-fact.observation.html">the same test one level down: not where does this go, but should this exist here</a>
+</knowledge-decision>
+</body></html>

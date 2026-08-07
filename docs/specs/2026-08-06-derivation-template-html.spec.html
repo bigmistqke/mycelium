@@ -91,12 +91,61 @@ mechanism that gets it written.</p>
 each carry an id. The id is the point. A test cites one behaviour, and a
 behaviour without an address can only be cited as part of a whole document, which
 is not enough for anything downstream to count.</p>
-<p>A behaviour marks itself as a requirement or as context, the way RFC 2119
-keywords do in a standards document. That answers what counts as a behaviour by a
-word in the prose rather than by anyone's judgement, and a countable list is what
-exhaustiveness needs before it means anything.</p>
+<p>An id is an author-chosen slug, stable, and named for the behaviour rather
+than for its wording, so a copy-edit never touches one. Nothing can enforce
+permanence from a single snapshot, since that needs history and git is not
+somewhere this corpus may point. Fragments resolve does the work instead: rename
+an id and every citation to it fails, so a rename becomes deliberate and carries
+its citations with it.</p>
 <p>Each specification links up to the axioms it serves. Each behaviour sits
 inside a specification and inherits that.</p>
+<p>A specification does not name its subsystem, it points at one. It links to the
+documents and source files it describes, and the subsystem is whatever that link
+set covers. This follows
+<a href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do not
+tag</a>, which refused a hand-maintained vocabulary once already, and it answers
+which specification covers a given file by walking edges. One specification per
+subsystem then needs no rule of its own, since a file reached by two
+specifications means two documents claim what it does.</p>
+<h2>A specification is behaviours and edges, and nothing else</h2>
+<p>Every behaviour owes a test. Nothing marks one as exempt, no keyword
+vocabulary sorts them, and no attribute grades them. A behaviour is a claim about
+the system, and a claim with no evidence under it is the same failure Grounded
+already names when an axiom reaches nothing.</p>
+<p>An earlier form of this design split a behaviour into a requirement, which
+owed a test, and context, which did not. The argument was that a requirement is a
+promise holding across refactors while context describes internals a refactor may
+invalidate. That reasons from the code level, outside the chain, and within the
+chain nothing below may make something above false. An implementation
+contradicting a behaviour is the finding travelling up, not a drift the document
+absorbs.</p>
+<p>RFC 2119 also answered a question nobody asks here. Its keywords encode
+optionality for independent implementers of one standard, where several parties
+build to a single document and some features stay negotiable. A specification
+here describes one system, this one. The
+<a href="../knowledge/2026-08-07-every-specification-item-has-a-test.decision.html">decision</a>
+records both arguments.</p>
+<p>So the document carries no prose, and no detail field either, though every
+other type in this corpus has one. Each kind of content that is not a behaviour
+already has a family: a criterion is an axiom, something that happened is a
+knowledge node, a word's meaning is a language term, and the reasoning behind a
+design is the design document.</p>
+<p>Two sentences that look like prose and are not. <q>This gate only became real
+on 2026-07-30; before that it printed failures and exited 0</q> is an incident
+and belongs in the graph. <q>It exits non-zero rather than warning because a gate
+people ignore is not a gate</q> glues a behaviour to its criterion, and the
+halves separate into a behaviour and an axiom.</p>
+<p>A detail field is the hole both of those go through, which is why this type
+has none. The
+<a href="../knowledge/2026-08-07-specification-carries-no-prose.decision.html">decision</a>
+carries the cost: a specification reads as a list rather than an explanation, and
+a reader who wants to know why the subsystem took this shape reads the axioms
+above it and the design document beside it.</p>
+<p>A behaviour is therefore one falsifiable sentence rather than a paragraph.
+Citation depends on it, since a test citing a paragraph cites several claims at
+once, and <q>does a test exist for this</q> stops having an answer. Where a
+paragraph seems necessary, the claim inside it is the behaviour and the rest
+belongs to another family.</p>
 <h2>Where the rungs live</h2>
 <p>The chain runs axiom, then specification behaviour, then test, then
 implementation, and the last two get no document.
@@ -110,10 +159,23 @@ block: each command lives in its <code>.command.html</code>, and each audit live
 in the template file whose type it checks. So an implementation rung is a
 TypeScript file some of the time and a script block inside a document the rest of
 the time, and the audit reader already parses the second kind.</p>
-<p>A citation from a plain source file is an href in a comment, in a file that is
-not HTML. This corpus already reaches into <code>src/</code>: the audit
-filesystem is rooted one level above <code>docs/</code> for exactly this reason,
-and both the comments command and the prose audit read source today.</p>
+<p>A citation from a plain source file lives in a comment, in a file that is not
+HTML. This corpus already reaches into <code>src/</code>: the audit filesystem is
+rooted one level above <code>docs/</code> for exactly this reason, and both the
+comments command and the prose audit read source today.</p>
+<p>The citation is a tagged line: <code>@derives</code>, then a path from the
+repository root, then a fragment, one target per line. A tag rather than a bare
+path, because <code>every-link-resolves</code> reads anchors only and skips
+<q>text that happens to describe an href</q>, and a comment offers no anchor to
+parse. Repository-root paths rather than file-relative ones, since
+<code>src/</code> sits at a different depth from a script block inside
+<code>docs/</code>, and one target would otherwise need two spellings.</p>
+<p>Extraction already exists. <code>docs/templates/code-comments.ts</code>
+exports <code>commentRanges</code>, which returns every comment in a TypeScript
+or JavaScript source alongside what it sits above, where
+<code>subject.declares</code> names the kind and <code>subject.name</code> names
+the thing. So one call hands an audit both the citation and the name of the test
+carrying it.</p>
 <p>The test rung has no home here at all. This repository ships no tests and no
 test runner, and <code>package.json</code> declares <code>mycelium</code>,
 <code>typecheck</code> and <code>check-scripts</code> and nothing else. The
@@ -147,22 +209,22 @@ exists.</p>
   <li><strong>Grounded.</strong> Every axiom reaches a behaviour beneath it, and
     every specification reaches an axiom above it. An axiom with nothing under it
     is a belief nobody acted on.</li>
-  <li><strong>Exhaustive.</strong> Every behaviour marked as a requirement has a
-    test citing it. A behaviour marked as context does not, and that exemption is
-    the only thing the marking does.</li>
+  <li><strong>Exhaustive.</strong> Every behaviour has a test citing it. Nothing
+    is exempt, so this counts the whole list rather than a marked subset of
+    it.</li>
   <li><strong>Cited.</strong> Every test cites a behaviour. This is the one that
     closes the loop: a test citing nothing is a claim about the system that no
     specification makes, so either a behaviour is missing above it or the test
     checks something nobody meant to promise.</li>
 </ul>
-<p>An earlier form of Grounded also asked that every behaviour reach a test.
-That duplicated Exhaustive from the other side and quietly overrode it, since
-Exhaustive exempts a context behaviour and Grounded did not, which left the
-requirement marking with no effect on any check. Grounded now covers the joint
-between an axiom and a specification, and Exhaustive and Cited cover the two
-directions of the joint between a specification and a test. The
+<p>Exhaustive and Cited are total in both directions across the same joint, with
+no exemption on either side, which is what the absence of a marking buys. An
+earlier form of Grounded also asked that every behaviour reach a test, which
+duplicated Exhaustive from the other side. Grounded now covers the joint between
+an axiom and a specification, and the other two cover the joint between a
+specification and a test. The
 <a href="../knowledge/2026-08-07-audits-only-run-downward.observation.html">observation
-that all three ran one way</a> is where Cited comes from.</p>
+that the checks all ran one way</a> is where Cited comes from.</p>
 <p>None of the four names a rung inside <code>src/</code>. The engine learns the
 chain by reading this family's own declarations, because a checker that hardcodes
 its ontology is the
@@ -218,18 +280,15 @@ the fact. They still come second, because writing them needs the family to exist
 and needs somewhere for the test rung to live. Sequence, not priority.</p>
 </spec-out-of-scope>
   <spec-open-questions>
-<p>Which keyword vocabulary marks a requirement, and whether the language family
-should hold those words as terms the way it holds the rest of this project's
-vocabulary.</p>
-<p>What a citation from source looks like exactly, and whether a comment tag or a
-plain href in a comment carries it.</p>
-<p>Whether every test owes a citation, or only a test at some altitude. A unit
-test of a small helper may have no behaviour above it that anyone would want to
-write, and Cited as stated makes no room for that.</p>
-<p>Whether a behaviour id has to survive an edit to the behaviour's wording, the
-way a standards body treats an anchor as permanent, and what enforces that here.</p>
-<p>Whether one specification maps to one subsystem, and what names a subsystem
-given that this project refused a topic vocabulary once already.</p>
+<p>Whether an implementation cites its test, and whether anything checks that it
+did. The chain has four rungs and this design covers three joints of it: axiom to
+specification, specification to test in both directions. The joint between a test
+and the code beneath it carries no citation and no audit here, which leaves the
+bottom rung attached to the chain by convention alone.</p>
+<p>Whether a file reached by two specifications becomes an audit of its own or
+stays something a reader notices. The check costs little and the failure it
+catches is real, two documents each claiming what one file does, but no
+specification exists yet to try the rule against.</p>
 </spec-open-questions>
 </spec-doc>
 </body></html>
