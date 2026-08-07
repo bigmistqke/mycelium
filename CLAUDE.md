@@ -320,11 +320,22 @@ audits) checks for, now for real: `pnpm mycelium validate` runs it against the a
 files, not just sample markup. Still worth checking by eye before running
 `pnpm mycelium validate`, but it's an automated gate now, not just a judgment call.
 
-The six `data-rel` edge labels, unchanged from deciduous:
+Eight `data-rel` edge labels. Six come unchanged from deciduous:
 `depends_on`, `blocks`, `supports`, `contradicts`, `alternative_to`,
-`leads_to`. Mint new ones when a project genuinely needs them (see
-`DESIGN.html`'s "open-vocabulary links"), the same way `specifies` and
-`elaborates` got minted for the spec-doc work.
+`leads_to`. `specifies` and `elaborates` got minted for the spec-doc work.
+
+The schema now holds that list, as a pattern on the `<a>` each type
+declares, so `pnpm mycelium validate` rejects a ninth label rather than
+accepting it. Minting therefore means editing that pattern in
+`knowledge.template.html` and `language.template.html` — nine
+placeholders, one find-and-replace. Do that when the project genuinely
+needs a relation, the way those two arrived; `DESIGN.html`'s
+"open-vocabulary links" is the argument for keeping that door open, and
+the check is the argument for making you walk through it deliberately.
+
+Two edges used labels no list named until 2026-08-07, when both became
+`leads_to` — see
+`docs/knowledge/2026-08-07-unlisted-relations-become-leads-to.decision.html`.
 
 ### CRITICAL: Link Commits to Actions/Outcomes
 

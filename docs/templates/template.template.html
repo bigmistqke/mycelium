@@ -68,15 +68,17 @@
   Two things lived in that gap, and both are load-bearing. 550 <code>&lt;a data-rel&gt;</code> edges,
   which is the whole structure of the knowledge graph, and 22 <code>&lt;script&gt;</code> elements, which
   are the substance of every test case and every language rule. Each type now declares what it holds:
-  <code>&lt;a repeatable href=".+" data-rel=".+"&gt;</code> on the six knowledge types and the three
-  language ones, and <code>&lt;script required&gt;</code> on a test case, copying the
+  <code>&lt;a repeatable href=".+" data-rel="^(depends_on|&hellip;)$"&gt;</code> on the six knowledge types
+  and the three language ones, and <code>&lt;script required&gt;</code> on a test case, copying the
   <code>language-rule</code> that already declared its own.
 </p>
 <p>
-  The values a <code>data-rel</code> may take stay open for now. Closing them would fail two edges
-  carrying relations no list names, and <code>link</code> cannot retarget one of them, because it builds
-  the href itself and mangles a path leaving its own directory. Requiring the attribute costs nothing and
-  waits for none of that.
+  That <code>data-rel</code> pattern lists the relations a document may use, so one declaration both
+  admits an edge and closes the vocabulary. Two edges carrying relations no list named blocked it until
+  <a data-rel="depends_on" href="../knowledge/2026-08-07-unlisted-relations-become-leads-to.decision.html">both
+  of them became <code>leads_to</code></a>. Minting a relation now means editing this pattern, which is
+  the cost of the check, and <a data-rel="depends_on" href="../DESIGN.html">DESIGN.html</a> argues for
+  open-vocabulary links on the other side of it.
 </p>
 <p>
   A placeholder that declares an attribute of its own is the exception to the empty rule. Such an element
@@ -151,7 +153,7 @@
     &lt;knowledge-status required enum="pending active completed rejected"&gt;&lt;/knowledge-status&gt;
     &lt;knowledge-prompt&gt;&lt;/knowledge-prompt&gt;
     &lt;knowledge-detail&gt;&lt;/knowledge-detail&gt;
-    &lt;a repeatable href=".+" data-rel=".+"&gt;&lt;/a&gt;
+    &lt;a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"&gt;&lt;/a&gt;
   &lt;/knowledge-goal&gt;
 &lt;/template&gt;</code></pre>
 
