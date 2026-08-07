@@ -15,11 +15,14 @@
 <p>This project can say what shape a document takes and whether its prose obeys
 the rules. It cannot say why the system took the shape it has, nor whether the
 code answers to anything.</p>
-<p>Two gaps sit under that. The graph has held options and decisions since
+<p>Three gaps sit under that. The graph has held options and decisions since
 January without ever holding the criterion that settles them, so a rationale
-lives in prose inside a decision or it lives nowhere. And no document states
-what the system does in a form a test can cite, so nothing connects a running
-test to a claim about behaviour.</p>
+lives in prose inside a decision or it lives nowhere. No document states what the
+system does in a form a test can cite, so nothing connects a running test to a
+claim about behaviour. And with nowhere for a principle to live, nothing can show
+that one subsystem assumes one thing while another assumes something
+incompatible: each part stays internally consistent, neither part is a bug, and
+the disagreement never surfaces.</p>
 <p>A methodology already exists for this, and another project applied it by
 hand: a chain running from an axiom, to a specification of behaviour, to a test,
 to an implementation. That project also found that an agent does not hold to
@@ -27,6 +30,20 @@ such a discipline on trust, and made the citations structured text so a checker
 could answer whether the protocol held. The
 <a href="../knowledge/2026-08-02-rg-structured-links-made-protocol-accountable.observation.html">observation
 recording that</a> is what this design responds to.</p>
+<p>The chain runs in both directions, and that is the methodology rather than a
+property of it. Implementation flows down: an axiom settles what a specification
+should say, a specification says what a test should check, a test says what an
+implementation should do.</p>
+<p>Findings flow up. A problem the chain did not predict is not faulty code by
+default, because it means either that no behaviour speaks to the case, or that
+two behaviours want different things and someone had to pick one. So a fix has an
+altitude, and patching the code alone leaves the hole that produced it. The
+<a href="../knowledge/2026-08-07-findings-travel-upward.observation.html">observation
+recording that</a> carries the argument.</p>
+<p>The upward direction is also how this reaches a project already running. A
+codebase carries principles nobody wrote down, sitting in its maintainers' habits
+and sometimes visible in how the project describes itself. Reading those out of
+the code is the same operation, run the other way.</p>
 </spec-problem>
   <spec-design>
 <h2>Two types in one family file</h2>
@@ -54,9 +71,14 @@ made when it dropped the date prefix its siblings carry.</p>
 <p>An axiom decides which options are good. It is the standing criterion someone
 appeals to when two designs both work and one of them is right, which is a job
 nothing in this corpus does today.</p>
+<p>An axiom carries a confidence, the way every knowledge node does. Someone who
+commits to a principle and someone who infers one by reading a codebase produce
+the same shape of document, and the second is the likelier misreading. Without
+the field nothing tells the two apart, which matters most in exactly the case
+this design wants to serve.</p>
 <p>Axioms compose by refinement. A subsystem's axiom links up to the general one
-it narrows, and that edge is the whole mechanism — no region names, no scope
-attribute, no cascade. Asking which axioms govern a subsystem is a walk upward
+it narrows, and that edge is the whole mechanism, with no region names, no scope
+attribute and no cascade. Asking which axioms govern a subsystem is a walk upward
 from its own.</p>
 <p>What this gives up, and the
 <a href="../knowledge/2026-08-06-how-subsystem-axioms-inherit.decision.html">decision</a>
@@ -75,17 +97,29 @@ word in the prose rather than by anyone's judgement, and a countable list is wha
 exhaustiveness needs before it means anything.</p>
 <p>Each specification links up to the axioms it serves. Each behaviour sits
 inside a specification and inherits that.</p>
-<h2>Tests and implementations stay in source</h2>
+<h2>Where the rungs live</h2>
 <p>The chain runs axiom, then specification behaviour, then test, then
 implementation, and the last two get no document.
 <a href="../knowledge/2026-07-25-tests-cite-not-modeled-as-nodes.decision.html">Tests
 cite, they are not nodes</a> settled that in July: a test is a citation target
 read out of real source, the way a commit is a field rather than a re-hosted
 node.</p>
-<p>A citation from source is an href in a file that is not HTML, written as a
-comment. This corpus already reaches into <code>src/</code> — the audit filesystem
-is rooted one level above <code>docs/</code> for exactly this reason, and both the
-comments command and the prose audit read source today.</p>
+<p>Real source is not only <code>src/</code>. Eight documents in this corpus hold
+their own implementation inside a <code>&lt;script type="mycelium/…"&gt;</code>
+block: each command lives in its <code>.command.html</code>, and each audit lives
+in the template file whose type it checks. So an implementation rung is a
+TypeScript file some of the time and a script block inside a document the rest of
+the time, and the audit reader already parses the second kind.</p>
+<p>A citation from a plain source file is an href in a comment, in a file that is
+not HTML. This corpus already reaches into <code>src/</code>: the audit
+filesystem is rooted one level above <code>docs/</code> for exactly this reason,
+and both the comments command and the prose audit read source today.</p>
+<p>The test rung has no home here at all. This repository ships no tests and no
+test runner, and <code>package.json</code> declares <code>mycelium</code>,
+<code>typecheck</code> and <code>check-scripts</code> and nothing else. The
+audits are the nearest thing to tests it has, and they check documents rather
+than code. That leaves the design intact and says where the work lands: the first
+specification about this project will cite tests that someone writes first.</p>
 <h2>The order of work, which the rungs also describe</h2>
 <p>Read downward the chain says what the system is, at whichever altitude you cut
 it. Read forward it says what to do next: state the behaviour, stub the
@@ -96,31 +130,78 @@ So a gate cannot ask whether the rung above is finished. It asks a narrower
 question: a signature before a test is the method working, and a body before a
 test is the method skipped.</p>
 <h2>What gets checked</h2>
-<p>Three audits, and the first of them is a repair to something that already
+<p>Four audits, and the first of them is a repair to something that already
 exists.</p>
 <ul>
   <li><strong>Fragments resolve.</strong> The current
-    <code>every-link-resolves</code> drops the fragment before testing a path, so
-    a citation to <code>#behaviour-3</code> passes whether or not anything carries
-    that id. Every citation in this chain is a fragment citation, so this audit is
-    the ground the rest stands on.</li>
-  <li><strong>Grounded.</strong> Every axiom reaches a behaviour, and every
-    behaviour reaches a test. An axiom with nothing under it is a belief nobody
-    acted on.</li>
+    <code>every-link-resolves</code> splits the fragment off before testing a
+    path, so a citation to <code>#behaviour-3</code> passes whether or not
+    anything carries that id, and a citation carrying nothing but a fragment
+    leaves an empty path that the same function skips outright. Every citation in
+    this chain is a fragment citation, so this audit is the ground the rest
+    stands on. It is two jobs rather than one: the check has to look inside the
+    target document for the id, and it has to see citations in files that are not
+    HTML, which the current pass neither lists nor parses.
+    <code>AuditFs.read</code> takes any path, so the second job needs no new
+    interface.</li>
+  <li><strong>Grounded.</strong> Every axiom reaches a behaviour beneath it, and
+    every specification reaches an axiom above it. An axiom with nothing under it
+    is a belief nobody acted on.</li>
   <li><strong>Exhaustive.</strong> Every behaviour marked as a requirement has a
-    test citing it. This runs opposite to the citations: a link proves one test
-    exists, and the method wants none missing.</li>
+    test citing it. A behaviour marked as context does not, and that exemption is
+    the only thing the marking does.</li>
+  <li><strong>Cited.</strong> Every test cites a behaviour. This is the one that
+    closes the loop: a test citing nothing is a claim about the system that no
+    specification makes, so either a behaviour is missing above it or the test
+    checks something nobody meant to promise.</li>
 </ul>
-<p>None of the three names a rung inside <code>src/</code>. The engine learns the
+<p>An earlier form of Grounded also asked that every behaviour reach a test.
+That duplicated Exhaustive from the other side and quietly overrode it, since
+Exhaustive exempts a context behaviour and Grounded did not, which left the
+requirement marking with no effect on any check. Grounded now covers the joint
+between an axiom and a specification, and Exhaustive and Cited cover the two
+directions of the joint between a specification and a test. The
+<a href="../knowledge/2026-08-07-audits-only-run-downward.observation.html">observation
+that all three ran one way</a> is where Cited comes from.</p>
+<p>None of the four names a rung inside <code>src/</code>. The engine learns the
 chain by reading this family's own declarations, because a checker that hardcodes
 its ontology is the
 <a href="../knowledge/2026-07-27-rg-derivation-checker-hardcodes-ontology.observation.html">divergence
 already recorded</a> from the way this project works.</p>
+<h2>An unfinished chain is an ordinary error</h2>
+<p>A behaviour with no test, an axiom with nothing under it, a test citing
+nothing: each is a violation, each fails <code>validate</code>, each contributes
+to a non-zero exit. Nothing marks a chain as in progress, no flag softens a check
+into advice, and no separate command reports these apart from the rest.</p>
+<p>The argument against that ran: non-zero is this family's normal state. You
+write a chain in order, behaviour then stub then failing tests then an
+implementation, so every intermediate moment has a gap in it, and an axiom read
+out of an existing codebase waits a long time before anything sits beneath it.
+Checks whose expected value is never zero look unlike
+<code>dangling-outcome</code>, where zero is the answer and anything else means
+someone slipped.</p>
+<p>That difference is real and it is not the checker's business. Everything in
+this corpus is a declaration, and every audit reports where reality does not
+match one, so <q>you declared an outcome and nothing causes it</q> and <q>you
+declared a required behaviour and nothing tests it</q> are the same sentence.</p>
+<p>These are type errors: they say the thing does not match what someone
+declared, and a person can ignore them the way a type error does not stop code
+from running. A non-zero exit is communication, not permission. The
+<a href="../knowledge/2026-08-07-gaps-are-ordinary-validation-errors.decision.html">decision</a>
+records what this rules out.</p>
+<p>What follows is that the message carries the weight. <q>Behaviour 3 has no
+test</q> only scolds. Naming the specification, the axiom that behaviour serves,
+and what nothing currently checks turns the error into the next thing someone
+writes.</p>
 </spec-design>
   <spec-out-of-scope>
-<h3>The entailed check</h3>
+<h3>The entailed check, and finding a conflict</h3>
 <p>Whether each step follows from the one above it is a judgement, and nothing
 here runs a model inside an audit. It stays something a person asks for.</p>
+<p>The same holds for the conflict this design is partly aimed at. Two axioms
+that cannot both hold have somewhere to live, since <code>contradicts</code> is
+already one of the edge labels and <code>knowledge recover</code> prints
+contested claims, but nothing finds one. Someone reads both and judges.</p>
 <h3>Coverage as evidence</h3>
 <p>A citation from an implementation up to a test is a claim someone wrote, and a
 run could corroborate it. Wiring a coverage report into the chain is a later
@@ -130,9 +211,11 @@ question.</p>
 and pair only by filename. That migration would free the shorter word, and it is
 <a href="../knowledge/2026-08-06-spec-and-plan-duplicate-each-other.observation.html">recorded</a>
 rather than done. Until then this design writes the long word everywhere.</p>
-<h3>Retrofitting this repository</h3>
-<p>Mycelium's own axioms and specifications are the point of the exercise, but
-writing them is work that follows the family existing.</p>
+<h3>Writing this repository's own axioms</h3>
+<p>Mycelium's own axioms and specifications are the point of the exercise, and
+reading them out of the code is the upward direction rather than cleanup after
+the fact. They still come second, because writing them needs the family to exist
+and needs somewhere for the test rung to live. Sequence, not priority.</p>
 </spec-out-of-scope>
   <spec-open-questions>
 <p>Which keyword vocabulary marks a requirement, and whether the language family
@@ -140,6 +223,9 @@ should hold those words as terms the way it holds the rest of this project's
 vocabulary.</p>
 <p>What a citation from source looks like exactly, and whether a comment tag or a
 plain href in a comment carries it.</p>
+<p>Whether every test owes a citation, or only a test at some altitude. A unit
+test of a small helper may have no behaviour above it that anyone would want to
+write, and Cited as stated makes no room for that.</p>
 <p>Whether a behaviour id has to survive an edit to the behaviour's wording, the
 way a standards body treats an anchor as permanent, and what enforces that here.</p>
 <p>Whether one specification maps to one subsystem, and what names a subsystem
