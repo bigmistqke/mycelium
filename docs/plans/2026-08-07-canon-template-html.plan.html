@@ -2,18 +2,18 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plan: Build the derivation family and the four checks that walk its chain</title>
+<title>Plan: Build the canon family and the four checks that walk its chain</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/plan.template.css">
 </head>
 <body>
 <plan-doc data-conforms-to="../templates/plan.template.html#plan-doc">
-  <plan-title>Build the derivation family and the four checks that walk its chain</plan-title>
+  <plan-title>Build the canon family and the four checks that walk its chain</plan-title>
   <plan-date>2026-08-07</plan-date>
-  <plan-goal>&lt;p&gt;A derivation family exists, its authoring commands write it, and its audits run.&lt;/p&gt;&lt;p&gt;Terminal state has three parts. &lt;code&gt;docs/templates/derivation.template.html&lt;/code&gt; declares &lt;code&gt;derivation-axiom&lt;/code&gt; and &lt;code&gt;derivation-specification&lt;/code&gt;, with &lt;code&gt;derivation-behaviour&lt;/code&gt; nested inside the second. &lt;code&gt;mycelium derivation&lt;/code&gt; creates and edits both, so nothing here gets hand-authored. And &lt;code&gt;mycelium validate&lt;/code&gt; runs four checks over the chain, one repaired and three new.&lt;/p&gt;&lt;p&gt;No axiom or specification about mycelium itself gets written here. That follows the family existing, so the three chain checks pass over an empty corpus and earn their keep through deliberate violations in the template's own worked examples instead.&lt;/p&gt;</plan-goal>
+  <plan-goal>&lt;p&gt;A canon family exists, its authoring commands write it, and its audits run.&lt;/p&gt;&lt;p&gt;Terminal state has three parts. &lt;code&gt;docs/templates/canon.template.html&lt;/code&gt; declares &lt;code&gt;canon-axiom&lt;/code&gt; and &lt;code&gt;canon-specification&lt;/code&gt;, with &lt;code&gt;canon-behaviour&lt;/code&gt; nested inside the second. &lt;code&gt;mycelium canon&lt;/code&gt; creates and edits both, so nothing here gets hand-authored. And &lt;code&gt;mycelium validate&lt;/code&gt; runs four checks over the chain, one repaired and three new.&lt;/p&gt;&lt;p&gt;No axiom or specification about mycelium itself gets written here. That follows the family existing, so the three chain checks pass over an empty corpus and earn their keep through deliberate violations in the template's own worked examples instead.&lt;/p&gt;</plan-goal>
   <plan-architecture>Four tasks, ordered so each one can be checked when it lands. Task 1 repairs every-link-resolves to resolve fragments, which every later check rests on: all 8 fragment citations in the corpus today already resolve, so this lands green and opens no repair backlog. Task 2 writes the template, declaring both types and their validators. Task 3 adds the authoring commands, following the same add/update/link/unlink shape knowledge already has, with behaviour nested inside a specification the way plan-step nests inside plan-task. Task 4 adds the source-citation reader and the three chain checks on top of it. The reader is shared infrastructure for two of them and reuses commentRanges from code-comments.ts, which already returns each comment alongside what it sits above. Deliberately out of scope, per the spec: writing this repository's own axioms and specifications, any citation from an implementation up to a test, and coverage as evidence.</plan-architecture>
   <plan-tech-stack>Node with native TS stripping, happy-dom for parsing, the existing validate crawler and the audit-discovery convention it already uses. TypeScript's own parser via code-comments.ts for reading citations out of source. No new dependencies.</plan-tech-stack>
-  <plan-global-constraints>Every plan-check runs from the repository root. pnpm mycelium validate is green at every step of this plan, unlike the harness-shape-audits pass: nothing here writes an axiom or a specification, so the three chain checks pass over an empty set from the moment they land. A check that has never fired is not known to work, which is why each one carries a deliberate violation in the template's worked example, declared in data-expects the way the three knowledge audits already do. The design this implements is docs/specs/2026-08-06-derivation-template-html.spec.html and its two open questions stay open: nothing connects a test to the code beneath it, and no check catches a file reached by two specifications.</plan-global-constraints>
+  <plan-global-constraints>Every plan-check runs from the repository root. pnpm mycelium validate is green at every step of this plan, unlike the harness-shape-audits pass: nothing here writes an axiom or a specification, so the three chain checks pass over an empty set from the moment they land. A check that has never fired is not known to work, which is why each one carries a deliberate violation in the template's worked example, declared in data-expects the way the three knowledge audits already do. The design this implements is docs/specs/2026-08-06-canon-template-html.spec.html and its two open questions stay open: nothing connects a test to the code beneath it, and no check catches a file reached by two specifications.</plan-global-constraints>
   <plan-task id="task-1" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Make every-link-resolves resolve the fragment</plan-title>
     <plan-files>docs/templates/template.template.html</plan-files>
@@ -71,12 +71,12 @@ reporting a bare node id.</p>
     </plan-step>
   </plan-task>
   <plan-task id="task-2" data-conforms-to="../templates/plan.template.html#plan-task">
-    <plan-title>Write derivation.template.html</plan-title>
-    <plan-files>docs/templates/derivation.template.html, docs/templates/derivation.template.css</plan-files>
-    <plan-interfaces>Two template ids, derivation-axiom and derivation-specification, with derivation-behaviour nested inside the second the way plan-step nests inside plan-task. Instances live at docs/derivation/axioms/&lt;slug&gt;.axiom.html and docs/derivation/specifications/&lt;slug&gt;.specification.html, with no date prefix.</plan-interfaces>
+    <plan-title>Write canon.template.html</plan-title>
+    <plan-files>docs/templates/canon.template.html, docs/templates/canon.template.css</plan-files>
+    <plan-interfaces>Two template ids, canon-axiom and canon-specification, with canon-behaviour nested inside the second the way plan-step nests inside plan-task. Instances live at docs/canon/axioms/&lt;slug&gt;.axiom.html and docs/canon/specifications/&lt;slug&gt;.specification.html, with no date prefix.</plan-interfaces>
     <plan-step id="task-2-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
-      <plan-title>Declare derivation-axiom</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-title>Declare canon-axiom</plan-title>
+      <plan-status>completed</plan-status>
       <plan-detail><p>Fields: a title carrying the principle itself, a confidence, and an optional
 detail. The title is the axiom, the way a knowledge title is the claim, and the
 detail holds the reasoning.</p>
@@ -92,8 +92,8 @@ from its own. No region attribute, no scope, no cascade.</p>
       </plan-check>
     </plan-step>
     <plan-step id="task-2-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
-      <plan-title>Declare derivation-specification and derivation-behaviour</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-title>Declare canon-specification and canon-behaviour</plan-title>
+      <plan-status>completed</plan-status>
       <plan-detail><p>A specification holds a title, edges up to the axioms it serves, edges to the
 documents and source files it describes, and its behaviours. No prose field and
 no detail field, though every other type in this corpus has one.</p>
@@ -132,9 +132,9 @@ before task 4 reads it.</p>
     </plan-step>
   </plan-task>
   <plan-task id="task-3" data-conforms-to="../templates/plan.template.html#plan-task">
-    <plan-title>Add the derivation authoring commands</plan-title>
-    <plan-files>docs/templates/derivation.template.html</plan-files>
-    <plan-interfaces>derivation add axiom|specification --title --file &lt;undated-slug&gt; [--confidence] [--detail]; derivation add behaviour &lt;file&gt; --id --title; derivation update; derivation link/unlink. No --date flag on either type, matching language rather than knowledge.</plan-interfaces>
+    <plan-title>Add the canon authoring commands</plan-title>
+    <plan-files>docs/templates/canon.template.html</plan-files>
+    <plan-interfaces>canon add axiom|specification --title --file &lt;undated-slug&gt; [--confidence] [--detail]; canon add behaviour &lt;file&gt; --id --title; canon update; canon link/unlink. No --date flag on either type, matching language rather than knowledge.</plan-interfaces>
     <plan-step id="task-3-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Write add, for both types and for a nested behaviour</plan-title>
       <plan-status>pending</plan-status>
@@ -149,7 +149,7 @@ do after the doubled-prefix bug.</p>
 for the new family.</p>
 </plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
-        <plan-check-command>pnpm mycelium derivation --help</plan-check-command>
+        <plan-check-command>pnpm mycelium canon --help</plan-check-command>
         <plan-check-output>add</plan-check-output>
       </plan-check>
     </plan-step>
@@ -168,14 +168,14 @@ behaviour inside it, and every citation from source pointing at those behaviours
 stays behind in files this command does not own.</p>
 </plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
-        <plan-check-command>pnpm mycelium derivation --help</plan-check-command>
+        <plan-check-command>pnpm mycelium canon --help</plan-check-command>
         <plan-check-output>unlink</plan-check-output>
       </plan-check>
     </plan-step>
   </plan-task>
   <plan-task id="task-4" data-conforms-to="../templates/plan.template.html#plan-task">
     <plan-title>Read citations out of source, then add the three chain checks</plan-title>
-    <plan-files>docs/templates/derivation.template.html</plan-files>
+    <plan-files>docs/templates/canon.template.html</plan-files>
     <plan-interfaces>A citation reader that returns every @specification tag in the corpus with the test it sits above. Three audits declared beside the types they check, discovered by the existing crawler with no engine change: grounded, exhaustive, cited.</plan-interfaces>
     <plan-step id="task-4-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Write the citation reader</plan-title>
@@ -246,7 +246,7 @@ it rather than assume it.</p>
 knowledge commands the day <code>unlink</code> and <code>del</code> already
 existed, and an agent reading it concluded an <code>unlink</code> was the next
 gap to build.</p>
-<p>So the derivation signatures go in beside the others, with the same warning
+<p>So the canon signatures go in beside the others, with the same warning
 that <code>--help</code> outranks the block.</p>
 </plan-detail>
       <plan-check data-conforms-to="../templates/plan.template.html#plan-check">

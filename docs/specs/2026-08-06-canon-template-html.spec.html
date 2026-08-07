@@ -2,13 +2,13 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Spec: derivation.template.html: axioms, specifications, and a chain a checker can walk</title>
+<title>Spec: canon.template.html: axioms, specifications, and a chain a checker can walk</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/spec.template.css">
 </head>
 <body>
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
-  <spec-title>derivation.template.html: axioms, specifications, and a chain a checker can walk</spec-title>
+  <spec-title>canon.template.html: axioms, specifications, and a chain a checker can walk</spec-title>
   <spec-status>draft</spec-status>
   <spec-date>2026-08-06</spec-date>
   <spec-problem>
@@ -47,16 +47,27 @@ the code is the same operation, run the other way.</p>
 </spec-problem>
   <spec-design>
 <h2>Two types in one family file</h2>
-<p><code>docs/templates/derivation.template.html</code> declares
-<code>derivation-axiom</code> and <code>derivation-specification</code>, with
-<code>derivation-behaviour</code> nested inside the second. One file, because the
+<p><code>docs/templates/canon.template.html</code> declares
+<code>canon-axiom</code> and <code>canon-specification</code>, with
+<code>canon-behaviour</code> nested inside the second. One file, because the
 types only mean anything together, which is the same reason six knowledge types
 and four plan types each share a file. The
 <a href="../knowledge/2026-08-06-one-derivation-family-file.decision.html">decision
 recording this</a> carries the alternatives it beat.</p>
-<p>The name is not new. <a href="../knowledge/2026-07-25-tests-cite-not-modeled-as-nodes.decision.html">Tests
-cite, they are not nodes</a> refers to a hypothetical <code>derivation-*</code>
-family, so the family had a name in July and gets a file now.</p>
+<p>The name arrived late. <a href="../knowledge/2026-07-25-tests-cite-not-modeled-as-nodes.decision.html">Tests
+cite, they are not nodes</a> called this family <code>derivation-*</code> back in
+July, and this design carried that word until the template existed and the tags
+went on the page.</p>
+<p>Read together they say nothing. <q>Derivation</q> names the relation between
+one rung and the next, so a compound like <q>derivation-axiom</q> is two
+abstractions with no picture behind either. A canon is the standing body of
+principle a work answers to, which is what these documents hold, and every
+compound reads: the axiom in the canon, the behaviour in the canon.</p>
+<p>Naming the documents rather than the activity also matches the families
+already here. <code>knowledge</code> names what the graph holds and not the act
+of learning, and <code>language</code> names the vocabulary and not the writing.
+The methodology stays a phrase in prose, which is where it was doing its work
+anyway.</p>
 <h2>Instances carry no date</h2>
 <p>Both types describe what holds now. An axiom that stops being true gets
 revised or retired, and a specification that no longer matches the system is a
@@ -64,8 +75,8 @@ bug in one of the two. Neither belongs to the exploration that produced it, whic
 is the argument
 <a href="../templates/language.template.html">language.template.html</a> already
 made when it dropped the date prefix its siblings carry.</p>
-<p>So <code>docs/derivation/axioms/&lt;slug&gt;.axiom.html</code> and
-<code>docs/derivation/specifications/&lt;slug&gt;.specification.html</code>, and
+<p>So <code>docs/canon/axioms/&lt;slug&gt;.axiom.html</code> and
+<code>docs/canon/specifications/&lt;slug&gt;.specification.html</code>, and
 <code>add</code> takes no <code>--date</code> flag.</p>
 <h2>What an axiom is for</h2>
 <p>An axiom decides which options are good. It is the standing criterion someone

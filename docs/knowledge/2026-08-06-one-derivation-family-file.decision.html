@@ -2,28 +2,30 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Decision: Axiom and specification share one derivation family file</title>
+<title>Decision: Axiom and specification share one family file</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/knowledge.template.css">
 </head>
 <body>
 <knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
-  <knowledge-title>Axiom and specification share one derivation family file</knowledge-title>
+  <knowledge-title>Axiom and specification share one family file</knowledge-title>
   <knowledge-confidence>75</knowledge-confidence>
   <knowledge-status>completed</knowledge-status>
-  <knowledge-detail><p>The axiom and the specification go in one <code>derivation.template.html</code>,
+  <knowledge-detail><p>The axiom and the specification go in one <code>canon.template.html</code>,
 holding a template per type, rather than in a file each.</p>
 <p>This is the convention already in place. <code>knowledge.template.html</code>
 holds six types and <code>plan.template.html</code> holds four, in both cases
 because the types only mean anything together. An axiom that adjudicates nothing
 and a specification with nothing above it are each half an idea; the chain is
 the object, and a family file is how this project writes an object with parts.</p>
-<p>The name comes from the graph rather than from this conversation.
-<a href="./2026-07-25-tests-cite-not-modeled-as-nodes.decision.html">Tests cite,
-they are not nodes</a> already refers to <q>a hypothetical derivation-* family</q>,
-so the family had a name before it had a file.</p>
+<p>The family answered to <code>derivation</code> while this decision got made,
+a name <a href="./2026-07-25-tests-cite-not-modeled-as-nodes.decision.html">tests
+cite, they are not nodes</a> had already used in July. It became
+<code>canon</code> once the tags went on a page and read badly:
+<q>derivation</q> names the relation between one rung and the next, so the
+compound put two abstractions together with no picture behind either.</p>
 <p>What this gives up: a file called <code>specification.template.html</code>
-announces the weight of the thing it defines, and <code>derivation-specification</code>
+announces the weight of the thing it defines, and <code>canon-specification</code>
 does not. The word carries that weight instead, spelled out and never shortened,
 which the <a href="../language/terms/specification.term.html">term entry</a> now
 records.</p>

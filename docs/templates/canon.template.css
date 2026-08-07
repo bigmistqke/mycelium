@@ -1,0 +1,105 @@
+/* The canon-* field vocabulary. Every tag is hyphenated so it can
+   never collide with a current or future standard HTML element, and so it
+   could later be registered as a real custom element if that's ever
+   useful. Selectors stay scoped under their own root type so this file's
+   rules can never leak onto another template's same-named field tags. */
+canon-axiom, canon-specification {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  background: var(--code-bg);
+  margin: 1.25rem 0;
+}
+
+canon-axiom > canon-title,
+canon-specification > canon-title {
+  display: block;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 0.35rem;
+}
+
+/* An axiom's title is the principle itself, so it reads as a statement
+   standing on its own rather than as a heading over something else. */
+canon-axiom > canon-title {
+  font-style: italic;
+}
+
+canon-axiom > canon-confidence {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+canon-axiom > canon-confidence::before {
+  content: "confidence ";
+}
+
+canon-axiom > canon-confidence::after {
+  content: "%";
+}
+
+canon-axiom > canon-detail {
+  display: block;
+  margin-top: 0.75rem;
+}
+
+/* A specification is a list, and its behaviours are the list. Numbering
+   them in the margin gives a reader a position to refer to out loud
+   without putting a number in an id, where it would rot the first time
+   someone inserted a behaviour above it. */
+canon-specification {
+  counter-reset: behaviour;
+}
+
+canon-behaviour {
+  display: block;
+  counter-increment: behaviour;
+  position: relative;
+  padding: 0.5rem 0 0.5rem 3rem;
+  border-top: 1px solid var(--border);
+}
+
+canon-behaviour::before {
+  content: counter(behaviour);
+  position: absolute;
+  left: 0;
+  width: 2rem;
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+canon-behaviour > canon-title {
+  display: block;
+}
+
+/* An id is what a test cites, so it belongs on screen next to the
+   sentence it addresses rather than only in the markup. */
+canon-behaviour::after {
+  content: "#" attr(id);
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--mono, monospace);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Edges read as what they are: a specification's link up to an axiom, and
+   its links out to the files it describes. */
+canon-axiom > a[data-rel],
+canon-specification > a[data-rel] {
+  display: block;
+  font-size: 0.9rem;
+  margin-top: 0.35rem;
+}
+
+canon-axiom > a[data-rel]::before,
+canon-specification > a[data-rel]::before {
+  content: attr(data-rel) " → ";
+  color: var(--muted);
+  font-family: var(--mono, monospace);
+  font-size: 0.8rem;
+}

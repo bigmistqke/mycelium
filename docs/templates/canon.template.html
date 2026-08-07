@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template: canon-axiom and canon-specification</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="./canon.template.css">
+</head>
+<body>
+
+<h1>Template: canon-axiom, canon-specification</h1>
+<div class="meta">
+  <div><b>Node types:</b> <code>canon-axiom</code>, <code>canon-specification</code>,
+    with <code>canon-behaviour</code> nested inside the second</div>
+  <div><b>Instances:</b> <code>docs/canon/axioms/&lt;slug&gt;.axiom.html</code> and
+    <code>docs/canon/specifications/&lt;slug&gt;.specification.html</code>, with no date
+    prefix</div>
+  <div><b>Design:</b>
+    <a href="../specs/2026-08-06-canon-template-html.spec.html">canon.template.html:
+    axioms, specifications, and a chain a checker can walk</a></div>
+</div>
+
+<h2>Why this template exists</h2>
+<p>
+  This project could say what shape a document takes and whether its prose obeys the rules. It could
+  not say why the system took the shape it has, nor whether the code answers to anything.
+</p>
+<p>
+  These two types close that. An axiom holds the criterion someone appeals to when two designs both
+  work and one of them is right. A specification holds what one subsystem does, as a list of
+  behaviours a test can cite one at a time.
+</p>
+<p>
+  The chain runs axiom, then behaviour, then test, then implementation. The last two get no document
+  of their own: a test cites a behaviour from a comment in real source, the way a commit is a field
+  rather than a re-hosted node.
+</p>
+<p>
+  It runs in both directions, and that is the methodology rather than a property of it. Downward, an
+  axiom settles what a specification says and a specification says what a test checks. Upward, a
+  problem the chain did not predict means either that no behaviour speaks to the case or that two
+  behaviours want different things, so a fix has an altitude.
+</p>
+
+<h2>Two types in one file</h2>
+<p>
+  The types only mean anything together, which is the same reason six knowledge types and four plan
+  types each share a file. An axiom with no specification under it settles nothing, and a
+  specification with no axiom above it is a list of assertions nobody can argue with.
+</p>
+
+<h2>No date prefix, like the language family</h2>
+<p>
+  Both types describe what holds now. An axiom that stops being true gets revised or retired, and a
+  specification that no longer matches the system is a bug in one of the two.
+</p>
+<p>
+  Neither belongs to the exploration that produced it, so neither filename carries a date and
+  <code>add</code> takes no <code>--date</code> flag. Knowledge nodes and spec docs date their
+  instances because each one records a moment; these record a standing claim.
+</p>
+
+<h2>Shape</h2>
+<p>
+  All three types share <code>canon-title</code>, the way every <code>knowledge-*</code> type
+  shares <code>knowledge-title</code>. Fields carry the family prefix and not the type name, so
+  <code>canon-title</code> rather than <code>canon-axiom-title</code>.
+</p>
+<p>
+  For an axiom the title is the principle itself. For a behaviour it is the claim, in one falsifiable
+  sentence. For a specification it names the subsystem.
+</p>
+
+<template id="canon-axiom">
+  <canon-axiom>
+    <canon-title required></canon-title>
+    <canon-confidence required pattern="^(0|[1-9][0-9]?|100)$"></canon-confidence>
+    <canon-detail></canon-detail>
+  </canon-axiom>
+</template>
+<pre><code>&lt;canon-axiom&gt;
+  &lt;canon-title&gt;&hellip; the principle, in one line &hellip;&lt;/canon-title&gt;
+  &lt;canon-confidence&gt;90&lt;/canon-confidence&gt;
+  &lt;canon-detail&gt;&hellip; optional, free-form: the reasoning &hellip;&lt;/canon-detail&gt;
+  &lt;a data-rel="depends_on" href="./documents-are-the-source.axiom.html"&gt;narrows&lt;/a&gt;
+&lt;/canon-axiom&gt;</code></pre>
+
+<template id="canon-specification">
+  <canon-specification>
+    <canon-title required></canon-title>
+    <canon-behaviour></canon-behaviour>
+  </canon-specification>
+</template>
+
+<template id="canon-behaviour">
+  <canon-behaviour id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
+    <canon-title required></canon-title>
+  </canon-behaviour>
+</template>
+<pre><code>&lt;canon-specification&gt;
+  &lt;canon-title&gt;validate&lt;/canon-title&gt;
+  &lt;a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html"&gt;serves&lt;/a&gt;
+  &lt;a data-rel="describes" href="../../commands/validate.command.html"&gt;the subsystem&lt;/a&gt;
+  &lt;canon-behaviour id="exits-non-zero-on-failure"&gt;
+    &lt;canon-title&gt;validate exits non-zero when any audit fails.&lt;/canon-title&gt;
+  &lt;/canon-behaviour&gt;
+&lt;/canon-specification&gt;</code></pre>
+
+<h2>What each field is for</h2>
+<p>
+  An axiom carries a confidence and a specification does not. Someone who commits to a principle and
+  someone who infers one by reading a codebase write the same shape of document, and the inferred one
+  is the likelier misreading. Without the field nothing tells the two apart, which matters most in
+  the case this family exists to serve.
+</p>
+<p>
+  An axiom carries an optional detail, holding the reasoning behind the principle. A specification
+  carries no detail, and that absence is load-bearing rather than an oversight.
+</p>
+<p>
+  Each kind of content that is not a behaviour already has a family here. A criterion is an axiom,
+  something that happened is a knowledge node, a word's meaning is a language term, and the reasoning
+  behind a design is the design document. A detail field on a specification is the hole all four go
+  through, so this template declares none and the closed-field check rejects one.
+</p>
+<p>
+  Two sentences show what that catches. <q>This gate only became real on 2026-07-30; before that it
+  printed failures and exited 0</q> is an incident, and it belongs in the graph. <q>It exits non-zero
+  rather than warning because a gate people ignore is not a gate</q> glues a behaviour to its
+  criterion, and the halves separate into a behaviour and an axiom.
+</p>
+
+<h3>Every behaviour owes a test</h3>
+<p>
+  Nothing marks a behaviour as exempt. No keyword vocabulary sorts them and no attribute grades them,
+  because a behaviour is a claim about the system and a claim with no evidence under it is the same
+  failure an axiom reaching nothing already names.
+</p>
+<p>
+  An earlier draft split a behaviour into a requirement, which owed a test, and context, which did
+  not. The argument was that a requirement is a promise holding across refactors while context
+  describes internals a refactor may invalidate. That reasons from the code level, outside the chain,
+  where nothing below may make something above false.
+</p>
+<p>
+  So the question of what counts as a behaviour is not a question about sorting content inside a
+  specification. It asks which family a sentence belongs to, and the corpus answers that already.
+</p>
+
+<h3>An id is an address, not a summary</h3>
+<p>
+  The id attribute is what a test cites, so it is required and its pattern rejects any segment made
+  only of digits. A number rots the first time someone inserts a behaviour above it, which the
+  project that ran this methodology before learned from its own numbered axioms.
+</p>
+<p>
+  An id is named for the behaviour rather than for its wording, so a copy-edit never touches one.
+  Renaming an id fails every citation to it, which makes a rename deliberate and carries its
+  citations along.
+</p>
+<p>
+  What that leaves open, and no check here closes it: rewording a behaviour in place keeps every
+  citation resolving, so nothing tells the citing tests they now check something the document no
+  longer claims.
+</p>
+
+<h3>A behaviour is one sentence</h3>
+<p>
+  A test citing a paragraph cites several claims at once, and then <q>does a test exist for this</q>
+  stops having an answer. Where a paragraph seems necessary, the claim inside it is the behaviour and
+  the rest belongs to another family.
+</p>
+<p>
+  The schema does not enforce this. <code>pattern</code> tests trimmed text, so it cannot see block
+  markup, and a rule counting sentence terminators would reject a behaviour naming
+  <code>src/api.ts</code>. This one stays prose until an audit can carry it.
+</p>
+
+<h2>Edges</h2>
+<p>
+  A specification links up to the axioms it serves with <code>depends_on</code>, and an axiom links
+  up to the general one it narrows with the same relation. That edge is the whole composition
+  mechanism, with no region names, no scope attribute and no cascade.
+</p>
+<p>
+  Stored edges point up only. The downward reach a checker asks about gets computed from them, never
+  authored, because a hand-maintained reverse index rots and a forgotten entry in one looks exactly
+  like an axiom nothing derives from.
+</p>
+<p>
+  A specification also points at what it describes, with <code>describes</code>. It does not name its
+  subsystem, it points at one: the subsystem is whatever that link set covers. This follows
+  <a href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do not tag</a>, which refused
+  a hand-maintained vocabulary once already.
+</p>
+
+<h2>A test cites a behaviour from source</h2>
+<p>
+  A test gets no document. It joins the chain through a comment carrying
+  <code>@specification</code>, then a path from the repository root, then a fragment, one target per
+  line.
+</p>
+<p>
+  The path starts at the repository root because <code>src/</code> sits at a different depth from a
+  script block inside <code>docs/</code>, and one target should not need two spellings. The long word
+  rather than the short one, because <code>spec add</code> here writes a design document, so
+  <code>@spec</code> would name one family and point at another.
+</p>
+<pre><code>/**
+ * @specification docs/canon/specifications/validate.specification.html#exits-non-zero-on-failure
+ */
+it('exits non-zero when an audit fails', () =&gt; {</code></pre>
+<p>
+  Only a leaf test carries one. An enclosing group spans a whole file and answers to no single
+  behaviour, so a citation there means picking a child's target arbitrarily, and an inner group
+  restates what each child already carries.
+</p>
+<p>
+  A citation gets judged on where it lands, never on which tag carries it. A citation resolving to an
+  axiom rather than a behaviour is a finding: the test knows something no specification states.
+</p>
+
+<h2>Sample instances</h2>
+<p>
+  One sample per type, found by <code>data-conforms-to</code> the same way every instance in the
+  corpus is, so this file fails if one stops conforming. They are real instances, not illustrations.
+</p>
+<p>
+  Two of them fail on purpose, and the checks that catch them declare that failure in their own
+  <code>data-expects</code>. A check that has never fired is not known to work, and nothing else in
+  the corpus exercises these yet.
+</p>
+
+<div id="sample-instances" style="display:none">
+  <canon-axiom id="sample-axiom" data-conforms-to="./canon.template.html#canon-axiom">
+    <canon-title>A document is the source of truth, and the tooling reads it.</canon-title>
+    <canon-confidence>90</canon-confidence>
+  </canon-axiom>
+
+  <canon-axiom id="sample-ungrounded-axiom" data-conforms-to="./canon.template.html#canon-axiom">
+    <canon-title>A principle nobody has read down into any subsystem yet.</canon-title>
+    <canon-confidence>50</canon-confidence>
+  </canon-axiom>
+
+  <canon-specification id="sample-specification" data-conforms-to="./canon.template.html#canon-specification">
+    <canon-title>a sample subsystem</canon-title>
+    <a data-rel="depends_on" href="#sample-axiom">the axiom this serves</a>
+    <a data-rel="describes" href="./canon.template.css">the file it describes</a>
+    <canon-behaviour id="sample-untested-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
+      <canon-title>A claim no test cites, kept here so the exhaustive check has something to find.</canon-title>
+    </canon-behaviour>
+  </canon-specification>
+</div>
+
+<h2>Validator</h2>
+<p>
+  The generic validator in <a href="./template.template.html">template.template.html</a> handles
+  this, reading the schema attributes on the three <code>&lt;template&gt;</code> elements above. No
+  hand-written validator lives here.
+</p>
+<p>
+  The closed-field rule does the work that matters. A specification carrying a
+  <code>canon-detail</code> fails, because that field is absent from its template and the
+  allowed set is exactly what the template declares.
+</p>
+
+</body></html>
