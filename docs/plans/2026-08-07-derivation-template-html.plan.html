@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan: Build the derivation family and the four checks that walk its chain</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/plan.template.css">
+</head>
+<body>
+<plan-doc data-conforms-to="../templates/plan.template.html#plan-doc">
+  <plan-title>Build the derivation family and the four checks that walk its chain</plan-title>
+  <plan-date>2026-08-07</plan-date>
+  <plan-goal>&lt;p&gt;A derivation family exists, its authoring commands write it, and its audits run.&lt;/p&gt;&lt;p&gt;Terminal state has three parts. &lt;code&gt;docs/templates/derivation.template.html&lt;/code&gt; declares &lt;code&gt;derivation-axiom&lt;/code&gt; and &lt;code&gt;derivation-specification&lt;/code&gt;, with &lt;code&gt;derivation-behaviour&lt;/code&gt; nested inside the second. &lt;code&gt;mycelium derivation&lt;/code&gt; creates and edits both, so nothing here gets hand-authored. And &lt;code&gt;mycelium validate&lt;/code&gt; runs four checks over the chain, one repaired and three new.&lt;/p&gt;&lt;p&gt;No axiom or specification about mycelium itself gets written here. That follows the family existing, so the three chain checks pass over an empty corpus and earn their keep through deliberate violations in the template's own worked examples instead.&lt;/p&gt;</plan-goal>
+  <plan-architecture>Four tasks, ordered so each one can be checked when it lands. Task 1 repairs every-link-resolves to resolve fragments, which every later check rests on: all 8 fragment citations in the corpus today already resolve, so this lands green and opens no repair backlog. Task 2 writes the template, declaring both types and their validators. Task 3 adds the authoring commands, following the same add/update/link/unlink shape knowledge already has, with behaviour nested inside a specification the way plan-step nests inside plan-task. Task 4 adds the source-citation reader and the three chain checks on top of it. The reader is shared infrastructure for two of them and reuses commentRanges from code-comments.ts, which already returns each comment alongside what it sits above. Deliberately out of scope, per the spec: writing this repository's own axioms and specifications, any citation from an implementation up to a test, and coverage as evidence.</plan-architecture>
+  <plan-tech-stack>Node with native TS stripping, happy-dom for parsing, the existing validate crawler and the audit-discovery convention it already uses. TypeScript's own parser via code-comments.ts for reading citations out of source. No new dependencies.</plan-tech-stack>
+  <plan-global-constraints>Every plan-check runs from the repository root. pnpm mycelium validate is green at every step of this plan, unlike the harness-shape-audits pass: nothing here writes an axiom or a specification, so the three chain checks pass over an empty set from the moment they land. A check that has never fired is not known to work, which is why each one carries a deliberate violation in the template's worked example, declared in data-expects the way the three knowledge audits already do. The design this implements is docs/specs/2026-08-06-derivation-template-html.spec.html and its two open questions stay open: nothing connects a test to the code beneath it, and no check catches a file reached by two specifications.</plan-global-constraints>
+  <plan-task id="task-1" data-conforms-to="../templates/plan.template.html#plan-task">
+    <plan-title>Make every-link-resolves resolve the fragment</plan-title>
+    <plan-files>docs/templates/template.template.html</plan-files>
+    <plan-interfaces>The audit keeps its signature and its data-audits name. It gains id resolution inside the target document, and stops skipping an href that carries nothing but a fragment.</plan-interfaces>
+    <plan-step id="task-1-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Resolve the fragment against ids in the target document</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>The audit splits the fragment off at <code>href.split('#')[0]</code> and never
+looks at it again, so a citation to <code>#behaviour-3</code> passes whether or
+not anything carries that id. Parse the target and look the id up.</p>
+<p>All 8 fragment citations in the corpus resolve today, so this lands green.
+That is worth knowing before writing it: the change is a repair with no cleanup
+behind it, and a red result means the new code is wrong rather than the corpus.</p>
+<p>Keep the existing exclusions. Links inside <code>pre</code> or <code>code</code>
+stay skipped as illustrations, and absolute links stay skipped because this
+checks what the repository promises about itself.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium validate</plan-check-command>
+      </plan-check>
+    </plan-step>
+    <plan-step id="task-1-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Stop skipping an href that carries nothing but a fragment</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>A same-document citation like <code>#behaviour-3</code> leaves an empty path
+after the split, and the next line reads <code>if (!href) continue</code>. So
+that citation is not merely unchecked, it never reaches a check at all.</p>
+<p>An empty path means <q>this document</q>, so resolve the id against the file
+holding the link.</p>
+<p>Every behaviour a test cites lives in another file, so this case matters most
+inside a specification, where one behaviour refers to another beside it.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium validate</plan-check-command>
+      </plan-check>
+    </plan-step>
+    <plan-step id="task-1-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Give the audit a worked example that fails, and declare it in data-expects</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>This audit carries no <code>data-expects</code> today, so nothing demonstrates
+that it fires. The three knowledge audits each name a sample node their own
+worked example violates on purpose.</p>
+<p>The declaration runs both ways, which is the point. An undeclared violation
+fails the build, and a declared one that stops appearing fails it too, because
+the example built to demonstrate the audit has stopped demonstrating anything.</p>
+<p>One wrinkle to settle while writing this. The comparison matches whole
+strings, and this audit's violation reads <code>&lt;path&gt;: link to &lt;href&gt;
+does not resolve</code>, so the declaration either repeats the path or the
+violation format gets shortened first. The knowledge audits sidestep it by
+reporting a bare node id.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium validate</plan-check-command>
+      </plan-check>
+    </plan-step>
+  </plan-task>
+  <plan-task id="task-2" data-conforms-to="../templates/plan.template.html#plan-task">
+    <plan-title>Write derivation.template.html</plan-title>
+    <plan-files>docs/templates/derivation.template.html, docs/templates/derivation.template.css</plan-files>
+    <plan-interfaces>Two template ids, derivation-axiom and derivation-specification, with derivation-behaviour nested inside the second the way plan-step nests inside plan-task. Instances live at docs/derivation/axioms/&lt;slug&gt;.axiom.html and docs/derivation/specifications/&lt;slug&gt;.specification.html, with no date prefix.</plan-interfaces>
+    <plan-step id="task-2-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Declare derivation-axiom</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>Fields: a title carrying the principle itself, a confidence, and an optional
+detail. The title is the axiom, the way a knowledge title is the claim, and the
+detail holds the reasoning.</p>
+<p>Confidence is not decoration here. Someone who commits to a principle and
+someone who infers one by reading a codebase write the same shape of document,
+and the inferred one is the likelier misreading.</p>
+<p>Composition is a link and nothing else. A subsystem's axiom points up at the
+general one it narrows, so asking which axioms govern a subsystem walks upward
+from its own. No region attribute, no scope, no cascade.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium validate</plan-check-command>
+      </plan-check>
+    </plan-step>
+    <plan-step id="task-2-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Declare derivation-specification and derivation-behaviour</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>A specification holds a title, edges up to the axioms it serves, edges to the
+documents and source files it describes, and its behaviours. No prose field and
+no detail field, though every other type in this corpus has one.</p>
+<p>Leaving detail out is the load-bearing part. Each kind of content that is not
+a behaviour already has a family: a criterion is an axiom, an incident is a
+knowledge node, a word's meaning is a language term, and design reasoning is the
+design document. A detail field is the hole all four go through.</p>
+<p>A behaviour carries an id and one falsifiable sentence. The validator should
+reject a behaviour holding block-level markup, since a paragraph means a test
+citing it cites several claims at once.</p>
+<p>The id is an author-chosen slug, never a number. A number rots the first time
+someone inserts a behaviour above it, which the project that ran this methodology
+before learned from its own numbered axioms.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium validate</plan-check-command>
+      </plan-check>
+    </plan-step>
+    <plan-step id="task-2-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Write the worked examples the three chain checks will fire on</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>Three samples, one per check landing in task 4: an axiom nothing sits under, a
+behaviour no test cites, and a test citing nothing. Each one is the violation its
+check declares in <code>data-expects</code>.</p>
+<p>Writing them here rather than in task 4 means each check has something to fire
+on the moment it exists. Nothing else in the corpus will exercise them, since
+this plan writes no real axiom or specification.</p>
+<p>The third sample needs source rather than markup, because a test citing
+nothing is a comment in a file that is not HTML. A fixture file under
+<code>docs/</code> is the cheapest form, and where it lives is worth settling
+before task 4 reads it.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium validate</plan-check-command>
+      </plan-check>
+    </plan-step>
+  </plan-task>
+  <plan-task id="task-3" data-conforms-to="../templates/plan.template.html#plan-task">
+    <plan-title>Add the derivation authoring commands</plan-title>
+    <plan-files>docs/templates/derivation.template.html</plan-files>
+    <plan-interfaces>derivation add axiom|specification --title --file &lt;undated-slug&gt; [--confidence] [--detail]; derivation add behaviour &lt;file&gt; --id --title; derivation update; derivation link/unlink. No --date flag on either type, matching language rather than knowledge.</plan-interfaces>
+    <plan-step id="task-3-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Write add, for both types and for a nested behaviour</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>Both types describe what holds now, so neither filename carries a date and
+<code>add</code> takes no <code>--date</code> flag. This follows the language
+family rather than knowledge and spec, which both date their instances.</p>
+<p>A behaviour goes into an existing specification, so its <code>add</code> takes
+that file as a positional argument the way <code>plan add step</code> takes a
+plan-doc. Reject a slug that already carries a date, as both other families now
+do after the doubled-prefix bug.</p>
+<p>Nothing hand-authors a node in this project, and this is what closes that gap
+for the new family.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium derivation --help</plan-check-command>
+        <plan-check-output>add</plan-check-output>
+      </plan-check>
+    </plan-step>
+    <plan-step id="task-3-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Write update, link and unlink</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>Same three commands knowledge already carries, for the same reasons.
+<code>update</code> fills or clears a field on a node that exists, and
+<code>link</code> upserts on the pair of relation and target, so it can correct a
+label but never a direction.</p>
+<p><code>unlink</code> is what a mis-aimed edge needs, since running
+<code>link</code> again leaves a second wrong edge beside the right one. An axiom
+pointing the wrong way up its refinement chain is exactly that mistake.</p>
+<p>No <code>del</code> in this pass. Deleting a specification means dropping every
+behaviour inside it, and every citation from source pointing at those behaviours
+stays behind in files this command does not own.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium derivation --help</plan-check-command>
+        <plan-check-output>unlink</plan-check-output>
+      </plan-check>
+    </plan-step>
+  </plan-task>
+  <plan-task id="task-4" data-conforms-to="../templates/plan.template.html#plan-task">
+    <plan-title>Read citations out of source, then add the three chain checks</plan-title>
+    <plan-files>docs/templates/derivation.template.html</plan-files>
+    <plan-interfaces>A citation reader that returns every @specification tag in the corpus with the test it sits above. Three audits declared beside the types they check, discovered by the existing crawler with no engine change: grounded, exhaustive, cited.</plan-interfaces>
+    <plan-step id="task-4-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Write the citation reader</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>A citation is <code>@specification</code>, then a path from the repository
+root, then a fragment, one target per line, inside a comment. Repository-root
+paths because <code>src/</code> sits at a different depth from a script block
+inside <code>docs/</code>, and one target should not need two spellings.</p>
+<p><code>commentRanges</code> in <code>code-comments.ts</code> already returns
+every comment in a TypeScript or JavaScript source alongside what it sits above,
+where <code>subject.declares</code> names the kind and <code>subject.name</code>
+names the thing. So one call gives both the citation and the name of the test
+carrying it.</p>
+<p>Two places hold code, not one. Eight documents in this corpus keep their
+implementation in a script block, so the reader covers plain source files and
+script blocks inside documents.</p>
+<p>Only a leaf test carries a citation. An enclosing group spans a whole file and
+answers to no single behaviour, so a citation there means picking a child's
+target arbitrarily, and an inner group restates what each child already carries.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium validate</plan-check-command>
+      </plan-check>
+    </plan-step>
+    <plan-step id="task-4-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Write grounded</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>Every axiom reaches a behaviour beneath it, and every specification reaches an
+axiom above it. An axiom with nothing under it is a belief nobody acted on.</p>
+<p>Stored edges point up only. A specification names its axioms and an axiom
+names the one it refines, so the downward reach this check asks about gets
+computed from those, never authored. A hand-maintained reverse index rots, and a
+forgotten entry in one looks exactly like an axiom nothing derives from.</p>
+<p>The honest cost, which the design states: a broad axiom nobody has read down
+into a subsystem reaches nothing there, and this check cannot tell that apart
+from an axiom that does not apply. Writing the reading is the work.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium validate</plan-check-command>
+      </plan-check>
+    </plan-step>
+    <plan-step id="task-4-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Write exhaustive and cited</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>Exhaustive: every behaviour has a test citing it. Cited: every test cites a
+behaviour. Two directions of one joint, with no exemption on either side, which
+is what dropping the requirement marking bought.</p>
+<p>Cited is the one that closes the loop. A test citing nothing is a claim about
+the system that no specification makes, so either a behaviour is missing above it
+or the test checks something nobody meant to promise.</p>
+<p>Judge a citation on where it lands, never on the tag carrying it. The earlier
+project checked the tag name and let sixteen citations through that reached
+straight past a layer to an axiom. All sixteen were real gaps, and three rules got
+written to fill them, so a citation resolving to an axiom is a finding rather
+than a shortcut.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium validate</plan-check-command>
+      </plan-check>
+    </plan-step>
+    <plan-step id="task-4-step-4" data-conforms-to="../templates/plan.template.html#plan-step">
+      <plan-title>Put the three checks in the roster and in CLAUDE.md</plan-title>
+      <plan-status>pending</plan-status>
+      <plan-detail><p>The roster reads families and audits off the command scripts themselves, so
+the three new checks appear there once they carry the usual attributes. Confirm
+it rather than assume it.</p>
+<p>CLAUDE.md is maintained by hand and has been wrong before. It listed three
+knowledge commands the day <code>unlink</code> and <code>del</code> already
+existed, and an agent reading it concluded an <code>unlink</code> was the next
+gap to build.</p>
+<p>So the derivation signatures go in beside the others, with the same warning
+that <code>--help</code> outranks the block.</p>
+</plan-detail>
+      <plan-check data-conforms-to="../templates/plan.template.html#plan-check">
+        <plan-check-command>pnpm mycelium --help</plan-check-command>
+        <plan-check-output>cited</plan-check-output>
+      </plan-check>
+    </plan-step>
+  </plan-task>
+</plan-doc>
+</body></html>
