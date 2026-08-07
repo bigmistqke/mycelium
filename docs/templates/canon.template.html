@@ -265,4 +265,367 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
   allowed set is exactly what the template declares.
 </p>
 
+<h2>Authoring commands</h2>
+<p>
+  The same <code>type="mycelium/command"</code> convention every other family uses. Nothing here
+  gets hand-authored, so no file content passes through whoever is writing.
+</p>
+<p>
+  There is no <code>del</code> in this pass. Deleting a specification drops every behaviour inside
+  it, and each citation from source pointing at one stays behind in a file this command does not
+  own, which turns a delete into a broken chain nothing warned about.
+</p>
+
+<script type="mycelium/command">
+  import type { CommandContext } from "../../src/api.ts"
+  import { dirname, relative as relativePath } from "node:path"
+
+  const TYPES = ['axiom', 'specification']
+
+  // Fields in the order they should appear in a written document, per type.
+  // The validator does not care about order; a reader does, and laying out
+  // every instance the same way makes a directory of them skimmable.
+  const FIELD_ORDER = {
+    axiom: ['canon-title', 'canon-confidence', 'canon-detail'],
+    specification: ['canon-title'],
+    behaviour: ['canon-title'],
+  }
+
+  // Fields whose value is free-form markup rather than plain text.
+  const RICH_FIELDS = new Set(['canon-detail'])
+
+  // The flag each field is spelled as, so an error can name what was typed
+  // rather than the tag it would have become.
+  const FLAG_FOR = {
+    'canon-title': '--title',
+    'canon-confidence': '--confidence',
+    'canon-detail': '--detail',
+  }
+
+  function fieldValues(args) {
+    return {
+      'canon-title': args.title,
+      'canon-confidence': args.confidence,
+      'canon-detail': args.detail,
+    }
+  }
+
+  // A flag from the wrong type is an error, never a no-op. add writes only the
+  // fields its type declares, so without this `add specification --detail "…"`
+  // would report success with the content nowhere. That is exactly the failure
+  // a specification's missing detail field exists to prevent, so letting it
+  // through silently here would undo the point of leaving the field out.
+  function rejectForeignFields(type, values) {
+    const allowed = new Set(FIELD_ORDER[type])
+    for (const tag of Object.keys(values)) {
+      if (values[tag] === undefined || allowed.has(tag)) continue
+      if (tag === 'canon-detail' && type !== 'axiom') {
+        throw new Error(
+          `--detail is not a field of canon-${type}. Only an axiom carries reasoning; ` +
+          `a criterion is an axiom, something that happened is a knowledge node, and a ` +
+          `word's meaning is a language term.`
+        )
+      }
+      throw new Error(`${FLAG_FOR[tag]} is not a field of canon-${type}.`)
+    }
+  }
+
+  // Where an entry lives, derived from its own name. The suffix already says
+  // which type a file is, so the directory follows from it and a caller never
+  // types one. This is also what lets link compute an href between two files
+  // in different directories without learning where either sits.
+  function pathFor(file) {
+    const match = /\.(axiom|specification)\.html$/.exec(file)
+    if (!match) throw new Error(`<file> must end in .axiom.html or .specification.html, got "${file}"`)
+    return `canon/${match[1] === 'axiom' ? 'axioms' : 'specifications'}/${file}`
+  }
+
+  function requireArgs(...checks) {
+    for (const [value, label] of checks) {
+      if (value === undefined) throw new Error(`missing required argument: ${label}`)
+    }
+  }
+
+  function rootOf(doc) {
+    return doc.querySelector('canon-axiom, canon-specification')
+  }
+
+  /**
+   * Create a new canon-axiom or canon-specification, or add a behaviour to a
+   * specification that already exists.
+   *
+   *   mycelium canon add axiom --title "…" --file <slug>
+   *     --confidence NN [--detail "…" | --detail -]
+   *
+   *   mycelium canon add specification --title "…" --file <slug>
+   *
+   *   mycelium canon add behaviour <file> --id <slug> --title "…"
+   *
+   * The command writes to canon/axioms/<slug>.axiom.html or
+   * canon/specifications/<slug>.specification.html. There is NO date prefix and
+   * no --date flag, unlike knowledge add and spec add. Both types describe what
+   * holds now: an axiom that stops being true gets revised or retired, and a
+   * specification that no longer matches the system is a bug in one of the two.
+   * So --file is the whole name, and a slug carrying a date is rejected,
+   * because it would assert that the principle dates from that day.
+   *
+   * For an axiom, --title is the principle itself and --confidence says how far
+   * to trust it. Someone who commits to a principle and someone who infers one
+   * by reading a codebase write the same shape of document, and the inferred one
+   * is the likelier misreading, so the number is the only thing telling them
+   * apart.
+   *
+   * For a specification, --title names the subsystem. There is no --detail: each
+   * kind of content that is not a behaviour already has a family, and a detail
+   * field is the hole all of them go through.
+   *
+   * A behaviour takes an existing specification as a positional argument, the
+   * way `plan add step` takes a plan-doc. --title is the claim, in one
+   * falsifiable sentence.
+   *
+   * --id is what a test cites, so it is required. Its pattern rejects any
+   * segment made only of digits, because a number rots the first time someone
+   * inserts a behaviour above it.
+   *
+   * A specification's links to its axioms and to the files it describes are a
+   * separate step: mycelium canon link <file> <target> --rel depends_on.
+   *
+   * The command validates what it built against its own type before writing, so
+   * a missing required field or a malformed id fails and no file appears.
+   */
+  export async function add({ fs, args, cli }: CommandContext) {
+    const type = args._[0]
+    if (type === 'behaviour') return addBehaviour({ fs, args, cli })
+    if (!TYPES.includes(type)) {
+      throw new Error(`<type> must be one of ${[...TYPES, 'behaviour'].join('|')}, got "${type ?? '(nothing)'}"`)
+    }
+    requireArgs([args.file, '--file'])
+
+    const dated = /^(\d{4}-\d{2}-\d{2})-(.+)$/.exec(args.file)
+    if (dated) {
+      throw new Error(
+        `--file takes a plain slug; a canon entry carries no date, unlike knowledge and spec ` +
+        `files. Pass --file ${dated[2]}.`
+      )
+    }
+
+    const values = fieldValues(args)
+    rejectForeignFields(type, values)
+    if (values['canon-detail'] === '-') values['canon-detail'] = await cli.readStdin()
+
+    const path = pathFor(`${args.file}.${type}.html`)
+    const doc = fs.create(path, `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title></title>
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../../templates/canon.template.css">
+</head>
+<body>
+
+<canon-${type} data-conforms-to="../../templates/canon.template.html#canon-${type}">
+</canon-${type}>
+
+</body>
+</html>
+`)
+
+    const label = { axiom: 'Axiom', specification: 'Specification' }[type]
+    doc.querySelector('title').textContent = `${label}: ${args.title}`
+
+    const root = doc.querySelector(`canon-${type}`)
+    for (const tag of FIELD_ORDER[type]) {
+      const value = values[tag]
+      if (value === undefined || value === '') continue
+      const el = doc.createElement(tag)
+      if (RICH_FIELDS.has(tag)) el.innerHTML = value
+      else el.textContent = value
+      root.appendChild(el)
+    }
+
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
+  }
+
+  async function addBehaviour({ fs, args, cli }) {
+    requireArgs([args._[1], '<file>'], [args.id, '--id'], [args.title, '--title'])
+    const path = pathFor(args._[1])
+    const doc = fs.get(path)
+    const root = doc.querySelector('canon-specification')
+    if (!root) throw new Error(`${args._[1]} is not a canon-specification`)
+    if (root.querySelector(`canon-behaviour[id="${args.id}"]`)) {
+      throw new Error(`${args._[1]} already carries a behaviour with id "${args.id}"`)
+    }
+
+    const el = doc.createElement('canon-behaviour')
+    el.setAttribute('id', args.id)
+    el.setAttribute('data-conforms-to', '../../templates/canon.template.html#canon-behaviour')
+    const title = doc.createElement('canon-title')
+    title.textContent = args.title
+    el.appendChild(title)
+    root.appendChild(el)
+
+    const result = await cli.validate(el, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
+  }
+
+  /**
+   * Update fields on an existing canon entry.
+   *
+   *   mycelium canon update <file> [--title "…"] [--confidence NN]
+   *     [--detail "…" | --detail - | --detail ""]
+   *
+   *   mycelium canon update <file> --behaviour <id> [--title "…"]
+   *
+   * <file> is a whole existing filename including its .axiom.html or
+   * .specification.html suffix — contrast add, whose --file is a slug you
+   * choose. The command reads the type off the document's own root element.
+   *
+   * Omitted flags leave a field untouched, any other value upserts it, and an
+   * explicit empty value removes it. --detail carries free-form markup and
+   * takes "-" to read from stdin.
+   *
+   * --behaviour names a behaviour inside a specification and edits that instead
+   * of the specification itself. Rewording one is deliberately possible and
+   * deliberately quiet: the id survives, so every citation to it still resolves
+   * and nothing tells the citing tests they now check something the document no
+   * longer claims. No check here closes that.
+   *
+   * There is no way to change an id. Renaming one fails every citation to it,
+   * which is what makes a rename deliberate rather than silent, so it stays a
+   * thing you do by hand across the files that cite it.
+   */
+  export async function update({ fs, args, cli }: CommandContext) {
+    requireArgs([args._[0], '<file>'])
+    const path = pathFor(args._[0])
+    const doc = fs.get(path)
+    const root = rootOf(doc)
+    const type = root.tagName.toLowerCase().replace('canon-', '')
+
+    let target = root
+    if (args.behaviour !== undefined) {
+      target = root.querySelector(`canon-behaviour[id="${args.behaviour}"]`)
+      if (!target) throw new Error(`${args._[0]} carries no behaviour with id "${args.behaviour}"`)
+    }
+
+    const detail = args.detail === '-' ? await cli.readStdin() : args.detail
+    const values = { 'canon-title': args.title, 'canon-confidence': args.confidence, 'canon-detail': detail }
+    if (args.behaviour === undefined) rejectForeignFields(type, values)
+    else if (values['canon-confidence'] !== undefined || values['canon-detail'] !== undefined) {
+      throw new Error('a behaviour carries only a title; --confidence and --detail belong to an axiom.')
+    }
+
+    for (const tag of FIELD_ORDER[args.behaviour === undefined ? type : 'behaviour']) {
+      const value = values[tag]
+      if (value === undefined) continue
+      const existing = target.querySelector(tag)
+      if (value === '') {
+        existing?.remove()
+        continue
+      }
+      if (existing) {
+        if (RICH_FIELDS.has(tag)) existing.innerHTML = value
+        else existing.textContent = value
+        continue
+      }
+      const el = doc.createElement(tag)
+      if (RICH_FIELDS.has(tag)) el.innerHTML = value
+      else el.textContent = value
+      target.appendChild(el)
+    }
+
+    // add builds the head title as "Type: <title>", so update keeps the two in
+    // step or renaming an entry silently desyncs them.
+    if (args.title && args.behaviour === undefined) {
+      const headTitle = doc.querySelector('title')
+      const label = { axiom: 'Axiom', specification: 'Specification' }[type]
+      if (headTitle) headTitle.textContent = `${label}: ${args.title}`
+    }
+
+    const result = await cli.validate(target, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
+  }
+
+  // Where an edge points, for a target that may not be a canon entry at all.
+  // A specification names the axioms it serves and also the files it
+  // describes, and those files are commands, templates and source — anywhere
+  // in the repository. So a target ending in a canon suffix resolves to its
+  // own directory, and anything else names a path from the repository
+  // root, which is the only spelling that reaches both docs/ and src/.
+  function hrefFor(fromPath, target) {
+    const isEntry = /\.(axiom|specification)\.html$/.test(target)
+    const fromDir = dirname(`docs/${fromPath}`)
+    const toPath = isEntry ? `docs/${pathFor(target)}` : target
+    const href = relativePath(fromDir, toPath)
+    return href.startsWith('.') ? href : `./${href}`
+  }
+
+  /**
+   * Add a data-rel edge from one canon entry to another file.
+   *
+   *   mycelium canon link <from-file> <target> --rel <rel> --label "…"
+   *
+   * The command writes the edge inside <from-file>, so the argument order decides its
+   * direction. Stored edges point up only: a specification names the axioms it
+   * serves and an axiom names the general one it narrows. The downward reach a
+   * checker asks about gets computed from those and never authored, because a
+   * hand-maintained reverse index rots and a forgotten entry in one looks
+   * exactly like an axiom nothing derives from.
+   *
+   * <target> is another canon entry by filename, or any other file as a path
+   * from the repository root — docs/commands/validate.command.html, src/api.ts.
+   * A specification uses the second form to say what it describes, which is how
+   * it points at a subsystem rather than naming one.
+   *
+   * Upserts on the pair of relation and target, so this corrects a label but
+   * never a direction or a wrong --rel; both of those leave a second, wrong
+   * edge beside the right one. Use unlink and then link.
+   */
+  export function link({ fs, args }: CommandContext) {
+    requireArgs([args._[0], '<from-file>'], [args._[1], '<target>'], [args.rel, '--rel'])
+    const path = pathFor(args._[0])
+    const doc = fs.get(path)
+    const root = rootOf(doc)
+    const href = hrefFor(path, args._[1])
+    const label = args.label ?? ''
+
+    const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
+    if (existing) {
+      existing.textContent = label
+      return
+    }
+    const a = doc.createElement('a')
+    a.setAttribute('data-rel', args.rel)
+    a.setAttribute('href', href)
+    a.textContent = label
+    // Before the first behaviour, so a specification reads as what it answers
+    // to and then what it claims.
+    const firstBehaviour = root.querySelector('canon-behaviour')
+    if (firstBehaviour) root.insertBefore(a, firstBehaviour)
+    else root.appendChild(a)
+  }
+
+  /**
+   * Remove a data-rel edge from one canon entry to another file.
+   *
+   *   mycelium canon unlink <from-file> <target> --rel <rel>
+   *
+   * What a mis-aimed edge needs, since link upserts on the pair of relation and
+   * target and can never correct a direction. An axiom pointing the wrong way up
+   * its refinement chain is exactly that mistake.
+   */
+  export function unlink({ fs, args }: CommandContext) {
+    requireArgs([args._[0], '<from-file>'], [args._[1], '<target>'], [args.rel, '--rel'])
+    const path = pathFor(args._[0])
+    const doc = fs.get(path)
+    const root = rootOf(doc)
+    const href = hrefFor(path, args._[1])
+    const a = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
+    if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
+    a.remove()
+  }
+</script>
+
 </body></html>
