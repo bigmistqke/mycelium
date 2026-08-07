@@ -662,26 +662,33 @@
    * to <from-file>, right before its closing tag. Both <from-file> and
    * <to-file> must already exist.
    *
+   * <to-file> may climb out of the knowledge directory: pass
+   * ../templates/knowledge.template.html to point an edge at a template. The
+   * href comes out as the same string a person would write by hand, so the
+   * upsert below finds a hand-authored edge rather than appending a second
+   * one beside it.
+   *
    * Upserts on (rel, href): re-linking the same pair with the same rel
    * rewrites that edge's label instead of appending a second copy, so
    * the command is idempotent and a label can be corrected without
    * hand-editing. A different rel between the same two nodes is a
    * different edge and is added alongside.
    */
-  export function link({ fs, args }: CommandContext) {
+  export function link({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
     fs.get(`knowledge/${args._[1]}`)
     const doc = fs.get(`knowledge/${args._[0]}`)
     const root = doc.querySelector('[data-conforms-to]')
     const label = args.label ?? args._[2] ?? ''
-    const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${args.href}"]`)
+    const href = cli.href(`knowledge/${args._[0]}`, `knowledge/${args._[1]}`)
+    const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
     if (existing) {
       existing.textContent = label
       return
     }
     const a = doc.createElement('a')
     a.setAttribute('data-rel', args.rel)
-    a.setAttribute('href', args.href)
+    a.setAttribute('href', href)
     a.textContent = label
     root.appendChild(a)
   }
@@ -726,11 +733,12 @@
    * permanently wrong edge that only a hand edit could clear. Throws if
    * no such edge exists, rather than silently doing nothing.
    */
-  export function unlink({ fs, args }: CommandContext) {
+  export function unlink({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
     const doc = fs.get(`knowledge/${args._[0]}`)
     const root = doc.querySelector('[data-conforms-to]')
-    const a = root.querySelector(`a[data-rel="${args.rel}"][href="${args.href}"]`)
+    const href = cli.href(`knowledge/${args._[0]}`, `knowledge/${args._[1]}`)
+    const a = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
     if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
     a.remove()
   }

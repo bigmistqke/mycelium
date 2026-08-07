@@ -550,17 +550,18 @@ async function main() {
 
   const args = parseArgs(commandArgs)
 
-  // Generic path math for link-style commands: if the invocation has two
-  // file arguments (`link <from> <to> …`), precompute the relative href
-  // between them so the command never has to know where either file lives
-  // on disk.
-  if (args._.length >= 2) {
-    const [from, to] = args._
-    args.href = "./" + relativePath(dirname(resolvePath(docsDir, from)), resolvePath(docsDir, to))
+  // Path math for link-style commands. Both arguments are paths from the docs
+  // root, because the command resolves them itself — it knows which directory
+  // its family writes to and the engine does not. A target above the source's
+  // directory keeps its leading `..`; only a sibling or a descendant gets the
+  // `./` prefix, so an href here reads the same as a hand-written one.
+  const href: Cli["href"] = (from, to) => {
+    const path = relativePath(dirname(resolvePath(docsDir, from)), resolvePath(docsDir, to))
+    return path.startsWith(".") ? path : `./${path}`
   }
 
   const validate: Validate = (root, instancePath) => validateInstance(docsDir, instancePath, root)
-  const cli: Cli = { validate, readStdin, parseHTML }
+  const cli: Cli = { validate, readStdin, parseHTML, href }
 
   const fs = new Filesystem(docsDir)
   try {

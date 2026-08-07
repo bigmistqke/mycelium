@@ -28,6 +28,12 @@ export interface Cli {
   // Reads standard input to the end. What `--detail -` and its siblings use.
   readStdin: () => Promise<string>
   parseHTML: (html: string) => { document: Document }
+  // The relative href linking one document to another, both named from the
+  // docs root the same way `fs.get` names them. The engine used to compute
+  // this from the raw arguments, which only worked while a family kept every
+  // file in one directory — see
+  // docs/specs/2026-08-07-link-href-from-the-command-base.spec.html.
+  href: (from: string, to: string) => string
 }
 
 // The write side. A command mutates the documents it is handed, in place, and

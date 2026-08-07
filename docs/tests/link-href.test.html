@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: the href link writes when the two files sit in different directories</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/test.template.css">
+</head>
+<body>
+
+<test-doc data-conforms-to="../templates/test.template.html#test-doc">
+  <test-title>link and unlink agree on an href that leaves the directory</test-title>
+  <test-subject><a href="../templates/language.template.html">language.template.html</a>
+    and <a href="../templates/knowledge.template.html">knowledge.template.html</a></test-subject>
+
+  <test-case id="language-link-crosses-directories" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>an edge from a term to a guide climbs out of terms/</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // The engine used to resolve both filenames against docs/ while the
+      // command resolved them against language/terms/ or language/guides/. Two
+      // bases, so the href came out right only for two files sharing a
+      // directory, where the mistakes cancelled.
+      import type { TestContext } from "../../src/api.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        const term = sandbox.mycelium(
+          "language", "add", "term",
+          "--title", "drift",
+          "--file", "drift",
+          "--part-of-speech", "noun",
+          "--status", "approved",
+          "--meaning", "a copy of a rule that stops matching the rule",
+        )
+        assert(term.ok, `add term failed: ${term.stderr || term.stdout}`)
+
+        const guide = sandbox.mycelium(
+          "language", "add", "guide",
+          "--title", "Say what a thing does",
+          "--file", "say-what-it-does",
+          "--pass", "the command writes the edge",
+          "--fail", "the edge is written",
+        )
+        assert(guide.ok, `add guide failed: ${guide.stderr || guide.stdout}`)
+
+        const done = sandbox.mycelium(
+          "language", "link", "drift.term.html", "say-what-it-does.guide.html",
+          "--rel", "supports", "--label", "why drift matters",
+        )
+        assert(done.ok, `link failed: ${done.stderr || done.stdout}`)
+
+        const html = sandbox.read("language/terms/drift.term.html")
+        assert(
+          html.includes('href="../guides/say-what-it-does.guide.html"'),
+          `the edge points somewhere else: ${html.match(/<a data-rel[^>]*>/)?.[0] ?? "no edge at all"}`,
+        )
+
+        const back = sandbox.mycelium(
+          "language", "unlink", "drift.term.html", "say-what-it-does.guide.html", "--rel", "supports",
+        )
+        assert(back.ok, `unlink failed: ${back.stderr || back.stdout}`)
+        assert(!sandbox.read("language/terms/drift.term.html").includes("data-rel"), "unlink left the edge behind")
+      }
+    </script>
+  </test-case>
+
+  <test-case id="knowledge-link-reaches-a-template" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>an edge to a template keeps its leading dot-dot</test-name>
+    <test-status>PENDING</test-status>
+    <script type="mycelium/test">
+      // One node in the real graph points at a template, and a person wrote
+      // that edge by hand. The command has to produce the same string, or the
+      // upsert appends a second edge beside it and unlink never finds either.
+      import type { TestContext } from "../../src/api.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        const today = new Date().toISOString().slice(0, 10)
+        const made = sandbox.mycelium(
+          "knowledge", "add", "outcome",
+          "--title", "The templates exist",
+          "--confidence", "90",
+          "--file", "templates-exist",
+        )
+        assert(made.ok, `add failed: ${made.stderr || made.stdout}`)
+
+        const node = `${today}-templates-exist.outcome.html`
+        const target = "../templates/knowledge.template.html"
+        const done = sandbox.mycelium("knowledge", "link", node, target, "--rel", "produced", "--label", "the six templates")
+        assert(done.ok, `link failed: ${done.stderr || done.stdout}`)
+
+        const html = sandbox.read(`knowledge/${node}`)
+        assert(html.includes(`href="${target}"`), `the edge reads ${html.match(/href="\.[^"]*"/)?.[0] ?? "nothing"}`)
+        assert(!html.includes('href="./../'), "the href carries a leading ./ that no hand-written edge has")
+
+        const back = sandbox.mycelium("knowledge", "unlink", node, target, "--rel", "produced")
+        assert(back.ok, `unlink failed: ${back.stderr || back.stdout}`)
+        assert(!sandbox.read(`knowledge/${node}`).includes("data-rel"), "unlink left the edge behind")
+      }
+    </script>
+  </test-case>
+</test-doc>
+
+</body>
+</html>

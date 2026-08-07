@@ -397,14 +397,18 @@
   // and a copy would let a test pass against a stale duplicate of the thing it
   // is testing.
   //
-  // Every real import in a command script is either a node builtin or a sibling
-  // in the templates directory. The one import that reaches outside is a type
-  // import, which erases, so nothing needs the rest of the repository present.
+  // src arrives the same way, one level up, because a command script imports
+  // from it by a path relative to its own file: language.template.html reaches
+  // for ../../src/utils.ts, and the module hook resolves that inside whatever
+  // tree the document sits in. Node follows the symlink before resolving
+  // anything further, so the real file's own imports find the real
+  // node_modules.
   function sandboxFor(root) {
     const dir = mkdtempSync(join(tmpdir(), "mycelium-test-"))
     const docs = join(dir, "docs")
     mkdirSync(docs, { recursive: true })
     symlinkSync(join(root, "docs", "templates"), join(docs, "templates"))
+    symlinkSync(join(root, "src"), join(dir, "src"))
     return {
       dir,
       // The real command, in a real process, against this tree. Slower than
