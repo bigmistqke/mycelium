@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: An href computed from the base the command actually uses</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>An href computed from the base the command actually uses</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-07</spec-date>
+  <spec-problem>
+<p><code>src/run.ts</code> builds an href for every invocation carrying two
+positional arguments. It resolves both names against <code>docs/</code> and
+prefixes <code>./</code> to the result. Each link command resolves its own
+arguments against a subdirectory instead: <code>knowledge/</code> for one
+family, <code>language/terms/</code> or <code>language/rules/</code> for
+another.</p>
+<p>Two bases, one answer. The href comes out right only when both files sit in
+the same directory, because there the two mistakes cancel.</p>
+<p>One command reproduces the failure:</p>
+<pre><code>mycelium language link drift.term.html no-outside-references.rule.html --rel supports
+
+  writes href="./no-outside-references.rule.html" into language/terms/
+  the rule lives in language/rules/</code></pre>
+<p>The <code>every-link-resolves</code> audit catches the broken href, so no
+commit carries one. The command still writes it and says nothing, so a person
+learns what the command did by reading an audit.</p>
+<p>The same arithmetic puts one existing edge out of reach.
+<code>2026-07-23-template-series-built.outcome.html</code> points at
+<code>../templates/knowledge.template.html</code>, which a person wrote by
+hand. <code>unlink</code> computes the same wrong href, so it deletes whatever
+<code>link</code> just wrote and never finds that edge. Retargeting it is a
+prerequisite for closing the relation vocabulary, so this defect blocks that
+work.</p>
+</spec-problem>
+  <spec-design>
+<p>The engine cannot know where a family keeps its files, so it should stop
+guessing. The command knows already, since it resolves the path before it
+reads or writes anything. Hand the command a function and let it pass both
+paths in.</p>
+<pre><code>href(from: string, to: string): string</code></pre>
+<p>Each argument names a file from the docs root, the same vocabulary
+<code>fs.get</code> and <code>fs.create</code> take. The function returns the
+relative href from the first file's directory to the second. It joins
+<code>cli</code> beside <code>validate</code>, <code>readStdin</code> and
+<code>parseHTML</code>, because it belongs to the engine rather than to any one
+document.</p>
+<pre><code>a.setAttribute('href', cli.href(pathFor(args._[0]), pathFor(args._[1])))</code></pre>
+<h4 id="the-leading-dot">The leading dot, only where it belongs</h4>
+<p>The old line prefixed <code>./</code> unconditionally, which turns a climb
+out of the directory into <code>./../templates/knowledge.template.html</code>.
+Hand-authored edges write <code>../templates/knowledge.template.html</code>,
+and the two strings differ, so an upsert appends a duplicate and
+<code>unlink</code> misses. The function adds the prefix only to a path
+starting with a name.</p>
+<h4 id="what-goes-away">What goes away</h4>
+<p>The precomputation in <code>src/run.ts</code> disappears entirely. It fired
+on argument count alone, so any command taking two positional arguments
+collected an href whether or not it wanted one. Four commands read
+<code>args.href</code> today, <code>link</code> and <code>unlink</code> in two
+families, and each one calls the function instead.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Closing the relation vocabulary. This spec brings the two unlisted edges
+within reach of the CLI; deciding which relation each one means carries its own
+judgment and waits for its own change.</p>
+<p>How <code>knowledge generate</code> reads an edge, which takes the basename
+of an href and prefixes <code>knowledge/</code>. An edge leaving the directory
+confuses it, and always has.</p>
+<p>Every other command's argument handling. Nothing changes about the paths a
+command accepts or the place it writes.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Whether the function should check that both files exist. Every caller calls
+<code>fs.get</code> on both already, which throws on a missing file, so a
+second check would only move the error message.</p>
+<p>Whether the engine should hold a resolver for a family spanning three
+directories. <code>language</code> keeps <code>pathFor</code> and
+<code>resolveEntry</code> inside its own template, and nothing outside that
+template needs them.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
