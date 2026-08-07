@@ -395,7 +395,12 @@
   // .rule.html suffix already says which type a file is, so the directory
   // follows from it and a caller never has to type one. That is also what
   // keeps the suffix from being redundant now that the directory repeats it.
-  function pathFor(file) {
+  // Exported, because the engine computes the href between two file arguments
+  // and can only do that correctly if it knows where each one sits. Without
+  // it both resolve straight against docs/, which is right only when the two
+  // share a directory: a term linking to another term worked, and a term
+  // linking to a rule wrote ./passive-voice.rule.html from inside terms/.
+  export function pathFor(file) {
     const match = /\.(term|rule|guide)\.html$/.exec(file)
     if (!match) throw new Error(`<file> must end in .term.html, .rule.html or .guide.html, got "${file}"`)
     return `language/${match[1]}s/${file}`

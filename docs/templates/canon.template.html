@@ -278,7 +278,6 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
 
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
-  import { dirname, relative as relativePath } from "node:path"
 
   const TYPES = ['axiom', 'specification']
 
@@ -332,12 +331,32 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
 
   // Where an entry lives, derived from its own name. The suffix already says
   // which type a file is, so the directory follows from it and a caller never
-  // types one. This is also what lets link compute an href between two files
-  // in different directories without learning where either sits.
-  function pathFor(file) {
+  // types one.
+  //
+  // Exported, because the engine computes the href between two file arguments
+  // and runs the math through this. The two types sit in different
+  // directories. Without this the engine computes an href as though both sat
+  // in docs/, which is right only when two files share a directory, and here
+  // they never do.
+  //
+  // Anything that is not an entry passes through unchanged, already spelled
+  // relative to docs/. A specification names the axioms it serves and also the
+  // files it describes, and those are commands, templates and source. One
+  // address space for both: commands/validate.command.html, ../src/api.ts.
+  export function pathFor(file) {
     const match = /\.(axiom|specification)\.html$/.exec(file)
-    if (!match) throw new Error(`<file> must end in .axiom.html or .specification.html, got "${file}"`)
+    if (!match) return file
     return `canon/${match[1] === 'axiom' ? 'axioms' : 'specifications'}/${file}`
+  }
+
+  // What a command needs when the argument must be an entry, since pathFor
+  // now lets a describes-target through and would otherwise turn a typo into
+  // a missing-file error naming a path nobody typed.
+  function entryPathFor(file) {
+    if (!/\.(axiom|specification)\.html$/.test(file)) {
+      throw new Error(`<file> must end in .axiom.html or .specification.html, got "${file}"`)
+    }
+    return pathFor(file)
   }
 
   function requireArgs(...checks) {
@@ -413,7 +432,7 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
     rejectForeignFields(type, values)
     if (values['canon-detail'] === '-') values['canon-detail'] = await cli.readStdin()
 
-    const path = pathFor(`${args.file}.${type}.html`)
+    const path = entryPathFor(`${args.file}.${type}.html`)
     const doc = fs.create(path, `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -451,7 +470,7 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
 
   async function addBehaviour({ fs, args, cli }) {
     requireArgs([args._[1], '<file>'], [args.id, '--id'], [args.title, '--title'])
-    const path = pathFor(args._[1])
+    const path = entryPathFor(args._[1])
     const doc = fs.get(path)
     const root = doc.querySelector('canon-specification')
     if (!root) throw new Error(`${args._[1]} is not a canon-specification`)
@@ -499,7 +518,7 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
    */
   export async function update({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<file>'])
-    const path = pathFor(args._[0])
+    const path = entryPathFor(args._[0])
     const doc = fs.get(path)
     const root = rootOf(doc)
     const type = root.tagName.toLowerCase().replace('canon-', '')
@@ -548,20 +567,6 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
     if (!result.ok) throw new Error(result.errors.join('\n'))
   }
 
-  // Where an edge points, for a target that may not be a canon entry at all.
-  // A specification names the axioms it serves and also the files it
-  // describes, and those files are commands, templates and source — anywhere
-  // in the repository. So a target ending in a canon suffix resolves to its
-  // own directory, and anything else names a path from the repository
-  // root, which is the only spelling that reaches both docs/ and src/.
-  function hrefFor(fromPath, target) {
-    const isEntry = /\.(axiom|specification)\.html$/.test(target)
-    const fromDir = dirname(`docs/${fromPath}`)
-    const toPath = isEntry ? `docs/${pathFor(target)}` : target
-    const href = relativePath(fromDir, toPath)
-    return href.startsWith('.') ? href : `./${href}`
-  }
-
   /**
    * Add a data-rel edge from one canon entry to another file.
    *
@@ -585,10 +590,9 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
    */
   export function link({ fs, args }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<target>'], [args.rel, '--rel'])
-    const path = pathFor(args._[0])
-    const doc = fs.get(path)
+    const doc = fs.get(entryPathFor(args._[0]))
     const root = rootOf(doc)
-    const href = hrefFor(path, args._[1])
+    const href = args.href
     const label = args.label ?? ''
 
     const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
@@ -618,11 +622,9 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
    */
   export function unlink({ fs, args }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<target>'], [args.rel, '--rel'])
-    const path = pathFor(args._[0])
-    const doc = fs.get(path)
+    const doc = fs.get(entryPathFor(args._[0]))
     const root = rootOf(doc)
-    const href = hrefFor(path, args._[1])
-    const a = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
+    const a = root.querySelector(`a[data-rel="${args.rel}"][href="${args.href}"]`)
     if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
     a.remove()
   }

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: The engine computed a link's href against a directory no instance sits in</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>The engine computed a link's href against a directory no instance sits in</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-detail><p>A command taking two file arguments got <code>args.href</code> precomputed by
+the engine, which resolved both against <code>docs/</code> itself. No instance
+lives there. The result came out right only when the two files shared a
+directory, because then the same error appeared on both sides and cancelled.</p>
+<p>Knowledge nodes all sit in one directory, so this held for the family that
+introduced it and looked like working path math. Language entries sit in three,
+and a term linking to a rule wrote
+<code>./passive-voice.rule.html</code> from inside <code>terms/</code>. Nothing
+had made such a link yet, so nothing had failed.</p>
+<p>The first attempt at the canon family worked around it instead: that
+family's <code>link</code> computed its own href locally and ignored the one the
+engine handed it. Two mechanisms for one job, and the engine still handed every
+canon command a wrong value that any later reader would trust.</p>
+<p>A family knows where its own instances live and the engine does not, so the
+fix is a <code>pathFor</code> the family exports and the engine runs its math
+through. Each family now declares one, including knowledge, where the single
+prefix had been inlined at four call sites.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-07-build-derivation-family.action.html">found while writing the canon family's link command</a>
+</knowledge-observation>
+</body></html>

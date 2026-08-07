@@ -533,6 +533,15 @@
   // can ever catch (which file to write, which file to open, whether the user
   // gave --rel) — each type's knowledge-validates script handles everything
   // else, run via `validate` below.
+  // Where a node lives. Every node sits in one directory, so this is a single
+  // prefix rather than the suffix lookup the language and canon families need.
+  // Exported all the same: the engine computes the href between two file
+  // arguments through this, and a family that leaves it out gets path math run
+  // against docs/ itself, which is not where any instance sits.
+  export function pathFor(file) {
+    return `knowledge/${file}`
+  }
+
   function requireArgs(...checks) {
     for (const [value, label] of checks) {
       if (value === undefined) throw new Error(`missing required argument: ${label}`)
@@ -676,8 +685,8 @@
    */
   export function link({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
-    fs.get(`knowledge/${args._[1]}`)
-    const doc = fs.get(`knowledge/${args._[0]}`)
+    fs.get(pathFor(args._[1]))
+    const doc = fs.get(pathFor(args._[0]))
     const root = doc.querySelector('[data-conforms-to]')
     const label = args.label ?? args._[2] ?? ''
     const href = cli.href(`knowledge/${args._[0]}`, `knowledge/${args._[1]}`)
