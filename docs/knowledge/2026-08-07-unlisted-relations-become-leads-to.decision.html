@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Both unlisted relations become leads_to, and one of them turns around</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Both unlisted relations become leads_to, and one of them turns around</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Two edges in 550 carry a relation no vocabulary lists, and the corpus
+already shows what each one meant.</p>
+<p><code>template-series-built.outcome</code> points at
+<code>../templates/knowledge.template.html</code> with
+<code>produced</code>. Three actions point at the spec file they wrote using
+<code>leads_to</code> and the label <q>the spec this action produced</q>, so
+the relation for a node pointing at the artifact it made is
+<code>leads_to</code>, and the word <q>produced</q> belongs in the label.</p>
+<p><code>plan-template-html-complete.outcome</code> points back at its action
+with <code>resolves</code>. Here the direction is the defect rather than the
+word: an action leads to an outcome, and the audit wants the incoming edge on
+the outcome. So this one moves onto the action and turns around, which is the
+shape CLAUDE.md prescribes and the shape every other action-and-outcome pair
+already has.</p>
+<p>Retargeting the first needed <code>knowledge link</code> to address a file
+outside its own directory, which is why this waited.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-06-edges-outside-the-schema.observation.html">the census that found both edges</a>
+</knowledge-decision>
+</body></html>
