@@ -20,7 +20,7 @@
     <plan-interfaces>The audit keeps its signature and its data-audits name. It gains id resolution inside the target document, and stops skipping an href that carries nothing but a fragment.</plan-interfaces>
     <plan-step id="task-1-step-1" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Resolve the fragment against ids in the target document</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail><p>The audit splits the fragment off at <code>href.split('#')[0]</code> and never
 looks at it again, so a citation to <code>#behaviour-3</code> passes whether or
 not anything carries that id. Parse the target and look the id up.</p>
@@ -37,7 +37,7 @@ checks what the repository promises about itself.</p>
     </plan-step>
     <plan-step id="task-1-step-2" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Stop skipping an href that carries nothing but a fragment</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail><p>A same-document citation like <code>#behaviour-3</code> leaves an empty path
 after the split, and the next line reads <code>if (!href) continue</code>. So
 that citation is not merely unchecked, it never reaches a check at all.</p>
@@ -52,7 +52,7 @@ inside a specification, where one behaviour refers to another beside it.</p>
     </plan-step>
     <plan-step id="task-1-step-3" data-conforms-to="../templates/plan.template.html#plan-step">
       <plan-title>Give the audit a worked example that fails, and declare it in data-expects</plan-title>
-      <plan-status>pending</plan-status>
+      <plan-status>completed</plan-status>
       <plan-detail><p>This audit carries no <code>data-expects</code> today, so nothing demonstrates
 that it fires. The three knowledge audits each name a sample node their own
 worked example violates on purpose.</p>
