@@ -22,17 +22,12 @@
       // An axiom with nothing under it cannot be falsified, because nothing
       // beneath it can push back. That is what grounded exists to say.
       import type { TestContext } from "../../src/api.ts"
-      import { violationsOf } from "./chain-run.ts"
+      import { axiomDoc, violationsFrom } from "./audit-corpus.ts"
 
-      export default async function ({ assert, sandbox }: TestContext) {
-        const made = sandbox.mycelium(
-          "canon", "add", "axiom",
-          "--file", "lonely", "--confidence", "50",
-          "--title", "A principle nothing derives from.",
-        )
-        assert(made.ok, `add axiom failed: ${made.stderr || made.stdout}`)
-
-        const found = violationsOf(sandbox.mycelium("validate").stdout, "grounded")
+      export default async function ({ assert }: TestContext) {
+        const found = await violationsFrom("canon.template.html", "grounded", {
+          "docs/canon/axioms/lonely.axiom.html": axiomDoc("A principle nothing derives from."),
+        })
         assert(
           found.includes("docs/canon/axioms/lonely.axiom.html"),
           `grounded did not report the lonely axiom; it reported: ${found.join(", ") || "nothing"}`,
@@ -49,13 +44,14 @@
       // The other half of the same check. A specification answering to nothing
       // is a list of assertions nobody can argue with.
       import type { TestContext } from "../../src/api.ts"
-      import { violationsOf } from "./chain-run.ts"
+      import { specificationDoc, violationsFrom } from "./audit-corpus.ts"
 
-      export default async function ({ assert, sandbox }: TestContext) {
-        const made = sandbox.mycelium("canon", "add", "specification", "--file", "floating", "--title", "a floating subsystem")
-        assert(made.ok, `add specification failed: ${made.stderr || made.stdout}`)
-
-        const found = violationsOf(sandbox.mycelium("validate").stdout, "grounded")
+      export default async function ({ assert }: TestContext) {
+        const found = await violationsFrom("canon.template.html", "grounded", {
+          "docs/canon/specifications/floating.specification.html": specificationDoc("a floating subsystem", {
+            behaviours: [{ id: "does-a-thing", title: "It does a thing." }],
+          }),
+        })
         assert(
           found.includes("docs/canon/specifications/floating.specification.html"),
           `grounded did not report the floating specification; it reported: ${found.join(", ") || "nothing"}`,
@@ -69,25 +65,30 @@
     <test-status>PENDING</test-status>
     <a data-rel="depends_on" href="../canon/specifications/canon-chain.specification.html#reach-through-a-narrower-axiom-counts">the behaviour this checks</a>
     <script type="mycelium/test">
-      // The downward reach is computed from the upward edges rather than
-      // authored, so it has to run the whole way down and not one step. A
+      // The downward reach gets computed from the upward edges rather than
+      // authored, so it has to walk the whole way down and not one step. A
       // general axiom that only a narrower one names is still grounded.
+      //
+      // `unreached` is the control. This case decides on an absence, and a
+      // check that has stopped working also reports an absence, so it has to
+      // find something first.
       import type { TestContext } from "../../src/api.ts"
-      import { violationsOf } from "./chain-run.ts"
+      import { axiomDoc, specificationDoc, violationsFrom } from "./audit-corpus.ts"
 
-      export default async function ({ assert, sandbox }: TestContext) {
-        const run = (...argv: string[]) => {
-          const done = sandbox.mycelium(...argv)
-          assert(done.ok, `${argv.join(" ")} failed: ${done.stderr || done.stdout}`)
-        }
-        run("canon", "add", "axiom", "--file", "general", "--confidence", "80", "--title", "The general principle.")
-        run("canon", "add", "axiom", "--file", "narrow", "--confidence", "80", "--title", "The narrower principle.")
-        run("canon", "link", "narrow.axiom.html", "general.axiom.html", "--rel", "depends_on", "--label", "narrows")
-        run("canon", "add", "specification", "--file", "under", "--title", "a subsystem")
-        run("canon", "add", "behaviour", "under.specification.html", "--id", "does-a-thing", "--title", "It does a thing.")
-        run("canon", "link", "under.specification.html", "narrow.axiom.html", "--rel", "depends_on", "--label", "serves")
-
-        const found = violationsOf(sandbox.mycelium("validate").stdout, "grounded")
+      export default async function ({ assert }: TestContext) {
+        const found = await violationsFrom("canon.template.html", "grounded", {
+          "docs/canon/axioms/general.axiom.html": axiomDoc("The general principle."),
+          "docs/canon/axioms/narrow.axiom.html": axiomDoc("The narrower principle.", "./general.axiom.html"),
+          "docs/canon/axioms/unreached.axiom.html": axiomDoc("A principle nothing serves."),
+          "docs/canon/specifications/under.specification.html": specificationDoc("a subsystem", {
+            serves: "../axioms/narrow.axiom.html",
+            behaviours: [{ id: "does-a-thing", title: "It does a thing." }],
+          }),
+        })
+        assert(
+          found.includes("docs/canon/axioms/unreached.axiom.html"),
+          `the control is missing, so this case cannot read an absence; grounded reported: ${found.join(", ") || "nothing"}`,
+        )
         assert(
           !found.includes("docs/canon/axioms/general.axiom.html"),
           "grounded reported the general axiom, so it stopped after one step down instead of walking the chain",
@@ -102,22 +103,31 @@
     <a data-rel="depends_on" href="../canon/specifications/canon-chain.specification.html#a-behaviour-no-case-cites-fails">the behaviour this checks</a>
     <script type="mycelium/test">
       // Nothing marks a behaviour exempt, so a claim with no evidence under it
-      // is reported however reasonable it looks.
+      // gets reported however reasonable it looks.
       import type { TestContext } from "../../src/api.ts"
-      import { violationsOf } from "./chain-run.ts"
+      import { specificationDoc, testDoc, violationsFrom } from "./audit-corpus.ts"
 
-      export default async function ({ assert, sandbox }: TestContext) {
-        const run = (...argv: string[]) => {
-          const done = sandbox.mycelium(...argv)
-          assert(done.ok, `${argv.join(" ")} failed: ${done.stderr || done.stdout}`)
-        }
-        run("canon", "add", "specification", "--file", "claimed", "--title", "a claimed subsystem")
-        run("canon", "add", "behaviour", "claimed.specification.html", "--id", "nobody-checks-this", "--title", "Nobody checks this one.")
-
-        const found = violationsOf(sandbox.mycelium("validate").stdout, "exhaustive")
+      export default async function ({ assert }: TestContext) {
+        const found = await violationsFrom("canon.template.html", "exhaustive", {
+          "docs/canon/specifications/claimed.specification.html": specificationDoc("a claimed subsystem", {
+            behaviours: [
+              { id: "somebody-checks-this", title: "Somebody checks this one." },
+              { id: "nobody-checks-this", title: "Nobody checks this one." },
+            ],
+          }),
+          "docs/tests/covered.test.html": testDoc(
+            "covered",
+            "a case covering the first behaviour",
+            "../canon/specifications/claimed.specification.html#somebody-checks-this",
+          ),
+        })
         assert(
           found.includes("docs/canon/specifications/claimed.specification.html#nobody-checks-this"),
           `exhaustive did not report the uncited behaviour; it reported: ${found.join(", ") || "nothing"}`,
+        )
+        assert(
+          !found.includes("docs/canon/specifications/claimed.specification.html#somebody-checks-this"),
+          "exhaustive reported the behaviour a case does cite, so it is not reading citations at all",
         )
       }
     </script>
@@ -131,15 +141,27 @@
       // The direction that closes the loop. A case citing nothing is a claim
       // about the system that no specification makes.
       import type { TestContext } from "../../src/api.ts"
-      import { violationsOf, caseDoc } from "./chain-run.ts"
+      import { specificationDoc, testDoc, violationsFrom } from "./audit-corpus.ts"
 
-      export default async function ({ assert, sandbox }: TestContext) {
-        sandbox.write("tests/silent.test.html", caseDoc("says-nothing", "a case citing nothing at all", null))
-
-        const found = violationsOf(sandbox.mycelium("validate").stdout, "cited")
+      export default async function ({ assert }: TestContext) {
+        const found = await violationsFrom("canon.template.html", "cited", {
+          "docs/canon/specifications/claimed.specification.html": specificationDoc("a claimed subsystem", {
+            behaviours: [{ id: "somebody-checks-this", title: "Somebody checks this one." }],
+          }),
+          "docs/tests/silent.test.html": testDoc("says-nothing", "a case citing nothing at all"),
+          "docs/tests/speaking.test.html": testDoc(
+            "says-something",
+            "a case citing a behaviour",
+            "../canon/specifications/claimed.specification.html#somebody-checks-this",
+          ),
+        })
         assert(
           found.includes("docs/tests/silent.test.html#says-nothing"),
           `cited did not report the silent case; it reported: ${found.join(", ") || "nothing"}`,
+        )
+        assert(
+          !found.includes("docs/tests/speaking.test.html#says-something"),
+          "cited reported the case that does cite a behaviour, so it is not reading citations at all",
         )
       }
     </script>
@@ -154,21 +176,17 @@
       // Reaching past the layer that should have stated the claim is a finding:
       // the test knows something no specification says.
       import type { TestContext } from "../../src/api.ts"
-      import { violationsOf, caseDoc } from "./chain-run.ts"
+      import { axiomDoc, testDoc, violationsFrom } from "./audit-corpus.ts"
 
-      export default async function ({ assert, sandbox }: TestContext) {
-        const made = sandbox.mycelium(
-          "canon", "add", "axiom",
-          "--file", "reached-past", "--confidence", "70",
-          "--title", "A principle a test reached for directly.",
-        )
-        assert(made.ok, `add axiom failed: ${made.stderr || made.stdout}`)
-        sandbox.write(
-          "tests/overreaching.test.html",
-          caseDoc("cites-an-axiom", "a case citing an axiom", "../canon/axioms/reached-past.axiom.html"),
-        )
-
-        const found = violationsOf(sandbox.mycelium("validate").stdout, "cited")
+      export default async function ({ assert }: TestContext) {
+        const found = await violationsFrom("canon.template.html", "cited", {
+          "docs/canon/axioms/reached-past.axiom.html": axiomDoc("A principle a test reached for directly."),
+          "docs/tests/overreaching.test.html": testDoc(
+            "cites-an-axiom",
+            "a case citing an axiom",
+            "../canon/axioms/reached-past.axiom.html",
+          ),
+        })
         assert(
           found.includes("docs/tests/overreaching.test.html#cites-an-axiom"),
           `cited accepted a citation landing on an axiom; it reported: ${found.join(", ") || "nothing"}`,
