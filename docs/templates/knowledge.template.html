@@ -535,14 +535,7 @@
   // cli.href, because which directory a family writes to is the family's
   // business and not the engine's.
   function pathFor(file: string) {
-    // A node filename is dated and carries its type. Anything else is a path
-    // from docs/, which is how a node cites the spec it led to, the template it
-    // produced, or a source file. CLAUDE.md's rule is that a node may refer to
-    // whatever a reader can open, and that reaches past this one directory.
-    if (/^\d{4}-\d{2}-\d{2}-.+\.(goal|decision|option|action|outcome|observation)\.html$/.test(file)) {
-      return `knowledge/${file}`
-    }
-    return file
+    return `knowledge/${file}`
   }
 
   // Throws a clean, specific error for the handful of arguments no validator
