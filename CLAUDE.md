@@ -234,6 +234,63 @@ SUCCESS into a document.
 `validate` cannot test the figure engine, and no audit ever will: it parses
 with happy-dom, which computes no layout, so every rect is zero. See
 `docs/knowledge/2026-08-05-happy-dom-computes-no-layout.observation.html`.
+### The canon family: what the project holds true, and what it promises
+
+`canon.template.html` carries three types. An axiom is a principle, with a
+confidence saying how far to trust it. A specification names a subsystem and
+holds behaviours, each one a falsifiable claim in a single sentence carrying
+an `id`. Full design:
+`docs/specs/2026-08-06-canon-template-html.spec.html`.
+
+```bash
+pnpm mycelium canon add axiom --title "…" --file <slug> --confidence NN [--detail "…" | --detail -]
+pnpm mycelium canon add specification --title "…" --file <slug>
+pnpm mycelium canon add behaviour <file> --id <slug> --title "…"
+pnpm mycelium canon update <file> [--title "…"] [--confidence NN] [--detail "…"]
+pnpm mycelium canon link <from-file> <target> --rel <rel> --label "…"
+pnpm mycelium canon unlink <from-file> <target> --rel <rel>
+```
+
+`--file` here is the whole name and carries **no date**, unlike `knowledge
+add` and `spec add`, and a slug carrying one is rejected. There is no
+`--date` flag either. Both types describe what holds now: an axiom that stops
+being true gets revised or retired, and a specification that no longer
+matches the system is a bug in one of the two, so a date on the filename
+would assert that the principle dates from that day.
+
+Stored edges point up only. A specification names the axioms it serves and an
+axiom names the general one it narrows. Nothing authors the downward
+direction, because a hand-maintained reverse index rots and a forgotten entry
+in one looks exactly like an axiom nothing derives from.
+
+A test gets no document. It joins the chain through a comment carrying
+`@specification`, then a path from the repository root, then a fragment, one
+target per line:
+
+```ts
+/**
+ * @specification docs/canon/specifications/validate.specification.html#exits-non-zero-on-failure
+ */
+it('exits non-zero when an audit fails', () => {
+```
+
+The long word, not `@spec`: `spec add` writes a design document here, so the
+short one would name one family and point at another. Only a leaf test
+carries a citation — a group spans a whole file and answers to no single
+behaviour. A citation gets judged on where it lands, never on which tag
+carries it, so one resolving to an axiom rather than a behaviour is a finding
+rather than a shortcut: the test knows something no specification states.
+
+Three audits check the chain, and `pnpm mycelium validate` runs them with
+everything else. `grounded`: every axiom reaches a behaviour beneath it, and
+every specification reaches an axiom above it. `exhaustive`: every behaviour
+has a test citing it. `cited`: every test cites a behaviour. Nothing is
+exempt on either side of that last joint, which is what having no
+requirement marking buys.
+
+The honest limit, which no check closes: rewording a behaviour in place keeps
+every citation resolving, so nothing tells the citing tests they now check
+something the document no longer claims.
 
 ### The Core Rule
 
@@ -315,8 +372,8 @@ the observation conflicts with something already in the graph — that is
 what feeds `knowledge recover`'s contested-claims list.
 
 Root `knowledge-goal` nodes are the only valid orphans — exactly what
-`orphans-except-goal` (one of `knowledge.template.html`'s two collocated
-audits) checks for, now for real: `pnpm mycelium validate` runs it against the actual
+`orphans-except-goal` (one of the audits collocated in
+`knowledge.template.html`) checks for, now for real: `pnpm mycelium validate` runs it against the actual
 files, not just sample markup. Still worth checking by eye before running
 `pnpm mycelium validate`, but it's an automated gate now, not just a judgment call.
 
@@ -381,7 +438,7 @@ real files:
 
 ```bash
 pnpm mycelium knowledge recover   # the graph's live threads
-pnpm mycelium validate                     # every node validated, all four audits run
+pnpm mycelium validate                     # every node validated, every audit run
 git status                        # current state
 ```
 `knowledge recover` replaces the old `/recover` slash command, which drove
@@ -393,7 +450,8 @@ SessionStart hook runs it automatically, so this is here as documentation
 rather than something to remember.
 
 `pnpm mycelium validate` validates every instance against its own template and runs
-the four graph-wide audits. It **exits non-zero on failure** — true only
+every graph-wide audit. `mycelium --help` lists them, so read that rather
+than a count here. It **exits non-zero on failure** — true only
 since 2026-07-30; before that it printed failures and exited 0, so no audit
 had ever actually gated anything.
 
