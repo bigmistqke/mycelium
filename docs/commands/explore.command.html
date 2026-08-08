@@ -46,16 +46,23 @@
    * it — every matching element in a document, not just the first. That
    * is the same generic signal and the same querySelectorAll validate.ts's
    * own crawl uses, so this needs no per-family knowledge and picks up
-   * any future family for free. That also means a template file's own live worked-example
-   * instances (knowledge.template.html has six, one per type) are listed
-   * too, same as validate.ts counts them — this tool doesn't special-case
-   * templates any more than it special-cases any other family. Files
+   * any future family for free.
+   *
+   * A template file's own worked examples are the one thing skipped. An
+   * instance inside a document declaring a type demonstrates that type rather
+   * than claiming anything, which is how nothing-outside-the-type already
+   * reads the corpus. Nothing marks one: the document it sits in says so, and
+   * a marker would be a hand-written copy of that with somewhere to forget it.
+   *
+   * validate still checks every one of them, since conforming is half their
+   * job. This command counts the corpus, which is a different question. Files
    * with no data-conforms-to element at all (DESIGN.html, command files
    * like this one) are silently skipped, not an error: absence of the
    * attribute just means "not an instance."
    */
   export async function list({ fs }: CommandContext) {
     for (const { path, doc } of fs.list(".")) {
+      if (doc.querySelector("template[id]")) continue
       for (const root of Array.from(doc.querySelectorAll("[data-conforms-to]"))) {
         const tag = root.tagName.toLowerCase()
         const conformsTo = root.getAttribute("data-conforms-to")
