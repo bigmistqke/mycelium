@@ -13,7 +13,7 @@
 import { readFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { loadCheck, loadGenericValidator, parseHTML, resolveTemplateRef } from "../../src/utils.ts"
+import { loadCheck, loadGenericValidator, loadModule, parseHTML, resolveTemplateRef } from "../../src/utils.ts"
 import type { AuditFs, AuditResult } from "../../src/api.ts"
 
 const DOCS = resolve(dirname(fileURLToPath(import.meta.url)), "..")
@@ -129,4 +129,137 @@ export function testDoc(id: string, name: string, cites?: string): string {
     <script type="text/mycelium-test">assert(true)</script>
   </test-case>
 </test-doc>`
+}
+
+// A corpus that reads through to the real repository unless the case provided
+// the path, and a way to run the whole of validate against one.
+//
+// This is what makes a check about the command itself containable. Nothing
+// touches disk, nothing spawns, and the verdict comes back as a value. A case
+// states only the documents it cares about; the templates, the commands and
+// everything else arrive from the real tree, so a fixture stays a few lines
+// rather than a copy of the corpus.
+import { existsSync } from "node:fs"
+import type { Corpus, ValidateEnv, ValidateReport } from "../../src/api.ts"
+import { walkFiles } from "../../src/utils.ts"
+
+const REPO = resolve(DOCS, "..")
+
+export function overlay(materials: Record<string, string>): Corpus {
+  const provided = Object.keys(materials)
+  const has = (path: string) => Object.hasOwn(materials, path)
+  return {
+    root: REPO,
+    list(dir = ".", options = {}) {
+      const prefix = !dir || dir === "." ? "" : `${dir}/`
+      const real = existsSync(resolve(REPO, dir))
+        ? walkFiles(resolve(REPO, dir)).map((file) => file.slice(REPO.length + 1))
+        : []
+      // A provided path wins over the real one it shadows, and a provided path
+      // with no real counterpart still lists, which is how a case adds a
+      // document to a tree it did not write.
+      return [...new Set([...real, ...provided])]
+        .filter((path) => path.startsWith(prefix) && (!options.ext || path.endsWith(options.ext)))
+        .sort()
+    },
+    read: (path) => (has(path) ? materials[path] : readFileSync(resolve(REPO, path), "utf8")),
+    exists: (path) => has(path) || existsSync(resolve(REPO, path)),
+    parse(path) {
+      return parseHTML(this.read(path)).document as unknown as Document
+    },
+  }
+}
+
+// One whole validate run over provided materials.
+//
+// `checks` substitutes an audit's function by the address of the script
+// declaring it, which is how a case gets an audit that reports exactly what the
+// case wants to test the comparison against. Substituting code is deliberate
+// and separate from substituting documents: a script inside a document the case
+// wrote has no real file for the module hook to load, so without this it could
+// not run at all.
+export async function runValidateOn(
+  materials: Record<string, string>,
+  options: { docsDir?: string; checks?: Record<string, (fs: Corpus) => unknown> } = {},
+): Promise<ValidateReport> {
+  const command = resolve(DOCS, "commands/validate.command.html")
+  const script = parseHTML(readFileSync(command, "utf8")).document.querySelector('script[type="mycelium/command"]')
+  const { runValidate } = (await loadModule(command, script)) as {
+    runValidate: (env: ValidateEnv) => Promise<ValidateReport>
+  }
+  const corpus = overlay(materials)
+  const env: ValidateEnv = {
+    corpus,
+    docsDir: options.docsDir ?? "docs",
+    async loadCheck(file, script) {
+      const name = script.getAttribute("data-audits") ?? script.getAttribute("data-validates")
+      const provided = options.checks?.[`${file}#${name}`]
+      if (provided) return provided as (...args: unknown[]) => unknown
+      return loadCheck(resolve(REPO, file), script)
+    },
+    // Always the real one. The generic validator is code, and code stays real
+    // unless a case deliberately provides it, so a tree pointed at by --dir
+    // still gets checked by the validator this repository actually ships.
+    loadGenericValidator: () => loadGenericValidator(resolve(REPO, "docs")),
+  }
+  return runValidate(env)
+}
+
+// A document declaring one audit, for a case testing what validate does with
+// what an audit reports. The script is a placeholder: the run substitutes the
+// function through `checks`, so what matters here is the tag carrying the name
+// and the expectations.
+export function auditDoc(name: string, ...expects: string[]): string {
+  const declared = expects.length ? ` data-expects="${expects.join(" ")}"` : ""
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Audit: ${name}</title>
+</head>
+<body>
+<script type="mycelium/audit" data-audits="${name}"${declared}>
+  export default function () {
+    return { ok: true, violations: [] }
+  }
+</script>
+</body>
+</html>
+`
+}
+
+// A document declaring one type, so a case can build a small tree that answers
+// to a template of its own rather than to this repository's.
+export function typeDoc(name: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Template: ${name}</title>
+</head>
+<body>
+<template id="${name}">
+  <${name}-doc>
+    <${name}-title required></${name}-title>
+  </${name}-doc>
+</template>
+</body>
+</html>
+`
+}
+
+export function typeInstance(name: string, title: string, template: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>${title}</title>
+</head>
+<body>
+<${name}-doc data-conforms-to="${template}#${name}">
+  <${name}-title>${title}</${name}-title>
+</${name}-doc>
+</body>
+</html>
+`
 }

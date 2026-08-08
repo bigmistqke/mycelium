@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canon: validate</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/canon.template.css">
+</head>
+<body>
+<canon-specification id="validate" data-conforms-to="../templates/canon.template.html#canon-specification">
+  <canon-title>validate</canon-title>
+  <a data-rel="specifies" href="../commands/validate.command.html">the command that runs every check</a>
+  <canon-behaviour id="exits-non-zero-on-any-failure" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>validate exits non-zero when any instance or audit fails.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">the gate failing rather than warning</a>
+  </canon-behaviour>
+  <canon-behaviour id="exits-zero-when-everything-passes" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>validate exits zero when every instance and every audit passes.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a gate that always fails gets ignored the same way</a>
+  </canon-behaviour>
+  <canon-behaviour id="prints-every-failure-before-exiting" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>validate prints each failure before it exits, so a red run says what went wrong.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a verdict nobody can read is a verdict nobody acts on</a>
+  </canon-behaviour>
+  <canon-behaviour id="every-conforming-element-is-checked" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>Every element carrying data-conforms-to gets validated, however deeply it sits.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">the element making the claim is where conformance is declared</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-missing-template-fails-the-instance" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>An instance naming a template that does not exist fails, naming the address it looked for.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a conformance claim reaching nothing fails rather than passing</a>
+  </canon-behaviour>
+  <canon-behaviour id="the-schema-checks-the-instance" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>An instance gets checked against the schema its own template declares.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the contract the template declares is what gets checked</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-custom-validator-runs-as-well" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A type carrying its own data-validates script gets checked by that as well as by the schema.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-check-lives-with-its-vocabulary">a type carrying its own validator beside its declaration</a>
+  </canon-behaviour>
+  <canon-behaviour id="an-instance-no-validator-covers-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>An instance that no validator covers fails, rather than passing unchecked.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">passing unchecked is the quietest way to be ignored</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-throwing-validator-fails-one-instance" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A validator that throws fails that instance and leaves the rest of the run going.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">one broken validator may not silence the rest</a>
+  </canon-behaviour>
+  <canon-behaviour id="every-declared-audit-runs" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>Every script carrying data-audits runs over the whole tree.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-check-lives-with-its-vocabulary">an audit found by crawling, never named by the engine</a>
+  </canon-behaviour>
+  <canon-behaviour id="an-undeclared-violation-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A violation that no data-expects declares fails the run.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a finding nobody declared is the audit doing its job</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-declared-violation-that-vanished-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A violation declared in data-expects that the audit no longer finds fails the run.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">an example that stopped demonstrating anything</a>
+  </canon-behaviour>
+  <canon-behaviour id="the-comparison-is-the-verdict" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>An audit reporting failure passes when every violation it found is declared.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">the engine decides, not the audit's own opinion of itself</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-throwing-audit-fails-one-audit" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>An audit that throws fails and leaves the rest of the run going.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">one broken audit may not silence the rest</a>
+  </canon-behaviour>
+  <canon-behaviour id="an-audit-sees-every-document" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>An audit sees every document in the tree, templates included.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">every document, with no directory meaning fixture</a>
+  </canon-behaviour>
+  <canon-behaviour id="an-audit-reaches-outside-docs" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>An audit's filesystem is rooted above the docs directory, so it can read source files.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-check-lives-with-its-vocabulary">a rule about prose applies to a comment in source too</a>
+  </canon-behaviour>
+  <canon-behaviour id="dir-validates-another-corpus" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>The --dir flag validates a corpus somewhere other than this project's own.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">the corpus is whatever tree it is pointed at</a>
+  </canon-behaviour>
+</canon-specification>
+</body></html>

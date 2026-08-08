@@ -109,3 +109,40 @@ export interface AuditResult {
   ok: boolean
   violations: string[]
 }
+
+// A tree of documents somebody can run a whole check over. An AuditFs plus the
+// one question a check about missing files has to ask.
+export interface Corpus extends AuditFs {
+  exists(path: string): boolean
+}
+
+// Everything validate reaches outside itself, in one object it is handed rather
+// than builds.
+//
+// Until this existed validate was the one command that ignored the filesystem
+// the engine gave it and went straight to node:fs, which is why it was also the
+// one command no test could contain. A run now takes its corpus and its two
+// loaders as arguments, so a case can hand it documents it wrote in memory and
+// read the verdict back as a value.
+//
+// The loaders stay separate from the corpus on purpose. A module loads from a
+// real path through the hook in script-hooks.ts, so virtualising a document
+// does not virtualise the script inside it. Substituting code is a different
+// act from substituting data, and passing a loader makes a case say which one
+// it means rather than getting the other by accident.
+export interface ValidateEnv {
+  corpus: Corpus
+  // Where the documents sit, relative to the corpus root. What --dir names.
+  docsDir: string
+  loadCheck(file: string, script: Element): Promise<(...args: unknown[]) => unknown>
+  loadGenericValidator(): Promise<(templateEl: Element, instanceEl: Element) => { ok: boolean; errors: string[] }>
+}
+
+// What a run reports, as a value. check() prints this and sets the exit code
+// from it; a case reads it instead, so no test has to parse output or infer a
+// verdict from a process.
+export interface ValidateReport {
+  checked: number
+  fail: number
+  failures: string[]
+}

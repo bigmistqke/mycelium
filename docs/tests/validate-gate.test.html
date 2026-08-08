@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: validate reports what it found, and fails on it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/test.template.css">
+</head>
+<body>
+
+<test-doc data-conforms-to="../templates/test.template.html#test-doc">
+  <test-title>validate reports what it found, and fails on it</test-title>
+  <test-subject><a href="../commands/validate.command.html">validate.command.html</a></test-subject>
+
+  <test-case id="exits-zero-when-everything-passes" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a corpus with nothing wrong in it comes back clean</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/validate.canon.html#exits-zero-when-everything-passes">the behaviour this checks</a>
+    <script type="mycelium/test">
+      // A gate that always fails gets ignored exactly as fast as one that never
+      // does, so the clean case is a promise in its own right.
+      //
+      // The corpus is a tree of its own rather than this repository, because
+      // the real one carries deliberate violations that its own audits declare
+      // in data-expects. Pointing at a small tree is what --dir exists for.
+      import type { TestContext } from "../../src/api.ts"
+      import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/thing.template.html": typeDoc("thing"),
+          "tidy/one.thing.html": typeInstance("thing", "something", "./thing.template.html"),
+        }, { docsDir: "tidy" })
+        assert(report.fail === 0, `a clean corpus reported ${report.fail} failure(s): ${report.failures.join(" | ")}`)
+        assert(report.checked > 0, "nothing got checked at all, so a clean verdict says nothing")
+      }
+    </script>
+  </test-case>
+
+  <test-case id="an-undeclared-violation-fails" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a violation no data-expects declares fails the run</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/validate.canon.html#an-undeclared-violation-fails">the behaviour this checks</a>
+    <script type="mycelium/test">
+      // The audit is substituted so the case decides what it reports. That is
+      // the only way to test the comparison rather than whichever audit happens
+      // to exist, and it is deliberate: a document a case wrote has no real file
+      // for the module hook to load a script out of.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/noisy.template.html": auditDoc("noisy"),
+        }, {
+          docsDir: "tidy",
+          checks: { "tidy/noisy.template.html#noisy": () => ({ ok: false, violations: ["a-thing-nobody-declared"] }) },
+        })
+        assert(report.fail === 1, `expected the undeclared violation to fail the run, got ${report.fail}`)
+        assert(
+          report.failures.join(" ").includes("a-thing-nobody-declared"),
+          `the failure does not name what was found: ${report.failures.join(" | ")}`,
+        )
+      }
+    </script>
+  </test-case>
+
+  <test-case id="a-declared-violation-that-vanished-fails" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a violation declared in data-expects that the audit no longer finds fails the run</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/validate.canon.html#a-declared-violation-that-vanished-fails">the behaviour this checks</a>
+    <script type="mycelium/test">
+      // The other way to be wrong, and the quieter one. An example built to
+      // demonstrate a check has stopped demonstrating it, so the check is no
+      // longer known to work even though it now reports nothing.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/quiet.template.html": auditDoc("quiet", "a-thing-that-should-still-be-found"),
+        }, {
+          docsDir: "tidy",
+          checks: { "tidy/quiet.template.html#quiet": () => ({ ok: true, violations: [] }) },
+        })
+        assert(report.fail === 1, `expected the vanished expectation to fail the run, got ${report.fail}`)
+        assert(
+          report.failures.join(" ").includes("declared in data-expects but not found"),
+          `the failure does not say the expectation went missing: ${report.failures.join(" | ")}`,
+        )
+      }
+    </script>
+  </test-case>
+
+  <test-case id="the-comparison-is-the-verdict" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>an audit reporting failure passes when every violation it found is declared</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/validate.canon.html#the-comparison-is-the-verdict">the behaviour this checks</a>
+    <script type="mycelium/test">
+      // An audit reports what it found and the engine decides whether that is
+      // acceptable, so an audit's own opinion of itself carries no weight. This
+      // one says ok:false and still passes, because everything it found was
+      // declared.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/honest.template.html": auditDoc("honest", "the-declared-one"),
+        }, {
+          docsDir: "tidy",
+          checks: { "tidy/honest.template.html#honest": () => ({ ok: false, violations: ["the-declared-one"] }) },
+        })
+        assert(
+          report.fail === 0,
+          `the audit's own ok was taken as the verdict rather than the comparison: ${report.failures.join(" | ")}`,
+        )
+      }
+    </script>
+  </test-case>
+
+  <test-case id="a-throwing-audit-fails-one-audit" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>an audit that throws fails and leaves the rest of the run going</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/validate.canon.html#a-throwing-audit-fails-one-audit">the behaviour this checks</a>
+    <script type="mycelium/test">
+      // One broken audit may not silence the others. A run that stopped at the
+      // first throw would report a corpus as fine on the strength of never
+      // having looked at most of it.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/broken.template.html": auditDoc("broken"),
+          "tidy/working.template.html": auditDoc("working"),
+        }, {
+          docsDir: "tidy",
+          checks: {
+            "tidy/broken.template.html#broken": () => { throw new Error("this audit is broken") },
+            "tidy/working.template.html#working": () => ({ ok: true, violations: [] }),
+          },
+        })
+        assert(report.fail === 1, `expected only the broken audit to fail, got ${report.fail}`)
+        assert(
+          report.failures.join(" ").includes("this audit is broken"),
+          `the failure does not carry the thrown message: ${report.failures.join(" | ")}`,
+        )
+        assert(report.checked === 2, `expected both audits to be counted, got ${report.checked}`)
+      }
+    </script>
+  </test-case>
+</test-doc>
+
+</body>
+</html>

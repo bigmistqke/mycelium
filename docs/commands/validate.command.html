@@ -40,8 +40,8 @@
   one would only repeat the host's own name.
 </p>
 <script type="mycelium/command">
-  import type { CommandContext, AuditFs } from "../../src/api.ts"
-  import { parseHTML, walkFiles, walkHtmlFiles, resolveTemplateRef, loadCheck, loadGenericValidator } from "../../src/utils.ts"
+  import type { CommandContext, Corpus, ValidateEnv, ValidateReport } from "../../src/api.ts"
+  import { parseHTML, walkFiles, loadCheck, loadGenericValidator } from "../../src/utils.ts"
   import { existsSync, readFileSync } from "node:fs"
   import { styleText } from "node:util"
   import { dirname, resolve as resolvePath } from "node:path"
@@ -89,7 +89,7 @@
   // examines is its own affair. It could always have imported node:fs and read
   // whatever it liked — this makes the intended path the convenient one instead
   // of the awkward one.
-  function createAuditFs(root: string, cache: Map<string, Document>): AuditFs {
+  function realCorpus(root: string, cache: Map<string, Document>): Corpus {
     return {
       root,
       list(dir = ".", options = {}) {
@@ -104,6 +104,9 @@
       },
       read(path) {
         return readFileSync(resolvePath(root, path), "utf8")
+      },
+      exists(path) {
+        return existsSync(resolvePath(root, path))
       },
       // Shares the cache with the parse the instance pass already did, so an
       // audit reading every document costs nothing extra, and three audits
@@ -121,12 +124,35 @@
     }
   }
 
-  function parseAll(dir: string): ParsedDoc[] {
-    return walkHtmlFiles(dir).map((path) => {
-      const html = readFileSync(path, "utf8")
-      const { document } = parseHTML(html)
-      return { path: resolvePath(path), dom: document as unknown as Document }
-    })
+  // Everything a real run reaches outside itself. A case builds a different one
+  // and hands it to runValidate, which is the whole of what makes this command
+  // testable without a directory on disk and a second process to read it.
+  function realEnv(docsRoot: string): ValidateEnv {
+    const cache = new Map<string, Document>()
+    const root = dirname(docsRoot)
+    return {
+      corpus: realCorpus(root, cache),
+      docsDir: relative(root, docsRoot),
+      loadCheck: (file, script) => loadCheck(resolvePath(root, file), script),
+      loadGenericValidator: () => loadGenericValidator(docsRoot),
+    }
+  }
+
+  // Where an instance's data-conforms-to lands, as a corpus-relative address.
+  //
+  // resolveTemplateRef in utils.ts does the same arithmetic against the real
+  // filesystem and hands back an absolute path. Everything here runs from the
+  // corpus root instead, so a tree somebody wrote in memory resolves by the
+  // same rules as one on disk and neither needs a base nobody can supply.
+  function templateRefFor(instanceFile: string, conformsTo: string): string {
+    const [relPath, fragId] = conformsTo.split("#")
+    const segments = instanceFile.split("/").slice(0, -1)
+    for (const segment of relPath.split("/")) {
+      if (!segment || segment === ".") continue
+      if (segment === "..") segments.pop()
+      else segments.push(segment)
+    }
+    return `${segments.join("/")}#${fragId}`
   }
 
   function discoverTemplatesAndAudits(documents: ParsedDoc[]) {
@@ -173,10 +199,13 @@
     return instances
   }
 
-  async function runValidate(dir: string) {
-    const documents = parseAll(dir)
-    const parseCache = new Map(documents.map((d) => [d.path, d.dom]))
-    const auditFs = createAuditFs(dirname(dir), parseCache)
+  export async function runValidate(env: ValidateEnv): Promise<ValidateReport> {
+    const { corpus, docsDir } = env
+    // Every path below runs from the corpus root, the way an AuditFs lists one,
+    // so nothing here holds an absolute path and a corpus somebody wrote in
+    // memory reads the same as one on disk.
+    const documents = corpus.list(docsDir, { ext: ".html" })
+      .map((path) => ({ path, dom: corpus.parse(path) }))
     const { templates, audits } = discoverTemplatesAndAudits(documents)
     const instances = discoverInstances(documents)
     // Audits see every document, templates included. A template builds its
@@ -189,7 +218,7 @@
     // file could then never see anything declared in another.
     let genericCheck: ((templateEl: Element, instanceEl: Element) => CheckResult) | null = null
     try {
-      genericCheck = await loadGenericValidator(dir)
+      genericCheck = await env.loadGenericValidator()
     } catch {
       // No template.template.html in this docs tree (e.g. a corpus that
       // predates the generic validator) -- fall back to requiring every
@@ -203,9 +232,9 @@
 
     for (const instance of instances) {
       checked++
-      const key = resolveTemplateRef(instance.file, instance.conformsTo)
+      const key = templateRefFor(instance.file, instance.conformsTo)
       const template = templates.get(key)
-      const label = `${relative(dir, instance.file)}  (${instance.conformsTo})`
+      const label = `${instance.file}  (${instance.conformsTo})`
 
       if (!template) {
         fail++
@@ -218,7 +247,7 @@
         const results: CheckResult[] = []
         if (generic) results.push(generic)
         if (template.validatorScript) {
-          const customCheck = await loadCheck(template.file, template.validatorScript)
+          const customCheck = await env.loadCheck(template.file, template.validatorScript)
           const custom = customCheck(instance.element) as CheckResult
           results.push({ ok: custom.ok, errors: (custom.errors ?? custom.violations ?? []) as string[] })
         }
@@ -240,10 +269,10 @@
 
     for (const audit of audits) {
       checked++
-      const label = `${audit.name}  (${relative(dir, audit.file)}${audit.touches ? `, touches: ${audit.touches}` : ""})`
+      const label = `${audit.name}  (${audit.file}${audit.touches ? `, touches: ${audit.touches}` : ""})`
       try {
-        const check = await loadCheck(audit.file, audit.scriptElement)
-        const result = (await check(auditFs)) as CheckResult
+        const check = await env.loadCheck(audit.file, audit.scriptElement)
+        const result = (await check(corpus)) as CheckResult
         // The comparison is the verdict, so an audit's own `ok` is not
         // consulted: it reports what it found and the engine decides whether
         // that is acceptable. The two ways to be wrong are worth telling
@@ -267,14 +296,11 @@
       }
     }
 
-    console.log(styleText(fail === 0 ? "green" : "red", `${checked} checked, ${fail} fail`))
-    for (const f of failures) {
-      console.log("")
-      console.log(styleText("red", f))
-    }
-
-    // exitCode rather than exit() so the output above still flushes.
-    if (fail > 0) process.exitCode = 1
+    // The verdict comes back as a value rather than only reaching a terminal.
+    // Printing it and failing the build are what check() does with it, and a
+    // case reads the same object instead of parsing output or inferring an
+    // answer from a process that exited.
+    return { checked, fail, failures }
   }
 
   function relative(from: string, to: string): string {
@@ -309,7 +335,16 @@
    * subcommand. `mycelium validate check` names the same function.
    */
   export async function check({ fs, args }: CommandContext) {
-    await runValidate(args.dir ? resolvePath(args.dir as string) : fs.root)
+    const report = await runValidate(realEnv(args.dir ? resolvePath(args.dir as string) : fs.root))
+
+    console.log(styleText(report.fail === 0 ? "green" : "red", `${report.checked} checked, ${report.fail} fail`))
+    for (const failure of report.failures) {
+      console.log("")
+      console.log(styleText("red", failure))
+    }
+
+    // exitCode rather than exit() so the output above still flushes.
+    if (report.fail > 0) process.exitCode = 1
   }
 
   /**
