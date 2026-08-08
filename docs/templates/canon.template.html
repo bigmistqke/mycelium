@@ -928,9 +928,10 @@
    * contradict one and nothing can derive one from a principle either.
    *
    * <target> is another canon entry by filename, or any other file as a path
-   * from the repository root — docs/commands/validate.command.html, src/api.ts.
-   * A specification uses the second form to say what it describes, which is how
-   * it points at a subsystem rather than naming one.
+   * from the documents root — commands/validate.command.html,
+   * templates/figure.element.js. A file outside that tree climbs out of it,
+   * as ../src/api.ts. A specification uses the second form to say what it
+   * describes, which is how it points at a subsystem rather than naming one.
    *
    * Upserts on the pair of relation and target, so this corrects a label but
    * never a direction or a wrong --rel; both of those leave a second, wrong
