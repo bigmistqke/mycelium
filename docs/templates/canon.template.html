@@ -256,7 +256,7 @@
 
 <div id="sample-instances" style="display:none">
   <canon-axiom id="sample-axiom" data-conforms-to="./canon.template.html#canon-axiom">
-    <canon-title>A document is the source of truth, and the tooling reads it.</canon-title>
+    <canon-title>A principle the sample behaviours refine, so the chain has one rung that holds.</canon-title>
   </canon-axiom>
 
   <canon-axiom id="sample-ungrounded-axiom" data-conforms-to="./canon.template.html#canon-axiom">
@@ -1104,9 +1104,11 @@
         .map((entry) => [entry.address, walk(entry.address, above)])),
     }
 
+    // A valueless flag parses as the string "true", which is what bare --base
+    // arrives as. knowledge generate reads it the same way.
     const base = args.base === undefined
       ? ''
-      : `<base href="${args.base === '' ? pathToFileURL(resolvePath(fs.root) + '/').href : args.base}">`
+      : `<base href="${args.base === 'true' ? pathToFileURL(resolvePath(fs.root) + '/').href : args.base}">`
     const page = chainPage(data, base)
 
     if (args.out) {
