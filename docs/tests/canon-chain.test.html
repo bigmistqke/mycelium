@@ -15,46 +15,50 @@
     and <a href="../templates/canon-citations.ts">canon-citations.ts</a></test-subject>
 
   <test-case id="an-axiom-reaching-no-behaviour-fails" data-conforms-to="../templates/test.template.html#test-case">
-    <test-name>grounded reports an axiom that no specification reaches</test-name>
+    <test-name>grounded reports an axiom that no behaviour reaches</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/canon-chain.specification.html#an-axiom-reaching-no-behaviour-fails">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/chain.canon.html#an-axiom-reaching-no-behaviour-fails">the behaviour this checks</a>
     <script type="mycelium/test">
       // An axiom with nothing under it cannot be falsified, because nothing
       // beneath it can push back. That is what grounded exists to say.
       import type { TestContext } from "../../src/api.ts"
-      import { axiomDoc, violationsFrom } from "./audit-corpus.ts"
+      import { canonDoc, violationsFrom } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
         const found = await violationsFrom("canon.template.html", "grounded", {
-          "docs/canon/axioms/lonely.axiom.html": axiomDoc("A principle nothing derives from."),
+          "docs/canon/lonely.canon.html": canonDoc({
+            axioms: [{ id: "lonely", title: "A principle nothing derives from." }],
+          }),
         })
         assert(
-          found.includes("docs/canon/axioms/lonely.axiom.html"),
+          found.includes("docs/canon/lonely.canon.html#lonely"),
           `grounded did not report the lonely axiom; it reported: ${found.join(", ") || "nothing"}`,
         )
       }
     </script>
   </test-case>
 
-  <test-case id="a-specification-naming-no-axiom-fails" data-conforms-to="../templates/test.template.html#test-case">
-    <test-name>grounded reports a specification with no axiom above it</test-name>
+  <test-case id="a-behaviour-naming-no-axiom-fails" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>grounded reports a behaviour with no axiom above it</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/canon-chain.specification.html#a-specification-naming-no-axiom-fails">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/chain.canon.html#a-behaviour-naming-no-axiom-fails">the behaviour this checks</a>
     <script type="mycelium/test">
       // The other half of the same check. A specification answering to nothing
       // is a list of assertions nobody can argue with.
       import type { TestContext } from "../../src/api.ts"
-      import { specificationDoc, violationsFrom } from "./audit-corpus.ts"
+      import { canonDoc, violationsFrom } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
         const found = await violationsFrom("canon.template.html", "grounded", {
-          "docs/canon/specifications/floating.specification.html": specificationDoc("a floating subsystem", {
-            behaviours: [{ id: "does-a-thing", title: "It does a thing." }],
+          "docs/canon/floating.canon.html": canonDoc({
+            specification: { id: "floating", title: "a floating subsystem", behaviours: [
+              { id: "does-a-thing", title: "It does a thing." },
+            ] },
           }),
         })
         assert(
-          found.includes("docs/canon/specifications/floating.specification.html"),
-          `grounded did not report the floating specification; it reported: ${found.join(", ") || "nothing"}`,
+          found.includes("docs/canon/floating.canon.html#does-a-thing"),
+          `grounded did not report the freelancing behaviour; it reported: ${found.join(", ") || "nothing"}`,
         )
       }
     </script>
@@ -63,7 +67,7 @@
   <test-case id="reach-through-a-narrower-axiom-counts" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>an axiom reached through a narrower axiom counts as grounded</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/canon-chain.specification.html#reach-through-a-narrower-axiom-counts">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/chain.canon.html#reach-through-a-narrower-axiom-counts">the behaviour this checks</a>
     <script type="mycelium/test">
       // The downward reach gets computed from the upward edges rather than
       // authored, so it has to walk the whole way down and not one step. A
@@ -73,24 +77,29 @@
       // check that has stopped working also reports an absence, so it has to
       // find something first.
       import type { TestContext } from "../../src/api.ts"
-      import { axiomDoc, specificationDoc, violationsFrom } from "./audit-corpus.ts"
+      import { canonDoc, violationsFrom } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
         const found = await violationsFrom("canon.template.html", "grounded", {
-          "docs/canon/axioms/general.axiom.html": axiomDoc("The general principle."),
-          "docs/canon/axioms/narrow.axiom.html": axiomDoc("The narrower principle.", "./general.axiom.html"),
-          "docs/canon/axioms/unreached.axiom.html": axiomDoc("A principle nothing serves."),
-          "docs/canon/specifications/under.specification.html": specificationDoc("a subsystem", {
-            serves: "../axioms/narrow.axiom.html",
-            behaviours: [{ id: "does-a-thing", title: "It does a thing." }],
+          "docs/canon/general.canon.html": canonDoc({
+            axioms: [
+              { id: "general", title: "The general principle." },
+              { id: "unreached", title: "A principle nothing serves." },
+            ],
+          }),
+          "docs/canon/under.canon.html": canonDoc({
+            axioms: [{ id: "narrow", title: "The narrower principle.", narrows: "./general.canon.html#general" }],
+            specification: { id: "under", title: "a subsystem", behaviours: [
+              { id: "does-a-thing", title: "It does a thing.", refines: "#narrow" },
+            ] },
           }),
         })
         assert(
-          found.includes("docs/canon/axioms/unreached.axiom.html"),
+          found.includes("docs/canon/general.canon.html#unreached"),
           `the control is missing, so this case cannot read an absence; grounded reported: ${found.join(", ") || "nothing"}`,
         )
         assert(
-          !found.includes("docs/canon/axioms/general.axiom.html"),
+          !found.includes("docs/canon/general.canon.html#general"),
           "grounded reported the general axiom, so it stopped after one step down instead of walking the chain",
         )
       }
@@ -100,33 +109,33 @@
   <test-case id="a-behaviour-no-case-cites-fails" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>exhaustive reports a behaviour no case cites</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/canon-chain.specification.html#a-behaviour-no-case-cites-fails">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/chain.canon.html#a-behaviour-no-case-cites-fails">the behaviour this checks</a>
     <script type="mycelium/test">
       // Nothing marks a behaviour exempt, so a claim with no evidence under it
       // gets reported however reasonable it looks.
       import type { TestContext } from "../../src/api.ts"
-      import { specificationDoc, testDoc, violationsFrom } from "./audit-corpus.ts"
+      import { canonDoc, testDoc, violationsFrom } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
         const found = await violationsFrom("canon.template.html", "exhaustive", {
-          "docs/canon/specifications/claimed.specification.html": specificationDoc("a claimed subsystem", {
-            behaviours: [
+          "docs/canon/claimed.canon.html": canonDoc({
+            specification: { id: "claimed", title: "a claimed subsystem", behaviours: [
               { id: "somebody-checks-this", title: "Somebody checks this one." },
               { id: "nobody-checks-this", title: "Nobody checks this one." },
-            ],
+            ] },
           }),
           "docs/tests/covered.test.html": testDoc(
             "covered",
             "a case covering the first behaviour",
-            "../canon/specifications/claimed.specification.html#somebody-checks-this",
+            "../canon/claimed.canon.html#somebody-checks-this",
           ),
         })
         assert(
-          found.includes("docs/canon/specifications/claimed.specification.html#nobody-checks-this"),
+          found.includes("docs/canon/claimed.canon.html#nobody-checks-this"),
           `exhaustive did not report the uncited behaviour; it reported: ${found.join(", ") || "nothing"}`,
         )
         assert(
-          !found.includes("docs/canon/specifications/claimed.specification.html#somebody-checks-this"),
+          !found.includes("docs/canon/claimed.canon.html#somebody-checks-this"),
           "exhaustive reported the behaviour a case does cite, so it is not reading citations at all",
         )
       }
@@ -136,23 +145,25 @@
   <test-case id="a-case-citing-nothing-fails" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>cited reports a case that carries no citation</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/canon-chain.specification.html#a-case-citing-nothing-fails">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/chain.canon.html#a-case-citing-nothing-fails">the behaviour this checks</a>
     <script type="mycelium/test">
       // The direction that closes the loop. A case citing nothing is a claim
       // about the system that no specification makes.
       import type { TestContext } from "../../src/api.ts"
-      import { specificationDoc, testDoc, violationsFrom } from "./audit-corpus.ts"
+      import { canonDoc, testDoc, violationsFrom } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
         const found = await violationsFrom("canon.template.html", "cited", {
-          "docs/canon/specifications/claimed.specification.html": specificationDoc("a claimed subsystem", {
-            behaviours: [{ id: "somebody-checks-this", title: "Somebody checks this one." }],
+          "docs/canon/claimed.canon.html": canonDoc({
+            specification: { id: "claimed", title: "a claimed subsystem", behaviours: [
+              { id: "somebody-checks-this", title: "Somebody checks this one." },
+            ] },
           }),
           "docs/tests/silent.test.html": testDoc("says-nothing", "a case citing nothing at all"),
           "docs/tests/speaking.test.html": testDoc(
             "says-something",
             "a case citing a behaviour",
-            "../canon/specifications/claimed.specification.html#somebody-checks-this",
+            "../canon/claimed.canon.html#somebody-checks-this",
           ),
         })
         assert(
@@ -170,21 +181,23 @@
   <test-case id="a-citation-landing-on-an-axiom-fails" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>cited reports a citation that lands on an axiom rather than a behaviour</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/canon-chain.specification.html#a-citation-landing-on-an-axiom-fails">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/chain.canon.html#a-citation-landing-on-an-axiom-fails">the behaviour this checks</a>
     <script type="mycelium/test">
       // A citation gets judged on where it lands, never on what carries it.
       // Reaching past the layer that should have stated the claim is a finding:
       // the test knows something no specification says.
       import type { TestContext } from "../../src/api.ts"
-      import { axiomDoc, testDoc, violationsFrom } from "./audit-corpus.ts"
+      import { canonDoc, testDoc, violationsFrom } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
         const found = await violationsFrom("canon.template.html", "cited", {
-          "docs/canon/axioms/reached-past.axiom.html": axiomDoc("A principle a test reached for directly."),
+          "docs/canon/reached.canon.html": canonDoc({
+            axioms: [{ id: "reached-past", title: "A principle a test reached for directly." }],
+          }),
           "docs/tests/overreaching.test.html": testDoc(
             "cites-an-axiom",
             "a case citing an axiom",
-            "../canon/axioms/reached-past.axiom.html",
+            "../canon/reached.canon.html#reached-past",
           ),
         })
         assert(

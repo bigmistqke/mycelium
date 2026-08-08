@@ -80,28 +80,42 @@ export function corpus(documents: Record<string, string>): AuditFs {
   }
 }
 
-// The three builders below write what a real instance carries and nothing
-// else. A corpus made of them stays readable inside the case that declares it,
-// which is the point of holding one in memory rather than on disk.
-export function axiomDoc(title: string, narrows?: string): string {
-  const up = narrows ? `\n  <a data-rel="depends_on" href="${narrows}">narrows</a>` : ""
-  return `<canon-axiom data-conforms-to="../../templates/canon.template.html#canon-axiom">
-  <canon-title>${title}</canon-title>
+// The builders below write what a real document carries and nothing else. A
+// canon document holds one subsystem's axioms and the specification its
+// behaviours belong to, so a fixture made of them reads like the corpus does.
+export function canonDoc(options: {
+  axioms?: { id: string; title: string; narrows?: string }[]
+  specification?: { id: string; title: string; behaviours?: { id: string; title: string; refines?: string }[] }
+}): string {
+  const conforms = (type: string) => `data-conforms-to="../templates/canon.template.html#canon-${type}"`
+  const axioms = (options.axioms ?? []).map((axiom) => {
+    const up = axiom.narrows ? `\n  <a data-rel="depends_on" href="${axiom.narrows}">narrows</a>` : ""
+    return `<canon-axiom id="${axiom.id}" ${conforms("axiom")}>
+  <canon-title>${axiom.title}</canon-title>
   <canon-confidence>80</canon-confidence>${up}
 </canon-axiom>`
-}
-
-export function specificationDoc(
-  title: string,
-  options: { serves?: string; behaviours?: { id: string; title: string }[] } = {},
-): string {
-  const up = options.serves ? `\n  <a data-rel="depends_on" href="${options.serves}">serves</a>` : ""
-  const claims = (options.behaviours ?? [])
-    .map((b) => `\n  <canon-behaviour id="${b.id}">\n    <canon-title>${b.title}</canon-title>\n  </canon-behaviour>`)
-    .join("")
-  return `<canon-specification data-conforms-to="../../templates/canon.template.html#canon-specification">
-  <canon-title>${title}</canon-title>${up}${claims}
-</canon-specification>`
+  })
+  const specification = options.specification
+    ? [`<canon-specification id="${options.specification.id}" ${conforms("specification")}>
+  <canon-title>${options.specification.title}</canon-title>${(options.specification.behaviours ?? []).map((b) => {
+    const up = b.refines ? `\n    <a data-rel="depends_on" href="${b.refines}">the principle this refines</a>` : ""
+    return `\n  <canon-behaviour id="${b.id}" ${conforms("behaviour")}>
+    <canon-title>${b.title}</canon-title>${up}
+  </canon-behaviour>`
+  }).join("")}
+</canon-specification>`]
+    : []
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Canon</title>
+</head>
+<body>
+${[...axioms, ...specification].join("\n\n")}
+</body>
+</html>
+`
 }
 
 export function testDoc(id: string, name: string, cites?: string): string {

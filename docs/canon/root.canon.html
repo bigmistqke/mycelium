@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canon: root</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/canon.template.css">
+</head>
+<body>
+<canon-axiom id="documents-are-the-source" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>A document is the source of truth, and the tooling reads it.</canon-title>
+  <canon-confidence>95</canon-confidence>
+</canon-axiom>
+<canon-axiom id="a-document-is-read-by-a-person" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>A document is for a person to read as well as a machine.</canon-title>
+  <canon-confidence>90</canon-confidence>
+</canon-axiom>
+<canon-axiom id="derive-do-not-maintain" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>Derive whatever can be derived, because a second copy drifts from the first.</canon-title>
+  <canon-confidence>90</canon-confidence>
+</canon-axiom>
+<canon-axiom id="a-gate-people-ignore" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>A gate people ignore is not a gate.</canon-title>
+  <canon-confidence>90</canon-confidence>
+</canon-axiom>
+<canon-axiom id="a-check-lives-with-its-vocabulary" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>A check belongs beside the vocabulary it checks, not inside an engine that names it.</canon-title>
+  <canon-confidence>85</canon-confidence>
+</canon-axiom>
+<canon-axiom id="edges-point-up-only" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>A stored edge points up, and every downward reach gets computed from the edges rather than authored.</canon-title>
+  <canon-confidence>90</canon-confidence>
+  <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">the reverse index this refuses to keep</a>
+</canon-axiom>
+
+</body></html>

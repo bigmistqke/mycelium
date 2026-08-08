@@ -13,9 +13,9 @@
 <div class="meta">
   <div><b>Node types:</b> <code>canon-axiom</code>, <code>canon-specification</code>,
     with <code>canon-behaviour</code> nested inside the second</div>
-  <div><b>Instances:</b> <code>docs/canon/axioms/&lt;slug&gt;.axiom.html</code> and
-    <code>docs/canon/specifications/&lt;slug&gt;.specification.html</code>, with no date
-    prefix</div>
+  <div><b>Instances:</b> <code>docs/canon/&lt;subsystem&gt;.canon.html</code>, one document per
+    subsystem holding its own axioms and its specification, with
+    <code>root.canon.html</code> holding the axioms that govern everything</div>
   <div><b>Design:</b>
     <a href="../specs/2026-08-06-canon-template-html.spec.html">canon.template.html:
     axioms, specifications, and a chain a checker can walk</a></div>
@@ -88,10 +88,10 @@
 &lt;/canon-axiom&gt;</code></pre>
 
 <template id="canon-specification">
-  <canon-specification>
+  <canon-specification id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
     <canon-title required></canon-title>
     <a repeatable href=".+" data-rel="^(specifies)$"></a>
-    <canon-behaviour required repeatable conforms-to="#canon-behaviour"></canon-behaviour>
+    <canon-behaviour repeatable conforms-to="#canon-behaviour"></canon-behaviour>
   </canon-specification>
 </template>
 
@@ -425,7 +425,7 @@
   Every behaviour has a test citing it. Nothing is exempt, so this counts the whole list rather than
   a marked subset of it, which is what the absence of a requirement marking buys.
 </p>
-<script type="mycelium/audit" data-audits="exhaustive" data-expects="docs/templates/canon.template.html#sample-untested-behaviour" data-touches="canon-behaviour">
+<script type="mycelium/audit" data-audits="exhaustive" data-expects="docs/templates/canon.template.html#sample-untested-behaviour docs/templates/canon.template.html#sample-freelancing-behaviour" data-touches="canon-behaviour">
   import type { AuditFs } from "../../src/api.ts"
   /**
    * Every behaviour has a test citing it.
@@ -597,13 +597,13 @@
   // Splitting here rather than in each command keeps the two spellings in one
   // place, and keeps a typo in a behaviour id from silently appending an edge
   // to the specification instead.
-  function sourceOf(doc, source) {
-    const hash = source.indexOf('#')
-    if (hash === -1) return rootOf(doc)
-    const id = source.slice(hash + 1)
-    const behaviour = doc.querySelector(`canon-behaviour[id="${id}"]`)
-    if (!behaviour) throw new Error(`no behaviour with id "${id}" in ${source.slice(0, hash)}`)
-    return behaviour
+  // Where an edge lands, as a docs-root path and an optional fragment. A target
+  // is another claim, written <canon>#<id>, or any other file spelled relative
+  // to docs/ — which is how a specification names the code it answers for.
+  function targetOf(target: string) {
+    const hash = target.indexOf('#')
+    if (hash === -1) return { path: pathFor(target), fragment: '' }
+    return { path: canonPathFor(target.slice(0, hash)), fragment: target.slice(hash + 1) }
   }
 
   // The file half of a source, for the commands that have to open it.
@@ -612,24 +612,59 @@
     return hash === -1 ? source : source.slice(0, hash)
   }
 
+  // Any entry a command edits, addressed the same way, since all three types
+  // carry an id. Which relation each may then carry is the schema's business:
+  // specifies on a specification, depends_on on an axiom or a behaviour.
+  function entryOf(doc, source) {
+    const hash = source.indexOf('#')
+    if (hash === -1) throw new Error(`<canon>#<id> names the entry, got "${source}"`)
+    const id = source.slice(hash + 1)
+    const el = doc.querySelector(`canon-axiom[id="${id}"], canon-specification[id="${id}"], canon-behaviour[id="${id}"]`)
+    if (!el) throw new Error(`no entry with id "${id}" in ${source.slice(0, hash)}`)
+    return el
+  }
+
+  // Resolves an href written inside `from` back to a path from the docs root
+  // and a fragment, which is the inverse of what cli.href computes.
+  function resolveFrom(from: string, href: string) {
+    const hash = href.indexOf('#')
+    const file = hash === -1 ? href : href.slice(0, hash)
+    const fragment = hash === -1 ? '' : href.slice(hash + 1)
+    if (!file) return { path: from, fragment }
+    const segments = from.split('/').slice(0, -1)
+    for (const segment of file.split('/')) {
+      if (!segment || segment === '.') continue
+      if (segment === '..') segments.pop()
+      else segments.push(segment)
+    }
+    return { path: segments.join('/'), fragment }
+  }
+
   /**
    * Create a new canon-axiom or canon-specification, or add a behaviour to a
    * specification that already exists.
    *
-   *   mycelium canon add axiom --title "…" --file <slug>
-   *     --confidence NN [--detail "…" | --detail -]
+   *   mycelium canon add axiom --canon <name> --id <slug>
+   *     --title "…" --confidence NN [--detail "…" | --detail -]
    *
-   *   mycelium canon add specification --title "…" --file <slug>
+   *   mycelium canon add specification --canon <name> --id <slug> --title "…"
    *
-   *   mycelium canon add behaviour <file> --id <slug> --title "…"
+   *   mycelium canon add behaviour --canon <name> --id <slug> --title "…"
    *
-   * The command writes to canon/axioms/<slug>.axiom.html or
-   * canon/specifications/<slug>.specification.html. There is NO date prefix and
-   * no --date flag, unlike knowledge add and spec add. Both types describe what
-   * holds now: an axiom that stops being true gets revised or retired, and a
-   * specification that no longer matches the system is a bug in one of the two.
-   * So --file is the whole name, and a slug carrying a date is rejected,
-   * because it would assert that the principle dates from that day.
+   * Everything lands in canon/<name>.canon.html, one document per subsystem
+   * holding that subsystem's own axioms and the specification its behaviours
+   * belong to. root.canon.html holds the axioms governing everything, which the
+   * subsystem ones narrow.
+   *
+   * A subsystem's axioms sit beside the behaviours refining them because the set
+   * that shaped one subsystem says nothing about the others. A flat list of all
+   * of them buries the few that do govern everything, and makes an axiom about
+   * drawing read as a peer of an axiom about documents.
+   *
+   * No date prefix and no --date flag, unlike knowledge add and spec add. These
+   * describe what holds now: an axiom that stops being true gets revised or
+   * retired, and a specification that no longer matches the system is a bug in
+   * one of the two.
    *
    * For an axiom, --title is the principle itself and --confidence says how far
    * to trust it. Someone who commits to a principle and someone who infers one
@@ -641,8 +676,8 @@
    * kind of content that is not a behaviour already has a family, and a detail
    * field is the hole all of them go through.
    *
-   * A behaviour takes an existing specification as a positional argument, the
-   * way `plan add step` takes a plan-doc. --title is the claim, in one
+   * A behaviour lands in the specification its canon document already holds, so
+   * add one before adding behaviours. --title is the claim, in one
    * falsifiable sentence.
    *
    * --id is what a test cites, so it is required. Its pattern rejects any
@@ -661,43 +696,24 @@
     if (!TYPES.includes(type)) {
       throw new Error(`<type> must be one of ${[...TYPES, 'behaviour'].join('|')}, got "${type ?? '(nothing)'}"`)
     }
-    requireArgs([args.file, '--file'])
-
-    const dated = /^(\d{4}-\d{2}-\d{2})-(.+)$/.exec(args.file)
-    if (dated) {
-      throw new Error(
-        `--file takes a plain slug; a canon entry carries no date, unlike knowledge and spec ` +
-        `files. Pass --file ${dated[2]}.`
-      )
-    }
+    requireArgs([args.canon, '--canon'], [args.id, '--id'])
 
     const values = fieldValues(args)
     rejectForeignFields(type, values)
     if (values['canon-detail'] === '-') values['canon-detail'] = await cli.readStdin()
 
-    const path = entryPathFor(`${args.file}.${type}.html`)
-    const doc = fs.create(path, `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title></title>
-<link rel="stylesheet" href="../../theme.css">
-<link rel="stylesheet" href="../../templates/canon.template.css">
-</head>
-<body>
+    const path = canonPathFor(args.canon)
+    const doc = openCanon(fs, path, args.canon)
+    if (doc.querySelector(`[id="${args.id}"]`)) {
+      throw new Error(`${args.canon} already carries an entry with id "${args.id}"`)
+    }
+    if (type === 'specification' && doc.querySelector('canon-specification')) {
+      throw new Error(`${args.canon} already carries a specification; one canon document covers one subsystem.`)
+    }
 
-<canon-${type} data-conforms-to="../../templates/canon.template.html#canon-${type}">
-</canon-${type}>
-
-</body>
-</html>
-`)
-
-    const label = { axiom: 'Axiom', specification: 'Specification' }[type]
-    doc.querySelector('title').textContent = `${label}: ${args.title}`
-
-    const root = doc.querySelector(`canon-${type}`)
+    const root = doc.createElement(`canon-${type}`)
+    root.setAttribute('id', args.id)
+    root.setAttribute('data-conforms-to', `../templates/canon.template.html#canon-${type}`)
     for (const tag of FIELD_ORDER[type]) {
       const value = values[tag]
       if (value === undefined || value === '') continue
@@ -706,24 +722,58 @@
       else el.textContent = value
       root.appendChild(el)
     }
+    // An axiom sits above the specification its behaviours refine, so a reader
+    // meets the principles before the claims. A specification always lands
+    // last, which also means an axiom added later still sorts above it.
+    const specification = doc.querySelector('canon-specification')
+    if (type === 'axiom' && specification) specification.parentNode.insertBefore(root, specification)
+    else doc.querySelector('body').appendChild(root)
 
     const result = await cli.validate(root, path)
     if (!result.ok) throw new Error(result.errors.join('\n'))
   }
 
+  // The canon document, opened or seeded. A canon holds one subsystem's axioms
+  // and the specification they govern, so the file is the unit somebody opens
+  // to read a subsystem rather than a directory they have to assemble by eye.
+  function openCanon(fs, path, name) {
+    if (fs.exists?.(path) === false) return fs.create(path, canonSeed(name))
+    try {
+      return fs.get(path)
+    } catch {
+      return fs.create(path, canonSeed(name))
+    }
+  }
+
+  function canonSeed(name) {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canon: ${name}</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/canon.template.css">
+</head>
+<body>
+</body>
+</html>
+`
+  }
+
   async function addBehaviour({ fs, args, cli }) {
-    requireArgs([args._[1], '<file>'], [args.id, '--id'], [args.title, '--title'])
-    const path = entryPathFor(args._[1])
+    requireArgs([args.canon, '--canon'], [args.id, '--id'], [args.title, '--title'])
+    const path = canonPathFor(args.canon)
     const doc = fs.get(path)
     const root = doc.querySelector('canon-specification')
-    if (!root) throw new Error(`${args._[1]} is not a canon-specification`)
-    if (root.querySelector(`canon-behaviour[id="${args.id}"]`)) {
-      throw new Error(`${args._[1]} already carries a behaviour with id "${args.id}"`)
+    if (!root) throw new Error(`${args.canon} carries no specification yet; add one before a behaviour.`)
+    if (doc.querySelector(`[id="${args.id}"]`)) {
+      throw new Error(`${args.canon} already carries an entry with id "${args.id}"`)
     }
 
     const el = doc.createElement('canon-behaviour')
     el.setAttribute('id', args.id)
-    el.setAttribute('data-conforms-to', '../../templates/canon.template.html#canon-behaviour')
+    el.setAttribute('data-conforms-to', '../templates/canon.template.html#canon-behaviour')
     const title = doc.createElement('canon-title')
     title.textContent = args.title
     el.appendChild(title)
@@ -741,56 +791,40 @@
    *
    *   mycelium canon update <file> --behaviour <id> [--title "…"]
    *
-   * <file> is a whole existing filename including its .axiom.html or
-   * .specification.html suffix — contrast add, whose --file is a slug you
-   * choose. The command reads the type off the document's own root element.
+   * <canon>#<id> names the entry to edit: an axiom, a specification or a
+   * behaviour, all addressed the same way because all three carry an id.
    *
    * Omitted flags leave a field untouched, any other value upserts it, and an
    * explicit empty value removes it. --detail carries free-form markup and
    * takes "-" to read from stdin.
    *
-   * --behaviour names a behaviour inside a specification and edits that instead
-   * of the specification itself. Rewording one is deliberately possible and
-   * deliberately quiet: the id survives, so every citation to it still resolves
-   * and nothing tells the citing tests they now check something the document no
-   * longer claims. No check here closes that.
+   * Rewording a claim is deliberately possible and deliberately quiet: the id
+   * survives, so every citation to it still resolves and nothing tells the
+   * citing tests they now check something the document no longer claims. No
+   * check here closes that.
    *
-   * There is no way to change an id. Renaming one fails every citation to it,
-   * which is what makes a rename deliberate rather than silent, so it stays a
-   * thing you do by hand across the files that cite it.
+   * --id renames instead, which is a different act. An id names the claim
+   * rather than the sentence, so a copy-edit never touches one. A claim that
+   * changed meaning is what this exists for, and the rename deliberately fails
+   * every citation to the old address, so whoever did it carries them along.
+   * Use move when the claim is unchanged and only its home is wrong.
    */
   export async function update({ fs, args, cli }: CommandContext) {
-    requireArgs([args._[0], '<file>'])
-    const path = entryPathFor(args._[0])
+    requireArgs([args._[0], '<canon>#<id>'])
+    const path = canonPathFor(fileOf(args._[0]))
     const doc = fs.get(path)
-    const root = rootOf(doc)
-    const type = root.tagName.toLowerCase().replace('canon-', '')
+    const target = entryOf(doc, args._[0])
+    const type = target.tagName.toLowerCase().replace('canon-', '')
 
-    let target = root
-    if (args.behaviour !== undefined) {
-      target = root.querySelector(`canon-behaviour[id="${args.behaviour}"]`)
-      if (!target) throw new Error(`${args._[0]} carries no behaviour with id "${args.behaviour}"`)
-    }
-
-    // Renaming a behaviour's id, which is a different act from editing its
-    // wording. An id names the behaviour rather than the sentence, so a
-    // copy-edit never touches one and --title alone is the usual case. A
-    // behaviour that changed meaning is the case this exists for, and the
-    // rename deliberately fails every citation to the old address so whoever
-    // did it carries them along.
-    if (args.id !== undefined) {
-      if (args.behaviour === undefined) throw new Error('--id renames a behaviour, so it needs --behaviour naming the one to rename.')
-      target.setAttribute('id', args.id)
-    }
+    // Renaming, which is a different act from editing the wording. An id names
+    // the claim rather than the sentence, so a copy-edit never touches one.
+    if (args.id !== undefined) target.setAttribute('id', args.id)
 
     const detail = args.detail === '-' ? await cli.readStdin() : args.detail
     const values = { 'canon-title': args.title, 'canon-confidence': args.confidence, 'canon-detail': detail }
-    if (args.behaviour === undefined) rejectForeignFields(type, values)
-    else if (values['canon-confidence'] !== undefined || values['canon-detail'] !== undefined) {
-      throw new Error('a behaviour carries only a title; --confidence and --detail belong to an axiom.')
-    }
+    rejectForeignFields(type, values)
 
-    for (const tag of FIELD_ORDER[args.behaviour === undefined ? type : 'behaviour']) {
+    for (const tag of FIELD_ORDER[type]) {
       const value = values[tag]
       if (value === undefined) continue
       const existing = target.querySelector(tag)
@@ -809,16 +843,74 @@
       target.appendChild(el)
     }
 
-    // add builds the head title as "Type: <title>", so update keeps the two in
-    // step or renaming an entry silently desyncs them.
-    if (args.title && args.behaviour === undefined) {
-      const headTitle = doc.querySelector('title')
-      const label = { axiom: 'Axiom', specification: 'Specification' }[type]
-      if (headTitle) headTitle.textContent = `${label}: ${args.title}`
-    }
-
     const result = await cli.validate(target, path)
     if (!result.ok) throw new Error(result.errors.join('\n'))
+  }
+
+  /**
+   * Move a claim into another canon document, carrying its citations.
+   *
+   *   mycelium canon move <canon>#<id> <to-canon>
+   *
+   * A claim whose home is wrong is a different problem from a claim that is
+   * wrong. An axiom written for one subsystem and later found to govern several
+   * belongs in root; one written in root that only ever governs one subsystem
+   * belongs with it. Neither is a rewording, so neither should break anything.
+   *
+   * So this rewrites both halves. The moved claim's own edges get recomputed
+   * from where it now sits, and every citation anywhere in the corpus gets
+   * repointed at its new address. That is the opposite of what --id does on
+   * update, which breaks citations on purpose because the claim itself changed.
+   *
+   * Moving a specification carries its behaviours with it, since a behaviour
+   * addresses through the document holding it.
+   */
+  export async function move({ fs, args, cli }: CommandContext) {
+    requireArgs([args._[0], '<canon>#<id>'], [args._[1], '<to-canon>'])
+    const fromPath = canonPathFor(fileOf(args._[0]))
+    const toPath = canonPathFor(args._[1])
+    if (fromPath === toPath) throw new Error(`${args._[0]} already sits in ${args._[1]}`)
+
+    const fromDoc = fs.get(fromPath)
+    const entry = entryOf(fromDoc, args._[0])
+    const toDoc = openCanon(fs, toPath, args._[1])
+    if (toDoc.querySelector(`[id="${entry.getAttribute('id')}"]`)) {
+      throw new Error(`${args._[1]} already carries an entry with id "${entry.getAttribute('id')}"`)
+    }
+
+    // Every address this move invalidates: the claim itself, and each behaviour
+    // riding along inside it.
+    const ids = new Set([entry, ...Array.from(entry.querySelectorAll('canon-behaviour[id]'))]
+      .map((el) => el.getAttribute('id')))
+
+    // The claim's own outgoing edges. Both documents sit in canon/, so every
+    // target keeps the href that reached it — except one written as a bare
+    // fragment, which meant "this document" and stops being true.
+    for (const a of Array.from(entry.querySelectorAll('a[href]'))) {
+      const href = a.getAttribute('href')
+      if (href.startsWith('#')) a.setAttribute('href', `./${fileOf(fromPath).replace('canon/', '')}${href}`)
+    }
+
+    toDoc.querySelector('body').appendChild(entry)
+    // A canon document holding nothing is a file nobody opens twice.
+    if (!fromDoc.querySelector('canon-axiom, canon-specification')) fs.delete(fromPath)
+
+    // Every citation anywhere, repointed. This is the half that makes a move
+    // different from a rename: the claim did not change, so nothing citing it
+    // should break.
+    let repointed = 0
+    for (const { path, doc } of fs.list('')) {
+      for (const a of Array.from(doc.querySelectorAll('a[href]'))) {
+        const { path: target, fragment } = resolveFrom(path, a.getAttribute('href'))
+        if (target !== fromPath || !ids.has(fragment)) continue
+        a.setAttribute('href', `${cli.href(path, toPath)}#${fragment}`)
+        repointed++
+      }
+    }
+
+    const result = await cli.validate(entry, toPath)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
+    console.log(`moved ${args._[0]} to ${args._[1]}, repointing ${repointed} citation(s)`)
   }
 
   /**
@@ -849,9 +941,11 @@
    */
   export function link({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<target>'], [args.rel, '--rel'])
-    const doc = fs.get(entryPathFor(fileOf(args._[0])))
-    const root = sourceOf(doc, args._[0])
-    const href = cli.href(entryPathFor(fileOf(args._[0])), pathFor(args._[1]))
+    const path = canonPathFor(fileOf(args._[0]))
+    const doc = fs.get(path)
+    const root = entryOf(doc, args._[0])
+    const target = targetOf(args._[1])
+    const href = `${cli.href(path, target.path)}${target.fragment ? `#${target.fragment}` : ''}`
     const label = args.label ?? ''
 
     const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
@@ -863,11 +957,7 @@
     a.setAttribute('data-rel', args.rel)
     a.setAttribute('href', href)
     a.textContent = label
-    // Before the first behaviour, so a specification reads as what it answers
-    // to and then what it claims.
-    const firstBehaviour = root.querySelector('canon-behaviour')
-    if (firstBehaviour) root.insertBefore(a, firstBehaviour)
-    else root.appendChild(a)
+    root.appendChild(a)
   }
 
   /**
@@ -881,9 +971,11 @@
    */
   export function unlink({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<target>'], [args.rel, '--rel'])
-    const doc = fs.get(entryPathFor(fileOf(args._[0])))
-    const root = sourceOf(doc, args._[0])
-    const href = cli.href(entryPathFor(fileOf(args._[0])), pathFor(args._[1]))
+    const path = canonPathFor(fileOf(args._[0]))
+    const doc = fs.get(path)
+    const root = entryOf(doc, args._[0])
+    const target = targetOf(args._[1])
+    const href = `${cli.href(path, target.path)}${target.fragment ? `#${target.fragment}` : ''}`
     const a = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
     if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
     a.remove()

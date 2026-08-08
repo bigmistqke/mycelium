@@ -16,7 +16,7 @@
   <test-case id="duplicate-field-fails" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>a second copy of a field the template declares once fails</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/template-schema.specification.html#duplicate-field-fails">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/schema.canon.html#duplicate-field-fails">the behaviour this checks</a>
     <script type="mycelium/test">
       // The lookup this replaces took the first match, so a duplicate left one
       // copy live and the other unreachable: no field held it and no query
@@ -64,7 +64,7 @@
   <test-case id="repeatable-child-may-repeat" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>a repeatable child may appear many times</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/template-schema.specification.html#repeatable-child-may-repeat">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/schema.canon.html#repeatable-child-may-repeat">the behaviour this checks</a>
     <script type="mycelium/test">
       // Three children against a placeholder written once. Without the
       // declaration this same markup fails as a duplicate, which is the point
@@ -103,7 +103,7 @@
   <test-case id="every-occurrence-is-checked" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>a repeatable child fails on its second occurrence, not only its first</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/template-schema.specification.html#every-occurrence-is-checked">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/schema.canon.html#every-occurrence-is-checked">the behaviour this checks</a>
     <script type="mycelium/test">
       // The regression this change exists for. Only the first child of a kind
       // ever met a check, so a figure with twelve nodes had one placement
@@ -146,7 +146,7 @@
   <test-case id="attribute-borne-element-may-be-empty" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>an element declaring attributes may hold no text</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/template-schema.specification.html#attribute-borne-element-may-be-empty">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/schema.canon.html#attribute-borne-element-may-be-empty">the behaviour this checks</a>
     <script type="mycelium/test">
       // An edge with no label still has two ends, so its meaning survives an
       // empty body. A placeholder declaring no attributes keeps the older
@@ -192,7 +192,7 @@
   <test-case id="declared-order-binds" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>a field placed before one the template ranks earlier fails</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/template-schema.specification.html#declared-order-binds">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/schema.canon.html#declared-order-binds">the behaviour this checks</a>
     <script type="mycelium/test">
       // Thirty one nodes drifted this way before anything checked it, one
       // update at a time, because adding a field appended it. Nothing read
@@ -236,7 +236,7 @@
   <test-case id="a-run-stays-contiguous" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>another tag may not interrupt a repeatable run</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/template-schema.specification.html#a-run-stays-contiguous">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/schema.canon.html#a-run-stays-contiguous">the behaviour this checks</a>
     <script type="mycelium/test">
       // Contiguity costs no check of its own. A cursor that only moves
       // forward has already passed the run's slot by the time the run
@@ -277,7 +277,7 @@
   <test-case id="the-root-is-closed" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>a child of any name the template does not declare fails</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/template-schema.specification.html#the-root-is-closed">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/schema.canon.html#the-root-is-closed">the behaviour this checks</a>
     <script type="mycelium/test">
       // The check used to compare only tags carrying the family prefix, so a
       // div or a blink sat on a knowledge node and met nothing. Five hundred
@@ -325,7 +325,7 @@
   <test-case id="a-plain-field-holds-text-only" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>a placeholder declaring nothing holds text and no elements</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/template-schema.specification.html#a-plain-field-holds-text-only">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/schema.canon.html#a-plain-field-holds-text-only">the behaviour this checks</a>
     <script type="mycelium/test">
       // Nothing looked inside a field before this. A bold tag in a title
       // flattens into textContent, so a pattern tested the flattened string
@@ -372,7 +372,7 @@
   <test-case id="a-field-may-declare-its-own-vocabulary" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>a field declaring which tags it holds refuses any other</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/template-schema.specification.html#a-field-may-declare-its-own-vocabulary">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/schema.canon.html#a-field-may-declare-its-own-vocabulary">the behaviour this checks</a>
     <script type="mycelium/test">
       // Between text-only and anything-goes sits a field with a short fixed
       // vocabulary. A term's meaning holds links and nothing else, so saying
@@ -420,7 +420,7 @@
   <test-case id="a-placeholder-may-name-a-nested-type" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>a placeholder naming a type carries its children into validation</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/template-schema.specification.html#a-placeholder-may-name-a-nested-type">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/schema.canon.html#a-placeholder-may-name-a-nested-type">the behaviour this checks</a>
     <script type="mycelium/test">
       // This is what reaches a figure. Twelve nodes inside one graph carry no
       // conformance of their own, so nothing ever checked a placement. A
@@ -475,7 +475,7 @@
   <test-case id="the-relation-vocabulary-is-closed" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>an edge naming a relation the knowledge template does not list fails</test-name>
     <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="../canon/specifications/template-schema.specification.html#the-relation-vocabulary-is-closed">the behaviour this checks</a>
+    <a data-rel="depends_on" href="../canon/schema.canon.html#the-relation-vocabulary-is-closed">the behaviour this checks</a>
     <script type="mycelium/test">
       // Every case above builds its own sample template, so each one tests the
       // mechanism and none of them tests a list any real document has to obey.
