@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A link into a hidden element resolves and still goes nowhere</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>A link into a hidden element resolves and still goes nowhere</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-detail><p>Every template keeps its worked examples inside a
+<code>display:none</code> block, so the page reads as prose rather than as a
+wall of fixture markup. A browser cannot scroll to a hidden element, so a link
+into one lands on a page that never moves.</p>
+<p><code>every-link-resolves</code> passes all of them. It asks whether the file
+exists and whether something carries that id, which are the two questions it
+answers, and neither is the question a reader has. Eight links in the corpus
+land inside such a block, across the plan, knowledge and canon templates.</p>
+<p>The canon ones matter most, because the drawing links every axiom and
+behaviour back to where it lives and three of those live in the template's own
+samples. Those blocks are visible now, which is also what the prose beside them
+already claims: real instances rather than illustrations.</p>
+<p>The other two templates still hide theirs, and the check still cannot tell.
+This is the same shape as the rest of the day: a check answering a narrower
+question than the one that matters, and passing confidently on the difference.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-08-build-canon-generate-chain.action.html">what following the drawing's own links turned up</a>
+</knowledge-observation>
+</body></html>

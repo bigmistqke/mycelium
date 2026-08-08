@@ -103,3 +103,19 @@ canon-specification > a[data-rel]::before {
   font-family: var(--mono, monospace);
   font-size: 0.8rem;
 }
+
+/* The worked examples, which the prose above each block introduces and the
+   checks fire on. They used to sit behind display:none, which made every link
+   into one resolve and then do nothing: a browser cannot scroll to a hidden
+   element, so the drawing's links into a sample landed on a page that never
+   moved. Visible is also what the prose already claims — these are real
+   instances rather than illustrations. */
+.samples {
+  border-left: 2px solid color-mix(in oklab, currentColor 20%, transparent);
+  padding-left: 1rem;
+  margin: 1rem 0;
+}
+.samples :target {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
