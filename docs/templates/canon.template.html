@@ -493,6 +493,11 @@
 
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
+  import { readCanon, collectTests } from "./canon-citations.ts"
+  import { writeFileSync, mkdtempSync } from "node:fs"
+  import { tmpdir } from "node:os"
+  import { join, resolve as resolvePath } from "node:path"
+  import { pathToFileURL } from "node:url"
 
   const TYPES = ['axiom', 'specification']
 
@@ -972,6 +977,367 @@
     if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
     a.remove()
   }
+  /**
+   * Draw the chain, so an axiom's reach is visible rather than merely checked.
+   *
+   *   mycelium canon generate chain [--out <path>] [--base [<href>]]
+   *
+   * The three checks say the chain holds together and none says what it looks
+   * like. grounded reports that an axiom reaches a behaviour, never how many or
+   * how far. An axiom carrying one and an axiom carrying twelve pass
+   * identically, and that difference is the whole question when somebody asks
+   * whether a principle is load-bearing or merely broad.
+   *
+   * Ranks become columns, because this graph is ranked. An axiom narrows an
+   * axiom, a behaviour refines an axiom, a case checks a behaviour, and a
+   * specification names the files it answers for. Every edge crosses one rank
+   * or stays inside the axiom rank, so nothing has to compute a layout and the
+   * page carries no dependency on anything a network serves. That is the one
+   * place this diverges from knowledge generate, which draws a mesh and needs a
+   * force layout to do it.
+   *
+   * Selecting a node lights everything beneath it and dims the rest, which is
+   * the blast radius as a gesture rather than a list assembled by hand.
+   *
+   * --out writes to that path, relative to docs/ or absolute, for committing a
+   * snapshot. Omitted, it writes to a temp file and prints a file:// URL.
+   * --base adds a <base> tag so a page outside docs/ still resolves the links
+   * it carries back into the corpus; bare, it points at this machine's docs/.
+   */
+  export function generate({ fs, args }: CommandContext) {
+    const kind = args._[0]
+    if (kind !== 'chain') throw new Error(`unknown generate kind "${kind}" — expected "chain"`)
+
+    const corpus = auditFsOver(fs)
+    const { axioms, specifications } = readCanon(corpus)
+    const cases = collectTests(corpus)
+
+    const behaviours = specifications.flatMap((specification) =>
+      specification.behaviours.map((behaviour) => ({ ...behaviour, specification: specification.address })))
+    const behaviourAt = new Map(behaviours.map((b) => [b.address, b]))
+
+    // The reverse of the stored edges, built here and thrown away, the same as
+    // grounded does. Every downward step in one map.
+    const beneath = new Map<string, string[]>()
+    for (const entry of [...axioms, ...behaviours]) {
+      for (const target of entry.dependsOn) {
+        if (!beneath.has(target)) beneath.set(target, [])
+        beneath.get(target)!.push(entry.address)
+      }
+    }
+    for (const testCase of cases) {
+      for (const citation of testCase.citations) {
+        if (!beneath.has(citation.target)) beneath.set(citation.target, [])
+        beneath.get(citation.target)!.push(testCase.address)
+      }
+    }
+
+    // What each node points at, which is the direction the corpus stores.
+    const above = new Map<string, string[]>()
+    for (const entry of [...axioms, ...behaviours]) above.set(entry.address, entry.dependsOn)
+    for (const testCase of cases) above.set(testCase.address, testCase.citations.map((c) => c.target))
+
+    // Everything one way from a node, following the whole distance rather than
+    // one step. `seen` is what keeps an axiom narrowing itself in a loop from
+    // walking forever.
+    function walk(start: string, steps: Map<string, string[]>): string[] {
+      const seen = new Set<string>()
+      const queue = [start]
+      while (queue.length > 0) {
+        for (const next of steps.get(queue.pop()!) ?? []) {
+          if (seen.has(next)) continue
+          seen.add(next)
+          queue.push(next)
+        }
+      }
+      return [...seen]
+    }
+    const reachOf = (start: string) => walk(start, beneath)
+
+    // How far an axiom sits from a general one, so narrowing reads as distance
+    // across the page rather than as an edge doubling back inside a column.
+    const depthOf = new Map<string, number>()
+    function depth(address: string, guard = new Set<string>()): number {
+      if (depthOf.has(address)) return depthOf.get(address)!
+      if (guard.has(address)) return 0
+      guard.add(address)
+      const parents = (above.get(address) ?? []).filter((up) => axiomAt.has(up))
+      const d = parents.length === 0 ? 0 : 1 + Math.max(...parents.map((up) => depth(up, guard)))
+      depthOf.set(address, d)
+      return d
+    }
+    const axiomAt = new Map(axioms.map((axiom) => [axiom.address, axiom]))
+    for (const axiom of axioms) depth(axiom.address)
+
+    const canonOf = (address: string) => address.split('/').pop()!.replace('.canon.html', '').replace(/#.*/, '')
+    const data = {
+      axioms: axioms.map((axiom) => ({
+        address: axiom.address,
+        title: axiom.title,
+        canon: canonOf(axiom.address),
+        narrows: axiom.dependsOn,
+        depth: depthOf.get(axiom.address) ?? 0,
+        behaviours: reachOf(axiom.address).filter((a) => behaviourAt.has(a)).length,
+      })),
+      specifications: specifications.map((specification) => ({
+        address: specification.address,
+        title: specification.title,
+        canon: canonOf(specification.address),
+        specifies: specification.specifies,
+      })),
+      behaviours: behaviours.map((behaviour) => ({
+        address: behaviour.address,
+        title: behaviour.title,
+        specification: behaviour.specification,
+        refines: behaviour.dependsOn,
+      })),
+      cases: cases.map((testCase) => ({
+        address: testCase.address,
+        name: testCase.name,
+        checks: testCase.citations.map((citation) => citation.target),
+      })),
+      // Both directions, precomputed, so selecting anything can light the whole
+      // chain it belongs to rather than only what hangs beneath it.
+      reach: Object.fromEntries([...axioms, ...behaviours, ...cases]
+        .map((entry) => [entry.address, reachOf(entry.address)])),
+      above: Object.fromEntries([...axioms, ...behaviours, ...cases]
+        .map((entry) => [entry.address, walk(entry.address, above)])),
+    }
+
+    const base = args.base === undefined
+      ? ''
+      : `<base href="${args.base === '' ? pathToFileURL(resolvePath(fs.root) + '/').href : args.base}">`
+    const page = chainPage(data, base)
+
+    if (args.out) {
+      const out = resolvePath(fs.root, args.out as string)
+      writeFileSync(out, page)
+      console.log(`wrote    ${out}`)
+      return
+    }
+    const out = join(mkdtempSync(join(tmpdir(), 'mycelium-chain-')), 'chain.html')
+    writeFileSync(out, page)
+    console.log(pathToFileURL(out).href)
+  }
+
+  // An AuditFs over the command's own filesystem, since readCanon and
+  // collectTests both take one and a command is handed the other. Reading is
+  // all either needs.
+  function auditFsOver(fs) {
+    const docs = fs.list('').map(({ path, doc }) => ({ path: `docs/${path}`, doc }))
+    const byPath = new Map(docs.map((d) => [d.path, d.doc]))
+    return {
+      root: resolvePath(fs.root, '..'),
+      list: (dir = '.', options: { ext?: string } = {}) => docs
+        .map((d) => d.path)
+        .filter((path) => (!dir || dir === '.' || path.startsWith(`${dir}/`)) && (!options.ext || path.endsWith(options.ext))),
+      read: () => '',
+      parse: (path: string) => byPath.get(path),
+    }
+  }
+
+  // One self-contained page. The data goes in as JSON, the ranks come out as
+  // columns, and the edges get drawn once the browser has laid the columns out
+  // and can say where anything actually sits.
+  function chainPage(data, base: string): string {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The canon chain</title>
+${base}
+<style>
+  :root { color-scheme: light dark; --line: color-mix(in oklab, currentColor 25%, transparent); }
+  body { margin: 0; font: 13px/1.45 ui-sans-serif, system-ui, sans-serif; }
+  header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--line); }
+  h1 { font-size: 1rem; margin: 0 0 .25rem; }
+  .counts { opacity: .65; }
+  .counts b { font-weight: 600; }
+  #grid { display: grid; gap: 0 2.5rem; padding: 1.25rem; position: relative; align-items: start; }
+  #wires { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  #wires path { fill: none; stroke: var(--line); stroke-width: 1.2; }
+  #wires path.lit { stroke: currentColor; stroke-width: 1.8; }
+  .rank > h2 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+               opacity: .55; margin: 0 0 .6rem; position: sticky; top: 0; }
+  .group { margin-bottom: 1rem; }
+  .group > h3 { font-size: .7rem; opacity: .5; margin: 0 0 .35rem; font-weight: 500; }
+  h3.selectable { cursor: pointer; }
+  h3.selectable:hover { opacity: .9; }
+  h3.lit { opacity: 1; font-weight: 600; }
+  h3.dim { opacity: .18; }
+  .node.file { font-family: ui-monospace, monospace; font-size: .72rem; }
+  .node { border: 1px solid var(--line); border-radius: 5px; padding: .4rem .55rem;
+          margin-bottom: .35rem; cursor: pointer; position: relative; }
+  .node:hover { border-color: currentColor; }
+  .node.lit { border-color: currentColor; }
+  .node.dim { opacity: .18; }
+  .node .reach { float: right; opacity: .5; font-variant-numeric: tabular-nums; }
+  .node a { color: inherit; text-decoration: none; }
+  .node a:hover { text-decoration: underline; }
+  footer { padding: .75rem 1.25rem; border-top: 1px solid var(--line); opacity: .6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>The canon chain</h1>
+  <div class="counts">
+    <b>${data.axioms.length}</b> axioms &middot;
+    <b>${data.behaviours.length}</b> behaviours &middot;
+    <b>${data.cases.length}</b> cases &middot;
+    <b>${data.specifications.length}</b> subsystems
+  </div>
+</header>
+<div id="grid"><svg id="wires"></svg></div>
+<footer>Select an axiom, a behaviour, a case or a subsystem heading to light its whole chain. Every title links back into the corpus.</footer>
+<script type="application/json" id="chain">${JSON.stringify(data)}<\/script>
+<script>
+${CHAIN_SCRIPT}
+<\/script>
+</body>
+</html>
+`
+  }
+
+  // Runs in the page. Plain JavaScript, since nothing here loads under Node.
+  const CHAIN_SCRIPT = `
+const data = JSON.parse(document.getElementById('chain').textContent)
+const grid = document.getElementById('grid')
+const wires = document.getElementById('wires')
+
+// Ranks, left to right. An axiom sits in the column its narrowing depth puts
+// it in, so an axiom narrowing another lands right of it and that edge crosses
+// a column like every other edge rather than doubling back inside one.
+const axiomDepth = Math.max(0, ...data.axioms.map(a => a.depth))
+const ranks = []
+for (let d = 0; d <= axiomDepth; d++)
+  ranks.push({ name: d === 0 ? 'axioms' : 'narrowed', items: data.axioms.filter(a => a.depth === d)
+    .map(a => ({ address: a.address, title: a.title, group: a.canon, reach: a.behaviours })) })
+
+const specTitle = Object.fromEntries(data.specifications.map(s => [s.address, s.title]))
+ranks.push({ name: 'behaviours', items: data.behaviours.map(b =>
+  ({ address: b.address, title: b.title, group: specTitle[b.specification] || 'unspecified', groupOf: b.specification })) })
+ranks.push({ name: 'test cases', items: data.cases.map(c =>
+  ({ address: c.address, title: c.name, group: c.address.split('/').pop().split('#')[0] })) })
+const files = []
+for (const s of data.specifications)
+  for (const f of s.specifies)
+    files.push({ address: f, title: f.replace(/^docs\\//, ''), group: s.title, groupOf: s.address, file: true })
+ranks.push({ name: 'implementation', items: files })
+
+// What each item points at, for ordering a column against the one before it.
+const parentsOf = {}
+for (const a of data.axioms) parentsOf[a.address] = a.narrows
+for (const b of data.behaviours) parentsOf[b.address] = b.refines
+for (const c of data.cases) parentsOf[c.address] = c.checks
+for (const s of data.specifications) for (const f of s.specifies) parentsOf[f] = [s.address]
+
+// Fewer crossings, by putting each item near whatever it points at. A group
+// takes the mean position of its members, and members sort inside it, so the
+// subsystem stays readable while the lines stop fighting each other.
+const row = {}
+for (const rank of ranks) {
+  const mean = (item) => {
+    const ps = (parentsOf[item.address] || []).map(p => row[p]).filter(n => n !== undefined)
+    return ps.length ? ps.reduce((a, b) => a + b, 0) / ps.length : Number.MAX_SAFE_INTEGER
+  }
+  const groups = new Map()
+  for (const item of rank.items) {
+    if (!groups.has(item.group)) groups.set(item.group, [])
+    groups.get(item.group).push(item)
+  }
+  for (const items of groups.values()) items.sort((a, b) => mean(a) - mean(b))
+  rank.groups = [...groups.entries()]
+    .map(([name, items]) => ({ name, items, groupOf: items[0].groupOf,
+      at: items.reduce((n, i) => n + (mean(i) === Number.MAX_SAFE_INTEGER ? 0 : mean(i)), 0) / items.length }))
+    .sort((a, b) => (a.name === 'root' ? -1 : b.name === 'root' ? 1 : a.at - b.at))
+  let n = 0
+  for (const group of rank.groups) for (const item of group.items) row[item.address] = n++
+}
+
+for (const rank of ranks) {
+  const column = document.createElement('div')
+  column.className = 'rank'
+  column.innerHTML = '<h2>' + rank.name + '</h2>'
+  for (const group of rank.groups) {
+    const g = document.createElement('div')
+    g.className = 'group'
+    const h = document.createElement('h3')
+    h.textContent = group.name
+    // A specification is selectable too, so a whole subsystem lights at once.
+    if (group.groupOf) { h.dataset.address = group.groupOf; h.className = 'selectable' }
+    g.appendChild(h)
+    for (const item of group.items) {
+      const el = document.createElement('div')
+      el.className = 'node' + (item.file ? ' file' : '')
+      el.dataset.address = item.address
+      el.innerHTML = (item.reach === undefined ? '' : '<span class="reach">' + item.reach + '</span>')
+        + '<a href="' + item.address.replace(/^docs\\//, '') + '">' + item.title + '</a>'
+      g.appendChild(el)
+    }
+    column.appendChild(g)
+  }
+  grid.appendChild(column)
+}
+grid.style.gridTemplateColumns = 'repeat(' + ranks.length + ', minmax(160px, 1fr))'
+
+const links = []
+for (const [child, parents] of Object.entries(parentsOf))
+  for (const parent of parents) links.push([child, parent])
+
+const boxOf = (address) => grid.querySelector('[data-address="' + CSS.escape(address) + '"]')
+
+function draw() {
+  const origin = grid.getBoundingClientRect()
+  wires.setAttribute('viewBox', '0 0 ' + origin.width + ' ' + origin.height)
+  wires.style.width = origin.width + 'px'
+  wires.style.height = origin.height + 'px'
+  wires.innerHTML = ''
+  for (const [from, to] of links) {
+    const a = boxOf(from), b = boxOf(to)
+    if (!a || !b) continue
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect()
+    const x1 = ra.left - origin.left, y1 = ra.top - origin.top + ra.height / 2
+    const x2 = rb.right - origin.left, y2 = rb.top - origin.top + rb.height / 2
+    const mid = (x1 + x2) / 2
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    path.setAttribute('d', 'M' + x1 + ',' + y1 + ' C' + mid + ',' + y1 + ' ' + mid + ',' + y2 + ' ' + x2 + ',' + y2)
+    path.dataset.from = from
+    path.dataset.to = to
+    wires.appendChild(path)
+  }
+}
+
+// Selecting anything lights the whole chain it belongs to, above and below.
+// A specification has no chain of its own, so it stands for its behaviours.
+function chainOf(address) {
+  const spec = data.specifications.find(s => s.address === address)
+  if (!spec) return new Set([address, ...(data.reach[address] || []), ...(data.above[address] || [])])
+  const lit = new Set([address, ...spec.specifies])
+  for (const b of data.behaviours.filter(b => b.specification === address))
+    for (const a of [b.address, ...(data.reach[b.address] || []), ...(data.above[b.address] || [])]) lit.add(a)
+  return lit
+}
+
+let selected = null
+grid.addEventListener('click', (event) => {
+  if (event.target.tagName === 'A') return
+  const box = event.target.closest('[data-address]')
+  const address = box && box.dataset.address
+  selected = address === selected ? null : address
+  const lit = selected ? chainOf(selected) : null
+  for (const el of grid.querySelectorAll('[data-address]')) {
+    el.classList.toggle('lit', !!lit && lit.has(el.dataset.address))
+    el.classList.toggle('dim', !!lit && !lit.has(el.dataset.address))
+  }
+  for (const path of wires.querySelectorAll('path'))
+    path.classList.toggle('lit', !!lit && lit.has(path.dataset.from) && lit.has(path.dataset.to))
+})
+
+draw()
+addEventListener('resize', draw)
+`
+
 </script>
 
 </body></html>

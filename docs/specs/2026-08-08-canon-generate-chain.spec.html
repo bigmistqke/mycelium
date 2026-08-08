@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: canon generate chain: drawing a ranked graph as ranks</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>canon generate chain: drawing a ranked graph as ranks</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-08</spec-date>
+  <spec-problem>
+<p>Three checks say the chain holds together and none of them says what it looks
+like. <code>grounded</code> reports that an axiom reaches a behaviour, never how
+many or how far. An axiom carrying one behaviour and an axiom carrying twelve
+pass identically, and that difference is the whole question when somebody asks
+whether a principle is load-bearing or just broad enough to cover anything.</p>
+<p>The same gap costs a reader the blast radius. Rewording an axiom means
+re-deriving every behaviour beneath it and every case citing those, and the
+edges all point the other way, so today that list gets assembled by hand.</p>
+<p><code>knowledge generate graph</code> already draws its own family, so the
+shape of the command exists and the flags are settled. What does not carry over
+is the drawing.</p>
+</spec-problem>
+  <spec-design>
+<p><code>mycelium canon generate chain [--out path] [--base [href]]</code>, the
+same signature the knowledge command already takes, for the same reasons about
+where a self-contained page can safely resolve its links.</p>
+<p>The layout differs because the graph does. A knowledge graph is a mesh, so it
+gets a force layout and a library to compute one. The canon chain is ranked: an
+axiom narrows an axiom, a behaviour refines an axiom, a case checks a behaviour,
+and a specification names the files it answers for. Every edge crosses exactly
+one rank or stays inside the axiom rank.</p>
+<p>So the page draws ranks as columns and needs no layout engine at all. Axioms
+sit left, then behaviours, then cases, then the files a specification names.
+Edges are SVG paths between two columns. Nothing is computed that the graph does
+not already state, and the page carries no dependency on anything a network
+serves.</p>
+<p>Reach is the reading the checks cannot give, so the drawing leads with it. An
+axiom shows the count of behaviours beneath it, following narrowing the whole
+way down, which is the same walk <code>grounded</code> already does and throws
+away. Selecting any node lights its whole downstream reach and dims the rest,
+which is the blast radius as a gesture rather than a list.</p>
+<p>Grouping follows the file. A canon document is one subsystem, so its axioms
+and behaviours draw together and carry its name, which makes an axiom in root
+visibly different from one that belongs to a subsystem.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>No card carrying an entry's own markup. The knowledge command inlines each
+node's real HTML and its family stylesheet so a card looks like the page it came
+from, which earns its cost when a node holds a detail worth reading. A behaviour
+is one sentence and an axiom is one line, so a card here would be the title and
+a border around it.</p>
+<p>No editing. The page reads the corpus and links back into it; changing
+anything stays with the commands that own the files.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Whether the implementation rank belongs on the drawing at all. A
+specification names files rather than claims, so that column is a list of paths
+with no structure beneath it, and it may say less than the space it takes.</p>
+<p>Whether an axiom's reach should count behaviours or cases. Behaviours measure
+what the principle governs; cases measure what anybody actually checks, and the
+two diverge exactly where coverage is thin.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>

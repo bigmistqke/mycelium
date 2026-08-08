@@ -38,6 +38,10 @@ export interface CanonEntry {
 
 export interface Specification extends CanonEntry {
   behaviours: CanonEntry[]
+  // The files this subsystem answers for, already resolved. A specification
+  // points at code rather than naming a subsystem, so this link set is the
+  // whole of what the subsystem covers.
+  specifies: string[]
 }
 
 export interface Canon {
@@ -71,9 +75,9 @@ export function resolveHref(path: string, href: string): string {
   return address(segments.join("/"), fragment)
 }
 
-function edges(element: Element, path: string): string[] {
+function edges(element: Element, path: string, rel = "depends_on"): string[] {
   return Array.from(element.children)
-    .filter((child) => child.tagName.toLowerCase() === "a" && child.getAttribute("data-rel") === "depends_on")
+    .filter((child) => child.tagName.toLowerCase() === "a" && child.getAttribute("data-rel") === rel)
     .map((child) => resolveHref(path, child.getAttribute("href") ?? ""))
 }
 
@@ -135,6 +139,7 @@ export function readCanon(fs: AuditFs): Canon {
         address: address(path, element.getAttribute("id")),
         title: titleOf(element),
         dependsOn: edges(element, path),
+        specifies: edges(element, path, "specifies"),
         behaviours: Array.from(element.querySelectorAll("canon-behaviour[id]")).map((behaviour) => ({
           address: address(path, behaviour.getAttribute("id")),
           title: titleOf(behaviour),
