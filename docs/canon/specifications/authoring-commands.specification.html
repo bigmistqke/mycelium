@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Specification: the authoring commands</title>
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../../templates/canon.template.css">
+</head>
+<body>
+<canon-specification data-conforms-to="../../templates/canon.template.html#canon-specification">
+  <canon-title>the authoring commands</canon-title>
+  <a data-rel="depends_on" href="../axioms/derive-do-not-maintain.axiom.html">the href is computed, never typed</a>
+  <a data-rel="depends_on" href="../axioms/documents-are-the-source.axiom.html">a command writes the document it owns</a>
+  <a data-rel="specifies" href="../../templates/knowledge.template.html">the knowledge authoring commands</a>
+  <canon-behaviour id="add-dates-the-filename" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
+    <canon-title>knowledge add prepends today's date to a bare slug.</canon-title>
+  </canon-behaviour>
+  <canon-behaviour id="add-refuses-a-dated-slug" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
+    <canon-title>knowledge add refuses a slug that already carries a date.</canon-title>
+  </canon-behaviour>
+  <canon-behaviour id="link-writes-into-the-from-file" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
+    <canon-title>link writes the edge into the first file, not the second.</canon-title>
+  </canon-behaviour>
+  <canon-behaviour id="language-link-crosses-directories" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
+    <canon-title>An edge from a term to a guide climbs out of the directory holding the term.</canon-title>
+  </canon-behaviour>
+  <canon-behaviour id="knowledge-link-reaches-a-template" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
+    <canon-title>An edge to a template keeps the leading dot-dot that reaches it.</canon-title>
+  </canon-behaviour>
+</canon-specification>
+</body></html>

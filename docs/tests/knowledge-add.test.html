@@ -16,6 +16,7 @@
   <test-case id="add-dates-the-filename" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>add prepends today's date to a bare slug</test-name>
     <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/specifications/authoring-commands.specification.html#add-dates-the-filename">the behaviour this checks</a>
     <script type="mycelium/test">
       // The slug a caller passes carries no date, and the command supplies one.
       // That split is the reason add takes an undated slug while every other
@@ -50,6 +51,7 @@
   <test-case id="add-refuses-a-dated-slug" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>add refuses a slug that already carries a date</test-name>
     <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/specifications/authoring-commands.specification.html#add-refuses-a-dated-slug">the behaviour this checks</a>
     <script type="mycelium/test">
       // This used to write a filename carrying the date twice. Such a node
       // validates, so the only symptom was the name, and the surrounding prose
@@ -75,6 +77,7 @@
   <test-case id="link-writes-into-the-from-file" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>link writes the edge into the first file, not the second</test-name>
     <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/specifications/authoring-commands.specification.html#link-writes-into-the-from-file">the behaviour this checks</a>
     <script type="mycelium/test">
       // Argument order decides direction, and getting it backwards still runs
       // without complaint. It leaves an edge pointing the wrong way for a later

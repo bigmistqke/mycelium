@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A test cites a behaviour with an edge, not a tag in a comment</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A test cites a behaviour with an edge, not a tag in a comment</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-08</spec-date>
+  <spec-problem>
+<p>The derivation chain's bottom rung was designed against another project's
+test framework. A citation is a comment carrying <code>@specification</code>,
+and a leaf test is an <code>it(...)</code> or <code>test(...)</code> call,
+which is what Playwright and the project that ran this methodology before both
+give you.</p>
+<p>This repository has neither. A test here is a document. A
+<code>test-doc</code> holds <code>test-case</code> elements, each carrying a
+name, a status, an optional fixture and a script, and a node case exports one
+default function rather than calling anything named <code>it</code>. So the
+reader finds no test in <code>docs/tests/</code> at all, and the two families
+pass each other by while both spelling a script type
+<code>mycelium/test</code>.</p>
+<p>The tag notation has also failed twice, both times by finding nothing and
+reporting that as an answer. A walk over comments could never see a test
+carrying none. Then a comment holding one tag line stopped surviving the
+reading view, because that view drops tag lines and then drops any comment left
+holding no prose. Each time the audits reported an empty chain faithfully, and
+each time the only thing that caught it was a worked example built to make the
+check fire.</p>
+<p>Both failures share a shape. The citation lived in text that another part of
+the system was free to reformat, and neither part knew the other was reading
+it.</p>
+</spec-problem>
+  <spec-design>
+<p>A <code>test-case</code> carries its citation as an ordinary edge:</p>
+<pre><code>&lt;test-case id="exits-non-zero-on-failure"&gt;
+  &lt;test-name&gt;validate exits non-zero when an audit fails&lt;/test-name&gt;
+  &lt;test-status&gt;PENDING&lt;/test-status&gt;
+  &lt;a data-rel="depends_on" href="../canon/specifications/validate.specification.html#exits-non-zero-on-failure"&gt;the behaviour this checks&lt;/a&gt;
+  &lt;script type="mycelium/test"&gt;…&lt;/script&gt;
+&lt;/test-case&gt;</code></pre>
+<p>Four things fall out of that, and none of them needs new machinery.</p>
+<p>A case already has an <code>id</code>, so it already has an address. A
+violation names <code>docs/tests/link-href.test.html#language-link-crosses-directories</code>
+rather than a slug made from the test's own wording, which was the best a
+comment could offer and moved whenever somebody reworded the test.</p>
+<p><code>every-link-resolves</code> already checks that a link reaches the file
+and the anchor it names, and it learned to check the fragment for this chain's
+sake. A citation is now an ordinary link, so a citation pointing at a behaviour
+that no longer exists fails there, in the check that already exists for it.</p>
+<p><code>depends_on</code> is the relation, from the closed set every family
+shares. The chain's upward edges are already <code>depends_on</code>: a
+specification names the axioms it serves, an axiom names the one it narrows,
+and a case naming the behaviour it checks is the next rung of that same ladder.
+Nothing gets minted.</p>
+<p>The reader stops parsing source entirely. It queries
+<code>test-case</code> elements and reads their edges, which is the same
+reading <code>readCanon</code> already does one rung up. So
+<code>testRanges</code>, the leaf-test definition it rests on, and the reading
+of comments in <code>.ts</code> files all go, along with the class of failure
+they carried.</p>
+<p>This follows <a href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link,
+do not tag</a>, which the project settled once already for a different reason
+and which applies here exactly: a link is a thing a reader can follow and a
+checker can resolve, and a tag in a comment is neither.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>No authoring command. A citation is one edge on a case somebody is writing
+by hand anyway, and <code>test.template.html</code> deliberately has no
+<code>add</code> for the same reason: a test's substance is a fixture and a
+script, and neither fits on a flag.</p>
+<p>Nothing here makes a browser case cite differently from a node case. The
+edge sits on the case, above the script, so the script type stays what it
+already means and decides only which runner opens the page.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Whether a case may cite more than one behaviour. The schema allows a
+repeatable edge and the reader accepts any that land, so today it may. Whether
+that is right is the same question the old design asked about one target per
+line, and neither has met a real case yet.</p>
+<p>Whether <code>cited</code> should distinguish a case citing nothing from one
+whose citation resolves to an axiom rather than a behaviour. Both fail now, on
+the principle that a citation gets judged on where it lands. The second is the
+more interesting finding and currently reads the same as the first.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>

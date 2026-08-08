@@ -132,6 +132,7 @@
     <test-name required></test-name>
     <test-status required enum="PENDING"></test-status>
     <test-message></test-message>
+    <a repeatable href=".+" data-rel="^(depends_on)$"></a>
     <test-fixture markup></test-fixture>
     <script required></script>
   </test-case>
@@ -162,6 +163,37 @@
   <code>test-fixture</code> holds ordinary markup, live in the page rather than cloned into it. A figure
   inside one upgrades and draws exactly as it would anywhere else, which is the whole reason to write a test
   of markup in markup.
+</p>
+
+<h2>A case cites the behaviour it checks</h2>
+<p>
+  A case names the claim it answers to with an ordinary edge, so the bottom rung of the derivation chain
+  is a link like every rung above it:
+</p>
+<pre><code>&lt;test-case id="exits-non-zero-on-failure"&gt;
+  &lt;test-name&gt;validate exits non-zero when an audit fails&lt;/test-name&gt;
+  &lt;test-status&gt;PENDING&lt;/test-status&gt;
+  &lt;a data-rel="depends_on" href="../canon/specifications/validate.specification.html#exits-non-zero-on-failure"&gt;the behaviour this checks&lt;/a&gt;
+  &lt;script type="mycelium/test"&gt;&hellip;&lt;/script&gt;
+&lt;/test-case&gt;</code></pre>
+<p>
+  A case already carries an <code>id</code>, so it already has an address, and
+  <a href="./template.template.html">every-link-resolves</a> already checks that a link reaches the file
+  and the anchor it names. A citation pointing at a behaviour somebody has since renamed therefore fails
+  in the check that exists for it, rather than in one written for citations.
+</p>
+<p>
+  <code>depends_on</code> is the relation the whole chain already uses upward: a specification names the
+  axioms it serves and an axiom names the one it narrows. A case naming its behaviour is the next rung of
+  that ladder, so nothing new gets minted.
+</p>
+<p>
+  An earlier design put this in a comment above the test, as
+  <code>@specification</code> and a path. That came from a test framework this repository does not use,
+  where a case is an <code>it(...)</code> call with no document and no id to link from. It failed twice by
+  finding nothing and reporting that as an answer, both times because the citation sat in text another
+  part of the system was free to reformat. Full reasoning:
+  <a href="../specs/2026-08-08-citation-is-an-edge.spec.html">a test cites a behaviour with an edge</a>.
 </p>
 
 <h2>Why the case script is not a mycelium type</h2>

@@ -264,45 +264,45 @@ axiom names the general one it narrows. Nothing authors the downward
 direction, because a hand-maintained reverse index rots and a forgotten entry
 in one looks exactly like an axiom nothing derives from.
 
-A test joins the chain through a comment carrying `@specification`, then a
-path from the repository root, then a fragment, one target per line:
+A test cites the behaviour it checks with an ordinary edge on its own
+`test-case`, so the bottom rung is a link like every rung above it:
 
-```ts
-/**
- * @specification docs/canon/specifications/validate.specification.html#exits-non-zero-on-failure
- */
-it('exits non-zero when an audit fails', () => {
+```html
+<test-case id="exits-non-zero-on-failure" data-conforms-to="../templates/test.template.html#test-case">
+  <test-name>validate exits non-zero when an audit fails</test-name>
+  <test-status>PENDING</test-status>
+  <a data-rel="depends_on" href="../canon/specifications/validate.specification.html#exits-non-zero-on-failure">the behaviour this checks</a>
+  <script type="mycelium/test">…</script>
+</test-case>
 ```
 
-The long word, not `@spec`: `spec add` writes a design document here, so the
-short one would name one family and point at another. Only a leaf test
-carries a citation — a group spans a whole file and answers to no single
-behaviour. A citation gets judged on where it lands, never on which tag
-carries it, so one resolving to an axiom rather than a behaviour is a finding
-rather than a shortcut: the test knows something no specification states.
+The edge goes directly after `test-status`, which is where the schema ranks it.
+`depends_on` is the relation the chain already uses upward, so nothing is
+minted for this. A case carries an `id`, so both ends of a citation have an
+address and `every-link-resolves` checks it like any other link — renaming a
+behaviour fails every citation to it, which is what makes a rename deliberate.
+
+A citation gets judged on where it lands, never on what carries it, so one
+resolving to an axiom rather than a behaviour is a finding rather than a
+shortcut: the test knows something no specification states.
 
 Three audits check the chain, and `pnpm mycelium validate` runs them with
 everything else. `grounded`: every axiom reaches a behaviour beneath it, and
 every specification reaches an axiom above it. `exhaustive`: every behaviour
-has a test citing it. `cited`: every test cites a behaviour. Nothing is
-exempt on either side of that last joint, which is what having no
-requirement marking buys.
+has a case citing it. `cited`: every case cites a behaviour. Nothing is exempt
+on either side of that last joint, which is what having no requirement marking
+buys — adding a test case means adding the behaviour it answers to, or the
+build goes red.
 
 The honest limit, which no check closes: rewording a behaviour in place keeps
-every citation resolving, so nothing tells the citing tests they now check
+every citation resolving, so nothing tells the citing cases they now check
 something the document no longer claims.
 
-The chain does not reach the test family yet. `cited` and `exhaustive`
-recognise a leaf test as an `it(...)` or `test(...)` call, while a node case in
-`test.template.html` is a default-exported function instead. So the reader
-finds no test in `docs/tests/`, and the two families pass each other by.
-
-Both families also spell a script type `mycelium/test` and mean different
-things by it, so the canon template's own sample is the only thing the chain
-checks today. Closing this means picking one notation. The likelier answer is
-that a citation becomes an ordinary edge on `test-case` rather than a tag in a
-comment, since a test is a document now and this project links rather than
-tags.
+An earlier design wrote a citation as `@specification` in a comment above an
+`it(...)` call. That notation came from a test framework this repository does
+not use, and it failed twice by finding nothing and reporting that as an
+answer. See
+`docs/specs/2026-08-08-citation-is-an-edge.spec.html`.
 
 ### The Core Rule
 

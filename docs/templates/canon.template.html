@@ -204,30 +204,33 @@
   <code>describes</code> here would have reopened exactly that.
 </p>
 
-<h2>A test cites a behaviour from source</h2>
+<h2>A test cites a behaviour</h2>
 <p>
-  A test gets no document. It joins the chain through a comment carrying
-  <code>@specification</code>, then a path from the repository root, then a fragment, one target per
-  line.
+  A test is a document here, so the bottom rung is a link like every rung above it. A
+  <code>test-case</code> names the behaviour it checks with <code>depends_on</code>, the same relation
+  a specification uses to name the axiom it serves.
+</p>
+<pre><code>&lt;test-case id="exits-non-zero-on-failure"&gt;
+  &lt;test-name&gt;validate exits non-zero when an audit fails&lt;/test-name&gt;
+  &lt;test-status&gt;PENDING&lt;/test-status&gt;
+  &lt;a data-rel="depends_on" href="../canon/specifications/validate.specification.html#exits-non-zero-on-failure"&gt;the behaviour this checks&lt;/a&gt;
+  &lt;script type="mycelium/test"&gt;&hellip;&lt;/script&gt;
+&lt;/test-case&gt;</code></pre>
+<p>
+  A case carries an <code>id</code>, so a citation has an address at both ends and
+  <code>every-link-resolves</code> checks it like any other link. Renaming a behaviour fails every
+  citation to it, which is what makes a rename deliberate.
 </p>
 <p>
-  The path starts at the repository root because <code>src/</code> sits at a different depth from a
-  script block inside <code>docs/</code>, and one target should not need two spellings. The long word
-  rather than the short one, because <code>spec add</code> here writes a design document, so
-  <code>@spec</code> would name one family and point at another.
-</p>
-<pre><code>/**
- * @specification docs/canon/specifications/validate.specification.html#exits-non-zero-on-failure
- */
-it('exits non-zero when an audit fails', () =&gt; {</code></pre>
-<p>
-  Only a leaf test carries one. An enclosing group spans a whole file and answers to no single
-  behaviour, so a citation there means picking a child's target arbitrarily, and an inner group
-  restates what each child already carries.
+  A citation gets judged on where it lands, never on what carries it. One resolving to an axiom rather
+  than a behaviour is a finding: the test knows something no specification states.
 </p>
 <p>
-  A citation gets judged on where it lands, never on which tag carries it. A citation resolving to an
-  axiom rather than a behaviour is a finding: the test knows something no specification states.
+  An earlier design wrote this as <code>@specification</code> in a comment above an
+  <code>it(...)</code> call, which is what a test looks like in frameworks this repository does not
+  use. It failed twice by finding nothing and calling that an answer. Full reasoning:
+  <a href="../specs/2026-08-08-citation-is-an-edge.spec.html">a test cites a behaviour with an
+  edge</a>.
 </p>
 
 <h2>Sample instances</h2>
@@ -265,30 +268,34 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
   </canon-specification>
 </div>
 
-<h3>The sample tests</h3>
+<h3>The sample cases</h3>
 <p>
-  The bottom rung needs a worked example too, and a test is the one rung with no document to hold
-  it. So the two below sit in a script block, the same place eight documents in this corpus already
-  keep a command or an audit.
+  The bottom rung needs a worked example too. These are real
+  <code>test-case</code> instances, checked against
+  <a href="./test.template.html">test.template.html</a> like any other, and they sit here rather than
+  in <code>docs/tests/</code> because a case built to fail a check is not one anybody wants a runner
+  to open.
 </p>
 <p>
-  The type is <code>mycelium/test</code>, which nothing here runs. That is the point: a file named
-  <code>*.test.ts</code> would be collected by whatever runner this repository grows, and a sample
-  built to fail a check is not a test anybody wants executed. It still typechecks, and the citation
-  reader still finds it, because both read the block rather than run it.
+  They carry a browser script, which keeps them out of the node runner and out of
+  <code>check-scripts</code>, and the two audits about case scripts skip a document declaring a
+  template anyway. The citation reader does not skip it, which is what makes these fire.
 </p>
-<script type="mycelium/test">
-  import { it } from "node:test"
 
-  /**
-   * @specification docs/templates/canon.template.html#sample-tested-behaviour
-   */
-  it("cites a behaviour, which is what the passing side of the joint looks like", () => {})
+<div id="sample-cases" style="display:none">
+  <test-case id="sample-citing-case" data-conforms-to="./test.template.html#test-case">
+    <test-name>cites a behaviour, which is what the passing side of the joint looks like</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="#sample-tested-behaviour">the behaviour this checks</a>
+    <script type="text/mycelium-test">assert(true)</script>
+  </test-case>
 
-  // No citation, so this one is the violation `cited` declares. A test that
-  // cites nothing is a claim about the system no specification makes.
-  it("cites nothing at all", () => {})
-</script>
+  <test-case id="sample-uncited-case" data-conforms-to="./test.template.html#test-case">
+    <test-name>cites nothing at all, which is the violation cited declares</test-name>
+    <test-status>PENDING</test-status>
+    <script type="text/mycelium-test">assert(true)</script>
+  </test-case>
+</div>
 
 <h2>Validator</h2>
 <p>
@@ -427,20 +434,19 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
   project that ran this methodology before checked the tag name instead and let sixteen such
   citations through, and every one of them turned out to be a real gap.
 </p>
-<script type="mycelium/audit" data-audits="cited" data-expects="docs/templates/canon.template.html:cites-nothing-at-all" data-touches="canon-behaviour">
+<script type="mycelium/audit" data-audits="cited" data-expects="docs/templates/canon.template.html#sample-uncited-case" data-touches="canon-behaviour">
   import type { AuditFs } from "../../src/api.ts"
   /**
    * Every test cites a behaviour.
    *
    * One check covers all three ways to fail, because all three are the same
-   * failure: a test with no comment above it, a citation resolving to nothing,
-   * and a citation landing on an axiom rather than on a behaviour. What decides
-   * is where the citation lands.
+   * failure: a case carrying no edge, an edge resolving to nothing, and an edge
+   * landing on an axiom rather than on a behaviour. What decides is where the
+   * citation lands.
    *
-   * A test has no id to be named by, so a violation names the file and a slug
-   * of the test's own words.
+   * A case carries an id, so a violation names the address somebody can open.
    */
-  import { collectTests, readCanon, slugify } from "./canon-citations.ts"
+  import { collectTests, readCanon } from "./canon-citations.ts"
 
   export default function (fs: AuditFs) {
     const behaviours = new Set(
@@ -448,7 +454,7 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
     )
     const violations = collectTests(fs)
       .filter((test) => !test.citations.some((citation) => behaviours.has(citation.target)))
-      .map((test) => `${test.source}:${slugify(test.name)}`)
+      .map((test) => test.address)
     return { ok: violations.length === 0, violations }
   }
 </script>

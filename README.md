@@ -1,5 +1,7 @@
 # mycelium
 
+Free text only supports a read. A declared shape supports a check. Mycelium is an engine for the second kind: a schema, a command, an audit — each one is a document that claims a shape and answers to it.
+
 You write this:
 
 ```html
