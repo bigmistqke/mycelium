@@ -234,6 +234,7 @@ SUCCESS into a document.
 `validate` cannot test the figure engine, and no audit ever will: it parses
 with happy-dom, which computes no layout, so every rect is zero. See
 `docs/knowledge/2026-08-05-happy-dom-computes-no-layout.observation.html`.
+
 ### The canon family: what the project holds true, and what it promises
 
 `canon.template.html` carries three types. An axiom is a principle, with a
@@ -263,9 +264,8 @@ axiom names the general one it narrows. Nothing authors the downward
 direction, because a hand-maintained reverse index rots and a forgotten entry
 in one looks exactly like an axiom nothing derives from.
 
-A test gets no document. It joins the chain through a comment carrying
-`@specification`, then a path from the repository root, then a fragment, one
-target per line:
+A test joins the chain through a comment carrying `@specification`, then a
+path from the repository root, then a fragment, one target per line:
 
 ```ts
 /**
@@ -291,6 +291,18 @@ requirement marking buys.
 The honest limit, which no check closes: rewording a behaviour in place keeps
 every citation resolving, so nothing tells the citing tests they now check
 something the document no longer claims.
+
+The chain does not reach the test family yet. `cited` and `exhaustive`
+recognise a leaf test as an `it(...)` or `test(...)` call, while a node case in
+`test.template.html` is a default-exported function instead. So the reader
+finds no test in `docs/tests/`, and the two families pass each other by.
+
+Both families also spell a script type `mycelium/test` and mean different
+things by it, so the canon template's own sample is the only thing the chain
+checks today. Closing this means picking one notation. The likelier answer is
+that a citation becomes an ordinary edge on `test-case` rather than a tag in a
+comment, since a test is a document now and this project links rather than
+tags.
 
 ### The Core Rule
 
