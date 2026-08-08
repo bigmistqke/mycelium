@@ -237,72 +237,65 @@ with happy-dom, which computes no layout, so every rect is zero. See
 
 ### The canon family: what the project holds true, and what it promises
 
-`canon.template.html` carries three types. An axiom is a principle, with a
-confidence saying how far to trust it. A specification names a subsystem and
-holds behaviours, each one a falsifiable claim in a single sentence carrying
-an `id`. Full design:
-`docs/specs/2026-08-06-canon-template-html.spec.html`.
+A canon document is one subsystem: `docs/canon/<subsystem>.canon.html`, holding
+that subsystem's own axioms and the specification its behaviours belong to.
+`root.canon.html` holds the axioms that govern everything, and a subsystem axiom
+narrows one of those. Full design:
+`docs/specs/2026-08-06-canon-template-html.spec.html` and
+`docs/specs/2026-08-08-behaviour-cites-its-axiom.spec.html`.
 
 ```bash
-pnpm mycelium canon add axiom --title "…" --file <slug> --confidence NN [--detail "…" | --detail -]
-pnpm mycelium canon add specification --title "…" --file <slug>
-pnpm mycelium canon add behaviour <file> --id <slug> --title "…"
-pnpm mycelium canon update <file> [--title "…"] [--confidence NN] [--detail "…"]
-pnpm mycelium canon link <from-file> <target> --rel <rel> --label "…"
-pnpm mycelium canon unlink <from-file> <target> --rel <rel>
+pnpm mycelium canon add axiom --canon <name> --id <slug> --title "…" --confidence NN [--detail "…" | --detail -]
+pnpm mycelium canon add specification --canon <name> --id <slug> --title "…"
+pnpm mycelium canon add behaviour --canon <name> --id <slug> --title "…"
+pnpm mycelium canon update <canon>#<id> [--title "…"] [--id <slug>] [--confidence NN] [--detail "…"]
+pnpm mycelium canon link <canon>#<id> <target> --rel <rel> --label "…"
+pnpm mycelium canon unlink <canon>#<id> <target> --rel <rel>
+pnpm mycelium canon move <canon>#<id> <to-canon>
 ```
 
-`--file` here is the whole name and carries **no date**, unlike `knowledge
-add` and `spec add`, and a slug carrying one is rejected. There is no
-`--date` flag either. Both types describe what holds now: an axiom that stops
-being true gets revised or retired, and a specification that no longer
-matches the system is a bug in one of the two, so a date on the filename
-would assert that the principle dates from that day.
+Nothing here carries a date, and there is no `--date` flag. These describe what
+holds now: an axiom that stops being true gets revised or retired, and a
+specification that no longer matches the system is a bug in one of the two.
 
-Stored edges point up only. A specification names the axioms it serves and an
-axiom names the general one it narrows. Nothing authors the downward
-direction, because a hand-maintained reverse index rots and a forgotten entry
-in one looks exactly like an axiom nothing derives from.
+The citation sits on the claim and never on the container. A behaviour names
+the axiom it refines and an axiom names the general one it narrows, both with
+`depends_on`. A specification carries only `specifies`, pointing at the code it
+answers for. A subsystem is a grouping of files, so nothing can contradict one
+and nothing can derive one from a principle either — only a claim does that.
+
+Where an axiom belongs follows from who cites it. One cited from more than one
+subsystem goes in root; one cited only by its own subsystem lives with it. Use
+`move` when that changes: a claim whose home is wrong is a different problem
+from a claim that is wrong, so `move` carries every citation with it. `update
+--id` does the opposite on purpose, failing every citation, because there the
+claim itself changed.
 
 A test cites the behaviour it checks with an ordinary edge on its own
-`test-case`, so the bottom rung is a link like every rung above it:
+`test-case`, placed directly after `test-status` where the schema ranks it:
 
 ```html
-<test-case id="exits-non-zero-on-failure" data-conforms-to="../templates/test.template.html#test-case">
-  <test-name>validate exits non-zero when an audit fails</test-name>
-  <test-status>PENDING</test-status>
-  <a data-rel="depends_on" href="../canon/specifications/validate.specification.html#exits-non-zero-on-failure">the behaviour this checks</a>
-  <script type="mycelium/test">…</script>
-</test-case>
+<a data-rel="depends_on" href="../canon/validate.canon.html#exits-non-zero-on-failure">the behaviour this checks</a>
 ```
 
-The edge goes directly after `test-status`, which is where the schema ranks it.
-`depends_on` is the relation the chain already uses upward, so nothing is
-minted for this. A case carries an `id`, so both ends of a citation have an
-address and `every-link-resolves` checks it like any other link — renaming a
-behaviour fails every citation to it, which is what makes a rename deliberate.
-
-A citation gets judged on where it lands, never on what carries it, so one
-resolving to an axiom rather than a behaviour is a finding rather than a
-shortcut: the test knows something no specification states.
+A case carries an `id`, so both ends of a citation have an address and
+`every-link-resolves` checks it like any other link. A citation gets judged on
+where it lands, never on what carries it, so one resolving to an axiom rather
+than a behaviour is a finding: the test knows something no specification states.
 
 Three audits check the chain, and `pnpm mycelium validate` runs them with
-everything else. `grounded`: every axiom reaches a behaviour beneath it, and
-every specification reaches an axiom above it. `exhaustive`: every behaviour
-has a case citing it. `cited`: every case cites a behaviour. Nothing is exempt
-on either side of that last joint, which is what having no requirement marking
-buys — adding a test case means adding the behaviour it answers to, or the
-build goes red.
+everything else. `grounded` checks two things and both are per-claim: a
+behaviour naming no axiom is freelancing, and an axiom no behaviour reaches is
+dead, since nothing beneath it can push back. `exhaustive`: every behaviour has
+a case citing it. `cited`: every case cites a behaviour. Nothing is exempt on
+either side of that last joint, so adding a test case means adding the behaviour
+it answers to.
 
-The honest limit, which no check closes: rewording a behaviour in place keeps
-every citation resolving, so nothing tells the citing cases they now check
-something the document no longer claims.
-
-An earlier design wrote a citation as `@specification` in a comment above an
-`it(...)` call. That notation came from a test framework this repository does
-not use, and it failed twice by finding nothing and reporting that as an
-answer. See
-`docs/specs/2026-08-08-citation-is-an-edge.spec.html`.
+Two honest limits, neither closed by any check. Rewording a behaviour in place
+keeps every citation resolving, so nothing tells the citing cases they now check
+something the document no longer claims. And a broad axiom nobody has read down
+into a subsystem reaches nothing there, which no check separates from an axiom
+that genuinely does not apply.
 
 ### The Core Rule
 
