@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: what validate hands an audit, and which tree it reads</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/test.template.css">
+</head>
+<body>
+
+<test-doc data-conforms-to="../templates/test.template.html#test-doc">
+  <test-title>What validate hands an audit, and which tree it reads</test-title>
+  <test-subject><a href="../commands/validate.command.html">validate.command.html</a></test-subject>
+
+  <test-case id="every-declared-audit-runs" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>every script carrying data-audits runs, not just the first</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/validate.canon.html#every-declared-audit-runs">the behaviour this checks</a>
+    <script type="mycelium/test">
+      // The engine finds an audit by crawling for the tag that declares it, so adding
+      // one adds no case to any list in the engine. A run that stopped at the
+      // first would make that discovery worthless.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const ran: string[] = []
+        const report = await runValidateOn({
+          "tidy/first.template.html": auditDoc("first"),
+          "tidy/second.template.html": auditDoc("second"),
+          "tidy/third.template.html": auditDoc("third"),
+        }, {
+          docsDir: "tidy",
+          checks: {
+            "tidy/first.template.html#first": () => { ran.push("first"); return { ok: true, violations: [] } },
+            "tidy/second.template.html#second": () => { ran.push("second"); return { ok: true, violations: [] } },
+            "tidy/third.template.html#third": () => { ran.push("third"); return { ok: true, violations: [] } },
+          },
+        })
+        assert(ran.length === 3, `expected all three audits to run, these did: ${ran.join(", ") || "none"}`)
+        assert(report.checked === 3, `expected all three to be counted, got ${report.checked}`)
+      }
+    </script>
+  </test-case>
+
+  <test-case id="an-audit-sees-every-document" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>an audit sees every document in the tree, templates included</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/validate.canon.html#an-audit-sees-every-document">the behaviour this checks</a>
+    <script type="mycelium/test">
+      // A template builds its worked examples to fail the audit they
+      // illustrate, and each audit declares those in data-expects, so a
+      // deliberate violation is an assertion rather than a failure. Filtering
+      // templates out instead would make a directory mean "fixture", and an
+      // audit declared in one template could never see anything in another.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        let seen: string[] = []
+        await runValidateOn({
+          "tidy/watcher.template.html": auditDoc("watcher"),
+          "tidy/thing.template.html": typeDoc("thing"),
+          "tidy/one.thing.html": typeInstance("thing", "an ordinary instance", "./thing.template.html"),
+        }, {
+          docsDir: "tidy",
+          checks: {
+            "tidy/watcher.template.html#watcher": (fs: any) => {
+              seen = fs.list("tidy", { ext: ".html" })
+              return { ok: true, violations: [] }
+            },
+          },
+        })
+        assert(
+          seen.includes("tidy/thing.template.html"),
+          `the audit could not see a template; it saw: ${seen.join(", ") || "nothing"}`,
+        )
+        assert(
+          seen.includes("tidy/one.thing.html") && seen.includes("tidy/watcher.template.html"),
+          `the audit could not see every document; it saw: ${seen.join(", ")}`,
+        )
+      }
+    </script>
+  </test-case>
+
+  <test-case id="an-audit-reaches-outside-docs" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>an audit can read a source file outside the documents directory</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/validate.canon.html#an-audit-reaches-outside-docs">the behaviour this checks</a>
+    <script type="mycelium/test">
+      // A rule about language applies to a comment in a source file as much as
+      // to prose in a document, and an audit that could only see HTML could
+      // never say so. The filesystem is rooted above the documents directory
+      // for that reason, so src/ is reachable.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        let reached = ""
+        let sources: string[] = []
+        await runValidateOn({
+          "tidy/reader.template.html": auditDoc("reader"),
+        }, {
+          docsDir: "tidy",
+          checks: {
+            "tidy/reader.template.html#reader": (fs: any) => {
+              reached = fs.read("src/api.ts")
+              sources = fs.list("src", { ext: ".ts" })
+              return { ok: true, violations: [] }
+            },
+          },
+        })
+        assert(
+          reached.includes("export interface AuditFs"),
+          "the audit could not read a source file above the documents directory",
+        )
+        assert(sources.length > 0, "the audit could not list anything outside the documents directory")
+      }
+    </script>
+  </test-case>
+
+  <test-case id="dir-validates-another-corpus" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>--dir checks the tree it names and leaves the rest alone</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/validate.canon.html#dir-validates-another-corpus">the behaviour this checks</a>
+    <script type="mycelium/test">
+      // Pointing the command somewhere else is what lets a corpus be checked
+      // without being this project's own, which every case in these documents
+      // relies on. A broken instance sitting outside the named tree stays
+      // outside it.
+      import type { TestContext } from "../../src/api.ts"
+      import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const broken = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>broken</title></head>
+<body>
+<thing-doc data-conforms-to="../tidy/thing.template.html#thing"></thing-doc>
+</body></html>
+`
+        const report = await runValidateOn({
+          "tidy/thing.template.html": typeDoc("thing"),
+          "tidy/one.thing.html": typeInstance("thing", "inside the named tree", "./thing.template.html"),
+          "elsewhere/broken.thing.html": broken,
+        }, { docsDir: "tidy" })
+        assert(report.fail === 0, `something outside the named tree was checked: ${report.failures.join(" | ")}`)
+        assert(report.checked === 1, `expected only the instance inside the tree, got ${report.checked}`)
+      }
+    </script>
+  </test-case>
+</test-doc>
+
+</body>
+</html>

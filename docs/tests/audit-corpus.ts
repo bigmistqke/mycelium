@@ -180,7 +180,14 @@ export function overlay(materials: Record<string, string>): Corpus {
 // not run at all.
 export async function runValidateOn(
   materials: Record<string, string>,
-  options: { docsDir?: string; checks?: Record<string, (fs: Corpus) => unknown> } = {},
+  options: {
+    docsDir?: string
+    checks?: Record<string, (...args: any[]) => unknown>
+    // Makes the generic validator unavailable, which is the state a corpus
+    // predating it is in. Without it there is no way to reach the case where an
+    // instance is covered by nothing at all.
+    withoutGenericValidator?: boolean
+  } = {},
 ): Promise<ValidateReport> {
   const command = resolve(DOCS, "commands/validate.command.html")
   const script = parseHTML(readFileSync(command, "utf8")).document.querySelector('script[type="mycelium/command"]')
@@ -192,7 +199,9 @@ export async function runValidateOn(
     corpus,
     docsDir: options.docsDir ?? "docs",
     async loadCheck(file, script) {
-      const name = script.getAttribute("data-audits") ?? script.getAttribute("data-validates")
+      // data-validates writes its reference as a fragment and data-audits as a
+      // bare name, so the key reads the same either way.
+      const name = (script.getAttribute("data-audits") ?? script.getAttribute("data-validates") ?? "").replace(/^#/, "")
       const provided = options.checks?.[`${file}#${name}`]
       if (provided) return provided as (...args: unknown[]) => unknown
       return loadCheck(resolve(REPO, file), script)
@@ -200,7 +209,9 @@ export async function runValidateOn(
     // Always the real one. The generic validator is code, and code stays real
     // unless a case deliberately provides it, so a tree pointed at by --dir
     // still gets checked by the validator this repository actually ships.
-    loadGenericValidator: () => loadGenericValidator(resolve(REPO, "docs")),
+    loadGenericValidator: () => options.withoutGenericValidator
+      ? Promise.reject(new Error("no generic validator in this corpus"))
+      : loadGenericValidator(resolve(REPO, "docs")),
   }
   return runValidate(env)
 }
@@ -230,7 +241,17 @@ export function auditDoc(name: string, ...expects: string[]): string {
 
 // A document declaring one type, so a case can build a small tree that answers
 // to a template of its own rather than to this repository's.
-export function typeDoc(name: string): string {
+export function typeDoc(name: string, options: { ownValidator?: boolean } = {}): string {
+  // A type may carry a validator of its own beside its declaration, which runs
+  // as well as the schema rather than instead of it. The run substitutes the
+  // function through `checks`, so the script here only has to declare itself.
+  const validator = options.ownValidator
+    ? `\n<script type="mycelium/validate" data-validates="#${name}">
+  export default function () {
+    return { ok: true, errors: [] }
+  }
+</script>`
+    : ""
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -242,7 +263,7 @@ export function typeDoc(name: string): string {
   <${name}-doc>
     <${name}-title required></${name}-title>
   </${name}-doc>
-</template>
+</template>${validator}
 </body>
 </html>
 `
