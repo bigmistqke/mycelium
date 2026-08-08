@@ -74,8 +74,9 @@
       // that edge by hand. The command has to produce the same string, or the
       // upsert appends a second edge beside it and unlink never finds either.
       import type { TestContext } from "../../src/api.ts"
+      import { todayDate } from "../templates/shared.ts"
       export default async function ({ assert, sandbox }: TestContext) {
-        const today = new Date().toISOString().slice(0, 10)
+        const today = todayDate()
         const made = sandbox.mycelium(
           "knowledge", "add", "outcome",
           "--title", "The templates exist",

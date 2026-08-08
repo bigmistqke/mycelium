@@ -22,6 +22,7 @@
       // That split is the reason add takes an undated slug while every other
       // command takes a whole filename.
       import type { TestContext } from "../../src/api.ts"
+      import { todayDate } from "../templates/shared.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         const done = sandbox.mycelium(
           "knowledge", "add", "goal",
@@ -32,7 +33,7 @@
         )
         assert(done.ok, `add failed: ${done.stderr || done.stdout}`)
 
-        const today = new Date().toISOString().slice(0, 10)
+        const today = todayDate()
         const path = `knowledge/${today}-sample-goal.goal.html`
         assert(sandbox.exists(path), `wrote no ${path}; said: ${done.stdout.trim()}`)
 
@@ -84,8 +85,9 @@
       // audit to catch, or for nothing to catch when the relation happens to
       // satisfy none of them.
       import type { TestContext } from "../../src/api.ts"
+      import { todayDate } from "../templates/shared.ts"
       export default async function ({ assert, sandbox }: TestContext) {
-        const today = new Date().toISOString().slice(0, 10)
+        const today = todayDate()
         const make = (type: string, slug: string, extra: string[]) => {
           const done = sandbox.mycelium(
             "knowledge", "add", type,
