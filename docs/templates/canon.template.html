@@ -76,7 +76,8 @@
   <canon-axiom>
     <canon-title required></canon-title>
     <canon-confidence required pattern="^(0|[1-9][0-9]?|100)$"></canon-confidence>
-    <canon-detail></canon-detail>
+    <canon-detail markup></canon-detail>
+    <a repeatable href=".+" data-rel="^(depends_on)$"></a>
   </canon-axiom>
 </template>
 <pre><code>&lt;canon-axiom&gt;
@@ -89,7 +90,8 @@
 <template id="canon-specification">
   <canon-specification>
     <canon-title required></canon-title>
-    <canon-behaviour></canon-behaviour>
+    <a repeatable href=".+" data-rel="^(depends_on|specifies)$"></a>
+    <canon-behaviour repeatable conforms-to="#canon-behaviour"></canon-behaviour>
   </canon-specification>
 </template>
 
@@ -101,7 +103,7 @@
 <pre><code>&lt;canon-specification&gt;
   &lt;canon-title&gt;validate&lt;/canon-title&gt;
   &lt;a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html"&gt;serves&lt;/a&gt;
-  &lt;a data-rel="describes" href="../../commands/validate.command.html"&gt;the subsystem&lt;/a&gt;
+  &lt;a data-rel="specifies" href="../../commands/validate.command.html"&gt;the subsystem&lt;/a&gt;
   &lt;canon-behaviour id="exits-non-zero-on-failure"&gt;
     &lt;canon-title&gt;validate exits non-zero when any audit fails.&lt;/canon-title&gt;
   &lt;/canon-behaviour&gt;
@@ -189,10 +191,17 @@
   like an axiom nothing derives from.
 </p>
 <p>
-  A specification also points at what it describes, with <code>describes</code>. It does not name its
-  subsystem, it points at one: the subsystem is whatever that link set covers. This follows
+  A specification also points at the code it answers for, with <code>specifies</code>. It does not
+  name its subsystem, it points at one: the subsystem is whatever that link set covers. This follows
   <a href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do not tag</a>, which refused
   a hand-maintained vocabulary once already.
+</p>
+<p>
+  The relation comes from the closed set every family already shares, rather than a word minted for
+  this one. <code>specifies</code> entered that set for a design document pointing at what it
+  specifies, and a specification pointing at the command it answers for is the same shape one rung
+  lower. The corpus retired its last two unlisted relations rather than widen the list, and a
+  <code>describes</code> here would have reopened exactly that.
 </p>
 
 <h2>A test cites a behaviour from source</h2>
@@ -246,7 +255,7 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
   <canon-specification id="sample-specification" data-conforms-to="./canon.template.html#canon-specification">
     <canon-title>a sample subsystem</canon-title>
     <a data-rel="depends_on" href="#sample-axiom">the axiom this serves</a>
-    <a data-rel="describes" href="./canon.template.css">the file it describes</a>
+    <a data-rel="specifies" href="./canon.template.css">the file it specifies</a>
     <canon-behaviour id="sample-tested-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
       <canon-title>A claim the sample test below cites, so the whole chain has one rung that holds.</canon-title>
     </canon-behaviour>
@@ -332,7 +341,7 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
    */
   import { readCanon } from "./canon-citations.ts"
 
-  export function check(fs: AuditFs) {
+  export default function (fs: AuditFs) {
     const { axioms, specifications } = readCanon(fs)
     const violations = []
     const isAxiom = new Set(axioms.map((axiom) => axiom.address))
@@ -393,7 +402,7 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
    */
   import { collectTests, readCanon } from "./canon-citations.ts"
 
-  export function check(fs: AuditFs) {
+  export default function (fs: AuditFs) {
     const cited = new Set()
     for (const test of collectTests(fs)) {
       for (const citation of test.citations) cited.add(citation.target)
@@ -433,7 +442,7 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
    */
   import { collectTests, readCanon, slugify } from "./canon-citations.ts"
 
-  export function check(fs: AuditFs) {
+  export default function (fs: AuditFs) {
     const behaviours = new Set(
       readCanon(fs).specifications.flatMap((specification) => specification.behaviours.map((b) => b.address)),
     )
@@ -512,26 +521,26 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
   // which type a file is, so the directory follows from it and a caller never
   // types one.
   //
-  // Exported, because the engine computes the href between two file arguments
-  // and runs the math through this. The two types sit in different
-  // directories. Without this the engine computes an href as though both sat
-  // in docs/, which is right only when two files share a directory, and here
-  // they never do.
+  // The two types sit in different directories, so a command hands both ends
+  // through here before asking cli.href for the path between them. The engine
+  // never calls it. Which directory a family writes to is the family's own
+  // business, and an engine guessing at that computes the href as though both
+  // files sat in docs/, which is right only when they share a directory.
   //
   // Anything that is not an entry passes through unchanged, already spelled
   // relative to docs/. A specification names the axioms it serves and also the
-  // files it describes, and those are commands, templates and source. One
+  // files it answers for, and those are commands, templates and source. One
   // address space for both: commands/validate.command.html, ../src/api.ts.
-  export function pathFor(file) {
+  function pathFor(file: string) {
     const match = /\.(axiom|specification)\.html$/.exec(file)
     if (!match) return file
     return `canon/${match[1] === 'axiom' ? 'axioms' : 'specifications'}/${file}`
   }
 
   // What a command needs when the argument must be an entry, since pathFor
-  // now lets a describes-target through and would otherwise turn a typo into
+  // lets a specifies-target through and would otherwise turn a typo into
   // a missing-file error naming a path nobody typed.
-  function entryPathFor(file) {
+  function entryPathFor(file: string) {
     if (!/\.(axiom|specification)\.html$/.test(file)) {
       throw new Error(`<file> must end in .axiom.html or .specification.html, got "${file}"`)
     }
@@ -767,11 +776,11 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
    * never a direction or a wrong --rel; both of those leave a second, wrong
    * edge beside the right one. Use unlink and then link.
    */
-  export function link({ fs, args }: CommandContext) {
+  export function link({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<target>'], [args.rel, '--rel'])
     const doc = fs.get(entryPathFor(args._[0]))
     const root = rootOf(doc)
-    const href = args.href
+    const href = cli.href(entryPathFor(args._[0]), pathFor(args._[1]))
     const label = args.label ?? ''
 
     const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
@@ -799,11 +808,12 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
    * target and can never correct a direction. An axiom pointing the wrong way up
    * its refinement chain is exactly that mistake.
    */
-  export function unlink({ fs, args }: CommandContext) {
+  export function unlink({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<target>'], [args.rel, '--rel'])
     const doc = fs.get(entryPathFor(args._[0]))
     const root = rootOf(doc)
-    const a = root.querySelector(`a[data-rel="${args.rel}"][href="${args.href}"]`)
+    const href = cli.href(entryPathFor(args._[0]), pathFor(args._[1]))
+    const a = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
     if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
     a.remove()
   }

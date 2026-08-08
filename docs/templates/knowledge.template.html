@@ -529,19 +529,19 @@
 
   const REQUIRES_STATUS = ['goal', 'decision', 'action']
 
+  // Where a node lives. Every node sits in one directory, so this is a single
+  // prefix rather than the suffix lookup the language family needs. The engine
+  // does not call it: a command resolves its own paths and hands both ends to
+  // cli.href, because which directory a family writes to is the family's
+  // business and not the engine's.
+  function pathFor(file: string) {
+    return `knowledge/${file}`
+  }
+
   // Throws a clean, specific error for the handful of arguments no validator
   // can ever catch (which file to write, which file to open, whether the user
   // gave --rel) — each type's knowledge-validates script handles everything
   // else, run via `validate` below.
-  // Where a node lives. Every node sits in one directory, so this is a single
-  // prefix rather than the suffix lookup the language and canon families need.
-  // Exported all the same: the engine computes the href between two file
-  // arguments through this, and a family that leaves it out gets path math run
-  // against docs/ itself, which is not where any instance sits.
-  export function pathFor(file) {
-    return `knowledge/${file}`
-  }
-
   function requireArgs(...checks) {
     for (const [value, label] of checks) {
       if (value === undefined) throw new Error(`missing required argument: ${label}`)
@@ -689,7 +689,7 @@
     const doc = fs.get(pathFor(args._[0]))
     const root = doc.querySelector('[data-conforms-to]')
     const label = args.label ?? args._[2] ?? ''
-    const href = cli.href(`knowledge/${args._[0]}`, `knowledge/${args._[1]}`)
+    const href = cli.href(pathFor(args._[0]), pathFor(args._[1]))
     const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
     if (existing) {
       existing.textContent = label
@@ -746,7 +746,7 @@
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
     const doc = fs.get(`knowledge/${args._[0]}`)
     const root = doc.querySelector('[data-conforms-to]')
-    const href = cli.href(`knowledge/${args._[0]}`, `knowledge/${args._[1]}`)
+    const href = cli.href(pathFor(args._[0]), pathFor(args._[1]))
     const a = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
     if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
     a.remove()
