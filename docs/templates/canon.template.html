@@ -75,15 +75,13 @@
 <template id="canon-axiom">
   <canon-axiom id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
     <canon-title required></canon-title>
-    <canon-confidence required pattern="^(0|[1-9][0-9]?|100)$"></canon-confidence>
     <canon-detail markup></canon-detail>
     <a repeatable href=".+" data-rel="^(depends_on)$"></a>
   </canon-axiom>
 </template>
 <pre><code>&lt;canon-axiom&gt;
   &lt;canon-title&gt;&hellip; the principle, in one line &hellip;&lt;/canon-title&gt;
-  &lt;canon-confidence&gt;90&lt;/canon-confidence&gt;
-  &lt;canon-detail&gt;&hellip; optional, free-form: the reasoning &hellip;&lt;/canon-detail&gt;
+    &lt;canon-detail&gt;&hellip; optional, free-form: the reasoning &hellip;&lt;/canon-detail&gt;
   &lt;a data-rel="depends_on" href="./documents-are-the-source.axiom.html"&gt;narrows&lt;/a&gt;
 &lt;/canon-axiom&gt;</code></pre>
 
@@ -112,10 +110,9 @@
 
 <h2>What each field is for</h2>
 <p>
-  An axiom carries a confidence and a specification does not. Someone who commits to a principle and
-  someone who infers one by reading a codebase write the same shape of document, and the inferred one
-  is the likelier misreading. Without the field nothing tells the two apart, which matters most in
-  the case this family exists to serve.
+  An axiom once carried a confidence, meant to tell a principle somebody committed to from one an
+  agent inferred by reading code. That is a question about kind, and a number from 0 to 100 cannot
+  answer it. The eleven values sat between 80 and 95, nothing read them, and not one ever moved.
 </p>
 <p>
   An axiom carries an optional detail, holding the reasoning behind the principle. A specification
@@ -260,12 +257,10 @@
 <div id="sample-instances" style="display:none">
   <canon-axiom id="sample-axiom" data-conforms-to="./canon.template.html#canon-axiom">
     <canon-title>A document is the source of truth, and the tooling reads it.</canon-title>
-    <canon-confidence>90</canon-confidence>
   </canon-axiom>
 
   <canon-axiom id="sample-ungrounded-axiom" data-conforms-to="./canon.template.html#canon-axiom">
     <canon-title>A principle nobody has read down into any subsystem yet.</canon-title>
-    <canon-confidence>50</canon-confidence>
   </canon-axiom>
 
   <canon-specification id="sample-specification" data-conforms-to="./canon.template.html#canon-specification">
@@ -505,7 +500,7 @@
   // The validator does not care about order; a reader does, and laying out
   // every instance the same way makes a directory of them skimmable.
   const FIELD_ORDER = {
-    axiom: ['canon-title', 'canon-confidence', 'canon-detail'],
+    axiom: ['canon-title', 'canon-detail'],
     specification: ['canon-title'],
     behaviour: ['canon-title'],
   }
@@ -517,14 +512,12 @@
   // rather than the tag it would have become.
   const FLAG_FOR = {
     'canon-title': '--title',
-    'canon-confidence': '--confidence',
     'canon-detail': '--detail',
   }
 
   function fieldValues(args) {
     return {
       'canon-title': args.title,
-      'canon-confidence': args.confidence,
       'canon-detail': args.detail,
     }
   }
@@ -644,8 +637,8 @@
    * Create a new canon-axiom or canon-specification, or add a behaviour to a
    * specification that already exists.
    *
-   *   mycelium canon add axiom --canon <name> --id <slug>
-   *     --title "…" --confidence NN [--detail "…" | --detail -]
+   *   mycelium canon add axiom --canon <name> --id <slug> --title "…"
+   *     [--detail "…" | --detail -]
    *
    *   mycelium canon add specification --canon <name> --id <slug> --title "…"
    *
@@ -666,11 +659,10 @@
    * retired, and a specification that no longer matches the system is a bug in
    * one of the two.
    *
-   * For an axiom, --title is the principle itself and --confidence says how far
-   * to trust it. Someone who commits to a principle and someone who infers one
-   * by reading a codebase write the same shape of document, and the inferred one
-   * is the likelier misreading, so the number is the only thing telling them
-   * apart.
+   * For an axiom, --title is the principle itself. How far to trust one is not a
+   * field here: a knowledge node records the decision that established or
+   * revised it, dated and carrying the prompt behind it, so the history lives
+   * where history lives.
    *
    * For a specification, --title names the subsystem. There is no --detail: each
    * kind of content that is not a behaviour already has a family, and a detail
@@ -786,7 +778,7 @@
   /**
    * Update fields on an existing canon entry.
    *
-   *   mycelium canon update <file> [--title "…"] [--confidence NN]
+   *   mycelium canon update <canon>#<id> [--title "…"]
    *     [--detail "…" | --detail - | --detail ""]
    *
    *   mycelium canon update <file> --behaviour <id> [--title "…"]
@@ -821,7 +813,7 @@
     if (args.id !== undefined) target.setAttribute('id', args.id)
 
     const detail = args.detail === '-' ? await cli.readStdin() : args.detail
-    const values = { 'canon-title': args.title, 'canon-confidence': args.confidence, 'canon-detail': detail }
+    const values = { 'canon-title': args.title, 'canon-detail': detail }
     rejectForeignFields(type, values)
 
     for (const tag of FIELD_ORDER[type]) {

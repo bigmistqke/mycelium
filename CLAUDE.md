@@ -238,17 +238,20 @@ with happy-dom, which computes no layout, so every rect is zero. See
 ### The canon family: what the project holds true, and what it promises
 
 A canon document is one subsystem: `docs/canon/<subsystem>.canon.html`, holding
-that subsystem's own axioms and the specification its behaviours belong to.
+that subsystem's own axioms and the specification its behaviours belong to. An
+axiom carries no confidence and no date, because it states what holds now. How
+it came to hold, and how sure anybody was, belongs to a knowledge node — dated,
+carrying the prompt behind it, and never rewritten afterwards.
 `root.canon.html` holds the axioms that govern everything, and a subsystem axiom
 narrows one of those. Full design:
 `docs/specs/2026-08-06-canon-template-html.spec.html` and
 `docs/specs/2026-08-08-behaviour-cites-its-axiom.spec.html`.
 
 ```bash
-pnpm mycelium canon add axiom --canon <name> --id <slug> --title "…" --confidence NN [--detail "…" | --detail -]
+pnpm mycelium canon add axiom --canon <name> --id <slug> --title "…" [--detail "…" | --detail -]
 pnpm mycelium canon add specification --canon <name> --id <slug> --title "…"
 pnpm mycelium canon add behaviour --canon <name> --id <slug> --title "…"
-pnpm mycelium canon update <canon>#<id> [--title "…"] [--id <slug>] [--confidence NN] [--detail "…"]
+pnpm mycelium canon update <canon>#<id> [--title "…"] [--id <slug>] [--detail "…"]
 pnpm mycelium canon link <canon>#<id> <target> --rel <rel> --label "…"
 pnpm mycelium canon unlink <canon>#<id> <target> --rel <rel>
 pnpm mycelium canon move <canon>#<id> <to-canon>

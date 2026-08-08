@@ -91,8 +91,7 @@ export function canonDoc(options: {
   const axioms = (options.axioms ?? []).map((axiom) => {
     const up = axiom.narrows ? `\n  <a data-rel="depends_on" href="${axiom.narrows}">narrows</a>` : ""
     return `<canon-axiom id="${axiom.id}" ${conforms("axiom")}>
-  <canon-title>${axiom.title}</canon-title>
-  <canon-confidence>80</canon-confidence>${up}
+  <canon-title>${axiom.title}</canon-title>${up}
 </canon-axiom>`
   })
   const specification = options.specification
