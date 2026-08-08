@@ -440,6 +440,11 @@
     const docs = join(dir, "docs")
     mkdirSync(docs, { recursive: true })
     symlinkSync(join(root, "docs", "templates"), join(docs, "templates"))
+    // commands/ arrives for the same reason templates/ does. A command hosted
+    // outside a family lives here — validate is the one that matters — and a
+    // sandbox without it can run `knowledge add` but not the check that says
+    // whether what it wrote is valid. That gap is why nothing tested validate.
+    symlinkSync(join(root, "docs", "commands"), join(docs, "commands"))
     symlinkSync(join(root, "src"), join(dir, "src"))
     return {
       dir,
