@@ -9,26 +9,30 @@
 <body>
 <canon-specification data-conforms-to="../../templates/canon.template.html#canon-specification">
   <canon-title>the derivation chain checks</canon-title>
-  <a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html">a gap in the chain fails the build</a>
-  <a data-rel="depends_on" href="../axioms/derive-do-not-maintain.axiom.html">the downward reach is computed from the upward edges</a>
   <a data-rel="specifies" href="../../templates/canon.template.html">the three chain checks</a>
   <canon-behaviour id="an-axiom-reaching-no-behaviour-fails" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>An axiom that no specification reaches from beneath fails validation.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html">a gap in the chain fails the build</a>
   </canon-behaviour>
-  <canon-behaviour id="a-specification-naming-no-axiom-fails" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
-    <canon-title>A specification naming no axiom above it fails validation.</canon-title>
+  <canon-behaviour id="a-behaviour-naming-no-axiom-fails" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
+    <canon-title>A behaviour naming no axiom above it fails validation.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html">a gap in the chain fails the build</a>
   </canon-behaviour>
   <canon-behaviour id="reach-through-a-narrower-axiom-counts" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>An axiom reached through a narrower axiom counts as grounded.</canon-title>
+    <a data-rel="depends_on" href="../axioms/edges-point-up-only.axiom.html">the downward reach computed from the stored edges</a>
   </canon-behaviour>
   <canon-behaviour id="a-behaviour-no-case-cites-fails" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A behaviour that no test case cites fails validation.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html">a gap in the chain fails the build</a>
   </canon-behaviour>
   <canon-behaviour id="a-case-citing-nothing-fails" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A test case citing no behaviour fails validation.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html">a gap in the chain fails the build</a>
   </canon-behaviour>
   <canon-behaviour id="a-citation-landing-on-an-axiom-fails" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A citation resolving to an axiom rather than a behaviour fails validation.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html">a citation reaching past a layer fails the build</a>
   </canon-behaviour>
 </canon-specification>
 </body></html>

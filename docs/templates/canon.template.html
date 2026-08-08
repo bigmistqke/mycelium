@@ -38,7 +38,7 @@
 </p>
 <p>
   It runs in both directions, and that is the methodology rather than a property of it. Downward, an
-  axiom settles what a specification says and a specification says what a test checks. Upward, a
+  axiom settles what a behaviour may claim and a behaviour settles what a test checks. Upward, a
   problem the chain did not predict means either that no behaviour speaks to the case or that two
   behaviours want different things, so a fix has an altitude.
 </p>
@@ -46,8 +46,8 @@
 <h2>Two types in one file</h2>
 <p>
   The types only mean anything together, which is the same reason six knowledge types and four plan
-  types each share a file. An axiom with no specification under it settles nothing, and a
-  specification with no axiom above it is a list of assertions nobody can argue with.
+  types each share a file. An axiom no behaviour refines settles nothing, and a behaviour naming no
+  axiom is an assertion nobody can argue with.
 </p>
 
 <h2>No date prefix, like the language family</h2>
@@ -73,7 +73,7 @@
 </p>
 
 <template id="canon-axiom">
-  <canon-axiom>
+  <canon-axiom id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
     <canon-title required></canon-title>
     <canon-confidence required pattern="^(0|[1-9][0-9]?|100)$"></canon-confidence>
     <canon-detail markup></canon-detail>
@@ -90,22 +90,23 @@
 <template id="canon-specification">
   <canon-specification>
     <canon-title required></canon-title>
-    <a repeatable href=".+" data-rel="^(depends_on|specifies)$"></a>
-    <canon-behaviour repeatable conforms-to="#canon-behaviour"></canon-behaviour>
+    <a repeatable href=".+" data-rel="^(specifies)$"></a>
+    <canon-behaviour required repeatable conforms-to="#canon-behaviour"></canon-behaviour>
   </canon-specification>
 </template>
 
 <template id="canon-behaviour">
   <canon-behaviour id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
     <canon-title required></canon-title>
+    <a repeatable href=".+" data-rel="^(depends_on)$"></a>
   </canon-behaviour>
 </template>
 <pre><code>&lt;canon-specification&gt;
   &lt;canon-title&gt;validate&lt;/canon-title&gt;
-  &lt;a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html"&gt;serves&lt;/a&gt;
   &lt;a data-rel="specifies" href="../../commands/validate.command.html"&gt;the subsystem&lt;/a&gt;
   &lt;canon-behaviour id="exits-non-zero-on-failure"&gt;
     &lt;canon-title&gt;validate exits non-zero when any audit fails.&lt;/canon-title&gt;
+    &lt;a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html"&gt;the principle this refines&lt;/a&gt;
   &lt;/canon-behaviour&gt;
 &lt;/canon-specification&gt;</code></pre>
 
@@ -181,9 +182,21 @@
 
 <h2>Edges</h2>
 <p>
-  A specification links up to the axioms it serves with <code>depends_on</code>, and an axiom links
-  up to the general one it narrows with the same relation. That edge is the whole composition
-  mechanism, with no region names, no scope attribute and no cascade.
+  A behaviour links up to the axiom it refines with <code>depends_on</code>, and an axiom links up to
+  the general one it narrows with the same relation. That edge is the whole composition mechanism,
+  with no region names, no scope attribute and no cascade.
+</p>
+<p>
+  The citation sits on the behaviour and never on the specification holding it. A specification names
+  a subsystem, and a subsystem is a grouping of files rather than a claim, so nothing can contradict
+  one and nothing can derive one from a principle either. The unit that owes an axiom is the unit
+  somebody could later argue with, which is the behaviour.
+</p>
+<p>
+  Hanging the edge one level up hides exactly the failure this family exists to catch. An axiom
+  carrying three specifications reads as load-bearing, and means the opposite: it is general enough
+  to cover anything, so no behaviour underneath ever had to name a principle that actually predicts
+  it.
 </p>
 <p>
   Stored edges point up only. The downward reach a checker asks about gets computed from them, never
@@ -257,13 +270,18 @@
 
   <canon-specification id="sample-specification" data-conforms-to="./canon.template.html#canon-specification">
     <canon-title>a sample subsystem</canon-title>
-    <a data-rel="depends_on" href="#sample-axiom">the axiom this serves</a>
     <a data-rel="specifies" href="./canon.template.css">the file it specifies</a>
     <canon-behaviour id="sample-tested-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
-      <canon-title>A claim the sample test below cites, so the whole chain has one rung that holds.</canon-title>
+      <canon-title>A claim the sample case below cites, so the whole chain has one rung that holds.</canon-title>
+      <a data-rel="depends_on" href="#sample-axiom">the principle this refines</a>
     </canon-behaviour>
     <canon-behaviour id="sample-untested-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
-      <canon-title>A claim no test cites, kept here so the exhaustive check has something to find.</canon-title>
+      <canon-title>A claim no case cites, kept here so the exhaustive check has something to find.</canon-title>
+      <a data-rel="depends_on" href="#sample-axiom">the principle this refines</a>
+    </canon-behaviour>
+    <canon-behaviour id="sample-freelancing-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
+      <canon-title>A claim naming no principle, kept here so the grounded check has something to find.</canon-title>
+      <a data-rel="depends_on" href="./canon.template.css">a target that is not an axiom, so this claim still names none</a>
     </canon-behaviour>
   </canon-specification>
 </div>
@@ -337,11 +355,19 @@
   subsystem reaches nothing there, and this check cannot tell that apart from an axiom that does not
   apply. Writing the reading is the work, and no audit does it for you.
 </p>
-<script type="mycelium/audit" data-audits="grounded" data-expects="docs/templates/canon.template.html#sample-ungrounded-axiom" data-touches="canon-axiom canon-specification">
+<script type="mycelium/audit" data-audits="grounded" data-expects="docs/templates/canon.template.html#sample-ungrounded-axiom docs/templates/canon.template.html#sample-freelancing-behaviour" data-touches="canon-axiom canon-behaviour">
   import type { AuditFs } from "../../src/api.ts"
   /**
-   * Every axiom reaches a behaviour beneath it, and every specification reaches
-   * an axiom above it.
+   * Every behaviour names an axiom, and every axiom is reached by one.
+   *
+   * Both halves are per-claim. A behaviour citing nothing asserts something the
+   * project never committed to, and an axiom nothing reaches cannot be
+   * falsified, because nothing beneath it can push back.
+   *
+   * The specification holding a behaviour is not checked and carries no upward
+   * edge at all. It names a subsystem, and a subsystem is a grouping of files
+   * rather than a claim, so nothing can contradict one and nothing can derive
+   * one from a principle either.
    *
    * A violation names the address of whichever end is loose, so it reads as a
    * place to open rather than as a sentence about one.
@@ -350,29 +376,29 @@
 
   export default function (fs: AuditFs) {
     const { axioms, specifications } = readCanon(fs)
-    const violations = []
+    const behaviours = specifications.flatMap((specification) => specification.behaviours)
     const isAxiom = new Set(axioms.map((axiom) => axiom.address))
+    const violations = []
 
-    for (const specification of specifications) {
-      if (!specification.dependsOn.some((target) => isAxiom.has(target))) violations.push(specification.address)
+    for (const behaviour of behaviours) {
+      if (!behaviour.dependsOn.some((target) => isAxiom.has(target))) violations.push(behaviour.address)
     }
 
     // The reverse of the stored edges, built here and thrown away, which is the
-    // whole reason nothing authors it. A specification depends on the axioms it
-    // serves and an axiom on the one it narrows, so reversing both gives every
-    // step downward in one map.
+    // whole reason nothing authors it. A behaviour names the axiom it refines
+    // and an axiom names the one it narrows, so reversing both gives every step
+    // downward in one map.
     const dependents = new Map()
-    for (const entry of [...axioms, ...specifications]) {
+    for (const entry of [...axioms, ...behaviours]) {
       for (const target of entry.dependsOn) {
         if (!dependents.has(target)) dependents.set(target, [])
         dependents.get(target).push(entry.address)
       }
     }
-    const behaviourCount = new Map(specifications.map((s) => [s.address, s.behaviours.length]))
+    const isBehaviour = new Set(behaviours.map((behaviour) => behaviour.address))
 
-    // Walks down from one axiom until it meets a specification that states
-    // something. `seen` is what keeps an axiom narrowing itself in a loop from
-    // walking forever.
+    // Walks down from one axiom until it meets a behaviour. `seen` is what
+    // keeps an axiom narrowing itself in a loop from walking forever.
     function reachesBehaviour(start: string) {
       const seen = new Set([start])
       const queue = [start]
@@ -380,7 +406,7 @@
         for (const next of dependents.get(queue.pop()) ?? []) {
           if (seen.has(next)) continue
           seen.add(next)
-          if ((behaviourCount.get(next) ?? 0) > 0) return true
+          if (isBehaviour.has(next)) return true
           queue.push(next)
         }
       }
@@ -527,30 +553,31 @@
   // which type a file is, so the directory follows from it and a caller never
   // types one.
   //
-  // The two types sit in different directories, so a command hands both ends
-  // through here before asking cli.href for the path between them. The engine
-  // never calls it. Which directory a family writes to is the family's own
-  // business, and an engine guessing at that computes the href as though both
-  // files sat in docs/, which is right only when they share a directory.
+  // Where a canon document lives. One per subsystem, holding that subsystem's
+  // own axioms and the specification they govern, plus root.canon.html holding
+  // the axioms that govern everything.
   //
-  // Anything that is not an entry passes through unchanged, already spelled
-  // relative to docs/. A specification names the axioms it serves and also the
-  // files it answers for, and those are commands, templates and source. One
-  // address space for both: commands/validate.command.html, ../src/api.ts.
-  function pathFor(file: string) {
-    const match = /\.(axiom|specification)\.html$/.exec(file)
-    if (!match) return file
-    return `canon/${match[1] === 'axiom' ? 'axioms' : 'specifications'}/${file}`
+  // A subsystem's axioms sit with the behaviours refining them because the set
+  // that shaped one subsystem says nothing about the others. A flat list of all
+  // of them buries the few statements that do govern everything, and makes an
+  // axiom about drawing look like a peer of an axiom about documents.
+  //
+  // Anything that is not a canon document passes through unchanged, already
+  // spelled relative to docs/. A specification names the files it answers for,
+  // and those are commands, templates and source: commands/validate.command.html,
+  // ../src/api.ts.
+  function pathFor(name: string) {
+    if (!/^[a-z][a-z0-9-]*(\.canon\.html)?$/.test(name)) return name
+    return `canon/${name.replace(/\.canon\.html$/, '')}.canon.html`
   }
 
-  // What a command needs when the argument must be an entry, since pathFor
-  // lets a specifies-target through and would otherwise turn a typo into
-  // a missing-file error naming a path nobody typed.
-  function entryPathFor(file: string) {
-    if (!/\.(axiom|specification)\.html$/.test(file)) {
-      throw new Error(`<file> must end in .axiom.html or .specification.html, got "${file}"`)
-    }
-    return pathFor(file)
+  // What a command needs when the argument must be a canon document, since
+  // pathFor lets a specifies-target through and would otherwise turn a typo
+  // into a missing-file error naming a path nobody typed.
+  function canonPathFor(name: string) {
+    const path = pathFor(name)
+    if (!path.startsWith('canon/')) throw new Error(`<canon> names a canon document, got "${name}"`)
+    return path
   }
 
   function requireArgs(...checks) {
@@ -561,6 +588,28 @@
 
   function rootOf(doc) {
     return doc.querySelector('canon-axiom, canon-specification')
+  }
+
+  // Where an edge starts. A source is a file, or a file and a behaviour id
+  // after a hash, because a behaviour is the unit that names an axiom and a
+  // specification no longer carries an upward edge at all.
+  //
+  // Splitting here rather than in each command keeps the two spellings in one
+  // place, and keeps a typo in a behaviour id from silently appending an edge
+  // to the specification instead.
+  function sourceOf(doc, source) {
+    const hash = source.indexOf('#')
+    if (hash === -1) return rootOf(doc)
+    const id = source.slice(hash + 1)
+    const behaviour = doc.querySelector(`canon-behaviour[id="${id}"]`)
+    if (!behaviour) throw new Error(`no behaviour with id "${id}" in ${source.slice(0, hash)}`)
+    return behaviour
+  }
+
+  // The file half of a source, for the commands that have to open it.
+  function fileOf(source) {
+    const hash = source.indexOf('#')
+    return hash === -1 ? source : source.slice(0, hash)
   }
 
   /**
@@ -723,6 +772,17 @@
       if (!target) throw new Error(`${args._[0]} carries no behaviour with id "${args.behaviour}"`)
     }
 
+    // Renaming a behaviour's id, which is a different act from editing its
+    // wording. An id names the behaviour rather than the sentence, so a
+    // copy-edit never touches one and --title alone is the usual case. A
+    // behaviour that changed meaning is the case this exists for, and the
+    // rename deliberately fails every citation to the old address so whoever
+    // did it carries them along.
+    if (args.id !== undefined) {
+      if (args.behaviour === undefined) throw new Error('--id renames a behaviour, so it needs --behaviour naming the one to rename.')
+      target.setAttribute('id', args.id)
+    }
+
     const detail = args.detail === '-' ? await cli.readStdin() : args.detail
     const values = { 'canon-title': args.title, 'canon-confidence': args.confidence, 'canon-detail': detail }
     if (args.behaviour === undefined) rejectForeignFields(type, values)
@@ -764,14 +824,19 @@
   /**
    * Add a data-rel edge from one canon entry to another file.
    *
-   *   mycelium canon link <from-file> <target> --rel <rel> --label "…"
+   *   mycelium canon link <from-file>[#<behaviour-id>] <target> --rel <rel> --label "…"
    *
    * The command writes the edge inside <from-file>, so the argument order decides its
-   * direction. Stored edges point up only: a specification names the axioms it
-   * serves and an axiom names the general one it narrows. The downward reach a
+   * direction. Stored edges point up only: a behaviour names the axiom it
+   * refines and an axiom names the general one it narrows. The downward reach a
    * checker asks about gets computed from those and never authored, because a
    * hand-maintained reverse index rots and a forgotten entry in one looks
    * exactly like an axiom nothing derives from.
+   *
+   * A behaviour is named by its own id after a hash, and that is where an axiom
+   * citation belongs. A specification takes no depends_on: it names a
+   * subsystem, which is a grouping of files rather than a claim, so nothing can
+   * contradict one and nothing can derive one from a principle either.
    *
    * <target> is another canon entry by filename, or any other file as a path
    * from the repository root — docs/commands/validate.command.html, src/api.ts.
@@ -784,9 +849,9 @@
    */
   export function link({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<target>'], [args.rel, '--rel'])
-    const doc = fs.get(entryPathFor(args._[0]))
-    const root = rootOf(doc)
-    const href = cli.href(entryPathFor(args._[0]), pathFor(args._[1]))
+    const doc = fs.get(entryPathFor(fileOf(args._[0])))
+    const root = sourceOf(doc, args._[0])
+    const href = cli.href(entryPathFor(fileOf(args._[0])), pathFor(args._[1]))
     const label = args.label ?? ''
 
     const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
@@ -816,9 +881,9 @@
    */
   export function unlink({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<target>'], [args.rel, '--rel'])
-    const doc = fs.get(entryPathFor(args._[0]))
-    const root = rootOf(doc)
-    const href = cli.href(entryPathFor(args._[0]), pathFor(args._[1]))
+    const doc = fs.get(entryPathFor(fileOf(args._[0])))
+    const root = sourceOf(doc, args._[0])
+    const href = cli.href(entryPathFor(fileOf(args._[0])), pathFor(args._[1]))
     const a = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
     if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
     a.remove()

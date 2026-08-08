@@ -9,42 +9,50 @@
 <body>
 <canon-specification data-conforms-to="../../templates/canon.template.html#canon-specification">
   <canon-title>the template schema</canon-title>
-  <a data-rel="depends_on" href="../axioms/documents-are-the-source.axiom.html">the schema is declared in the document it describes</a>
-  <a data-rel="depends_on" href="../axioms/a-check-lives-with-its-vocabulary.axiom.html">the generic validator lives in template.template.html</a>
   <a data-rel="specifies" href="../../templates/template.template.html">the generic validator</a>
-  <a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html">a shape violation fails the build</a>
   <canon-behaviour id="duplicate-field-fails" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A second copy of a field the template declares once fails validation.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-declaration-is-the-whole-contract.axiom.html">how many the declaration allows</a>
   </canon-behaviour>
   <canon-behaviour id="repeatable-child-may-repeat" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A child declared repeatable may appear many times.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-declaration-is-the-whole-contract.axiom.html">how many the declaration allows</a>
   </canon-behaviour>
   <canon-behaviour id="every-occurrence-is-checked" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>Every occurrence of a repeatable child is validated, not only the first.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-declaration-is-the-whole-contract.axiom.html">every one of them, not the first</a>
   </canon-behaviour>
   <canon-behaviour id="attribute-borne-element-may-be-empty" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>An element whose meaning sits in its attributes may hold no text.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-declaration-is-the-whole-contract.axiom.html">what a declaration says about content</a>
   </canon-behaviour>
   <canon-behaviour id="declared-order-binds" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A field placed before one the template declares earlier fails validation.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-declaration-is-the-whole-contract.axiom.html">the order the declaration fixes</a>
   </canon-behaviour>
   <canon-behaviour id="a-run-stays-contiguous" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>Another tag may not interrupt a run of a repeatable child.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-declaration-is-the-whole-contract.axiom.html">the order the declaration fixes</a>
   </canon-behaviour>
   <canon-behaviour id="the-root-is-closed" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A child of any name the template does not declare fails validation.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-declaration-is-the-whole-contract.axiom.html">which children the declaration allows</a>
   </canon-behaviour>
   <canon-behaviour id="a-plain-field-holds-text-only" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A placeholder declaring no children holds text and no elements.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-declaration-is-the-whole-contract.axiom.html">which children the declaration allows</a>
   </canon-behaviour>
   <canon-behaviour id="a-field-may-declare-its-own-vocabulary" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A field declaring which tags it holds refuses any tag outside that list.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-declaration-is-the-whole-contract.axiom.html">which children the declaration allows</a>
   </canon-behaviour>
   <canon-behaviour id="a-placeholder-may-name-a-nested-type" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A placeholder naming a type carries that type's children into validation.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-declaration-is-the-whole-contract.axiom.html">a declaration reaching into a nested type</a>
   </canon-behaviour>
   <canon-behaviour id="the-relation-vocabulary-is-closed" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>An edge naming a relation its type does not list fails validation.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-declaration-is-the-whole-contract.axiom.html">which relations the declaration allows</a>
   </canon-behaviour>
 </canon-specification>
 </body></html>

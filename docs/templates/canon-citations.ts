@@ -138,7 +138,7 @@ export function readCanon(fs: AuditFs): Canon {
         behaviours: Array.from(element.querySelectorAll("canon-behaviour[id]")).map((behaviour) => ({
           address: address(path, behaviour.getAttribute("id")),
           title: titleOf(behaviour),
-          dependsOn: [],
+          dependsOn: edges(behaviour, path),
         })),
       })
     }

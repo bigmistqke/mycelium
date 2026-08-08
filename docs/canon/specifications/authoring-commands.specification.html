@@ -9,24 +9,27 @@
 <body>
 <canon-specification data-conforms-to="../../templates/canon.template.html#canon-specification">
   <canon-title>the authoring commands</canon-title>
-  <a data-rel="depends_on" href="../axioms/derive-do-not-maintain.axiom.html">the href is computed, never typed</a>
-  <a data-rel="depends_on" href="../axioms/documents-are-the-source.axiom.html">a command writes the document it owns</a>
   <a data-rel="specifies" href="../../templates/knowledge.template.html">the knowledge authoring commands</a>
   <a data-rel="specifies" href="../../templates/language.template.html">the language authoring commands, which two of these behaviours are about</a>
   <canon-behaviour id="add-dates-the-filename" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>knowledge add prepends today's date to a bare slug.</canon-title>
+    <a data-rel="depends_on" href="../axioms/derive-do-not-maintain.axiom.html">the date is computed, never typed</a>
   </canon-behaviour>
   <canon-behaviour id="add-refuses-a-dated-slug" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>knowledge add refuses a slug that already carries a date.</canon-title>
+    <a data-rel="depends_on" href="../axioms/derive-do-not-maintain.axiom.html">refusing the hand-typed copy of a computed fact</a>
   </canon-behaviour>
   <canon-behaviour id="link-writes-into-the-from-file" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>link writes the edge into the first file, not the second.</canon-title>
+    <a data-rel="depends_on" href="../axioms/edges-point-up-only.axiom.html">which end of the edge stores it</a>
   </canon-behaviour>
   <canon-behaviour id="language-link-crosses-directories" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>An edge from a term to a guide climbs out of the directory holding the term.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-family-owns-its-paths.axiom.html">the family knows where its terms and guides sit</a>
   </canon-behaviour>
   <canon-behaviour id="knowledge-link-reaches-a-template" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>An edge to a template keeps the leading dot-dot that reaches it.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-family-owns-its-paths.axiom.html">the family resolves its own path before asking for the href</a>
   </canon-behaviour>
 </canon-specification>
 </body></html>

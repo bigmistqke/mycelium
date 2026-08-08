@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A behaviour cites its own axiom, because a subsystem cannot derive from one</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A behaviour cites its own axiom, because a subsystem cannot derive from one</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-08</spec-date>
+  <spec-problem>
+<p>The canon hangs its upward edge on the wrong element. A
+<code>canon-specification</code> carries <code>depends_on</code> to an axiom, and
+a <code>canon-behaviour</code> carries no edge at all — the schema does not
+declare one and <code>readCanon</code> hardcodes an empty list for it.</p>
+<p>So the corpus says <q>the figure layout engine depends_on documents are the
+source</q>. A specification names a subsystem, and a subsystem is a grouping of
+code rather than a claim. Nothing can contradict it, so nothing can derive it
+from a principle either. Only a claim derives from a principle, and the claim
+here is the behaviour.</p>
+<p>The methodology this family follows puts the citation on each claim-bearing
+unit, and settles granularity as the unit somebody could later contradict. A
+spec rule owes at least one axiom, individually. A test owes at least one rule.
+Nothing owes anything on behalf of a document that happens to contain it.</p>
+<p>The damage is visible in what got written. One axiom carries three
+specifications, which reads as a load-bearing principle and is the opposite: it
+is general enough to explain anything, so it explained everything and no
+behaviour ever had to name a principle that fits it. Twelve claims about figure
+layout hang from <q>a document is the source of truth</q>, which does not
+predict a single one of them.</p>
+</spec-problem>
+  <spec-design>
+<p>The upward edge moves down one level. A <code>canon-behaviour</code> declares
+<code>&lt;a repeatable data-rel="depends_on"&gt;</code> and names the axiom it
+refines. A <code>canon-specification</code> keeps <code>specifies</code>, which
+is a container's honest job — saying which files it covers — and loses
+<code>depends_on</code> entirely.</p>
+<p><code>grounded</code> then checks two things rather than one, and both are
+per-claim:</p>
+<ul>
+  <li>A behaviour citing no axiom is freelancing. It asserts something the
+    project never committed to.</li>
+  <li>An axiom no behaviour reaches is dead. Nothing beneath it can push back,
+    so nothing can falsify it.</li>
+</ul>
+<p>Reach still runs through narrowing. An axiom a narrower axiom refines counts
+as reached when a behaviour cites that narrower one, so the walk goes the whole
+way down rather than one step.</p>
+<p>The commands follow. <code>canon link</code> and <code>unlink</code> accept
+<code>&lt;file&gt;#&lt;behaviour-id&gt;</code> as the source, since a behaviour
+is now a thing an edge starts from and hand-authoring is what these commands
+exist to prevent.</p>
+<p>The schema also requires a specification to hold at least one behaviour. A
+container with no claims in it is dead weight the closed-field check cannot
+otherwise see.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>No case layer. The methodology this follows has a rung between a rule and a
+test, holding derived cases that owe a rule. Nothing here has wanted one, and
+adding a rung nobody asked for is how a vocabulary grows past what anybody
+maintains.</p>
+<p>No declared scope. That methodology lists in-scope paths in its checker's
+config, because a citation on every one of several hundred tests would be noise.
+This corpus has thirty-four cases and total coverage stays affordable, so
+<code>cited</code> remains total. The warning behind that choice still applies:
+routine noise from a check means the scope is wrong rather than the suite.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Whether a behaviour may cite more than one axiom. The schema allows it, since
+a claim can rest on two principles at once, and nothing yet says whether that
+reads as precision or as hedging.</p>
+<p>Whether an axiom should reach a behaviour directly rather than only through
+narrowing. A general axiom with no narrower axiom under it and no behaviour
+citing it is dead by this check, which may be right or may just push everyone to
+write a narrowing axiom to keep the build quiet.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>

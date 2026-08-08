@@ -9,43 +9,54 @@
 <body>
 <canon-specification data-conforms-to="../../templates/canon.template.html#canon-specification">
   <canon-title>the figure layout engine</canon-title>
-  <a data-rel="depends_on" href="../axioms/documents-are-the-source.axiom.html">a figure is a document that draws itself</a>
   <a data-rel="specifies" href="../../templates/figure.element.js">the layout engine</a>
   <canon-behaviour id="data-at-decides-the-cell" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A node lands in the row and column its data-at names.</canon-title>
+    <a data-rel="depends_on" href="../axioms/a-figure-is-declared.axiom.html">the cell comes from the document</a>
   </canon-behaviour>
   <canon-behaviour id="merge-shares-one-lane" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>Edges arriving at one box share a single lane.</canon-title>
+    <a data-rel="depends_on" href="../axioms/an-edge-runs-in-space-reserved-for-it.axiom.html">one lane serves the arrivals it holds</a>
   </canon-behaviour>
   <canon-behaviour id="back-edge-keeps-to-its-column" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A back edge runs inside the column reserved for it.</canon-title>
+    <a data-rel="depends_on" href="../axioms/an-edge-runs-in-space-reserved-for-it.axiom.html">the reserved column</a>
   </canon-behaviour>
   <canon-behaviour id="labels-into-one-box-do-not-overlap" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>Two labelled edges into one box show both labels.</canon-title>
+    <a data-rel="depends_on" href="../axioms/nothing-drawn-may-hide-anything.axiom.html">neither label hides the other</a>
   </canon-behaviour>
   <canon-behaviour id="no-label-covers-another-edge" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A label does not cover the drop belonging to another edge.</canon-title>
+    <a data-rel="depends_on" href="../axioms/nothing-drawn-may-hide-anything.axiom.html">a label may not hide a drop</a>
   </canon-behaviour>
   <canon-behaviour id="no-label-covers-a-node" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>No label lands on top of a box, even where the gap is full.</canon-title>
+    <a data-rel="depends_on" href="../axioms/nothing-drawn-may-hide-anything.axiom.html">a label may not hide a box</a>
   </canon-behaviour>
   <canon-behaviour id="no-label-leaves-the-figure" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A label longer than its column stays inside the figure.</canon-title>
+    <a data-rel="depends_on" href="../axioms/nothing-drawn-may-hide-anything.axiom.html">a label outside the frame hides itself</a>
   </canon-behaviour>
   <canon-behaviour id="a-lone-label-keeps-its-anchor" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A label with nothing to clash with keeps its own anchor.</canon-title>
+    <a data-rel="depends_on" href="../axioms/nothing-drawn-may-hide-anything.axiom.html">with nothing to hide, nothing moves</a>
   </canon-behaviour>
   <canon-behaviour id="peer-runs-level-between-facing-sides" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A peer edge is one level line joining the two facing sides.</canon-title>
+    <a data-rel="depends_on" href="../axioms/an-edge-runs-in-space-reserved-for-it.axiom.html">the space between two facing sides</a>
   </canon-behaviour>
   <canon-behaviour id="peer-running-leftwards" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A peer edge pointing left leaves the left side and arrives at the right one.</canon-title>
+    <a data-rel="depends_on" href="../axioms/an-edge-runs-in-space-reserved-for-it.axiom.html">the same space, entered from the other end</a>
   </canon-behaviour>
   <canon-behaviour id="peer-label-clears-its-own-line" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A peer edge's label sits above its line rather than over it.</canon-title>
+    <a data-rel="depends_on" href="../axioms/nothing-drawn-may-hide-anything.axiom.html">a label may not hide its own line</a>
   </canon-behaviour>
   <canon-behaviour id="peer-across-an-empty-column" data-conforms-to="../../templates/canon.template.html#canon-behaviour">
     <canon-title>A peer edge may span a column that holds nothing in its row.</canon-title>
+    <a data-rel="depends_on" href="../axioms/an-edge-runs-in-space-reserved-for-it.axiom.html">a column holding nothing still holds the edge</a>
   </canon-behaviour>
 </canon-specification>
 </body></html>
