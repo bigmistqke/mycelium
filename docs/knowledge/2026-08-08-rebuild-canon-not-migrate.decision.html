@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Rebuild the canon through its own commands rather than migrate the files</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Rebuild the canon through its own commands rather than migrate the files</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Moving to a document per subsystem invalidated every address in the canon, so
+every entry and every citation had to change. A script rewriting the files would
+have taken minutes. Rebuilding through <code>canon add</code> and
+<code>canon link</code> took about ninety invocations.</p>
+<p>The rebuild won because it ran the new commands on every entry rather than on
+one. That caught two things reading them would not have: a specification cannot
+require a behaviour at birth, since it gets created empty and then filled, and
+<code>link</code> does have to accept a specification as a source after all, for
+<code>specifies</code>.</p>
+<p>The cost was smaller than it looked, and worth measuring rather than
+guessing. A single invocation is about 1.6 seconds, so the rebuild cost roughly
+two and a half minutes. The session's real time went elsewhere.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-08-canon-document-per-subsystem.decision.html">the layout change this carried out</a>
+</knowledge-decision>
+</body></html>

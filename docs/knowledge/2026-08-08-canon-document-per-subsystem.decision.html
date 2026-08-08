@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: One canon document per subsystem, with root holding what governs everything</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>One canon document per subsystem, with root holding what governs everything</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>A flat <code>canon/axioms/</code> directory put the figure engine's
+principles beside the ones about documents and gates, as though they were peers.
+The set that shaped one subsystem says nothing about the others, and pouring all
+of them onto one sheet buries the few that do govern everything.</p>
+<p>The alternative considered and rejected was regions: a second vocabulary of
+scope names applied by hand. That is what <a href="./2026-07-30-link-do-not-tag.decision.html">link,
+do not tag</a> already refused once, and it would need maintaining.</p>
+<p>So a canon is a document per subsystem holding its own axioms and the
+specification its behaviours belong to, with <code>root.canon.html</code> for
+the axioms everything narrows from. Where an axiom belongs is readable rather
+than decided: cited from more than one subsystem means root, cited from one
+means it lives there.</p>
+<p>Nothing about the checks changed, which is what said the layout was a reading
+concern rather than a structural one. A reader locates an instance by
+<code>data-conforms-to</code> wherever it sits, several conforming elements in
+one document were already allowed, and the three chain checks never cared about
+files. Only the commands moved.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-06-how-subsystem-axioms-inherit.decision.html">the composition mechanism this lays out on disk</a>
+</knowledge-decision>
+</body></html>
