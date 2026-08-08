@@ -146,13 +146,47 @@ export interface CommentSubject {
   name: string | null
 }
 
+// A leaf test: `it` or `test`, including the forms that wear a modifier. The
+// leftmost identifier of the callee decides, so `it.only` and `test.skip`
+// answer the same as a bare call.
+//
+// A group such as `describe` is deliberately absent. A group is navigation: it
+// spans a whole file and asserts nothing itself, so naming it as a documented
+// subject invites a comment that has to speak for every child at once.
+const TEST_CALLS = new Set(["it", "test"])
+
+function calleeRoot(node: ts.Expression): string | null {
+  let current: ts.Node = node
+  while (true) {
+    if (ts.isIdentifier(current)) return current.text
+    if (ts.isPropertyAccessExpression(current) || ts.isCallExpression(current)) {
+      current = current.expression
+      continue
+    }
+    return null
+  }
+}
+
 // Which node kinds count as a declaration a comment can document. A comment
 // above an `if` or a `return` describes a step, and one above a function or a
 // constant describes a named thing — the distinction the whole doc-block
 // question rests on.
+//
+// A test is the one subject here that no declaration keyword introduces. It is
+// a call, and its name is a string rather than an identifier. The derivation
+// chain rests on that case: a test owns no document and joins the chain only
+// through the comment sitting above it, so anything asking what a comment
+// documents has to be able to answer "the test called …".
 function describe(node: ts.Node | undefined): CommentSubject {
   if (!node) return { declares: null, name: null }
   const named = (kind: string, id?: ts.Node) => ({ declares: kind, name: id && ts.isIdentifier(id as any) ? (id as ts.Identifier).text : null })
+  if (ts.isExpressionStatement(node) && ts.isCallExpression(node.expression)) {
+    const root = calleeRoot(node.expression.expression)
+    if (root && TEST_CALLS.has(root)) {
+      const first = node.expression.arguments[0]
+      return { declares: "test", name: first && ts.isStringLiteralLike(first) ? first.text : null }
+    }
+  }
   if (ts.isFunctionDeclaration(node)) return named("function", node.name)
   if (ts.isClassDeclaration(node)) return named("class", node.name)
   if (ts.isInterfaceDeclaration(node)) return named("interface", node.name)
@@ -224,6 +258,44 @@ export function commentRanges(source: string): CommentRange[] {
 
 export function extractComments(source: string): string[] {
   return commentRanges(source).map((c) => c.text)
+}
+
+export interface TestRange {
+  name: string | null
+  // The comment sitting directly above, when there is one.
+  comment: CommentRange | null
+}
+
+// Every leaf test in a source, whether or not a comment sits above it.
+//
+// commentRanges cannot answer this. It enumerates comments and reports what
+// each one sits above, so a test carrying no comment never appears in its
+// output. That absence is the exact case a check about missing citations
+// exists to catch. Asking the question the other way round is a different
+// walk, so it is a different function, sharing the one definition of what
+// counts as a test.
+export function testRanges(source: string): TestRange[] {
+  const comments = commentRanges(source)
+  const sourceFile = ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
+  const tests: TestRange[] = []
+
+  function visit(node: ts.Node) {
+    if (ts.isExpressionStatement(node) && ts.isCallExpression(node.expression)) {
+      const root = calleeRoot(node.expression.expression)
+      if (root && TEST_CALLS.has(root)) {
+        const first = node.expression.arguments[0]
+        // The comment inside this statement's own leading trivia, which is the
+        // same one describe() already attributed to it. Matching on the span
+        // rather than on the test's name keeps two tests worded alike apart.
+        const start = node.getStart(sourceFile)
+        const comment = comments.find((c) => c.subject.declares === "test" && c.pos >= node.pos && c.end <= start)
+        tests.push({ name: first && ts.isStringLiteralLike(first) ? first.text : null, comment: comment ?? null })
+      }
+    }
+    node.forEachChild(visit)
+  }
+  visit(sourceFile)
+  return tests
 }
 
 const WRAP_WIDTH = 80

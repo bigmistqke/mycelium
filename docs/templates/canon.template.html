@@ -227,7 +227,7 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
   corpus is, so this file fails if one stops conforming. They are real instances, not illustrations.
 </p>
 <p>
-  Two of them fail on purpose, and the checks that catch them declare that failure in their own
+  Three of them fail on purpose, and the checks that catch them declare that failure in their own
   <code>data-expects</code>. A check that has never fired is not known to work, and nothing else in
   the corpus exercises these yet.
 </p>
@@ -247,11 +247,39 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
     <canon-title>a sample subsystem</canon-title>
     <a data-rel="depends_on" href="#sample-axiom">the axiom this serves</a>
     <a data-rel="describes" href="./canon.template.css">the file it describes</a>
+    <canon-behaviour id="sample-tested-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
+      <canon-title>A claim the sample test below cites, so the whole chain has one rung that holds.</canon-title>
+    </canon-behaviour>
     <canon-behaviour id="sample-untested-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
       <canon-title>A claim no test cites, kept here so the exhaustive check has something to find.</canon-title>
     </canon-behaviour>
   </canon-specification>
 </div>
+
+<h3>The sample tests</h3>
+<p>
+  The bottom rung needs a worked example too, and a test is the one rung with no document to hold
+  it. So the two below sit in a script block, the same place eight documents in this corpus already
+  keep a command or an audit.
+</p>
+<p>
+  The type is <code>mycelium/test</code>, which nothing here runs. That is the point: a file named
+  <code>*.test.ts</code> would be collected by whatever runner this repository grows, and a sample
+  built to fail a check is not a test anybody wants executed. It still typechecks, and the citation
+  reader still finds it, because both read the block rather than run it.
+</p>
+<script type="mycelium/test">
+  import { it } from "node:test"
+
+  /**
+   * @specification docs/templates/canon.template.html#sample-tested-behaviour
+   */
+  it("cites a behaviour, which is what the passing side of the joint looks like", () => {})
+
+  // No citation, so this one is the violation `cited` declares. A test that
+  // cites nothing is a claim about the system no specification makes.
+  it("cites nothing at all", () => {})
+</script>
 
 <h2>Validator</h2>
 <p>
@@ -264,6 +292,157 @@ it('exits non-zero when an audit fails', () =&gt; {</code></pre>
   <code>canon-detail</code> fails, because that field is absent from its template and the
   allowed set is exactly what the template declares.
 </p>
+
+<h2>The chain checks</h2>
+<p>
+  Three audits, declared here beside the types they check, the way
+  <code>knowledge.template.html</code> declares its own. Each reads the corpus through
+  <code>AuditFs</code> and none of them names a rung inside <code>src/</code>: the engine learns this
+  chain by reading the declarations above, because a checker that hardcodes its ontology is a
+  checker that can only ever check one project.
+</p>
+<p>
+  All three share one reader, <a href="./canon-citations.ts">canon-citations.ts</a>, which holds both
+  ends of the joint: which behaviours the corpus states, and which behaviour each test says it
+  checks. Three copies of that reading is how two checks come to disagree about what a citation is.
+</p>
+
+<h3>grounded</h3>
+<p>
+  Every axiom reaches a behaviour beneath it, and every specification reaches an axiom above it. An
+  axiom with nothing under it is a belief nobody acted on.
+</p>
+<p>
+  The downward reach is computed from the upward edges, never authored. A hand-maintained reverse
+  index rots, and a forgotten entry in one looks exactly like an axiom nothing derives from.
+</p>
+<p>
+  The honest cost, which the design states outright: a broad axiom nobody has read down into a
+  subsystem reaches nothing there, and this check cannot tell that apart from an axiom that does not
+  apply. Writing the reading is the work, and no audit does it for you.
+</p>
+<script type="mycelium/audit" data-audits="grounded" data-expects="docs/templates/canon.template.html#sample-ungrounded-axiom" data-touches="canon-axiom canon-specification">
+  import type { AuditFs } from "../../src/api.ts"
+  /**
+   * Every axiom reaches a behaviour beneath it, and every specification reaches
+   * an axiom above it.
+   *
+   * A violation names the address of whichever end is loose, so it reads as a
+   * place to open rather than as a sentence about one.
+   */
+  import { readCanon } from "./canon-citations.ts"
+
+  export function check(fs: AuditFs) {
+    const { axioms, specifications } = readCanon(fs)
+    const violations = []
+    const isAxiom = new Set(axioms.map((axiom) => axiom.address))
+
+    for (const specification of specifications) {
+      if (!specification.dependsOn.some((target) => isAxiom.has(target))) violations.push(specification.address)
+    }
+
+    // The reverse of the stored edges, built here and thrown away, which is the
+    // whole reason nothing authors it. A specification depends on the axioms it
+    // serves and an axiom on the one it narrows, so reversing both gives every
+    // step downward in one map.
+    const dependents = new Map()
+    for (const entry of [...axioms, ...specifications]) {
+      for (const target of entry.dependsOn) {
+        if (!dependents.has(target)) dependents.set(target, [])
+        dependents.get(target).push(entry.address)
+      }
+    }
+    const behaviourCount = new Map(specifications.map((s) => [s.address, s.behaviours.length]))
+
+    // Walks down from one axiom until it meets a specification that states
+    // something. `seen` is what keeps an axiom narrowing itself in a loop from
+    // walking forever.
+    function reachesBehaviour(start: string) {
+      const seen = new Set([start])
+      const queue = [start]
+      while (queue.length > 0) {
+        for (const next of dependents.get(queue.pop()) ?? []) {
+          if (seen.has(next)) continue
+          seen.add(next)
+          if ((behaviourCount.get(next) ?? 0) > 0) return true
+          queue.push(next)
+        }
+      }
+      return false
+    }
+
+    for (const axiom of axioms) {
+      if (!reachesBehaviour(axiom.address)) violations.push(axiom.address)
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<h3>exhaustive</h3>
+<p>
+  Every behaviour has a test citing it. Nothing is exempt, so this counts the whole list rather than
+  a marked subset of it, which is what the absence of a requirement marking buys.
+</p>
+<script type="mycelium/audit" data-audits="exhaustive" data-expects="docs/templates/canon.template.html#sample-untested-behaviour" data-touches="canon-behaviour">
+  import type { AuditFs } from "../../src/api.ts"
+  /**
+   * Every behaviour has a test citing it.
+   *
+   * A behaviour nothing cites is a claim with no evidence under it, which is
+   * the same failure an axiom reaching nothing already names, one rung lower.
+   */
+  import { collectTests, readCanon } from "./canon-citations.ts"
+
+  export function check(fs: AuditFs) {
+    const cited = new Set()
+    for (const test of collectTests(fs)) {
+      for (const citation of test.citations) cited.add(citation.target)
+    }
+    const violations = readCanon(fs).specifications
+      .flatMap((specification) => specification.behaviours)
+      .filter((behaviour) => !cited.has(behaviour.address))
+      .map((behaviour) => behaviour.address)
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
+<h3>cited</h3>
+<p>
+  Every test cites a behaviour. This is the one that closes the loop: a test citing nothing is a
+  claim about the system that no specification makes, so either a behaviour is missing above it or
+  the test checks something nobody meant to promise.
+</p>
+<p>
+  A citation gets judged on where it lands, never on which tag carries it. One test citing an axiom
+  directly fails here, because it reaches past the layer that was supposed to state the claim. The
+  project that ran this methodology before checked the tag name instead and let sixteen such
+  citations through, and every one of them turned out to be a real gap.
+</p>
+<script type="mycelium/audit" data-audits="cited" data-expects="docs/templates/canon.template.html:cites-nothing-at-all" data-touches="canon-behaviour">
+  import type { AuditFs } from "../../src/api.ts"
+  /**
+   * Every test cites a behaviour.
+   *
+   * One check covers all three ways to fail, because all three are the same
+   * failure: a test with no comment above it, a citation resolving to nothing,
+   * and a citation landing on an axiom rather than on a behaviour. What decides
+   * is where the citation lands.
+   *
+   * A test has no id to be named by, so a violation names the file and a slug
+   * of the test's own words.
+   */
+  import { collectTests, readCanon, slugify } from "./canon-citations.ts"
+
+  export function check(fs: AuditFs) {
+    const behaviours = new Set(
+      readCanon(fs).specifications.flatMap((specification) => specification.behaviours.map((b) => b.address)),
+    )
+    const violations = collectTests(fs)
+      .filter((test) => !test.citations.some((citation) => behaviours.has(citation.target)))
+      .map((test) => `${test.source}:${slugify(test.name)}`)
+    return { ok: violations.length === 0, violations }
+  }
+</script>
 
 <h2>Authoring commands</h2>
 <p>
