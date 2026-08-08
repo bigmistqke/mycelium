@@ -242,16 +242,21 @@
 
   // What to remove for a cut. The comment's own range stops at its last
   // character, so deleting exactly that leaves the blank indented line it sat
-  // on. Widen to the start of its line when only whitespace precedes it, and
-  // through the newline that ends it, so the line goes with the comment.
+  // on. Both ends widen together, and only for a comment that owns its whole
+  // line: one trailing code shares that newline with the code, so taking it
+  // joins the line to the one below and quietly changes what runs.
   function cutRange(source: string, c: Candidate): { pos: number; end: number } {
     let pos = c.pos
-    const lineStart = source.lastIndexOf("\n", pos - 1) + 1
-    if (!source.slice(lineStart, pos).trim()) pos = lineStart
     let end = c.end
-    const rest = source.slice(end)
-    const trailing = /^[ \t]*\r?\n/.exec(rest)
-    if (trailing) end += trailing[0].length
+    const lineStart = source.lastIndexOf("\n", pos - 1) + 1
+    const before = source.slice(lineStart, pos)
+    if (before.trim()) {
+      pos -= /[ \t]*$/.exec(before)?.[0].length ?? 0
+    } else {
+      pos = lineStart
+      const trailing = /^[ \t]*\r?\n/.exec(source.slice(end))
+      if (trailing) end += trailing[0].length
+    }
     return { pos, end }
   }
 

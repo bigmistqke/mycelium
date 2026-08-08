@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canon: comments</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/canon.template.css">
+</head>
+<body>
+<canon-axiom id="the-standard-is-one-document" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>One document holds the standard a comment answers to, and this command keeps no copy of it.</canon-title>
+  <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">a built-in default would be the second copy that drifts</a>
+</canon-axiom>
+<canon-axiom id="the-file-may-state-its-own-verdict" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>The command reads a verdict the file already states, rather than asking a model to repeat it.</canon-title>
+  <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">the file is the source, so the command reads it</a>
+</canon-axiom>
+<canon-axiom id="rationale-moves-rather-than-dies" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>Rationale in the wrong place moves to where something can query it, and nothing deletes it.</canon-title>
+  <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">a decision belongs where something can query it</a>
+</canon-axiom>
+<canon-axiom id="nothing-changes-a-file-unasked" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>A command changes a file only when the person asked it to fix one.</canon-title>
+  <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a gate that edits what it measures</a>
+</canon-axiom>
+<canon-axiom id="a-fix-changes-only-what-it-reported" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>A fix removes exactly what the report named, and leaves the rest of the file alone.</canon-title>
+  <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a fix people cannot trust is one they run once</a>
+</canon-axiom>
+<canon-specification id="comments" data-conforms-to="../templates/canon.template.html#canon-specification">
+  <canon-title>the comments command</canon-title>
+  <a data-rel="specifies" href="../commands/comments.command.html">the command that judges and cuts comments</a>
+  <canon-behaviour id="every-comment-in-the-file-gets-a-verdict" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>Every comment in the file gets a verdict, and the command skips none.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a check that quietly skips is one nobody can rely on</a>
+  </canon-behaviour>
+  <canon-behaviour id="an-html-file-comes-through-its-scripts" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>In an .html file the command reads the comments inside its script blocks, at the position they hold in the outer file.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">this project keeps its code inside documents</a>
+  </canon-behaviour>
+  <canon-behaviour id="an-unreadable-kind-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A file of a kind the command cannot read fails, naming the kinds it understands.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">judging nothing in silence reads the same as passing</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-missing-guide-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>With the guide missing the command fails, rather than falling back to a standard of its own.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#the-standard-is-one-document">no second standard to fall back on</a>
+  </canon-behaviour>
+  <canon-behaviour id="the-guide-supplies-every-criterion" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>The criteria reaching the model come from the guide's own fields, and the command adds none.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#the-standard-is-one-document">the one copy is the one that runs</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-working-note-goes-without-asking" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A comment tagged WIP goes without a model ever seeing it.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#the-file-may-state-its-own-verdict">the tag is the author saying cut out loud</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-doc-comment-on-an-export-stays-without-asking" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A doc comment on an export stays, and reaches no model, because the roster prints it.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#the-file-may-state-its-own-verdict">the export says this comment is output</a>
+  </canon-behaviour>
+  <canon-behaviour id="the-summary-names-what-nothing-judged" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>The summary says how many comments kept their place without a model judging them.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#the-file-may-state-its-own-verdict">what went unasked gets said out loud</a>
+  </canon-behaviour>
+  <canon-behaviour id="check-exits-non-zero-on-a-cut" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>check exits non-zero when it finds a comment to cut.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a verdict that costs nothing to ignore</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-promotion-alone-exits-zero" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A file whose only finding is a promotion exits zero.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#rationale-moves-rather-than-dies">rationale in the wrong place is not a failure</a>
+  </canon-behaviour>
+  <canon-behaviour id="check-writes-nothing" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>check leaves the file exactly as it found it.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#nothing-changes-a-file-unasked">the report was the whole request</a>
+  </canon-behaviour>
+  <canon-behaviour id="diff-writes-nothing" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>The --diff flag prints what would go, and writes nothing.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#nothing-changes-a-file-unasked">a preview that edits is not a preview</a>
+  </canon-behaviour>
+  <canon-behaviour id="autofix-removes-only-a-cut" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>autofix removes every comment with a cut verdict, and no others.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#a-fix-changes-only-what-it-reported">the cut list is the whole change</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-promotion-stays-where-it-sits" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>autofix leaves a comment with a promote verdict exactly where it sits.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#rationale-moves-rather-than-dies">moving it is a person's job, and deleting it is nobody's</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-promotion-prints-the-line-that-moves-it" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A promotion prints the knowledge add line that would move it into the graph, naming the line it came from.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#rationale-moves-rather-than-dies">the move has to be one command away</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-cut-takes-its-whole-line" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>Cutting a comment that sits alone on its line takes the line with it, and leaves no blank behind.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#a-fix-changes-only-what-it-reported">the blank line the comment sat on was part of it</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-comment-beside-code-leaves-the-code" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>Cutting a comment that shares its line with code leaves that code on a line of its own.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#a-fix-changes-only-what-it-reported">the code on that line was never reported</a>
+  </canon-behaviour>
+  <canon-behaviour id="several-cuts-land-where-they-were-judged" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>Several cuts in one file each land on the comment the command judged.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#a-fix-changes-only-what-it-reported">an earlier cut may not move a later one</a>
+  </canon-behaviour>
+</canon-specification>
+</body></html>
