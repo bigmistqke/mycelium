@@ -1213,7 +1213,10 @@ const wires = document.getElementById('wires')
 const axiomDepth = Math.max(0, ...data.axioms.map(a => a.depth))
 const ranks = []
 for (let d = 0; d <= axiomDepth; d++)
-  ranks.push({ name: d === 0 ? 'axioms' : 'narrowed', items: data.axioms.filter(a => a.depth === d)
+  // Only the first axiom column carries the heading. The ones after it hold
+  // axioms too, narrower ones, and naming that again says nothing a reader
+  // cannot see from the edges arriving into them.
+  ranks.push({ name: d === 0 ? 'axioms' : '', items: data.axioms.filter(a => a.depth === d)
     .map(a => ({ address: a.address, title: a.title, group: a.canon, reach: a.behaviours })) })
 
 const specTitle = Object.fromEntries(data.specifications.map(s => [s.address, s.title]))
@@ -1260,7 +1263,7 @@ for (const rank of ranks) {
 for (const rank of ranks) {
   const column = document.createElement('div')
   column.className = 'rank'
-  column.innerHTML = '<h2>' + rank.name + '</h2>'
+  column.innerHTML = rank.name ? '<h2>' + rank.name + '</h2>' : '<h2>&nbsp;</h2>'
   for (const group of rank.groups) {
     const g = document.createElement('div')
     g.className = 'group'
