@@ -20,7 +20,29 @@ import type { AuditFs } from "../../src/api.ts"
 // all, which leaves the test carrying it citing nothing. That is what `cited`
 // reports anyway, so the mistake surfaces without a second kind of violation
 // for it.
-const CITATION = /@specification\s+(\S+)/g
+const CITATION = /^@specification\s+(\S+)/
+
+// Citations come off the raw comment, never off `text`.
+//
+// `text` is the prose view, built for the language rules, and it drops every
+// JSDoc tag line on purpose: a tag declares a type, and a type is not a
+// sentence anybody wrote or could reword. A citation is a tag. Reading the
+// prose view therefore finds no citations at all and says so by returning
+// none, which is the quietest way this reader can be wrong.
+//
+// Going line by line also enforces what the design asks for and the previous
+// pass only assumed: one target per line. A second tag further along the same
+// line is not a second citation, it is a malformed one.
+function citationsIn(raw: string): string[] {
+  const found: string[] = []
+  for (const line of raw.split("\n")) {
+    // `//`, `/*` and a continuation `*` are the three ways a line carries a
+    // comment marker. Off with it, and what remains has to be the citation.
+    const match = CITATION.exec(line.replace(/^\s*(\/\/+|\/\*+|\*+)\s*/, "").trim())
+    if (match) found.push(match[1])
+  }
+  return found
+}
 
 // An address is a path from the repository root and an optional fragment,
 // written the one way, so a citation and a behaviour can be compared as
@@ -88,11 +110,7 @@ export function testSites(source: string, label: string): TestSite[] {
     return {
       source: label,
       name,
-      citations: Array.from(test.comment?.text.matchAll(CITATION) ?? [], (match) => ({
-        target: match[1],
-        source: label,
-        test: name,
-      })),
+      citations: citationsIn(test.comment ?? "").map((target) => ({ target, source: label, test: name })),
     }
   })
 }

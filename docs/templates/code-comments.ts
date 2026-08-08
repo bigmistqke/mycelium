@@ -262,20 +262,30 @@ export function extractComments(source: string): string[] {
 
 export interface TestRange {
   name: string | null
-  // The comment sitting directly above, when there is one.
-  comment: CommentRange | null
+  // The raw source of every comment sitting above, markers and all, joined in
+  // order. Raw rather than the reading view on purpose — see below.
+  comment: string | null
 }
 
 // Every leaf test in a source, whether or not a comment sits above it.
 //
-// commentRanges cannot answer this. It enumerates comments and reports what
-// each one sits above, so a test carrying no comment never appears in its
-// output. That absence is the exact case a check about missing citations
-// exists to catch. Asking the question the other way round is a different
-// walk, so it is a different function, sharing the one definition of what
-// counts as a test.
+// commentRanges cannot answer this, for two separate reasons.
+//
+// It enumerates comments and reports what each one sits above, so a test
+// carrying no comment never appears in its output. That absence is the exact
+// case a check about missing citations exists to catch.
+//
+// And it returns a reading view. That view drops every JSDoc tag line, because
+// a tag declares a type rather than saying something a rule could ask you to
+// reword, and it then drops any comment left holding no prose at all. A
+// comment carrying one tag line and nothing else is both of those things at
+// once, so it does not survive to be looked up — silently, since an empty
+// result and a missing one look the same from here.
+//
+// So this reads the leading trivia straight from source and hands back the raw
+// text. Whoever wants prose can ask formatCodeComment for it; whoever wants a
+// tag needs the line that carries it.
 export function testRanges(source: string): TestRange[] {
-  const comments = commentRanges(source)
   const sourceFile = ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
   const tests: TestRange[] = []
 
@@ -284,12 +294,14 @@ export function testRanges(source: string): TestRange[] {
       const root = calleeRoot(node.expression.expression)
       if (root && TEST_CALLS.has(root)) {
         const first = node.expression.arguments[0]
-        // The comment inside this statement's own leading trivia, which is the
-        // same one describe() already attributed to it. Matching on the span
-        // rather than on the test's name keeps two tests worded alike apart.
-        const start = node.getStart(sourceFile)
-        const comment = comments.find((c) => c.subject.declares === "test" && c.pos >= node.pos && c.end <= start)
-        tests.push({ name: first && ts.isStringLiteralLike(first) ? first.text : null, comment: comment ?? null })
+        // Every comment between the previous statement and this one. A run of
+        // `//` lines arrives as one range per line, so joining them is what
+        // keeps a citation written across two lines whole.
+        const ranges = ts.getLeadingCommentRanges(source, node.pos) ?? []
+        tests.push({
+          name: first && ts.isStringLiteralLike(first) ? first.text : null,
+          comment: ranges.length ? ranges.map((r) => source.slice(r.pos, r.end)).join("\n") : null,
+        })
       }
     }
     node.forEachChild(visit)
