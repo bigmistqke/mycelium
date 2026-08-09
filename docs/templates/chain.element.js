@@ -2,6 +2,28 @@ const data = JSON.parse(document.getElementById('chain').textContent)
 const grid = document.getElementById('grid')
 const wires = document.getElementById('wires')
 
+/**
+ * Which subsystem an address belongs to, read off the canon document holding
+ * it.
+ *
+ * Every rank groups already, and each names its groups differently: a canon in
+ * the axiom column, a specification's title in the behaviour column, a filename
+ * in the implementation column. Nothing could tell that figure, the figure
+ * layout engine and templates/figure.element.js are one subsystem, so the bands
+ * never lined up and the edges between them crossed everything in the way.
+ */
+function subsystemOf(address) {
+  const file = address.split('#')[0]
+  return file.endsWith('.canon.html') ? file.split('/').pop().replace('.canon.html', '') : ''
+}
+
+// Which subsystem answers for a file, from the specification naming it. A
+// declaration sits in a source file and belongs to the subsystem that took
+// responsibility for it.
+const subsystemOfFile = {}
+for (const s of data.specifications)
+  for (const f of s.specifies) subsystemOfFile[f] = subsystemOf(s.address)
+
 // Ranks, left to right. An axiom sits in the column its narrowing depth puts
 // it in, so an axiom narrowing another lands right of it and that edge crosses
 // a column like every other edge rather than doubling back inside one.
@@ -12,7 +34,8 @@ for (let d = 0; d <= axiomDepth; d++)
   // axioms too, narrower ones, and naming that again says nothing a reader
   // cannot see from the edges arriving into them.
   ranks.push({ name: d === 0 ? 'axioms' : '', items: data.axioms.filter(a => a.depth === d)
-    .map(a => ({ address: a.address, title: a.title, group: a.canon, reach: a.behaviours })) })
+    .map(a => ({ address: a.address, title: a.title, group: a.canon,
+                 subsystem: subsystemOf(a.address), reach: a.behaviours })) })
 
 const specTitle = Object.fromEntries(data.specifications.map(s => [s.address, s.title]))
 const behaviourAt = new Map(data.behaviours.map(b => [b.address, b]))
@@ -38,7 +61,8 @@ const behaviourDepthMax = Math.max(0, ...depths)
 for (let d = 0; d <= behaviourDepthMax; d++)
   ranks.push({ name: d === 0 ? 'behaviours' : '', items: data.behaviours
     .filter((b, i) => depths[i] === d)
-    .map(b => ({ address: b.address, title: b.title, group: specTitle[b.specification] || 'unspecified', groupOf: b.specification })) })
+    .map(b => ({ address: b.address, title: b.title, group: specTitle[b.specification] || 'unspecified',
+                 subsystem: subsystemOf(b.specification), groupOf: b.specification })) })
 /**
  * One box per cited declaration, grouped by the file holding it. A file
  * nothing cites still appears, carrying no declarations, because a subsystem
@@ -48,11 +72,13 @@ for (let d = 0; d <= behaviourDepthMax; d++)
  */
 const shortFile = (f) => f.replace(/^docs\//, '')
 const declarations = data.code.map(d =>
-  ({ address: d.address, title: d.name, group: shortFile(d.file), code: d }))
+  ({ address: d.address, title: d.name, group: shortFile(d.file),
+     subsystem: subsystemOfFile[d.file] ?? '', code: d }))
 const cited = new Set(data.code.map(d => d.file))
 for (const s of data.specifications)
   for (const f of s.specifies)
-    if (!cited.has(f)) declarations.push({ address: f, title: shortFile(f), group: shortFile(f), file: true })
+    if (!cited.has(f)) declarations.push({ address: f, title: shortFile(f), group: shortFile(f),
+                                           subsystem: subsystemOfFile[f] ?? '', file: true })
 ranks.push({ name: 'implementation', items: declarations })
 
 // What each item points at, for ordering a column against the one before it.
@@ -70,9 +96,31 @@ const childrenOf = {}
 for (const [child, parents] of Object.entries(parentsOf))
   for (const parent of parents) (childrenOf[parent] ??= []).push(child)
 
-// Fewer crossings, by putting each item near whatever it points at. A group
-// takes the mean position of its members, and members sort inside it, so the
-// subsystem stays readable while the lines stop fighting each other.
+/**
+ * The order subsystems keep in every rank, so one occupies the same band across
+ * the page.
+ *
+ * Reading down the first axiom column rather than sorting by name, because the
+ * axiom rank is the one whose order nothing else constrains. Every rank after
+ * it then follows the order its own edges already pull it towards.
+ *
+ * Root sits first and belongs to nothing. Its axioms serve every subsystem, so
+ * the edges leaving them fan across the whole page whatever this does, and
+ * putting them at one end keeps that fan out of everything else.
+ */
+const bands = ['root', ...new Set(data.axioms.map(a => subsystemOf(a.address)).filter(s => s && s !== 'root'))]
+for (const s of data.specifications) {
+  const name = subsystemOf(s.address)
+  if (name && !bands.includes(name)) bands.push(name)
+}
+const bandOf = (item) => {
+  const at = bands.indexOf(item.subsystem)
+  return at === -1 ? bands.length : at
+}
+
+// Fewer crossings, by keeping a subsystem together and then putting each item
+// near whatever it points at. The band decides which stretch of the column a
+// group sits in, and the mean position of its parents orders it inside that.
 const row = {}
 for (const rank of ranks) {
   const mean = (item) => {
@@ -86,9 +134,9 @@ for (const rank of ranks) {
   }
   for (const items of groups.values()) items.sort((a, b) => mean(a) - mean(b))
   rank.groups = [...groups.entries()]
-    .map(([name, items]) => ({ name, items, groupOf: items[0].groupOf,
+    .map(([name, items]) => ({ name, items, groupOf: items[0].groupOf, band: bandOf(items[0]),
       at: items.reduce((n, i) => n + (mean(i) === Number.MAX_SAFE_INTEGER ? 0 : mean(i)), 0) / items.length }))
-    .sort((a, b) => (a.name === 'root' ? -1 : b.name === 'root' ? 1 : a.at - b.at))
+    .sort((a, b) => a.band - b.band || a.at - b.at)
   let n = 0
   for (const group of rank.groups) for (const item of group.items) row[item.address] = n++
 }
