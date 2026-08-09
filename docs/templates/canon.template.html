@@ -1332,7 +1332,14 @@
     // Read rather than embedded, so the page's own code is a file a person can
     // open, an editor can check and a browser check can exercise. Inlined
     // rather than linked, so the page a reader moves still draws.
-    const pageScript = readFileSync(resolvePath(fs.root, 'templates/chain.element.js'), 'utf8')
+    //
+    // The shared drawing goes first and the chain's own ranking second, because
+    // the second calls what the first defines. Two files rather than two script
+    // tags: the page carries one script and the split lives where the code
+    // does.
+    const pageScript = ['graph.element.js', 'chain.element.js']
+      .map((file) => readFileSync(resolvePath(fs.root, 'templates', file), 'utf8'))
+      .join('\n')
     const page = chainPage(data, base, pageScript)
 
     if (args.out) {
