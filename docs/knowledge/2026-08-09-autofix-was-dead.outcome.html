@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outcome: Tagging found validate autofix broken, a day after a rename missed one call site</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-outcome data-conforms-to="../templates/knowledge.template.html#knowledge-outcome">
+  <knowledge-title>Tagging found validate autofix broken, a day after a rename missed one call site</knowledge-title>
+  <knowledge-confidence>95</knowledge-confidence>
+  <knowledge-detail><p>Asking what <code>autofix</code> promises turned up nothing: no behaviour named
+it and no case ran it. Writing the behaviour meant writing the case, and the case
+would not start. The command threw
+<code>resolveTemplateRef is not defined</code> on every input.</p>
+<p>The commit that moved validate onto the engine's filesystem dropped that import
+and renamed the call inside <code>runValidate</code> to
+<code>templateRefFor</code>. One call site inside <code>autofix</code> kept the old
+name. Nothing ran it, so nothing said so, and CLAUDE.md went on telling people to
+use it for a day.</p>
+<p>Two cases cover it now: fields sort into the order their template declares, and
+an edge and an embedded script keep their place. The second one matters because a
+repair tidying more than it was asked to is one people run once.</p>
+<p>This is what the citation was for. The tag asks what a declaration answers, an
+answer of <q>nothing</q> is a question rather than an exemption, and following the
+question found dead code the gate could not see.</p>
+</knowledge-detail>
+</knowledge-outcome>
+</body></html>

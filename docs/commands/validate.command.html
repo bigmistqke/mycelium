@@ -77,18 +77,22 @@
     [key: string]: unknown
   }
 
-  // What an audit is handed. Read-only, and rooted one level above the docs
-  // directory so src/ is reachable. A rule about language applies to a
-  // comment in a source file as much as to prose in a document, and an
-  // audit that can only see HTML can never say so.
-  //
-  // Handing over a filesystem rather than a list of parsed documents is the
-  // whole point. Parsed documents are the engine deciding what a project's
-  // content is, which is not the engine's business; conformance is defined in
-  // HTML, so the engine parses HTML for that, and stops there. What an audit
-  // examines is its own affair. It could always have imported node:fs and read
-  // whatever it liked — this makes the intended path the convenient one instead
-  // of the awkward one.
+  /**
+   * What an audit is handed. Read-only, and rooted one level above the docs
+   * directory so src/ is reachable. A rule about language applies to a
+   * comment in a source file as much as to prose in a document, and an
+   * audit that can only see HTML can never say so.
+   *
+   * Handing over a filesystem rather than a list of parsed documents is the
+   * whole point. Parsed documents are the engine deciding what a project's
+   * content is, which is not the engine's business; conformance is defined in
+   * HTML, so the engine parses HTML for that, and stops there. What an audit
+   * examines is its own affair. It could always have imported node:fs and read
+   * whatever it liked — this makes the intended path the convenient one instead
+   * of the awkward one.
+   *
+   * @behaviour canon/validate.canon.html#an-audit-reaches-outside-docs
+   */
   function realCorpus(root: string, cache: Map<string, Document>): Corpus {
     return {
       root,
@@ -138,12 +142,16 @@
     }
   }
 
-  // Where an instance's data-conforms-to lands, as a corpus-relative address.
-  //
-  // resolveTemplateRef in utils.ts does the same arithmetic against the real
-  // filesystem and hands back an absolute path. Everything here runs from the
-  // corpus root instead, so a tree somebody wrote in memory resolves by the
-  // same rules as one on disk and neither needs a base nobody can supply.
+  /**
+   * Where an instance's data-conforms-to lands, as a corpus-relative address.
+   *
+   * resolveTemplateRef in utils.ts does the same arithmetic against the real
+   * filesystem and hands back an absolute path. Everything here runs from the
+   * corpus root instead, so a tree somebody wrote in memory resolves by the
+   * same rules as one on disk and neither needs a base nobody can supply.
+   *
+   * @behaviour canon/validate.canon.html#a-missing-template-fails-the-instance
+   */
   function templateRefFor(instanceFile: string, conformsTo: string): string {
     const [relPath, fragId] = conformsTo.split("#")
     const segments = instanceFile.split("/").slice(0, -1)
@@ -155,6 +163,10 @@
     return `${segments.join("/")}#${fragId}`
   }
 
+  /**
+   *
+   * @behaviour canon/validate.canon.html#every-declared-audit-runs
+   */
   function discoverTemplatesAndAudits(documents: ParsedDoc[]) {
     const templates = new Map<string, TemplateInfo>()
     const audits: AuditInfo[] = []
@@ -189,6 +201,10 @@
     conformsTo: string
   }
 
+  /**
+   *
+   * @behaviour canon/validate.canon.html#every-conforming-element-is-checked
+   */
   function discoverInstances(documents: ParsedDoc[]): Instance[] {
     const instances: Instance[] = []
     for (const { path, dom } of documents) {
@@ -199,6 +215,18 @@
     return instances
   }
 
+  /**
+   *
+   * @behaviour canon/validate.canon.html#the-schema-checks-the-instance
+   * @behaviour canon/validate.canon.html#a-custom-validator-runs-as-well
+   * @behaviour canon/validate.canon.html#an-instance-no-validator-covers-fails
+   * @behaviour canon/validate.canon.html#a-throwing-validator-fails-one-instance
+   * @behaviour canon/validate.canon.html#an-undeclared-violation-fails
+   * @behaviour canon/validate.canon.html#a-declared-violation-that-vanished-fails
+   * @behaviour canon/validate.canon.html#the-comparison-is-the-verdict
+   * @behaviour canon/validate.canon.html#a-throwing-audit-fails-one-audit
+   * @behaviour canon/validate.canon.html#an-audit-sees-every-document
+   */
   export async function runValidate(env: ValidateEnv): Promise<ValidateReport> {
     const { corpus, docsDir } = env
     // Every path below runs from the corpus root, the way an AuditFs lists one,
@@ -333,6 +361,11 @@
    *
    * This is the default export, so `mycelium validate` runs it with no
    * subcommand. `mycelium validate check` names the same function.
+   *
+   * @behaviour canon/validate.canon.html#exits-non-zero-on-any-failure
+   * @behaviour canon/validate.canon.html#exits-zero-when-everything-passes
+   * @behaviour canon/validate.canon.html#prints-every-failure-before-exiting
+   * @behaviour canon/validate.canon.html#dir-validates-another-corpus
    */
   export async function check({ fs, args }: CommandContext) {
     const report = await runValidate(realEnv(args.dir ? resolvePath(args.dir as string) : fs.root))
@@ -366,6 +399,9 @@
    * That is also why this takes no --dir: the engine writes what it opened.
    *
    * Prints one line per document it changed, then a count.
+   *
+   * @behaviour canon/validate.canon.html#autofix-sorts-fields-into-declared-order
+   * @behaviour canon/validate.canon.html#autofix-moves-nothing-but-fields
    */
   export async function autofix({ fs }: CommandContext) {
     const documents = fs.list(".").map(({ path, doc }) => ({
@@ -378,7 +414,7 @@
     for (const { path, dom } of documents) {
       let touched = false
       for (const el of Array.from(dom.querySelectorAll("[data-conforms-to]"))) {
-        const template = templates.get(resolveTemplateRef(path, el.getAttribute("data-conforms-to")!))
+        const template = templates.get(templateRefFor(path, el.getAttribute("data-conforms-to")!))
         const shape = (template?.element as HTMLTemplateElement | undefined)?.content?.firstElementChild
         if (!shape) continue
         const order = Array.from(shape.children).map((c) => c.tagName.toLowerCase())

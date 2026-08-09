@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: what validate autofix sorts, and what it leaves alone</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/test.template.css">
+</head>
+<body>
+
+<test-doc data-conforms-to="../templates/test.template.html#test-doc">
+  <test-title>validate autofix restores the declared order and moves nothing else</test-title>
+  <test-subject><a href="../commands/validate.command.html">validate.command.html</a></test-subject>
+
+  <test-case id="autofix-sorts-fields-into-declared-order" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>autofix sorts an instance's fields into the order its template declares</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/validate.canon.html#autofix-sorts-fields-into-declared-order">the behaviour this checks</a>
+    <script type="mycelium/test">
+      /**
+       * The order a template lists its placeholders in binds, so a hand-edited
+       * document that gets it wrong fails the gate. This is the repair, and it
+       * had no test and no behaviour until the code got tagged and turned out
+       * to be answering to nothing.
+       */
+      import type { TestContext } from "../../src/api.ts"
+      import { orderedTree } from "./validate-autofix-fixture.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        for (const [path, text] of Object.entries(orderedTree({ shuffled: true }))) sandbox.write(path, text)
+
+        const done = sandbox.mycelium("validate", "autofix")
+        assert(done.ok, `autofix failed: ${(done.stderr || done.stdout).trim()}`)
+
+        const after = sandbox.read("tidy/one.thing.html")
+        assert(
+          after.indexOf("<thing-title>") < after.indexOf("<thing-note>"),
+          `the title still sits below the note:\n${after}`,
+        )
+      }
+    </script>
+  </test-case>
+
+  <test-case id="autofix-moves-nothing-but-fields" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>autofix leaves an edge and a script where they sit</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/validate.canon.html#autofix-moves-nothing-but-fields">the behaviour this checks</a>
+    <script type="mycelium/test">
+      /**
+       * A repair that tidies more than it was asked to is one people run once.
+       * Declared fields move relative to each other; an edge and an embedded
+       * script keep their place, so a diff shows lines swapping and no content
+       * changing.
+       */
+      import type { TestContext } from "../../src/api.ts"
+      import { orderedTree } from "./validate-autofix-fixture.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        for (const [path, text] of Object.entries(orderedTree({ shuffled: true }))) sandbox.write(path, text)
+        const before = sandbox.read("tidy/one.thing.html")
+
+        const done = sandbox.mycelium("validate", "autofix")
+        assert(done.ok, `autofix failed: ${(done.stderr || done.stdout).trim()}`)
+
+        const after = sandbox.read("tidy/one.thing.html")
+        assert(after !== before, "autofix changed nothing at all, so this case checked nothing")
+        assert(after.includes('<a data-rel="supports" href="./two.thing.html">a peer</a>'), "the edge went missing")
+        assert(after.includes("const kept = 1"), "the embedded script went missing")
+        assert(
+          after.indexOf("<a data-rel") > after.indexOf("<thing-note>"),
+          `the edge climbed above a field it started below:\n${after}`,
+        )
+        assert(
+          after.indexOf("const kept = 1") > after.indexOf("<a data-rel"),
+          `the script moved relative to the edge:\n${after}`,
+        )
+      }
+    </script>
+  </test-case>
+
+</test-doc>
+
+</body>
+</html>
