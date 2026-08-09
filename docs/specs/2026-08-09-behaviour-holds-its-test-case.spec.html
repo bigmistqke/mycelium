@@ -25,8 +25,8 @@ declares. <code>test-subject</code> names the file a document exercises, and the
 specification names that same file with <code>specifies</code>. One of the two
 is a second copy, and this project treats a second copy as
 <a href="../language/terms/drift.term.html">drift</a> waiting to happen.</p>
-<p>The eleven test titles carry something the canon does not. <q>validate fails
-the build and says why</q> groups five of validate's nineteen behaviours, and
+<p>Fifteen test titles carry something the canon does not. <q>validate fails the
+build and says why</q> groups five of validate's nineteen behaviours, and
 nothing checks it, because a document title is prose. The grouping is real and
 the canon has no way to hold it.</p>
 <p>The drawing shows the next symptom. It lays out axioms, behaviours, cases and
@@ -86,6 +86,24 @@ tree, and every claim in the corpus has exactly one parent today — 91 with one
 citation and 5 with none. The <code>depends_on</code> edge stays declared beside
 the nesting, so a behaviour narrowing two others still has somewhere to say
 so.</p>
+<h3>Which titles become parents</h3>
+<p>Eleven of the fifteen. The rule is structural rather than a matter of taste:
+a parent whose children are every behaviour in the specification has the
+specification's own extent, so it asserts what the specification already
+asserts.</p>
+<p>Three fall to that rule. The chain, comments and schema canons each have one
+test document covering every behaviour they declare — 9, 21 and 11 — so those
+titles restate a specification title in different words. The other three canons
+are genuinely subdivided: figure's 12 behaviours across 4 documents, validate's
+19 across 5, and authoring's 8 across 3.</p>
+<p>One more goes for a different reason. The figure placement document holds a
+single case, and a parent with one child adds a level without grouping anything,
+so the child claim stands on its own.</p>
+<p>Two of the eleven need writing rather than rewording. <q>What validate hands
+an audit, and which tree it reads</q> names a topic and asserts nothing, and
+<q>knowledge add and knowledge link write what they promise</q> asserts almost
+nothing. Both mean stating a claim nobody has stated, which is the valuable case
+rather than a chore.</p>
 <h3>What proves a behaviour</h3>
 <p>A behaviour carries at least one case or at least one child behaviour. A leaf
 claim earns a case, and a claim made of narrower claims takes its proof from
@@ -151,9 +169,9 @@ to list what a subsystem promises would turn into mostly test code.</p>
 <code>&lt;details&gt;</code>, so the default reading stays one line per claim. A
 reader who wants the proof opens it, the same gesture the chain page already
 uses for a declaration's comment and code.</p>
-<p>Nesting helps here rather than hurting. A canon document that used to list 19
-flat behaviours lists 5 broad ones, each opening onto its own, which is the
-structure the eleven titles were carrying informally.</p>
+<p>Nesting helps here rather than hurting. The validate canon that used to list
+19 flat behaviours lists 4 broad ones, each opening onto its own, which is the
+structure its five test documents were carrying informally.</p>
 <h3>What the drawing gains</h3>
 <p>The chain drops to three ranks: axioms, behaviours, implementation. Every
 edge then crosses exactly one rank, nothing doubles back, and the sentence
@@ -163,7 +181,7 @@ sits one column right of the one it narrows. A behaviour box carries its case
 count, since the cases lose their column, and a behaviour with four cases looks
 different from one with one.</p>
 <h3>The migration, in order</h3>
-<p>Eleven documents hold 80 cases, and each case moves into the behaviour its
+<p>Fifteen documents hold 80 cases, and each case moves into the behaviour its
 edge already names. The edge names it unambiguously, so a script can do the
 move: read the citation, find the behaviour, cut the element, drop the
 anchor.</p>
@@ -171,10 +189,10 @@ anchor.</p>
 <code>docs/tests/</code> and <code>docs/canon/</code> sit at the same depth but a
 fixture path written from one does not resolve from the other. The
 <code>every-link-resolves</code> audit catches whatever the move gets wrong.</p>
-<p>The template change lands first, then the migration, then the eleven titles
-as parent behaviours, then the audit removals, then the drawing. A run that goes
-red between two steps teaches people to skip the gate, and this project has
-watched that happen.</p>
+<p>The template change lands first, then the migration, then the eleven parent
+behaviours, then the audit removals, then the drawing. A run that goes red
+between two steps teaches people to skip the gate, and this project has watched
+that happen.</p>
 </spec-design>
   <spec-out-of-scope>
 <p>A case still has no <code>add</code> command, and should not get one. Its
@@ -195,11 +213,11 @@ separate decision</a> weighs the candidates. It waits because this change
 already rewrites eighty tags and moving the same eighty twice buys nothing.</p>
 </spec-out-of-scope>
   <spec-open-questions>
-<p>Whether all eleven titles survive becoming claims. A parent behaviour has to
-be falsifiable like any other, and <q>What validate hands an audit, and which
-tree it reads</q> names a topic rather than making an assertion. Some will
-reword cleanly and some may turn out to be table of contents entries with
-nothing to say.</p>
+<p>What the two unwritten parents actually claim. One covers what validate hands
+an audit and which tree it reads, and the other covers what knowledge add and
+link promise. Writing either means stating something the project has never
+stated, so neither is a rewording exercise and both could turn out to hold no
+claim at all.</p>
 <p>Whether a parent behaviour may also carry its own case. Allowing both costs
 nothing in the schema and gives a broad claim an end-to-end check above its
 parts. Forbidding it keeps one clean rule about where proof lives.</p>
