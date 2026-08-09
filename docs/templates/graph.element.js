@@ -19,7 +19,7 @@ const grid = document.getElementById('grid')
 const wires = document.getElementById('wires')
 const pane = document.getElementById('pane')
 
-// What the caller supplies, filled in by mountGraph.
+/** What the caller supplies, filled in by mountGraph. */
 let ranks = []
 let parentsOf = {}
 let childrenOf = {}
@@ -65,7 +65,7 @@ function orderRank(rank, neighbours) {
     .sort((a, b) => a.band - b.band || a.at - b.at)
 }
 
-// Every item's position in its own column, which is what a mean averages.
+/** Every item's position in its own column, which is what a mean averages. */
 function numberRows() {
   for (const rank of ranks) {
     let n = 0
@@ -166,9 +166,11 @@ function render() {
   const used = bands.filter(band => ranks.some(rank => rank.groups.some(g => g.band === bands.indexOf(band))))
   const loose = ranks.some(rank => rank.groups.some(g => g.band >= bands.length))
 
-  // A backdrop under the headings, spanning every column so the gaps between
-  // them are covered too. Each heading sticks on its own, and without this the
-  // boxes scroll through the space between one heading and the next.
+  /**
+   * A backdrop under the headings, spanning every column so the gaps between
+   * them are covered too. Each heading sticks on its own, and without this the
+   * boxes scroll through the space between one heading and the next.
+   */
   const backdrop = document.createElement('div')
   backdrop.className = 'headband'
   backdrop.style.gridRow = 1
@@ -294,9 +296,12 @@ function collisions() {
   return count
 }
 
-// The same count, split by how far a wire travels. Ordering and placement only
-// reach the short ones; a wire spanning several columns passes over whatever
-// fills those columns whatever the layout does.
+/**
+ * The same count, split by how far a wire travels.
+ *
+ * Ordering and placement only reach the short ones. A wire spanning several
+ * columns passes over whatever fills those columns whatever the layout does.
+ */
 function overlapsBySpan() {
   const column = {}
   Array.from(grid.querySelectorAll('.rank, .cell')).forEach(cell => {
@@ -354,45 +359,50 @@ function settle(rounds = 6) {
 }
 
 /**
- * Fill the pane from one node, or hide it when nothing is selected.
+ * Where a node lives, with the document's name carrying the way out.
  *
- * One shape for every rank, so the gesture stays uniform and a reader never
- * learns which boxes reward a click. A node shows the reasoning it carries and
- * whatever code it names, and one carrying neither shows what it is and where
- * it lives.
- *
- * @behaviour canon/chain.canon.html#the-drawing-carries-the-comment-and-the-code
+ * A reader already reads this line to learn where the node sits, so the name in
+ * it is the link rather than a separate row offering to open something. The
+ * href keeps the fragment, so following it lands on the node itself and not the
+ * top of the file.
  */
-function fillPane(address) {
-  const node = address && nodeAt(address)
-  if (!node) { pane.hidden = true; return }
-  const file = node.address.split('#')[0].replace(/^docs\//, '')
-  document.getElementById('pane-title').textContent = node.title || node.name
-  // The document's name is the way out, rather than a separate line offering to
-  // open it. A reader already reads that line to learn where the node lives,
-  // and the href carries the fragment, so following it lands on the node itself
-  // rather than the top of the file.
+function fillWhere(node) {
   const where = document.getElementById('pane-where')
   where.textContent = (node.kind || 'declaration') + ' in '
   const anchor = document.createElement('a')
   anchor.href = node.address.replace(/^docs\//, '')
-  anchor.textContent = file
+  anchor.textContent = node.address.split('#')[0].replace(/^docs\//, '')
   where.appendChild(anchor)
+}
 
-  // The blast radius, up top where a reader meets it before the reasoning. This
-  // is what the badge on the box counts, and it is not the list further down:
-  // that list is one step, and this is everything the node reaches at any
-  // depth. Saying so is what stops 39 looking like it disagrees with eight.
+/**
+ * The blast radius, up top where a reader meets it before the reasoning.
+ *
+ * This is what the badge on the box counts, and it is not the list further
+ * down: that list is one step, and this is everything the node reaches at any
+ * depth. Saying so is what stops 39 looking like it disagrees with eight.
+ *
+ * Silent when the two agree, since a line repeating the list beneath it earns
+ * nothing.
+ */
+function fillReach(node) {
   const reached = impactOf(node.address)
   const reach = document.getElementById('pane-reach')
   reach.textContent = reached > (childrenOf[node.address] || []).length ? 'impacts ' + reached + ' behaviours' : ''
   reach.hidden = !reach.textContent
+}
 
+/**
+ * Whatever reasoning the node carries, and the code it names behind a
+ * disclosure.
+ *
+ * A claim's reasoning is markup it wrote and a declaration's is the prose of
+ * its own comment. Both read immediately, and only the code waits, since the
+ * reasoning is what a reader came for.
+ */
+function fillDetail(node) {
   const detail = document.getElementById('pane-detail')
   detail.textContent = ''
-  // A node's reasoning is markup it wrote; a declaration's is the prose of its
-  // own comment. Both read immediately, and only the code waits behind a
-  // disclosure, since the reasoning is what a reader came for.
   if (node.detail) detail.innerHTML = node.detail
   if (node.doc) {
     const doc = document.createElement('p')
@@ -401,21 +411,45 @@ function fillPane(address) {
     detail.appendChild(doc)
   }
   if (node.snippet) detail.appendChild(codeFor(node))
+}
 
-  const sideBox = document.getElementById('pane-links')
-  sideBox.textContent = ''
-  // Side by side, since the two read as a pair: what a node answers to, and
-  // what answers to it. A lone side takes the whole width, counted here rather
-  // than left to a selector, because any sibling added later would quietly
-  // break a rule that asks whether a side is on its own.
+/**
+ * The two steps out of a node, side by side, since they read as a pair: what it
+ * answers to, and what answers to it.
+ *
+ * A lone side takes the whole width, decided here rather than left to a
+ * selector, because any sibling added later would quietly break a rule that
+ * asks whether a side is on its own.
+ */
+function fillSides(node) {
+  const box = document.getElementById('pane-links')
+  box.textContent = ''
   const sides = [
     neighbours('derives from', parentsOf[node.address]),
     neighbours('derived from it', childrenOf[node.address]),
   ].filter(Boolean)
   for (const side of sides) {
     side.classList.toggle('alone', sides.length === 1)
-    sideBox.appendChild(side)
+    box.appendChild(side)
   }
+}
+
+/**
+ * Fill the pane from one node, or hide it when nothing is selected.
+ *
+ * One shape for every rank, so the gesture stays uniform and a reader never
+ * learns which boxes reward a click.
+ *
+ * @behaviour canon/chain.canon.html#the-drawing-carries-the-comment-and-the-code
+ */
+function fillPane(address) {
+  const node = address && nodeAt(address)
+  if (!node) { pane.hidden = true; return }
+  document.getElementById('pane-title').textContent = node.title || node.name
+  fillWhere(node)
+  fillReach(node)
+  fillDetail(node)
+  fillSides(node)
   pane.hidden = false
 }
 
@@ -491,9 +525,13 @@ function show(address) {
   }
 }
 
-// Clicking the graph toggles, because clicking what is already selected means
-// putting it down. Stepping through the pane never does: a reader following the
-// chain named a different node, and the one they came from is not it.
+/**
+ * Clicking the graph toggles, because clicking what is already selected means
+ * putting it down.
+ *
+ * Stepping through the pane never does: a reader following the chain named a
+ * different node, and the one they came from is not it.
+ */
 const toggle = (address) => show(address === selected ? null : address)
 
 /**

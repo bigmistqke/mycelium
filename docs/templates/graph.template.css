@@ -1,0 +1,112 @@
+  :root { color-scheme: light dark; --line: color-mix(in oklab, currentColor 25%, transparent);
+          --thumb: color-mix(in oklab, currentColor 35%, transparent); --pane-h: 15rem; }
+  /* The pane floats over the bottom right corner rather than taking a band of
+     the page, so a wide graph keeps its full height. It covers whatever is
+     under it, which the grid answers by carrying the pane's own height as
+     padding: there is always somewhere to scroll a box clear. */
+  body { margin: 0; font: 13px/1.45 ui-sans-serif, system-ui, sans-serif;
+         height: 100vh; display: flex; flex-direction: column; }
+  #grid { flex: 1; min-height: 0; overflow: auto; padding-bottom: calc(var(--pane-h) + 3rem); }
+  #pane { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 2;
+          width: min(36rem, calc(100vw - 2.5rem)); height: var(--pane-h); overflow: auto;
+          border: 1px solid var(--line); border-radius: 6px; padding: 1rem 1.25rem;
+          background: Canvas; }
+  #pane[hidden] { display: none; }
+  #pane h2 { font-size: .95rem; margin: 0 0 .3rem; padding-right: 2rem; }
+  /* Where the claim lives and how far it reaches, on one line and on the same
+     halves the neighbour lists below use, so the two rows read as one column
+     each rather than as two unrelated splits. */
+  #pane-meta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+               column-gap: 0; margin: 0 0 .75rem; }
+  #pane-where { opacity: .6; margin: 0; padding-right: 1.25rem; }
+  #pane-reach { opacity: .6; margin: 0; padding-left: 1.25rem; }
+  #pane-detail p { margin: 0 0 .6rem; max-width: 68ch; }
+  #pane-detail .doc { white-space: pre-wrap; max-width: 68ch; }
+  #pane-detail details { margin-top: .5rem; }
+  #pane-detail summary { cursor: pointer; opacity: .6; }
+  #pane-detail pre { overflow-x: auto; border: 1px solid var(--line);
+                     border-radius: 4px; padding: .6rem .75rem; margin: .5rem 0 0; }
+  /* Shiki writes both themes into one tree and picks with a variable, so the
+     page follows the reader's own setting rather than choosing for them. */
+  .shiki, .shiki span { color: var(--shiki-light); background-color: var(--shiki-light-bg); }
+  @media (prefers-color-scheme: dark) {
+    .shiki, .shiki span { color: var(--shiki-dark); background-color: var(--shiki-dark-bg); }
+  }
+  /* Two halves that stay halves. minmax(0, 1fr) is 1fr without its min-content
+     floor, so a long title wraps instead of widening its own column, and the
+     split cannot drift.
+
+     No column gap either: the divider is a border on the second half, so a gap
+     would put it half a gap right of centre. The space between the two comes
+     from padding inside each half, which leaves the line itself exactly on the
+     middle. */
+  #pane-links { margin-top: .9rem; display: grid; align-items: start;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 0; }
+  #pane-links .side { padding-right: 1.25rem; }
+  #pane-links .side.alone { grid-column: 1 / -1; padding-right: 0; }
+  #pane-links .side + .side { border-left: 1px solid var(--line);
+                              padding-left: 1.25rem; padding-right: 0; }
+  #pane-links h3 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+                   opacity: .5; margin: .6rem 0 .25rem; font-weight: 500; }
+  #pane-links button { display: block; background: none; border: 0; padding: .1rem 0;
+                       color: inherit; font: inherit; text-align: left; cursor: pointer;
+                       text-decoration: underline; text-decoration-color: var(--line); }
+  #pane-links button:hover { text-decoration-color: currentColor; }
+  #pane-close { position: absolute; top: .6rem; right: .8rem; background: none;
+                border: 0; color: inherit; font-size: 1.1rem; cursor: pointer; opacity: .6; }
+  #pane-close:hover { opacity: 1; }
+  * { scrollbar-width: thin; scrollbar-color: var(--thumb) transparent; }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-track, *::-webkit-scrollbar-corner { background: transparent; }
+  *::-webkit-scrollbar-thumb { background-color: var(--thumb); border-radius: 4px; }
+  *::-webkit-scrollbar-thumb:hover { background-color: color-mix(in oklab, currentColor 55%, transparent); }
+  .node pre { overflow-x: auto; }
+  header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--line);
+           position: sticky; left: 0; width: 100vw; box-sizing: border-box; }
+  h1 { font-size: 1rem; margin: 0 0 .25rem; }
+  .counts { opacity: .65; }
+  .counts b { font-weight: 600; }
+  /* A column per rank and a row per subsystem, so a band holds one stripe of
+     the page. A cell with nothing in it stays empty on purpose: that space is
+     what keeps the bands in line across the columns. */
+  /* No padding above the columns: the headings stick at the very top, and a
+     padded scrollport would leave a strip of nothing between them and the page
+     header. The breathing room goes under the headings instead. */
+  #grid { display: grid; gap: 0 2.5rem; padding: 0 1.25rem 1.25rem; position: relative;
+          grid-auto-rows: min-content; }
+  .cell { min-height: 0; }
+  .cell:empty { min-height: .5rem; }
+  #wires { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  #wires path { fill: none; stroke: var(--line); stroke-width: 1.2; }
+  #wires path.lit { stroke: currentColor; stroke-width: 1.8; }
+  /* The headings follow the reader down their columns, over a backdrop that
+     spans the whole row. Sticking each heading on its own leaves the column
+     gaps uncovered, and boxes scroll up through them. */
+  .headband { position: sticky; top: 0; z-index: 1; align-self: stretch; background: Canvas; }
+  .rank { position: sticky; top: 0; z-index: 2; background: Canvas; }
+  /* Scrolling something into view has to clear the headings, which cover the
+     top of the graph and would otherwise hide whatever just got selected. */
+  [data-address] { scroll-margin-top: 3.4rem; }
+  .rank > h2 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+               opacity: .55; margin: 0; padding: 1rem 0 .6rem; }
+  .group { margin-bottom: 1rem; }
+  .group > h3 { font-size: .7rem; opacity: .5; margin: 0 0 .35rem; font-weight: 500; }
+  h3.selectable { cursor: pointer; }
+  h3.selectable:hover { opacity: .9; }
+  h3.lit { opacity: 1; font-weight: 600; }
+  h3.dim { opacity: .18; }
+  .node.file { font-family: ui-monospace, monospace; font-size: .72rem; }
+  .node { border: 1px solid var(--line); border-radius: 5px; padding: .4rem .55rem;
+          margin-bottom: .35rem; cursor: pointer; position: relative; }
+  .node:hover { border-color: currentColor; }
+  /* A lit chain stays one brightness, since dimming part of it made the whole
+     thing harder to read. The node somebody picked takes a heavier border
+     instead: weight separates it from what it lit without competing over
+     colour. */
+  .node.lit { border-color: currentColor; }
+  .node.chosen { box-shadow: inset 0 0 0 1px currentColor,
+                             0 0 12px color-mix(in oklab, currentColor 50%, transparent); }
+  .node.dim { opacity: .18; }
+  .node .reach { float: right; opacity: .5; font-variant-numeric: tabular-nums; }
+  .node a { color: inherit; text-decoration: none; }
+  .node a:hover { text-decoration: underline; }

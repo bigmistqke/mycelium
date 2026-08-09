@@ -22,16 +22,23 @@ function subsystemOf(address) {
   return file.endsWith('.canon.html') ? file.split('/').pop().replace('.canon.html', '') : ''
 }
 
-// Which subsystem answers for a file, from the specification naming it. A
-// declaration sits in a source file and belongs to the subsystem that took
-// responsibility for it.
+/**
+ * Which subsystem answers for a file, from the specification naming it.
+ *
+ * A declaration sits in a source file and belongs to the subsystem that took
+ * responsibility for it.
+ */
 const subsystemOfFile = {}
 for (const s of data.specifications)
   for (const f of s.specifies) subsystemOfFile[f] = subsystemOf(s.address)
 
-// Ranks, left to right. An axiom sits in the column its narrowing depth puts
-// it in, so an axiom narrowing another lands right of it and that edge crosses
-// a column like every other edge rather than doubling back inside one.
+/**
+ * Ranks, left to right.
+ *
+ * An axiom sits in the column its narrowing depth puts it in, so an axiom
+ * narrowing another lands right of it and that edge crosses a column like every
+ * other edge rather than doubling back inside one.
+ */
 const axiomDepth = Math.max(0, ...data.axioms.map(a => a.depth))
 const ranks = []
 for (let d = 0; d <= axiomDepth; d++)
@@ -104,7 +111,7 @@ for (const s of data.specifications)
                                            subsystem: subsystemOfFile[f] ?? '', file: true })
 ranks.push({ name: 'implementation', items: declarations })
 
-// What each item points at, which is the direction the corpus stores.
+/** What each item points at, which is the direction the corpus stores. */
 const parentsOf = {}
 for (const a of data.axioms) parentsOf[a.address] = a.narrows
 for (const b of data.behaviours) parentsOf[b.address] = b.refines
@@ -143,8 +150,11 @@ function nodeAt(address) {
     || data.code.find(d => d.address === address)
 }
 
-// Selecting anything lights the whole chain it belongs to, above and below.
-// A specification has no chain of its own, so it stands for its behaviours.
+/**
+ * Selecting anything lights the whole chain it belongs to, above and below.
+ *
+ * A specification has no chain of its own, so it stands for its behaviours.
+ */
 function litFrom(address) {
   const spec = data.specifications.find(s => s.address === address)
   if (!spec) return new Set([address, ...(data.reach[address] || []), ...(data.above[address] || [])])
@@ -154,8 +164,10 @@ function litFrom(address) {
   return lit
 }
 
-// How far a claim reaches downward, counting only behaviours, which is what the
-// badge on an axiom shows.
+/**
+ * How far a claim reaches downward, counting only behaviours, which is what the
+ * badge on an axiom shows.
+ */
 const impactOf = (address) => (data.reach[address] || []).filter(a => behaviourAt.has(a)).length
 
 mountGraph({ ranks, parentsOf, bands, nodeAt, litFrom, impactOf })

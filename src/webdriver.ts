@@ -12,15 +12,20 @@ import { spawn, execFileSync } from "node:child_process"
 import { existsSync, mkdirSync, writeFileSync, chmodSync, rmSync } from "node:fs"
 import { join } from "node:path"
 
-// W3C's fixed key for a web element reference. Every conforming driver returns
-// this exact string, which is why it can be a constant here.
+/**
+ * W3C's fixed key for a web element reference. Every conforming driver returns
+ * this exact string, which is why it can be a constant here.
+ */
 export const ELEMENT = "element-6066-11e4-a52e-4f735466cecf"
 
 const BUILDS = "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json"
 
-// Where a run looks for Chrome when CHROME_PATH says nothing. Ordered by
-// platform, and a miss here is a clear error rather than a guess: the caller
-// names the variable to set.
+/**
+ * Where a run looks for Chrome when CHROME_PATH says nothing.
+ *
+ * Ordered by platform, and a miss here is a clear error rather than a guess:
+ * the caller names the variable to set.
+ */
 const CHROME_GUESSES: Record<string, string[]> = {
   darwin: [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -49,9 +54,12 @@ export function chromePath(): string {
   throw new Error("no Chrome found — set CHROME_PATH to the browser binary")
 }
 
-// The build number, which is the version without its patch. A driver matches
-// Chrome by build, so 150.0.7871.124 drives 150.0.7871.189 and the exact patch
-// never has to line up.
+/**
+ * The build number, which is the version without its patch.
+ *
+ * A driver matches Chrome by build, so 150.0.7871.124 drives 150.0.7871.189 and
+ * the exact patch never has to line up.
+ */
 function chromeBuild(binary: string): string {
   const printed = execFileSync(binary, ["--version"], { encoding: "utf8" })
   const found = /(\d+\.\d+\.\d+)\.\d+/.exec(printed)
@@ -107,7 +115,7 @@ export async function chromedriver(root: string): Promise<string> {
 
 export type Call = (method: string, path: string, body?: unknown) => Promise<any>
 
-// A thin WebDriver client against one running driver.
+/** A thin WebDriver client against one running driver. */
 export function session(base: string): Call {
   return async function call(method, path, body) {
     const response = await fetch(base + path, {

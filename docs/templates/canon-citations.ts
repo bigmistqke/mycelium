@@ -17,33 +17,43 @@ import { commentRanges } from "./code-comments.ts"
 export interface CanonEntry {
   address: string
   title: string
-  // The reasoning under the claim, as the markup it carries. A title states a
-  // rule in one line and one line has no room for what it rules out, so a
-  // reader wanting the why needs this beside the graph rather than behind a
-  // link. Empty for a claim carrying none.
+  /**
+   * The reasoning under the claim, as the markup it carries. A title states a
+   * rule in one line and one line has no room for what it rules out, so a
+   * reader wanting the why needs this beside the graph rather than behind a
+   * link. Empty for a claim carrying none.
+   */
   detail: string
-  // Where this entry points, already resolved to addresses. Stored edges point
-  // up only: a specification names the axioms it serves and an axiom names the
-  // one it narrows, so anything asking what sits beneath either computes it
-  // from these rather than reading an authored reverse index.
+  /**
+   * Where this entry points, already resolved to addresses. Stored edges point
+   * up only: a specification names the axioms it serves and an axiom names the
+   * one it narrows, so anything asking what sits beneath either computes it
+   * from these rather than reading an authored reverse index.
+   */
   dependsOn: string[]
 }
 
 export interface Specification extends CanonEntry {
   behaviours: Behaviour[]
-  // The files this subsystem answers for, already resolved. A specification
-  // points at code rather than naming a subsystem, so this link set is the
-  // whole of what the subsystem covers.
+  /**
+   * The files this subsystem answers for, already resolved. A specification
+   * points at code rather than naming a subsystem, so this link set is the
+   * whole of what the subsystem covers.
+   */
   specifies: string[]
 }
 
 export interface Behaviour extends CanonEntry {
-  // The behaviour this one narrows, when it sits inside another. A claim made
-  // of narrower claims holds them, so the parent is where the markup puts it
-  // rather than an edge somebody wrote.
+  /**
+   * The behaviour this one narrows, when it sits inside another. A claim made
+   * of narrower claims holds them, so the parent is where the markup puts it
+   * rather than an edge somebody wrote.
+   */
   parent: string | null
-  // Whether this claim carries the check that falsifies it. A leaf does; a
-  // claim proved by the ones beneath it does not.
+  /**
+   * Whether this claim carries the check that falsifies it. A leaf does; a
+   * claim proved by the ones beneath it does not.
+   */
   checks: boolean
 }
 
@@ -52,18 +62,25 @@ export interface Canon {
   specifications: Specification[]
 }
 
-// An address is a path from the repository root and an optional fragment,
-// written the one way, so a citation and a behaviour can be compared as
-// strings. Everything below builds one through here rather than by
-// concatenating in place.
+/**
+ * An address is a path from the repository root and an optional fragment,
+ * written the one way, so a citation and a behaviour can be compared as
+ * strings.
+ *
+ * Everything below builds one through here rather than by concatenating in
+ * place.
+ */
 export function address(path: string, fragment?: string | null): string {
   return fragment ? `${path}#${fragment}` : path
 }
 
-// Resolves an href written inside `path` against the repository root, since a
-// document links relatively and an address does not. An href with no path is
-// this same document, which is how a sample case points at a sample behaviour
-// beside it.
+/**
+ * Resolves an href written inside `path` against the repository root, since a
+ * document links relatively and an address does not.
+ *
+ * An href with no path is this same document, which is how a sample case points
+ * at a sample behaviour beside it.
+ */
 export function resolveHref(path: string, href: string): string {
   const hash = href.indexOf("#")
   const file = hash === -1 ? href : href.slice(0, hash)
@@ -103,21 +120,15 @@ function detailOf(element: Element): string {
     ?.innerHTML?.trim() ?? ""
 }
 
-// Every axiom and specification the corpus declares.
-//
-// This reads `data-conforms-to`, the same way everything here locates an
-// instance, which also skips the schema elements in the template's own
-// `<template>` blocks: those declare a shape and conform to nothing. It then
-// takes behaviours by tag name inside a conforming specification, since a
-// behaviour nested in its specification carries no separate conformance of its
-// own.
-// Every behaviour under one element, however deep, each carrying the claim it
-// narrows.
-//
-// Anything inside a canon-fixture is a worked example a check builds, not a
-// claim the project makes. A figure fixture holds figure elements and nobody
-// notices; a chain fixture holds canon elements, and counting those would put
-// an axiom nobody wrote in front of grounded.
+/**
+ * Every behaviour under one element, however deep, each carrying the claim it
+ * narrows.
+ *
+ * Anything inside a canon-fixture is a worked example a check builds, not a
+ * claim the project makes. A figure fixture holds figure elements and nobody
+ * notices; a chain fixture holds canon elements, and counting those would put
+ * an axiom nobody wrote in front of grounded.
+ */
 function behavioursIn(element: Element, path: string, parent: string | null): Behaviour[] {
   const found: Behaviour[] = []
   for (const child of Array.from(element.children)) {
@@ -138,6 +149,16 @@ function behavioursIn(element: Element, path: string, parent: string | null): Be
   return found
 }
 
+/**
+ * Every axiom and specification the corpus declares.
+ *
+ * This reads `data-conforms-to`, the same way everything here locates an
+ * instance, which also skips the schema elements in the template's own
+ * `<template>` blocks: those declare a shape and conform to nothing. It then
+ * takes behaviours by tag name inside a conforming specification, since a
+ * behaviour nested in its specification carries no separate conformance of its
+ * own.
+ */
 export function readCanon(fs: AuditFs): Canon {
   const axioms: CanonEntry[] = []
   const specifications: Specification[] = []
@@ -171,27 +192,32 @@ export function readCanon(fs: AuditFs): Canon {
  * One declaration in the code, and the behaviours its doc comment names.
  */
 export interface CodeCitation {
-  // file#name, so the declaration has an address like every other rung.
+  /** file#name, so the declaration has an address like every other rung. */
   address: string
   file: string
   name: string
-  // What the declaration is, as the compiler reports it: function, variable,
-  // type. Empty when a comment leads nothing the parser names.
+  /**
+   * What the declaration is, as the compiler reports it: function, variable,
+   * type. Empty when a comment leads nothing the parser names.
+   */
   kind: string
-  // The comment's prose, with the tag lines already gone.
+  /** The comment's prose, with the tag lines already gone. */
   doc: string
-  // The first lines the declaration itself occupies.
+  /** The declaration's own source, whole where the parser knows its span. */
   snippet: string
-  // Behaviour addresses, in the same docs-root form the rest of this file uses.
+  /** Behaviour addresses, in the same docs-root form the rest of this file uses. */
   cites: string[]
 }
 
 const TAG = /@behaviour\s+(\S+)/g
 
-// How much of a declaration to keep when the parser cannot say where it ends.
-// A run of line comments binds to whatever follows it, which may be a step
-// rather than a named thing, so there is no node to take and a few lines is the
-// honest guess.
+/**
+ * How much of a declaration to keep when the parser cannot say where it ends.
+ *
+ * A run of line comments binds to whatever follows it, which may be a step
+ * rather than a named thing, so there is no node to take and a few lines is the
+ * honest guess.
+ */
 const SNIPPET_LINES = 8
 
 /**
