@@ -33,6 +33,8 @@ const kindColour = {}
 const kindOf = {}
 /** The colour standing for each relation, for the groups the pane lists. */
 const relColour = {}
+/** Kinds a reader has switched off. Empty means everything shows. */
+const hidden = new Set()
 /**
  * Every address, under the shorter name the address bar shows.
  *
@@ -224,7 +226,10 @@ function render() {
       cell.className = 'cell'
       cell.style.gridColumn = column + 1
       cell.style.gridRow = index + 2
-      for (const group of rank.groups.filter(g => g.band === band)) cell.appendChild(groupBox(group))
+      for (const group of rank.groups.filter(g => g.band === band)) {
+        const showing = group.items.filter((item) => !hidden.has(item.kind))
+        if (showing.length) cell.appendChild(groupBox({ ...group, items: showing }))
+      }
       grid.appendChild(cell)
     })
   })
@@ -708,6 +713,38 @@ function measure() {
 }
 
 /**
+ * A switch per kind, so a reader can put one aside without losing it.
+ *
+ * Nothing is special-cased. The kinds come from what the graph actually holds,
+ * so a corpus that grows a type grows a switch, and neither drawing needs to
+ * know which kinds somebody finds noisy today.
+ *
+ * Switching one off leaves it out of the drawing entirely rather than fading
+ * it. A box nobody wants to read is still a box in the way, and the wires that
+ * reached it go with it, since a wire to nothing is a line to nowhere.
+ */
+function buildFilters() {
+  const box = document.getElementById('filters')
+  for (const kind of Object.keys(kindColour)) {
+    const chip = document.createElement('button')
+    chip.type = 'button'
+    chip.className = 'chip'
+    chip.textContent = kind
+    chip.style.setProperty('--wire', kindColour[kind])
+    chip.addEventListener('click', () => {
+      if (hidden.has(kind)) hidden.delete(kind)
+      else hidden.add(kind)
+      chip.classList.toggle('off', hidden.has(kind))
+      render()
+      draw()
+      // A selection whose kind just went away stops being a selection.
+      show(selected && hidden.has(kindOf[selected]) ? null : selected)
+    })
+    box.appendChild(chip)
+  }
+}
+
+/**
  * Draw what a caller describes, and hand the page over to a reader.
  *
  * Everything specific arrives here: which ranks exist, which edges join what,
@@ -763,6 +800,7 @@ function mount(model) {
   for (const rank of ranks) orderRank(rank, parentsOf)
   numberRows()
   render()
+  buildFilters()
   grid.style.gridTemplateColumns = 'repeat(' + ranks.length + ', minmax(160px, 1fr))'
 
   grid.addEventListener('click', (event) => {

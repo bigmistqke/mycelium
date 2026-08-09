@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: The notebook: peripheral thinking as a substrate, and how an axiom grounds in it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>The notebook: peripheral thinking as a substrate, and how an axiom grounds in it</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-09</spec-date>
+  <spec-problem>
+<p>574 nodes carry six types from an earlier tool. That tool offered IBIS
+without the argument type, so it asks for issues, positions and alternatives,
+and 9 rejected options exist across the whole corpus. Nobody writes the shape
+the schema wants.</p>
+<p>Sorting every title by what the node holds gives ten categories, not six.
+Build record 170, principle 120, vision 51, reference 50, method 46, mechanism
+43, goal 41, defect 26, measurement 18, rejected option 9. One type carries
+five of those: observation spreads across principle, vision, reference, method
+and mechanism almost evenly, which is why it grew to 231 nodes.</p>
+<p>170 of the nodes record work that git already holds. 26 more name a bug and
+18 name a number, and both go stale on contact — one counts 108 line comments,
+and 27 of those went away the same day somebody wrote the count. That is 214
+nodes whose content lives somewhere better.</p>
+<p>The graph changed what it holds twice and kept its schema through both.
+January is a bibliography and a manifesto, with 88 of 105 nodes holding prior
+art or vision. July is a work log, at 102 build records against 38 principles.
+August turns it over, at 80 principles and 33 method notes.</p>
+<p>Since the canon arrived, 97% of decisions reach no outcome, against 89%
+before. The canon does not hold that closure either: for 27 of the 32 open
+decisions the nearest claim shares under a third of its title words. What
+happened is that 83 checks answer <q>did it work</q> on every run, so the
+outcome node lost its question and nobody noticed.</p>
+<p>The two graphs touch nowhere. 9 prose links run from the graph into the
+canon, 0 real edges run either way, and no axiom names what it came from.</p>
+<p>The name is part of this. A store called a decision log filled with 98
+decisions, 60 of which state a rule rather than record a choice. A store
+called a knowledge graph produced 120 entries phrased as general truths.
+A word that asks for knowledge gets prose that performs knowing.</p>
+</spec-problem>
+  <spec-design>
+<p>The store becomes a notebook. It holds the thinking a session cannot act on
+yet: prior art somebody read, a direction nobody can build toward this month, a
+rule noticed but not yet checkable, a remark about how the work itself goes.
+None of it closes and none of it wants a status.</p>
+<p>That is the loss this project exists to answer. A task leaves artefacts in
+git, in the code and in the passing checks, so writing it down twice protects
+nothing. The half-thought that guides next month leaves nothing at all.</p>
+<h3>Three types, by where the knowledge came from</h3>
+<p>A <code>notebook-observation</code> comes from thinking. A
+<code>notebook-research</code> comes from someone else, so it holds prior art
+and external work. A <code>notebook-experiment</code> comes from running
+something, and it carries the code that ran.</p>
+<p>Provenance is the axis because it does not move. What an entry is about
+drifts as the project's vocabulary shifts, and that drift is what left one type
+doing five jobs. Where a thought came from stays fixed.</p>
+<p>An earlier draft of this design split the inward entries further, into
+principle, practice and direction, and sorted them by what each could become.
+That test is a promotion in disguise, and the section below removes promotion,
+so the split goes with it.</p>
+<h3>Grounding, not promotion</h3>
+<p>An axiom names what it came from, with an ordinary <code>data-rel</code>
+anchor into the notebook. Nothing marks an entry as promoted, nothing tracks a
+backlog, and nothing about an entry changes when an axiom cites it.</p>
+<p>Promotion would need somewhere to keep the state, something to update it and
+a notion of entries waiting their turn. All of that is machinery for a fact one
+edge already carries, which
+<a href="../canon/root.canon.html#derive-do-not-maintain">derive, do not
+maintain</a> rules out.</p>
+<p>The mechanism costs almost nothing.
+<code>every-link-resolves</code> already checks every href and fragment across
+the corpus, and <code>grounded</code> builds its downward map from axioms and
+behaviours alone, so an entry citing an axiom cannot make it look reached. One
+change is needed: <code>canon-axiom</code> restricts its edges to
+<code>depends_on</code>, and grounding wants its own relation.</p>
+<p>Seventeen axioms carry no grounding today. That number is a reading and not
+a gate. Much of the canon came top-down from the implementation, so demanding
+grounding now would manufacture entries to satisfy the check, which is how a
+commit hook put 134 actions in the graph.</p>
+<h3>An experiment carries its instrument</h3>
+<p><code>notebook-detail</code> has permitted a script from the day it
+arrived, with no tag restriction, and 574 nodes use it zero times. Every
+number in the corpus is prose. One entry reads <q>The 52% discipline figure
+was generalised from one night and never re-measured</q>, and that figure stood
+as fact because nothing could re-run it.</p>
+<p>So an experiment holds a question, a script and the reading that script last
+produced. A behaviour in the canon keeps the check that falsifies it, and this
+is the same move one rung down. The difference is what disagreement means: a
+red check says the code broke, and a different reading says the corpus
+moved.</p>
+<p>Writing the document therefore comes before knowing the answer, because
+running the script is how the answer arrives. Every capture failure in this
+corpus has the same shape — 52% compliance against a hook that never missed,
+eight nodes stuffing findings into their titles, 134 actions from a commit
+hook. Logging after the work competes with the work and loses. Here there is
+nothing left to do afterward.</p>
+<p>The script type is <code>mycelium/experiment</code>. The prefix already
+means Node-only and possibly TypeScript, and the second word keeps a runner
+from confusing a probe with a check. <code>mycelium notebook run</code> runs
+one on request, and <code>validate</code> never does. A probe that fails the
+build is a check with worse manners.</p>
+<h3>What an entry carries</h3>
+<p>A title, an optional repeatable <code>notebook-prompt</code>, an optional
+<code>notebook-detail</code>, and its edges. Confidence goes: 570 nodes carry
+it, 60% sit on three values, and nothing reads it. Status goes with the goals
+it belonged to, since nothing in a notebook is pending.</p>
+<p>The prompt stays a field rather than a quotation, because exact words are
+data and a reader wants to find them without reading the page. It moves off the
+goal type and onto any entry, and repeats, since one entry can gather several
+prompts over months.</p>
+<p>The eight relations stay exactly as they are. They carry the semantics the
+drawing reads, every one of them is checked, and nothing in this design needs a
+ninth.</p>
+<h3>The rename, and the date</h3>
+<p>Every tag moves from <code>knowledge-</code> to <code>notebook-</code>, the
+command family becomes <code>mycelium notebook</code>, and the directory
+becomes <code>docs/notebook/</code>. The project has renamed a family on these
+grounds twice, most recently when it chose <code>canon</code> because a tag
+prefix has to name a thing.</p>
+<p>The date leaves the filename. An entry accretes, so <code>add</code> has
+nothing true to prepend, and git already knows when a file first appeared. The
+drawing keeps its day columns and reads that date from git instead, which puts
+the last hand-maintained date in the corpus under the same axiom as everything
+else.</p>
+<h3>What goes</h3>
+<p>264 entries go, and their 404 edges go with them: 170 build records, 41
+goals, 26 defects, 18 measurements and 9 rejected options. Nothing gets merged.
+Each prior-art node already covers one work, so the 50 of them are 50 pages
+about Unison, TLA+, MLIR and the rest.</p>
+<p>Two categories wait on something. A defect goes once somebody confirms the
+bug is fixed, and a measurement goes once an experiment can recompute it.
+Neither leaves before then.</p>
+<p>The 56 goals need a hand pass rather than a rule. Reach sorts them roughly,
+and it misses: one goal with 44 descendants reads as a task, and another that
+produced the whole test family has reach 0 because nothing ever linked back to
+it. Their prompts are the only verbatim record of what anybody asked for, so
+each survives as a prompt on the entry its thinking produced, or not at
+all.</p>
+<h3>The migration is an API</h3>
+<p>The migration reads and rewrites 1175 documents, so it parses them.
+parse5 with source ranges already serves this repository for HTML positions,
+and the rename touches tag names, attribute values, hrefs and directory paths
+at once.</p>
+<p>A pattern cannot tell data from structure, and this project has the scars.
+An anchored regex renamed opening tags and left same-line closing ones,
+writing a mismatched tag into eighty documents. A replace aimed at
+<code>&lt;/body&gt;</code> landed inside a node's prompt, because that prompt
+quotes HTML, and cut a generated page in half.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>The edge back. A check going red could write a dated entry that contradicts
+the claim it broke, which is what closes the loop. Automatic entry writing is
+also what filled this graph with 134 actions, so it waits for its own design.</p>
+<p>Any gate on grounding. The reading comes first, and a check only follows if
+coverage ever reaches a level nobody had to manufacture.</p>
+<p>A new layout for the drawing. Day columns stay, reading their date from git,
+and what a subject-keyed arrangement would look like is a separate question.</p>
+<p>Deleting the four audits that police departing types.
+<code>orphans-except-goal</code> and <code>dangling-outcome</code> both lose
+their subject, and retiring them belongs with the migration that removes
+it.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Is a reading a claim or a cache? A claim makes the entry falsifiable and
+puts drift in front of a reader. A cache implies something may refresh every
+reading at once, which is a different command and a different meaning.</p>
+<p>51 surviving entries lose every edge when the task records go — 28
+principles, 14 mechanism notes, 8 method notes. Whether that reads as a wiki
+with stubs or as debris decides whether the edges were carrying the thinking or
+the task structure.</p>
+<p>The 51 January vision entries sit under observation and sit there loosely.
+<q>Mycelium is a compiler of intent</q> states something wanted rather than
+something noticed. If that keeps feeling wrong, a fourth type goes there.</p>
+<p>43 mechanism notes need a reading each. Some state a rule about one
+subsystem and belong in the notebook, and some are build records that a keyword
+caught.</p>
+<p>Which relation grounds an axiom in an entry, and whether
+<code>canon-axiom</code> widens its pattern or reuses
+<code>depends_on</code>.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>

@@ -4,9 +4,11 @@
      uninvited: a faded box let the wires behind it through and read as though
      they sat in front.
 
-     So four steps of ink, each a solid colour mixed toward the page, and a
-     hairline weaker than any of them. */
+     So five steps of ink, each a solid colour mixed toward the page, and a
+     hairline weaker than any of them. Full strength is currentColor itself and
+     needs no name; the scale starts one step under it. */
   :root { color-scheme: light dark;
+          --ink-1: color-mix(in oklab, currentColor 84%, Canvas);
           --ink-2: color-mix(in oklab, currentColor 68%, Canvas);
           --ink-3: color-mix(in oklab, currentColor 48%, Canvas);
           --ink-4: color-mix(in oklab, currentColor 30%, Canvas);
@@ -103,10 +105,30 @@
   *::-webkit-scrollbar-thumb { background-color: var(--thumb); border-radius: 4px; }
   *::-webkit-scrollbar-thumb:hover { background-color: var(--ink-3); }
   .node pre { overflow-x: auto; }
+  /* The title names the page and the switches act on it, so they share a line
+     and the counts run under the title they count. Wide enough and the switches
+     sit right of the title; too narrow and they take a line of their own rather
+     than squeezing the title into two. */
   header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--line);
-           position: sticky; left: 0; width: 100vw; box-sizing: border-box; }
+           position: sticky; left: 0; width: 100vw; box-sizing: border-box;
+           display: grid; grid-template-columns: 1fr auto; align-items: start;
+           column-gap: 1.5rem; }
   h1 { font-size: 1rem; margin: 0 0 .25rem; }
   .counts { color: var(--ink-3); }
+  /* One switch per kind the graph holds, coloured the way its boxes are, so the
+     control and the thing it controls are recognisably the same. */
+  #filters { grid-column: 2; grid-row: 1 / span 2; justify-self: end;
+             display: flex; flex-wrap: wrap; gap: .35rem; }
+  @media (max-width: 46rem) {
+    header { grid-template-columns: 1fr; }
+    #filters { grid-column: 1; grid-row: auto; justify-self: start; margin-top: .5rem; }
+  }
+  .chip { font: inherit; font-size: .7rem; text-transform: lowercase; letter-spacing: .06em;
+          padding: .1rem .5rem; border-radius: 999px; cursor: pointer;
+          background: none; color: var(--ink-1);
+          border: 1px solid color-mix(in oklab, var(--wire) 55%, Canvas); }
+  .chip:hover { color: inherit; border-color: var(--wire); }
+  .chip.off { color: var(--ink-4); border-color: var(--line); }
   .counts b { font-weight: 600; }
   /* A column per rank and a row per subsystem, so a band holds one stripe of
      the page. A cell with nothing in it stays empty on purpose: that space is

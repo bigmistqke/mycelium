@@ -67,6 +67,7 @@ ${templateFile("graph.template.css")}
     ${page.counts}<span class="stat"> &middot;
     <b id="crossings">—</b> wires over boxes</span>
   </div>
+  <div id="filters"></div>
 </header>
 <div id="grid"><svg id="wires"></svg><svg id="wires-lit"></svg></div>
 <aside id="pane" hidden>
