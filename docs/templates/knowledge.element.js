@@ -109,48 +109,47 @@ function walk(address, edges) {
 }
 
 /**
- * What each relation reads as, in the direction it runs.
+ * How each relation reads, and which side of the node it belongs on.
  *
- * Eight relations join these nodes and each says something the others do not,
- * so grouping a node's neighbours into what it derives from and what derives
- * from it threw away the part worth reading. A step is a supporting
- * observation, or a contradiction, or the outcome something led to, and the
- * pane says which.
+ * A lookup rather than a derivation. Where a neighbour sits used to fall out of
+ * the ranking, which meant a reader asking why "supports" sat on the left got
+ * an answer about which file stores the edge. That is a fact about the corpus
+ * and not about the claim in front of them.
  *
- * Read backwards for an incoming edge, since a node supported by an
- * observation is not supporting it.
+ * So each relation states both readings and where each one goes. Left is what a
+ * node rests on and right is what rests on it, and every line here is a
+ * judgement somebody can disagree with by editing it.
+ *
+ * `alternative_to` reads the same both ways and sits on the left twice, since
+ * neither of two alternatives rests on the other.
  */
 const RELATIONS = {
-  depends_on: ['depends on', 'depended on by'],
-  supports: ['supports', 'supported by'],
-  contradicts: ['contradicts', 'contradicted by'],
-  leads_to: ['leads to', 'came out of'],
-  blocks: ['blocks', 'blocked by'],
-  alternative_to: ['alternative to', 'alternative to'],
-  elaborates: ['elaborates', 'elaborated by'],
-  specifies: ['specifies', 'specified by'],
+  depends_on: { out: ['depends on', 0], in: ['depended on by', 1] },
+  supports: { out: ['supports', 0], in: ['supported by', 1] },
+  elaborates: { out: ['elaborates', 0], in: ['elaborated by', 1] },
+  specifies: { out: ['specifies', 1], in: ['specified by', 0] },
+  leads_to: { out: ['leads to', 1], in: ['came out of', 0] },
+  blocks: { out: ['blocks', 1], in: ['blocked by', 0] },
+  contradicts: { out: ['contradicts', 1], in: ['contradicted by', 1] },
+  alternative_to: { out: ['alternative to', 0], in: ['alternative to', 0] },
 }
 
 /**
  * A node's neighbours, grouped by the relation joining them.
  *
- * Outgoing groups come first, since a node's own edges are what it says, and
- * the incoming ones are what everything else said about it.
+ * Outgoing groups come first within a column, since a node's own edges are what
+ * it says and the incoming ones are what everything else said about it.
  */
 function sidesFor(address) {
   const groups = new Map()
-  const add = (title, side, target) => {
-    if (!groups.has(title)) groups.set(title, { ...side, addresses: [] })
+  const add = ([title, column], rel, target) => {
+    if (!groups.has(title)) groups.set(title, { rel, column, addresses: [] })
     groups.get(title).addresses.push(target)
   }
   for (const edge of knowledge.edges) {
-    const names = RELATIONS[edge.rel] ?? [edge.rel, edge.rel]
-    // Which side of the node a neighbour belongs on, read the same way the
-    // ranking reads it: leads_to runs from the node outward, and every other
-    // relation points at what the node answers to.
-    const outIsUpstream = edge.rel !== 'leads_to'
-    if (edge.from === address) add(names[0], { rel: edge.rel, upstream: outIsUpstream }, edge.to)
-    if (edge.to === address) add(names[1], { rel: edge.rel, upstream: !outIsUpstream }, edge.from)
+    const reading = RELATIONS[edge.rel] ?? { out: [edge.rel, 0], in: [edge.rel, 1] }
+    if (edge.from === address) add(reading.out, edge.rel, edge.to)
+    if (edge.to === address) add(reading.in, edge.rel, edge.from)
   }
   return [...groups].map(([title, side]) => ({ title, ...side }))
 }

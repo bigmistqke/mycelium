@@ -33,10 +33,20 @@ const kindColour = {}
 const kindOf = {}
 /** The colour standing for each relation, for the groups the pane lists. */
 const relColour = {}
+/**
+ * Every address, under the shorter name the address bar shows.
+ *
+ * A hash is something a person reads and pastes, so it drops the .html that
+ * says nothing. Kept as a lookup rather than a rule for putting the suffix
+ * back, because reversing a transform means guessing at what got removed, and
+ * the set of real addresses is right here.
+ */
+const addressByHash = {}
+const hashOf = (address) => address.replace(/\.html(?=$|#)/, '')
 
 let sidesFor = (address) => [
-  { title: 'answers to', upstream: true, addresses: parentsOf[address] },
-  { title: 'answered by', upstream: false, addresses: childrenOf[address] },
+  { title: 'answers to', column: 0, addresses: parentsOf[address] },
+  { title: 'answered by', column: 1, addresses: childrenOf[address] },
 ]
 
 const bandOf = (item) => {
@@ -276,13 +286,12 @@ function draw() {
     path.setAttribute('d', 'M' + x1 + ',' + y1 + ' C' + mid + ',' + y1 + ' ' + mid + ',' + y2 + ' ' + x2 + ',' + y2)
     path.dataset.from = from
     path.dataset.to = to
-    if (rel) path.dataset.rel = rel
-    // A wire takes the colour of the node it leaves, so following one out of a
-    // box follows that box's own colour.
-    const kind = kindOf[from]
-    if (kind) {
-      path.dataset.kind = kind
-      path.style.setProperty('--wire', kindColour[kind])
+    // A wire takes its relation's colour, which is the colour the pane puts
+    // beside that relation's group. One legend: a node's colour says what it
+    // is, an edge's says what kind of step it is.
+    if (rel && relColour[rel]) {
+      path.dataset.rel = rel
+      path.style.setProperty('--wire', relColour[rel])
     }
     wires.appendChild(path)
   }
@@ -440,6 +449,9 @@ function fillReach(node) {
   const reach = document.getElementById('pane-reach')
   reach.textContent = impactFor(node.address)
   reach.hidden = !reach.textContent
+  // The line beside it takes the whole width when nothing sits there, rather
+  // than stopping at the halfway mark against an empty half.
+  document.getElementById('pane-meta').classList.toggle('alone', reach.hidden)
 }
 
 /**
@@ -453,7 +465,15 @@ function fillReach(node) {
 function fillDetail(node) {
   const detail = document.getElementById('pane-detail')
   detail.textContent = ''
-  if (node.detail) detail.innerHTML = node.detail
+  // The prompt first and quoted, because it is the one thing here somebody else
+  // said. Everything under it answers it, and a reader meeting the answer
+  // before the question has to work backwards.
+  if (node.prompt) {
+    const quote = document.createElement('blockquote')
+    quote.textContent = node.prompt
+    detail.appendChild(quote)
+  }
+  if (node.detail) detail.insertAdjacentHTML('beforeend', node.detail)
   if (node.doc) {
     const doc = document.createElement('p')
     doc.className = 'doc'
@@ -484,9 +504,9 @@ function fillDetail(node) {
  * stack inside their column rather than each taking one, since which way a step
  * runs is the coarser question and the relation is the finer one.
  *
- * Upstream is not the same as incoming. A claim depending on another and a goal
- * leading to an outcome both point away from the node, and they put the target
- * on opposite sides, which is the same reading the ranking already takes.
+ * Which side a group belongs on comes from the caller, which states it per
+ * relation rather than deriving it. Deriving it answered the question with a
+ * fact about where an edge is stored, and a reader is looking at a claim.
  *
  * A node with steps in only one direction gives that column the whole width,
  * rather than leaving half the pane holding a rule and nothing else.
@@ -495,8 +515,8 @@ function fillSides(node) {
   const box = document.getElementById('pane-links')
   box.textContent = ''
   const sides = sidesFor(node.address)
-  const columns = [true, false]
-    .map((upstream) => sides.filter((side) => !!side.upstream === upstream).map(neighbours).filter(Boolean))
+  const columns = [0, 1]
+    .map((column) => sides.filter((side) => (side.column ?? 0) === column).map(neighbours).filter(Boolean))
     .filter((group) => group.length)
   box.style.gridTemplateColumns = `repeat(${columns.length}, minmax(0, 1fr))`
   columns.forEach((group, at) => {
@@ -546,7 +566,7 @@ function neighbours(side) {
   // it names are one thing rather than a word a reader has to hold.
   if (side.rel && relColour[side.rel]) {
     const dot = document.createElement('span')
-    dot.className = side.upstream ? 'dot hollow' : 'dot'
+    dot.className = side.column === 0 ? 'dot hollow' : 'dot'
     dot.style.setProperty('--wire', relColour[side.rel])
     h.appendChild(dot)
   }
@@ -616,9 +636,42 @@ function show(address) {
   fillPane(selected)
   if (selected) {
     const box = boxOf(selected)
-    if (box) box.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    if (box) box.scrollIntoView({ block: 'center', inline: 'center' })
     clearOfPane(box)
   }
+  rememberSelection()
+}
+
+/**
+ * Keep the address bar on the selected node, so a link to a drawing can be a
+ * link to a place in it.
+ *
+ * Written as a hash rather than a query, since nothing about it needs the
+ * server, and it lands in history so stepping through the pane can be walked
+ * back. Clearing the selection drops the hash entirely instead of leaving a
+ * bare one behind.
+ */
+function rememberSelection() {
+  const want = selected ? '#' + encodeURIComponent(hashOf(selected)) : ''
+  if (location.hash === want) return
+  if (want) location.hash = want
+  else history.replaceState(null, '', location.pathname + location.search)
+}
+
+/**
+ * Follow the address bar, whichever way it changed.
+ *
+ * A reader who opened the page at a node, and one who pressed back after
+ * clicking three of them, both arrive here. Selecting only when the address
+ * differs from what is already selected is what keeps this from answering the
+ * hash it just wrote.
+ */
+function followHash() {
+  const asked = decodeURIComponent(location.hash.slice(1))
+  if (!asked) { if (selected) show(null); return }
+  const address = addressByHash[asked]
+  if (!address || address === selected) return
+  show(address)
 }
 
 /**
@@ -682,7 +735,10 @@ function mount(model) {
   kinds.forEach((kind, at) => {
     kindColour[kind] = `oklch(66% 0.19 ${Math.round((360 * at) / kinds.length)})`
   })
-  for (const rank of ranks) for (const item of rank.items) kindOf[item.address] = item.kind
+  for (const rank of ranks) for (const item of rank.items) {
+    kindOf[item.address] = item.kind
+    addressByHash[hashOf(item.address)] = item.address
+  }
 
   // The reverse, built here and thrown away, the same as every other downward
   // reach on this page. One step only: the pane lists what a node touches
@@ -719,6 +775,8 @@ function mount(model) {
   if (location.search.includes('measure')) measure()
   else document.getElementById('crossings').closest('.stat').remove()
   addEventListener('resize', draw)
+  addEventListener('hashchange', followHash)
+  followHash()
 }
 
 return mount

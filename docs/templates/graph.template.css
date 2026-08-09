@@ -1,5 +1,17 @@
-  :root { color-scheme: light dark; --line: color-mix(in oklab, currentColor 25%, transparent);
-          --thumb: color-mix(in oklab, currentColor 35%, transparent); --pane-h: 15rem; }
+  /* Hierarchy comes from how much ink a thing carries, never from how
+     see-through it is. Opacity says recede and reveal at once, and every
+     layering fault in this drawing came from the second meaning arriving
+     uninvited: a faded box let the wires behind it through and read as though
+     they sat in front.
+
+     So four steps of ink, each a solid colour mixed toward the page, and a
+     hairline weaker than any of them. */
+  :root { color-scheme: light dark;
+          --ink-2: color-mix(in oklab, currentColor 68%, Canvas);
+          --ink-3: color-mix(in oklab, currentColor 48%, Canvas);
+          --ink-4: color-mix(in oklab, currentColor 30%, Canvas);
+          --line: color-mix(in oklab, currentColor 22%, Canvas);
+          --thumb: color-mix(in oklab, currentColor 32%, Canvas); --pane-h: 15rem; }
   /* The pane floats over the bottom right corner rather than taking a band of
      the page, so a wide graph keeps its full height. It covers whatever is
      under it, which the grid answers by carrying the pane's own height as
@@ -18,12 +30,25 @@
      each rather than as two unrelated splits. */
   #pane-meta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
                column-gap: 0; margin: 0 0 .75rem; }
-  #pane-where { opacity: .6; margin: 0; padding-right: 1.25rem; }
-  #pane-reach { opacity: .6; margin: 0; padding-left: 1.25rem; }
-  #pane-detail p { margin: 0 0 .6rem; max-width: 68ch; }
-  #pane-detail .doc { white-space: pre-wrap; max-width: 68ch; }
+  #pane-meta.alone { grid-template-columns: minmax(0, 1fr); }
+  #pane-meta.alone #pane-where { padding-right: 0; }
+  #pane-where { color: var(--ink-3); margin: 0; padding-right: 1.25rem; }
+  #pane-reach { color: var(--ink-3); margin: 0; padding-left: 1.25rem; }
+  /* No measure of its own. The pane sets the width, and a second one in ch
+     wraps the text short of the edge, which reads as a line break somebody
+     typed rather than one the layout chose. */
+  #pane-detail p { margin: 0 0 .6rem; }
+  #pane-detail .doc { white-space: pre-wrap; }
+  /* Quoted the way prose quotes, since it is prose somebody else wrote. */
+  /* Monospaced, because it is a transcript rather than prose the project wrote.
+     Setting it apart from every other line in the pane says whose words these
+     are before a reader has to work it out from the quoting. */
+  #pane-detail blockquote { margin: 0 0 .7rem; padding-left: .8rem;
+                            border-left: 3px solid var(--line); color: var(--ink-2);
+                            white-space: pre-line;
+                            font-family: ui-monospace, monospace; font-size: .78rem; }
   #pane-detail details { margin-top: .5rem; }
-  #pane-detail summary { cursor: pointer; opacity: .6; }
+  #pane-detail summary { cursor: pointer; color: var(--ink-3); }
   #pane-detail pre { overflow-x: auto; border: 1px solid var(--line);
                      border-radius: 4px; padding: .6rem .75rem; margin: .5rem 0 0; }
   /* Shiki writes both themes into one tree and picks with a variable, so the
@@ -55,7 +80,7 @@
      strength. Opacity on the heading took the dot down with it and every
      relation came out looking like the same washed pastel. */
   #pane-links h3 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
-                   color: color-mix(in oklab, currentColor 55%, Canvas);
+                   color: var(--ink-3);
                    margin: .6rem 0 .25rem; font-weight: 500;
                    display: flex; align-items: center; gap: .4rem; }
   /* Hollow coming from, solid going towards: a step not yet taken against one
@@ -71,18 +96,18 @@
                        text-decoration: none; }
   #pane-links button:hover { border-left-width: 4px; }
   #pane-close { position: absolute; top: .6rem; right: .8rem; background: none;
-                border: 0; color: inherit; font-size: 1.1rem; cursor: pointer; opacity: .6; }
-  #pane-close:hover { opacity: 1; }
+                border: 0; color: var(--ink-3); font-size: 1.1rem; cursor: pointer; }
+  #pane-close:hover { color: inherit; }
   * { scrollbar-width: thin; scrollbar-color: var(--thumb) transparent; }
   *::-webkit-scrollbar { width: 8px; height: 8px; }
   *::-webkit-scrollbar-track, *::-webkit-scrollbar-corner { background: transparent; }
   *::-webkit-scrollbar-thumb { background-color: var(--thumb); border-radius: 4px; }
-  *::-webkit-scrollbar-thumb:hover { background-color: color-mix(in oklab, currentColor 55%, transparent); }
+  *::-webkit-scrollbar-thumb:hover { background-color: var(--ink-3); }
   .node pre { overflow-x: auto; }
   header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--line);
            position: sticky; left: 0; width: 100vw; box-sizing: border-box; }
   h1 { font-size: 1rem; margin: 0 0 .25rem; }
-  .counts { opacity: .65; }
+  .counts { color: var(--ink-3); }
   .counts b { font-weight: 600; }
   /* A column per rank and a row per subsystem, so a band holds one stripe of
      the page. A cell with nothing in it stays empty on purpose: that space is
@@ -113,19 +138,18 @@
   #wires path, #wires-lit path { fill: none; stroke: var(--line); stroke-width: 1.2; }
   #wires path.lit, #wires-lit path { stroke-width: 1.8; }
 
-  /* A colour per kind of node, set from the page rather than listed here: each
-     graph names its own kinds, and a palette written in CSS would have to know
-     both vocabularies and go stale when either gains one.
-
-     A wire takes the colour of the node it leaves, so following one out of a
-     box is following its own colour. */
+  /* One legend, two vocabularies. A node's colour says what kind of thing it
+     is; an edge's says what kind of step it is, which is the same colour the
+     pane puts beside that relation's group. Both palettes come from the page
+     rather than from a list here, since each graph names its own and anything
+     written down would go stale when either gains a name. */
   /* A resting wire is the kind's colour mixed towards the page, which is a
      solid colour rather than a faded one — nothing here is see-through, and a
      wire crossing another does not blend with it. Lighting one takes it to full
      strength, which is the whole of the difference a reader is looking for. */
-  #wires path[data-kind] { stroke: color-mix(in oklab, var(--wire) 40%, Canvas); }
-  #wires path[data-kind].lit, #wires-lit path[data-kind] { stroke: var(--wire); }
-  #wires-lit path:not([data-kind]) { stroke: currentColor; }
+  #wires path[data-rel] { stroke: color-mix(in oklab, var(--wire) 40%, Canvas); }
+  #wires path[data-rel].lit, #wires-lit path[data-rel] { stroke: var(--wire); }
+  #wires-lit path:not([data-rel]) { stroke: currentColor; }
   /* The headings follow the reader down their columns, over a backdrop that
      spans the whole row. Sticking each heading on its own leaves the column
      gaps uncovered, and boxes scroll up through them. */
@@ -135,13 +159,17 @@
      top of the graph and would otherwise hide whatever just got selected. */
   [data-address] { scroll-margin-top: 3.4rem; }
   .rank > h2 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
-               opacity: .55; margin: 0; padding: 1rem 0 .6rem; }
+               color: var(--ink-3); margin: 0; padding: 1rem 0 .6rem; }
   .group { margin-bottom: 1rem; }
-  .group > h3 { font-size: .7rem; opacity: .5; margin: 0 0 .35rem; font-weight: 500; }
+  /* Positioned so it climbs to the boxes' layer. An unpositioned element
+     paints below every positioned one whatever the order in the document, so
+     the resting wires ran straight over these headings. */
+  .group > h3 { font-size: .7rem; color: var(--ink-3); margin: 0 0 .35rem; font-weight: 500;
+                position: relative; z-index: 1; }
   h3.selectable { cursor: pointer; }
-  h3.selectable:hover { opacity: .9; }
-  h3.lit { opacity: 1; font-weight: 600; }
-  h3.dim { color: color-mix(in oklab, currentColor 24%, Canvas); }
+  h3.selectable:hover { color: var(--ink-2); }
+  h3.lit { color: inherit; font-weight: 600; }
+  h3.dim { color: var(--ink-4); }
   .node.file { font-family: ui-monospace, monospace; font-size: .72rem; }
   /* Opaque, which is what actually puts a box in front of a wire. Sitting on a
      higher layer does nothing while the box is transparent: the wire is behind
@@ -160,8 +188,7 @@
      it, so a dimmed box turns see-through and the wires behind it read as
      though they were in front. Mixing towards the page instead keeps the box
      solid and only the ink recedes. */
-  .node.dim { color: color-mix(in oklab, currentColor 24%, Canvas);
-              border-color: color-mix(in oklab, currentColor 10%, Canvas); }
+  .node.dim { color: var(--ink-4); border-color: var(--line); }
   .node[data-kind].dim { border-color: color-mix(in oklab, var(--wire) 22%, Canvas); }
   /* The kind shows in the border rather than the words. A title tinted per kind
      costs contrast on the one thing every box exists to say, and the border
@@ -175,7 +202,7 @@
   .node[data-kind]:hover, .node[data-kind].lit { border-color: var(--wire); }
   .node[data-kind].chosen { border-color: var(--wire);
                             box-shadow: inset 0 0 0 1px var(--wire), 0 0 12px var(--wire); }
-  .node .reach { float: right; opacity: .5; font-variant-numeric: tabular-nums; }
+  .node .reach { float: right; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
   .node a { color: inherit; text-decoration: none; }
   .node a:hover { text-decoration: underline; }

@@ -1003,20 +1003,27 @@
     console.log('')
   }
 
-  // This clones the full markup a node's own page renders — title,
-  // confidence, status, detail, prompt, outgoing links. Cloning keeps the
-  // rewrite below from touching the live document: fs.commit() writes back
-  // anything that serializes differently from what it read, so mutating the
-  // original element in place would silently corrupt the source file. This
-  // function rewrites every relative href inside the same way it already
-  // rewrites node ids, so a link inside a detail paragraph stays just as
-  // durable as the top-level "open this node" link.
+  /**
+   * A node's reasoning, and only that.
+   *
+   * The whole card used to come through, which the pane then printed under a
+   * header already carrying the same title, confidence and status. A reader met
+   * every node's name twice and its detail once.
+   *
+   * Cloned before rewriting, because the filesystem writes back anything that
+   * serializes differently from what it read, so touching the live element
+   * would edit the source file. Every relative href inside gets resolved the
+   * same way a node id does, so a link in a paragraph is as durable as the one
+   * the pane puts in its heading.
+   */
   function extractCardHtml(documents, rel) {
     const html = new Map()
     for (const { path, dom } of documents) {
       for (const tag of NODE_TYPES) {
         for (const original of Array.from(dom.querySelectorAll(tag))) {
-          const el = original.cloneNode(true)
+          const detail = original.querySelector('knowledge-detail')
+          if (!detail) { html.set(original.id || path, '') ; continue }
+          const el = detail.cloneNode(true)
           for (const a of Array.from(el.querySelectorAll('a[href]'))) {
             const href = a.getAttribute('href')
             if (href.startsWith('http://') || href.startsWith('https://')) continue
@@ -1025,7 +1032,7 @@
               : rel(new URL(href, 'file://' + path).pathname)
             a.setAttribute('href', resolved)
           }
-          html.set(original.id || path, el.outerHTML)
+          html.set(original.id || path, el.innerHTML)
         }
       }
     }
@@ -1077,6 +1084,19 @@
     }))
     const { nodes, edges } = extractGraph(documents)
 
+    // The message that started the work, word for word. A goal carries one and
+    // nothing else does, and it is the only field here written by somebody
+    // other than whoever wrote the node.
+    const prompts = new Map()
+    for (const { path, dom } of documents) {
+      for (const tag of NODE_TYPES) {
+        for (const el of Array.from(dom.querySelectorAll(tag))) {
+          const prompt = el.querySelector('knowledge-prompt')?.textContent?.trim()
+          if (prompt) prompts.set(el.id || path, prompt)
+        }
+      }
+    }
+
     // Some edges point outside knowledge/ entirely—a leads_to into a spec-doc,
     // say. extractGraph can't validate these, since it only scanned knowledge/.
     // cytoscape requires both endpoints to be real, so these edges get dropped.
@@ -1095,7 +1115,8 @@
     const docsRoot = resolvePath('./docs')
     const rel = (p) => (p.startsWith(docsRoot + '/') ? p.slice(docsRoot.length + 1) : p)
     const cardHtml = extractCardHtml(documents, rel)
-    const relNodes = nodes.map((n) => ({ ...n, id: rel(n.id), html: cardHtml.get(n.id) ?? '' }))
+    const relNodes = nodes.map((n) =>
+      ({ ...n, id: rel(n.id), html: cardHtml.get(n.id) ?? '', prompt: prompts.get(n.id) ?? '' }))
     const relEdges = validEdges.map((e) => ({ ...e, from: rel(e.from), to: rel(e.to) }))
 
     /**
@@ -1122,6 +1143,7 @@
       address: n.id,
       title: n.title,
       kind: n.type.replace('knowledge-', ''),
+      prompt: n.prompt,
       detail: n.html,
     }))
     const joins = relEdges.map((e) => ({ from: e.from, to: e.to, rel: e.rel }))

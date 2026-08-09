@@ -187,9 +187,9 @@ function impactFor(address) {
  * nothing distinguished them on the page.
  */
 const kindOfEdge = (from) =>
-  data.code.some(d => d.address === from) ? 'specifies'
-  : data.behaviours.some(b => b.address === from) ? 'depends_on'
-  : 'elaborates'
+  data.code.some(d => d.address === from) ? 'answers'
+  : data.behaviours.some(b => b.address === from) ? 'narrows'
+  : 'specifies'
 
 const drawnEdges = Object.entries(parentsOf)
   .flatMap(([child, parents]) => (parents || []).map(parent => ({ from: child, to: parent, rel: kindOfEdge(child) })))
