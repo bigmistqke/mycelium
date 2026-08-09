@@ -241,6 +241,64 @@
     </script>
   </test-case>
 
+  <test-case id="the-rank-shows-a-cited-declaration" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a declaration citing a behaviour reaches the drawing as its own node</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/chain.canon.html#the-rank-shows-a-cited-declaration">the behaviour this checks</a>
+    <script type="mycelium/test">
+      /**
+       * The implementation rank used to draw one box per file, which is as
+       * coarse as the specifies edge that fed it. A citation in the code is
+       * what makes a finer box possible, and reading it is what makes the box
+       * appear without anybody authoring one.
+       */
+      import type { TestContext } from "../../src/api.ts"
+      import { chainOf, tinySubsystem } from "./canon-chain-fixture.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        for (const [path, text] of Object.entries(tinySubsystem())) sandbox.write(path, text)
+
+        const data = chainOf(sandbox, assert)
+        const cited = data.code.find((d) => d.name === "widen")
+        assert(cited, `no declaration reached the drawing; it carried ${JSON.stringify(data.code.map((d) => d.name))}`)
+        assert(
+          cited.cites.includes("docs/canon/sample.canon.html#a-claim"),
+          `the declaration cites ${JSON.stringify(cited.cites)}`,
+        )
+        assert(cited.kind === "function", `the drawing calls it a ${cited.kind || "(nothing)"}`)
+      }
+    </script>
+  </test-case>
+
+  <test-case id="the-drawing-carries-the-comment-and-the-code" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a cited declaration reaches the drawing with its comment and the lines beneath it</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/chain.canon.html#the-drawing-carries-the-comment-and-the-code">the behaviour this checks</a>
+    <script type="mycelium/test">
+      /**
+       * A reader following a claim down to the code came for the code. The
+       * comment is the half worth showing, since it holds the reasoning, and
+       * the tag lines come out of it because a citation is not prose.
+       */
+      import type { TestContext } from "../../src/api.ts"
+      import { chainOf, tinySubsystem } from "./canon-chain-fixture.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        for (const [path, text] of Object.entries(tinySubsystem())) sandbox.write(path, text)
+
+        const cited = chainOf(sandbox, assert).code.find((d) => d.name === "widen")
+        assert(cited, "no declaration reached the drawing")
+        assert(
+          cited.doc.includes("the blank line it sat on"),
+          `the comment never arrived: ${JSON.stringify(cited.doc)}`,
+        )
+        assert(!cited.doc.includes("@behaviour"), `the citation was left in the prose: ${JSON.stringify(cited.doc)}`)
+        assert(
+          cited.snippet.includes("function widen"),
+          `the lines beneath it never arrived: ${JSON.stringify(cited.snippet)}`,
+        )
+      }
+    </script>
+  </test-case>
+
 </test-doc>
 
 </body>

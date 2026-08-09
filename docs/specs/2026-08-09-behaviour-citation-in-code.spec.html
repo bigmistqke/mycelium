@@ -113,10 +113,20 @@ the tag name is what makes a separate <code>@axiom</code> spelling unnecessary.<
 
 <h3>What the drawing gains</h3>
 <p>The implementation rank stops being one box per file. It becomes one box per
-cited declaration, sitting under the behaviours naming it, so a function answering
-six claims looks different from one answering one.</p>
+cited declaration, grouped under the file holding it and sitting beneath the
+behaviours naming it, so a function answering six claims looks different from one
+answering one.</p>
+<p>Each box opens. A reader who follows a claim down to the code wants the code,
+and the page already holds everything needed to show it: the doc comment carrying
+the citation, and the first lines of the declaration underneath. Both go in a
+collapsible, closed by default, so the rank stays a column of names until somebody
+asks.</p>
+<p>The comment is the part worth showing. It holds the reasoning, it addresses a
+reader rather than a compiler, and pairing it with the claim it cites is the whole
+point of binding the two.</p>
 <p>Selecting a behaviour then lights the code, which is the blast radius the chain
 draws for every other layer already.</p>
+
 <h3>Order of arrival</h3>
 <p>The tags land before the audit. A gate arriving red teaches people to skip it,
 and this project watched that happen to a gate that reported failures and exited

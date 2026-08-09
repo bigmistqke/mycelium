@@ -79,13 +79,12 @@
    * @property {string | null} toId
    */
 
-  // Which cell a node occupies, as row,column counting from one. The template
-  // constrains the shape, so anything reaching here already matched.
   /**
+   * Which cell a node occupies, as row,column counting from one. The template
+   * constrains the shape, so anything reaching here already matched.
+   *
    * @param {Element} node
    * @returns {Cell | null}
-   */
-  /**
    *
    * @behaviour canon/figure.canon.html#data-at-decides-the-cell
    */
@@ -99,11 +98,9 @@
   // A box's rectangle in the figure's own coordinates. Measured after the
   // browser has laid the grid out, which is why no position is ever written
   // into the document.
-  /**
-   * @param {Element} node
-   * @param {Origin} origin
-   * @returns {Box}
-   */
+  /** @returns {Box} */
+  /** @param {Origin} origin */
+  /** @param {Element} node */
   function boxOf(node, origin) {
     var r = node.getBoundingClientRect()
     return {
@@ -122,13 +119,12 @@
   // Separating the two by band is a rule; nudging either one is not.
   var LANE_BAND = 0.45
 
-  // The stretch of a gap an edge travels sideways along, which is the part of
-  // its lane another edge can run into.
   /**
+   * The stretch of a gap an edge travels sideways along, which is the part of
+   * its lane another edge can run into.
+   *
    * @param {Measured} e
    * @returns {{ lo: number, hi: number }}
-   */
-  /**
    *
    * @behaviour canon/figure.canon.html#no-label-covers-another-edge
    */
@@ -138,41 +134,38 @@
   }
 
   // Present by the time it is asked for, or the passes ran out of order.
-  /**
-   * @template T
-   * @param {T | undefined} value
-   * @param {string} what
-   * @returns {T}
-   */
+  /** @returns {T} */
+  /** @param {string} what */
+  /** @param {T | undefined} value */
+  /** @template T */
   function must(value, what) {
     if (value === undefined) throw new Error("a figure was drawn before its " + what + " was worked out")
     return value
   }
 
-  // Whether two edges crossing one gap may share a lane.
-  //
-  // Sharing an end is the one reason to want them together: a fork and a merge
-  // are the same thing seen from opposite directions, and drawing either as one
-  // line says the boxes really do meet. Grouping by source alone never merged,
-  // so three edges into one box took three lanes and arrived as three
-  // near-parallel lines.
-  //
-  // Any other pair may share a lane only while their sideways runs keep out of
-  // each other's way. Two edges that share no box and cross at the same height
-  // draw a junction between relations that have nothing to do with each other,
-  // and a reader cannot tell it from a real one.
-  //
-  // Following the touching all the way through was what put them there. One
-  // edge shares a target with a second, the second shares a source with a
-  // third, the third shares a target with a fourth. A chain like that sweeps
-  // every edge in the gap into one lane, however little its ends have in
-  // common.
   /**
+   * Whether two edges crossing one gap may share a lane.
+   *
+   * Sharing an end is the one reason to want them together: a fork and a merge
+   * are the same thing seen from opposite directions, and drawing either as one
+   * line says the boxes really do meet. Grouping by source alone never merged,
+   * so three edges into one box took three lanes and arrived as three
+   * near-parallel lines.
+   *
+   * Any other pair may share a lane only while their sideways runs keep out of
+   * each other's way. Two edges that share no box and cross at the same height
+   * draw a junction between relations that have nothing to do with each other,
+   * and a reader cannot tell it from a real one.
+   *
+   * Following the touching all the way through was what put them there. One
+   * edge shares a target with a second, the second shares a source with a
+   * third, the third shares a target with a fourth. A chain like that sweeps
+   * every edge in the gap into one lane, however little its ends have in
+   * common.
+   *
    * @param {Measured} p
    * @param {Measured} q
    * @returns {boolean}
-   */
-  /**
    *
    * @behaviour canon/figure.canon.html#merge-shares-one-lane
    */
@@ -183,14 +176,13 @@
     return a.lo > b.hi + 0.5 || b.lo > a.hi + 0.5
   }
 
-  // Whether two nodes sit in one row, read off the cells they declare. A node
-  // with no data-at answers no, since it has no row to share.
   /**
+   * Whether two nodes sit in one row, read off the cells they declare. A node
+   * with no data-at answers no, since it has no row to share.
+   *
    * @param {Element} from
    * @param {Element} to
    * @returns {boolean}
-   */
-  /**
    *
    * @behaviour canon/figure.canon.html#peer-runs-level-between-facing-sides
    */
@@ -200,9 +192,10 @@
     return !!(a && b && a.row === b.row)
   }
 
-  /** @param {Measured[]} edges */
   /**
    * Puts every edge crossing a gap into a lane, sharing one wherever two may.
+   *
+   * @param {Measured[]} edges
    *
    * @behaviour canon/figure.canon.html#merge-shares-one-lane
    */
@@ -246,17 +239,16 @@
     })
   }
 
-  // data-columns names each column in order, so a figure can reserve one for
-  // edges: "edge node node node node". A bare count still means that many node
-  // columns, which is what every figure written so far says.
-  //
-  // Node columns are what data-at counts, so reserving an edge column does not
-  // renumber anything a figure already declared.
   /**
+   * data-columns names each column in order, so a figure can reserve one for
+   * edges: "edge node node node node". A bare count still means that many node
+   * columns, which is what every figure written so far says.
+   *
+   * Node columns are what data-at counts, so reserving an edge column does not
+   * renumber anything a figure already declared.
+   *
    * @param {Element} graph
    * @returns {string[]}
-   */
-  /**
    *
    * @behaviour canon/figure.canon.html#back-edge-keeps-to-its-column
    */
@@ -272,12 +264,11 @@
     return raw.split(/\s+/)
   }
 
-  // Where each node column lands once the edge columns are counted in.
   /**
+   * Where each node column lands once the edge columns are counted in.
+   *
    * @param {string[]} kinds
    * @returns {number[]}
-   */
-  /**
    *
    * @behaviour canon/figure.canon.html#back-edge-keeps-to-its-column
    */
@@ -290,14 +281,13 @@
     return map
   }
 
-  // The rows an edge travels, so its label can span them and centre itself over
-  // the whole run rather than sitting at one end of it.
   /**
+   * The rows an edge travels, so its label can span them and centre itself over
+   * the whole run rather than sitting at one end of it.
+   *
    * @param {Element} from
    * @param {Element} to
    * @returns {string}
-   */
-  /**
    *
    * @behaviour canon/figure.canon.html#a-lone-label-keeps-its-anchor
    */
@@ -314,23 +304,22 @@
   var ARRIVAL_SPACING = 30
   var ARRIVAL_MARGIN = 14
 
-  // Edges reaching one box land at points of their own along its top edge,
-  // rather than all on its middle.
-  //
-  // Sharing a lane is right and stays: three edges into one box that each took
-  // a lane of their own arrived as three near-parallel lines. Sharing the drop
-  // as well is what went wrong. The lines became one before they landed, so a
-  // reader could not see how many there were, and every label anchored to that
-  // one drop and stacked on top of itself.
-  //
-  // Sorted by where each line comes from, so spreading them out never makes two
-  // lines cross on the way in.
   /**
+   * Edges reaching one box land at points of their own along its top edge,
+   * rather than all on its middle.
+   *
+   * Sharing a lane is right and stays: three edges into one box that each took
+   * a lane of their own arrived as three near-parallel lines. Sharing the drop
+   * as well is what went wrong. The lines became one before they landed, so a
+   * reader could not see how many there were, and every label anchored to that
+   * one drop and stacked on top of itself.
+   *
+   * Sorted by where each line comes from, so spreading them out never makes two
+   * lines cross on the way in.
+   * The edges landing on each box, which are the ones whose labels meet.
+   *
    * @param {Measured[]} edges
    * @returns {Measured[][]}
-   */
-  /**
-   * The edges landing on each box, which are the ones whose labels meet.
    *
    * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
    */
@@ -347,11 +336,10 @@
   }
 
   /**
+   * Spreads the landings on one box apart, so two labels have room to sit side by side.
+   *
    * @param {Measured[]} edges
    * @param {number} spacing
-   */
-  /**
-   * Spreads the landings on one box apart, so two labels have room to sit side by side.
    *
    * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
    */
@@ -379,23 +367,24 @@
     e.labelAt = { x: arrive, y: (lane + e.b.top) / 2 }
   }
 
-  // A peer edge joins two boxes in one row, so it runs straight across the gap
-  // between their facing sides. No elbow and no lane: both boxes share a row, a
-  // row is as tall as its tallest box, and the line between their middles is
-  // already level.
-  //
-  // Its label wants the space above the row rather than the line itself. Two
-  // neighbours leave only the column gap between them, around twenty pixels,
-  // and a chip is wider than that: on the line it covered the whole edge
-  // including the arrowhead, so the figure stopped saying which way the
-  // relation ran. The band decides how far above it lands.
-  /** @param {Measured} e */
   /**
+   * A peer edge joins two boxes in one row, so it runs straight across the gap
+   * between their facing sides. No elbow and no lane: both boxes share a row, a
+   * row is as tall as its tallest box, and the line between their middles is
+   * already level.
    *
-   * @behaviour canon/figure.canon.html#peer-runs-level-between-facing-sides
-   * @behaviour canon/figure.canon.html#peer-running-leftwards
-   * @behaviour canon/figure.canon.html#peer-across-an-empty-column
+   * Its label wants the space above the row rather than the line itself. Two
+   * neighbours leave only the column gap between them, around twenty pixels,
+   * and a chip is wider than that: on the line it covered the whole edge
+   * including the arrowhead, so the figure stopped saying which way the
+   * relation ran. The band decides how far above it lands.
+   *
+   * @param {Measured} e
+   *
    * @behaviour canon/figure.canon.html#peer-label-clears-its-own-line
+   * @behaviour canon/figure.canon.html#peer-across-an-empty-column
+   * @behaviour canon/figure.canon.html#peer-running-leftwards
+   * @behaviour canon/figure.canon.html#peer-runs-level-between-facing-sides
    */
   function routePeer(e) {
     var rightwards = e.b.midX > e.a.midX
@@ -406,15 +395,16 @@
     e.labelAt = { x: (start + end) / 2, y: e.a.top }
   }
 
-  // A back edge runs down the middle of its own column, and its label already
-  // sits there as a grid item, so the wire follows the label rather than the
-  // label chasing the wire. The grid sizes the column to whatever the label
-  // needs, which is why no length of text can push one outside the figure.
-  /** @param {Measured} e */
   /**
+   * A back edge runs down the middle of its own column, and its label already
+   * sits there as a grid item, so the wire follows the label rather than the
+   * label chasing the wire. The grid sizes the column to whatever the label
+   * needs, which is why no length of text can push one outside the figure.
    *
-   * @behaviour canon/figure.canon.html#back-edge-keeps-to-its-column
+   * @param {Measured} e
+   *
    * @behaviour canon/figure.canon.html#no-label-leaves-the-figure
+   * @behaviour canon/figure.canon.html#back-edge-keeps-to-its-column
    */
   function routeBack(e) {
     var x = must(e.marker, "gutter label").midX
@@ -436,10 +426,8 @@
   /** @type {WeakMap<Element, { arrivalSpacing?: number, askedGap?: number }>} */
   var memory = new WeakMap()
 
-  /**
-   * @param {Element} graph
-   * @returns {{ arrivalSpacing?: number, askedGap?: number }}
-   */
+  /** @returns {{ arrivalSpacing?: number, askedGap?: number }} */
+  /** @param {Element} graph */
   function remembered(graph) {
     var found = memory.get(graph)
     if (!found) {
@@ -558,10 +546,8 @@
     // The bottom of the nearest row above a given line, or the top of the
     // figure when nothing is above it. A peer edge's label goes in that space,
     // since its own row is solid boxes from side to side.
-    /**
-     * @param {number} top
-     * @returns {number}
-     */
+    /** @returns {number} */
+    /** @param {number} top */
     function rowAbove(top) {
       var found = 0
       Array.prototype.forEach.call(graph.querySelectorAll("figure-node"), function (/** @type {Element} */ node) {
@@ -714,16 +700,15 @@
   // growing instead of running away.
   var MAX_ROW_GAP = 320
 
-  // Half the widest label landing on a box, plus a little air. Half, because a
-  // chip is centred on its own landing and only half of it reaches towards the
-  // next. A box narrower than that caps the spread on its own, in
-  // spreadArrivals, so this asks rather than demands.
   /**
+   * Half the widest label landing on a box, plus a little air. Half, because a
+   * chip is centred on its own landing and only half of it reaches towards the
+   * next. A box narrower than that caps the spread on its own, in
+   * spreadArrivals, so this asks rather than demands.
+   *
    * @param {Chip[]} chips
    * @param {Measured[]} edges
    * @returns {number}
-   */
-  /**
    *
    * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
    */
@@ -743,22 +728,21 @@
     return needed
   }
 
-  // How much deeper the busiest gap needs to be, answered as a whole row-gap.
-  //
-  // A band's height depends on the gap it sits in, and the lane above it moves
-  // as the gap moves, so this asks for the current gap plus whatever the worst
-  // cluster is short by. The next pass measures the new layout and asks again,
-  // which settles after a pass or two rather than solving it in one.
-  //
-  // Every label is measured first, because a chip is sized by its own text,
-  // then grouped the way placeLabels groups them: labels that overlap left to
-  // right are the ones that have to stack.
   /**
+   * How much deeper the busiest gap needs to be, answered as a whole row-gap.
+   *
+   * A band's height depends on the gap it sits in, and the lane above it moves
+   * as the gap moves, so this asks for the current gap plus whatever the worst
+   * cluster is short by. The next pass measures the new layout and asks again,
+   * which settles after a pass or two rather than solving it in one.
+   *
+   * Every label is measured first, because a chip is sized by its own text,
+   * then grouped the way placeLabels groups them: labels that overlap left to
+   * right are the ones that have to stack.
+   *
    * @param {Chip[]} chips
    * @param {number} present
    * @returns {number}
-   */
-  /**
    *
    * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
    */
@@ -785,27 +769,26 @@
   // Space between two stacked labels, and from a label to the edge of its gap.
   var LABEL_GUTTER = 3
 
-  // An anchor says where a label wants to sit, not where it may. Three rules
-  // decide where it ends up, and all three come from figures that broke:
-  //
-  // It stays inside the figure, because a long label near either side hung out
-  // past the border. It stays inside the gap its own edge crosses, because a
-  // gap holds no boxes at any width, so a label there can never cover a node.
-  // And it moves clear of the labels already placed, because a chip is opaque
-  // and the second one drawn hid the first, leaving a figure that showed one
-  // relation while claiming two.
-  //
-  // Measuring is the only way to do any of it. A chip is sized by its own text
-  // and nothing here knows how wide a word renders.
   /**
+   * An anchor says where a label wants to sit, not where it may. Three rules
+   * decide where it ends up, and all three come from figures that broke:
+   *
+   * It stays inside the figure, because a long label near either side hung out
+   * past the border. It stays inside the gap its own edge crosses, because a
+   * gap holds no boxes at any width, so a label there can never cover a node.
+   * And it moves clear of the labels already placed, because a chip is opaque
+   * and the second one drawn hid the first, leaving a figure that showed one
+   * relation while claiming two.
+   *
+   * Measuring is the only way to do any of it. A chip is sized by its own text
+   * and nothing here knows how wide a word renders.
+   *
    * @param {Chip[]} chips
    * @param {{ width: number, height: number }} inner
-   */
-  /**
    *
-   * @behaviour canon/figure.canon.html#no-label-leaves-the-figure
-   * @behaviour canon/figure.canon.html#no-label-covers-a-node
    * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
+   * @behaviour canon/figure.canon.html#no-label-covers-a-node
+   * @behaviour canon/figure.canon.html#no-label-leaves-the-figure
    */
   function placeLabels(chips, inner) {
     chips.forEach(function (entry) {
@@ -826,15 +809,16 @@
     })
   }
 
-  // Stack a run of labels down the space they share, each inside its own band.
-  //
-  // A lone label keeps the height its edge asked for. Several cannot: letting
-  // the first take the height it wanted leaves it in the middle of the room,
-  // and no place left is far enough from it, even when the two would have fitted
-  // at either end. So a run starts at the top of what it may use and comes down
-  // from there.
-  /** @param {Chip[]} run */
   /**
+   * Stack a run of labels down the space they share, each inside its own band.
+   *
+   * A lone label keeps the height its edge asked for. Several cannot: letting
+   * the first take the height it wanted leaves it in the middle of the room,
+   * and no place left is far enough from it, even when the two would have fitted
+   * at either end. So a run starts at the top of what it may use and comes down
+   * from there.
+   *
+   * @param {Chip[]} run
    *
    * @behaviour canon/figure.canon.html#a-lone-label-keeps-its-anchor
    */
@@ -861,11 +845,10 @@
   }
 
   /**
+   * Groups labels by the gap their edge crosses, since that is the space they share.
+   *
    * @param {Chip[]} chips
    * @returns {Chip[][]}
-   */
-  /**
-   * Groups labels by the gap their edge crosses, since that is the space they share.
    *
    * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
    */
@@ -881,12 +864,11 @@
     return Object.keys(groups).map(function (key) { return groups[key] })
   }
 
-  // Runs of labels that overlap left to right, found by sweeping across.
   /**
+   * Runs of labels that overlap left to right, found by sweeping across.
+   *
    * @param {Chip[]} group
    * @returns {Chip[][]}
-   */
-  /**
    *
    * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
    */
@@ -917,9 +899,10 @@
   FigureGraph.prototype.constructor = FigureGraph
   Object.setPrototypeOf(FigureGraph, HTMLElement)
 
-  /** @param {HTMLElement} graph */
   /**
    * Lays every node into the cell it declares, and sizes the columns around them.
+   *
+   * @param {HTMLElement} graph
    *
    * @behaviour canon/figure.canon.html#data-at-decides-the-cell
    */

@@ -500,9 +500,9 @@
 
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
-  import { readCanon, collectTests } from "./canon-citations.ts"
+  import { readCanon, collectTests, collectCodeCitations } from "./canon-citations.ts"
   import { declaredOrders, declaresATemplate, placeField } from "./shared.ts"
-  import { writeFileSync, mkdtempSync } from "node:fs"
+  import { writeFileSync, mkdtempSync, readFileSync } from "node:fs"
   import { tmpdir } from "node:os"
   import { join, resolve as resolvePath } from "node:path"
   import { pathToFileURL } from "node:url"
@@ -1061,6 +1061,7 @@
     const axioms = read.axioms.filter((axiom) => claims(axiom.address))
     const specifications = read.specifications.filter((specification) => claims(specification.address))
     const cases = collectTests(corpus).filter((testCase) => claims(testCase.address))
+    const code = collectCodeCitations(corpus, specifications.flatMap((s) => s.specifies))
 
     const behaviours = specifications.flatMap((specification) =>
       specification.behaviours.map((behaviour) => ({ ...behaviour, specification: specification.address })))
@@ -1081,11 +1082,18 @@
         beneath.get(citation.target)!.push(testCase.address)
       }
     }
+    for (const declaration of code) {
+      for (const target of declaration.cites) {
+        if (!beneath.has(target)) beneath.set(target, [])
+        beneath.get(target)!.push(declaration.address)
+      }
+    }
 
     // What each node points at, which is the direction the corpus stores.
     const above = new Map<string, string[]>()
     for (const entry of [...axioms, ...behaviours]) above.set(entry.address, entry.dependsOn)
     for (const testCase of cases) above.set(testCase.address, testCase.citations.map((c) => c.target))
+    for (const declaration of code) above.set(declaration.address, declaration.cites)
 
     // Everything one way from a node, following the whole distance rather than
     // one step. `seen` is what keeps an axiom narrowing itself in a loop from
@@ -1148,9 +1156,18 @@
       })),
       // Both directions, precomputed, so selecting anything can light the whole
       // chain it belongs to rather than only what hangs beneath it.
-      reach: Object.fromEntries([...axioms, ...behaviours, ...cases]
+      code: code.map((declaration) => ({
+        address: declaration.address,
+        name: declaration.name,
+        kind: declaration.kind,
+        file: declaration.file,
+        doc: declaration.doc,
+        snippet: declaration.snippet,
+        cites: declaration.cites,
+      })),
+      reach: Object.fromEntries([...axioms, ...behaviours, ...cases, ...code]
         .map((entry) => [entry.address, reachOf(entry.address)])),
-      above: Object.fromEntries([...axioms, ...behaviours, ...cases]
+      above: Object.fromEntries([...axioms, ...behaviours, ...cases, ...code]
         .map((entry) => [entry.address, walk(entry.address, above)])),
     }
 
@@ -1183,7 +1200,10 @@
       list: (dir = '.', options: { ext?: string } = {}) => docs
         .map((d) => d.path)
         .filter((path) => (!dir || dir === '.' || path.startsWith(`${dir}/`)) && (!options.ext || path.endsWith(options.ext))),
-      read: () => '',
+      // Real text, not an empty string. The stub that used to sit here made
+      // every file look like it held nothing, so a reader of source found no
+      // comments and reported that as an answer rather than as a failure.
+      read: (path: string) => readFileSync(resolvePath(fs.root, '..', path), 'utf8'),
       parse: (path: string) => byPath.get(path),
     }
   }
@@ -1274,11 +1294,17 @@ ranks.push({ name: 'behaviours', items: data.behaviours.map(b =>
   ({ address: b.address, title: b.title, group: specTitle[b.specification] || 'unspecified', groupOf: b.specification })) })
 ranks.push({ name: 'test cases', items: data.cases.map(c =>
   ({ address: c.address, title: c.name, group: c.address.split('/').pop().split('#')[0] })) })
-const files = []
+// One box per cited declaration, grouped by the file holding it. A file
+// nothing cites still appears, carrying no declarations, because a subsystem
+// naming a file with no claims in it is worth seeing rather than hiding.
+const shortFile = (f) => f.replace(/^docs\\//, '')
+const declarations = data.code.map(d =>
+  ({ address: d.address, title: d.name, group: shortFile(d.file), code: d }))
+const cited = new Set(data.code.map(d => d.file))
 for (const s of data.specifications)
   for (const f of s.specifies)
-    files.push({ address: f, title: f.replace(/^docs\\//, ''), group: s.title, groupOf: s.address, file: true })
-ranks.push({ name: 'implementation', items: files })
+    if (!cited.has(f)) declarations.push({ address: f, title: shortFile(f), group: shortFile(f), file: true })
+ranks.push({ name: 'implementation', items: declarations })
 
 // What each item points at, for ordering a column against the one before it.
 const parentsOf = {}
@@ -1286,6 +1312,7 @@ for (const a of data.axioms) parentsOf[a.address] = a.narrows
 for (const b of data.behaviours) parentsOf[b.address] = b.refines
 for (const c of data.cases) parentsOf[c.address] = c.checks
 for (const s of data.specifications) for (const f of s.specifies) parentsOf[f] = [s.address]
+for (const d of data.code) parentsOf[d.address] = d.cites
 
 // Fewer crossings, by putting each item near whatever it points at. A group
 // takes the mean position of its members, and members sort inside it, so the
@@ -1328,6 +1355,25 @@ for (const rank of ranks) {
       el.dataset.address = item.address
       el.innerHTML = (item.reach === undefined ? '' : '<span class="reach">' + item.reach + '</span>')
         + '<a href="' + item.address.replace(/^docs\\//, '') + '">' + item.title + '</a>'
+      // A reader following a claim down to the code came for the code. The
+      // comment carrying the citation is the part worth showing, so it opens
+      // first, with the lines it introduces under it.
+      if (item.code) {
+        const d = document.createElement('details')
+        const summary = document.createElement('summary')
+        summary.textContent = item.code.kind || 'declaration'
+        d.appendChild(summary)
+        if (item.code.doc) {
+          const doc = document.createElement('p')
+          doc.className = 'doc'
+          doc.textContent = item.code.doc
+          d.appendChild(doc)
+        }
+        const pre = document.createElement('pre')
+        pre.textContent = item.code.snippet
+        d.appendChild(pre)
+        el.appendChild(d)
+      }
       g.appendChild(el)
     }
     column.appendChild(g)

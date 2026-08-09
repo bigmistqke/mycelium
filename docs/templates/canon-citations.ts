@@ -10,6 +10,7 @@
 // readings, and a second copy is how two checks come to disagree about what a
 // citation is.
 import type { AuditFs } from "../../src/api.ts"
+import { commentRanges } from "./code-comments.ts"
 
 export interface Citation {
   // The behaviour this case claims to check, as an address.
@@ -150,4 +151,93 @@ export function readCanon(fs: AuditFs): Canon {
   }
 
   return { axioms, specifications }
+}
+
+/**
+ * One declaration in the code, and the behaviours its doc comment names.
+ */
+export interface CodeCitation {
+  // file#name, so the declaration has an address like every other rung.
+  address: string
+  file: string
+  name: string
+  // What the declaration is, as the compiler reports it: function, variable,
+  // type. Empty when a comment leads nothing the parser names.
+  kind: string
+  // The comment's prose, with the tag lines already gone.
+  doc: string
+  // The first lines the declaration itself occupies.
+  snippet: string
+  // Behaviour addresses, in the same docs-root form the rest of this file uses.
+  cites: string[]
+}
+
+const TAG = /@behaviour\s+(\S+)/g
+
+// Lines of the declaration kept beside its comment. Enough for a signature and
+// the start of a body, which is what a reader following a claim down came for.
+const SNIPPET_LINES = 8
+
+/**
+ * Every behaviour citation the code carries, read out of its doc comments.
+ *
+ * Only files a specification names get read. That boundary comes from the
+ * corpus rather than a list here, so a file nothing specifies is not
+ * participating and its silence means nothing.
+ *
+ * An .html file carries its code inside script blocks, and a comment's position
+ * gets offset by where its script starts, so a citation in a template reports
+ * the same way one in a source file does.
+ */
+export function collectCodeCitations(fs: AuditFs, specifies: string[]): CodeCitation[] {
+  const found: CodeCitation[] = []
+
+  for (const file of [...new Set(specifies)]) {
+    let source: string
+    try {
+      source = fs.read(file)
+    } catch {
+      continue
+    }
+
+    const blocks: { text: string; offset: number }[] = []
+    if (file.endsWith(".html")) {
+      const doc = fs.parse(file)
+      let searchFrom = 0
+      for (const script of Array.from(doc.querySelectorAll("script")) as any[]) {
+        const text = script.textContent ?? ""
+        const offset = source.indexOf(text, searchFrom)
+        if (offset === -1) continue
+        searchFrom = offset + text.length
+        blocks.push({ text, offset })
+      }
+    } else {
+      blocks.push({ text: source, offset: 0 })
+    }
+
+    for (const block of blocks) {
+      for (const comment of commentRanges(block.text)) {
+        const cites = [...comment.raw.matchAll(TAG)].map((m) => `docs/${m[1]}`)
+        if (!cites.length) continue
+        const at = block.offset + comment.pos
+        const name = comment.subject.name ?? `at-line-${source.slice(0, at).split("\n").length}`
+        found.push({
+          address: `${file}#${name}`,
+          file,
+          name,
+          kind: comment.subject.declares ?? "",
+          doc: comment.text,
+          snippet: block.text
+            .slice(comment.end)
+            .replace(/^\s*\n/, "")
+            .split("\n")
+            .slice(0, SNIPPET_LINES)
+            .join("\n"),
+          cites,
+        })
+      }
+    }
+  }
+
+  return found
 }

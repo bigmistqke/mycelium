@@ -183,7 +183,15 @@ export function commentRanges(source: string): CommentRange[] {
     // it, and a comment after something on the same line is an aside about the
     // line it trails. Handing the node to both would report a trailing note as
     // documentation of whatever came before it.
-    ts.forEachLeadingCommentRange(source, node.getFullStart(), (pos, end, kind) => record(pos, end, kind, node))
+    //
+    // The source file itself is not a subject, and claiming leading ranges for
+    // it would take them from the declaration underneath. Every node shares its
+    // full start with the file, so the file always got there first: the doc
+    // comment opening a file reported no subject at all, and a citation reader
+    // asking what a comment sits above got nothing back.
+    if (!ts.isSourceFile(node)) {
+      ts.forEachLeadingCommentRange(source, node.getFullStart(), (pos, end, kind) => record(pos, end, kind, node))
+    }
     ts.forEachTrailingCommentRange(source, node.getEnd(), record)
     node.forEachChild(visit)
   }

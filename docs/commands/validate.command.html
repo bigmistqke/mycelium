@@ -164,6 +164,9 @@
   }
 
   /**
+   * Every template the corpus declares, and every audit script sitting beside one.
+   * Found by crawling for the attributes that declare them, so the engine names
+   * neither and a new one costs no edit here.
    *
    * @behaviour canon/validate.canon.html#every-declared-audit-runs
    */
@@ -202,6 +205,9 @@
   }
 
   /**
+   * Every element claiming conformance, however deeply it sits. An instance is
+   * whatever carries data-conforms-to, which is the same signal the crawl uses
+   * everywhere else.
    *
    * @behaviour canon/validate.canon.html#every-conforming-element-is-checked
    */
@@ -216,6 +222,11 @@
   }
 
   /**
+   * One pass over a corpus: check every instance against the template it names,
+   * then run every audit over the whole tree.
+   *
+   * The verdict comes back as a value rather than reaching a terminal, so a
+   * caller decides what to print and what to exit with.
    *
    * @behaviour canon/validate.canon.html#the-schema-checks-the-instance
    * @behaviour canon/validate.canon.html#a-custom-validator-runs-as-well
