@@ -7,10 +7,6 @@
 <link rel="stylesheet" href="../templates/canon.template.css">
 </head>
 <body>
-<canon-axiom id="the-standard-is-one-document" data-conforms-to="../templates/canon.template.html#canon-axiom">
-  <canon-title>One document holds the standard a comment answers to, and this command keeps no copy of it.</canon-title>
-  <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">a built-in default would be the second copy that drifts</a>
-</canon-axiom>
 <canon-axiom id="the-file-may-state-its-own-verdict" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>The command reads a verdict the file already states, rather than asking a model to repeat it.</canon-title>
   <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">the file is the source, so the command reads it</a>
@@ -44,11 +40,11 @@
   </canon-behaviour>
   <canon-behaviour id="a-missing-guide-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>With the guide missing the command fails, rather than falling back to a standard of its own.</canon-title>
-    <a data-rel="depends_on" href="./comments.canon.html#the-standard-is-one-document">no second standard to fall back on</a>
+    <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">no second standard to fall back on</a>
   </canon-behaviour>
   <canon-behaviour id="the-guide-supplies-every-criterion" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>The criteria reaching the model come from the guide's own fields, and the command adds none.</canon-title>
-    <a data-rel="depends_on" href="./comments.canon.html#the-standard-is-one-document">the one copy is the one that runs</a>
+    <canon-title>Every field of the guide reaches the model that judges the file.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">the one copy is the one that runs</a>
   </canon-behaviour>
   <canon-behaviour id="a-working-note-goes-without-asking" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>A comment tagged WIP goes without a model ever seeing it.</canon-title>
@@ -101,6 +97,10 @@
   <canon-behaviour id="several-cuts-land-where-they-were-judged" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>Several cuts in one file each land on the comment the command judged.</canon-title>
     <a data-rel="depends_on" href="./comments.canon.html#a-fix-changes-only-what-it-reported">an earlier cut may not move a later one</a>
+  </canon-behaviour>
+  <canon-behaviour id="nothing-else-describes-what-earns-a-place" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>Nothing in the prompt says what earns a comment its place except the guide's own fields.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">a paraphrase in the prompt is the copy that drifts</a>
   </canon-behaviour>
 </canon-specification>
 </body></html>

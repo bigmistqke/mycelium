@@ -154,6 +154,11 @@
     }))
   }
 
+  // The three verdicts say what happens to a comment, never what makes one
+  // clutter. An earlier version defined them by criteria instead — "cut" listed
+  // the four failing kinds — which put a second copy of the standard in a string
+  // nothing can query, directly below the guide it was copied from. Editing the
+  // guide left that copy asserting the old thing, and the model read both.
   function verdictPrompt(guide: string, items: Candidate[]): string {
     const sections = items
       .map((c) => `### comment ${c.id}\n"""\n${c.text}\n"""\n\nThe code it introduces:\n"""\n${c.context}\n"""`)
@@ -165,12 +170,12 @@
       "",
       guide,
       "",
-      "Answer for each comment with one of three verdicts.",
-      '"keep" — it says something the code cannot.',
-      '"cut" — everything it says is already visible in the code beneath it, or it narrates, or it explains the language itself, or it is a working note.',
-      '"promote" — it records a rejected alternative, a decision, or a constraint that argues with something. It is not clutter, and it belongs in this project\'s knowledge graph rather than in a comment.',
+      "Decide by that standard and nothing else. Answer for each comment with one of three verdicts, which say what this command then does:",
+      '"keep" — the comment stays where it is.',
+      '"cut" — this command deletes the comment.',
+      '"promote" — the comment stays where it is, and this command prints the line that copies what it carries into the project\'s knowledge graph.',
       "",
-      "Prefer keep when torn. Deleting a comment that was carrying something is worse than leaving one that repeats itself.",
+      "So: a comment the standard says earns its place is keep, unless what it carries is the kind the standard says belongs in the graph, which is promote. A comment the standard says does not earn its place is cut.",
       "",
       sections,
       "",

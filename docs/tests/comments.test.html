@@ -173,6 +173,40 @@
     </script>
   </test-case>
 
+  <test-case id="nothing-else-describes-what-earns-a-place" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>nothing in the prompt says what earns a place except the guide's own fields</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/comments.canon.html#nothing-else-describes-what-earns-a-place">the behaviour this checks</a>
+    <script type="mycelium/test">
+      // The guide here holds sentinels and no criteria at all, so any wording
+      // about what earns a place came from the command rather than the
+      // document. The list below is the wording an earlier version carried.
+      //
+      // Naming the phrases is the weak part, and it is the strongest check
+      // available: a fresh paraphrase of the same criteria would pass this. It
+      // catches the regression that actually happened, which is somebody
+      // putting these four back.
+      import { readFileSync } from "node:fs"
+      import type { TestContext } from "../../src/api.ts"
+      import { GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        sandbox.write(GUIDE, guideDoc())
+        sandbox.write("sample.ts", "// the format another tool demands here\nconst a = 1\n")
+
+        const stub = stubClaude()
+        try {
+          sandbox.mycelium("comments", "check", "docs/sample.ts")
+          const prompt = readFileSync(stub.promptFile, "utf8")
+          for (const copied of ["already visible in the code", "narrates", "explains the language", "rejected alternative"]) {
+            assert(!prompt.includes(copied), `the prompt states a criterion of its own: "${copied}"`)
+          }
+        } finally {
+          stub.restore()
+        }
+      }
+    </script>
+  </test-case>
+
   <test-case id="a-working-note-goes-without-asking" data-conforms-to="../templates/test.template.html#test-case">
     <test-name>a comment tagged WIP goes without a model ever seeing it</test-name>
     <test-status>PENDING</test-status>
