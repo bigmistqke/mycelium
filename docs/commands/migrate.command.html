@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commands: migrate</title>
+<link rel="stylesheet" href="../theme.css">
+</head>
+<body>
+
+<h1>Commands: migrate</h1>
+<div class="meta">
+  <div><b>Purpose:</b> the one-time moves that turn the knowledge graph into
+    <a href="../templates/notebook.template.html">the notebook</a></div>
+  <div><b>Design:</b> <a href="../specs/2026-08-09-notebook-replaces-the-knowledge-graph.spec.html">the
+    spec for that family</a></div>
+  <div><b>Lifespan:</b> this file goes once the migration lands. It sits in the corpus rather than in a
+    scratch directory so that what it did stays readable, and so it runs through the same engine as every
+    other command.</div>
+</div>
+
+<h2>Why a command and not a script</h2>
+<p>
+  The migration reads and rewrites the whole corpus, so it parses rather than pattern-matches. Running it
+  through the engine gets that for free: <code>fs.get</code> hands over a parsed document and the engine
+  serialises whatever the command touched, so no rewrite here has to find a tag by searching text.
+</p>
+<p>
+  This project has the scars that argue for it. An anchored regex renamed opening tags and left same-line
+  closing ones, which wrote a mismatched tag into eighty documents. A replace aimed at
+  <code>&lt;/body&gt;</code> landed inside a node's prompt, because that prompt quotes markup, and cut a
+  generated page in half.
+</p>
+<p>
+  One process also beats 269. Deleting through <code>knowledge del</code> costs four seconds a node, since
+  each run re-reads every other node to find the edges pointing at it. Doing the same work in one pass takes
+  one traversal.
+</p>
+
+<script type="mycelium/command">
+  import type { CommandContext } from "../../src/api.ts"
+  import { readFileSync } from "node:fs"
+
+  function requireArgs(...checks) {
+    for (const [value, label] of checks) {
+      if (value === undefined) throw new Error(`missing required argument: ${label}`)
+    }
+  }
+
+  /**
+   * Delete the nodes a reviewed verdict names, and every edge left pointing at
+   * one.
+   *
+   *   mycelium migrate prune --verdict <file> [--apply]
+   *
+   * --verdict is a newline-separated list of filenames inside knowledge/,
+   * which is what the triage page produces once a person has been through it.
+   * The classifier that pre-ticked that page is a heuristic over titles, so
+   * nothing here re-derives the list: a reviewed decision arrives as data.
+   *
+   * Without --apply this reports what it would do and writes nothing. The
+   * count of dropped edges is the number worth reading before committing to
+   * it, because an incoming edge is something upstream resting on a node
+   * about to go.
+   */
+  export function prune({ fs, args }: CommandContext) {
+    requireArgs([args.verdict, "--verdict"])
+    const gone = new Set(
+      readFileSync(args.verdict, "utf8").split("\n").map((line) => line.trim()).filter(Boolean)
+    )
+
+    const present = new Set()
+    for (const { path } of fs.list("knowledge")) present.add(path.slice("knowledge/".length))
+    const absent = [...gone].filter((name) => !present.has(name))
+    if (absent.length) throw new Error(`the verdict names ${absent.length} file(s) not on disk: ${absent[0]}`)
+
+    let dropped = 0
+    for (const { path, doc } of fs.list("knowledge")) {
+      const name = path.slice("knowledge/".length)
+      if (gone.has(name)) continue
+      for (const a of Array.from(doc.querySelectorAll("a[data-rel]"))) {
+        const target = (a.getAttribute("href") ?? "").split("/").pop()
+        if (!gone.has(target)) continue
+        console.log(`  ${name}  --${a.getAttribute("data-rel")}-->  ${target}`)
+        if (args.apply) a.remove()
+        dropped++
+      }
+    }
+
+    if (args.apply) for (const name of gone) fs.delete(`knowledge/${name}`)
+    console.log(
+      `${args.apply ? "deleted" : "would delete"} ${gone.size} nodes, ` +
+      `${args.apply ? "dropped" : "would drop"} ${dropped} edges, ${present.size - gone.size} remain`
+    )
+  }
+
+  /**
+   * Turn a link at something no longer there into the words it already said.
+   *
+   *   mycelium migrate describe [--apply]
+   *
+   * This project settled the rule when it deleted the earlier log: describe a
+   * thing a reader cannot open, rather than cite it. In practice that is an
+   * unwrap, because an anchor whose text reads <q>the DSL option</q> or
+   * <q>the harness-reframe evidence</q> is already carrying the description.
+   *
+   * An edge is different and this refuses to touch one. A data-rel anchor
+   * carries structure rather than prose, so unwrapping it would drop a claim
+   * silently; those get reported for a person to settle.
+   *
+   * Only relative links count. An absolute one points outside the repository,
+   * where nothing here can say whether it resolves.
+   */
+  export function describe({ fs, args }: CommandContext) {
+    let unwrapped = 0
+    const structural = []
+
+    for (const { path, doc } of fs.list(".")) {
+      if (!path.endsWith(".html")) continue
+      const from = path.split("/").slice(0, -1)
+      for (const a of Array.from(doc.querySelectorAll("a[href]"))) {
+        const href = a.getAttribute("href") ?? ""
+        if (!href || /^[a-z]+:/i.test(href) || href.startsWith("#")) continue
+        const segments = [...from]
+        for (const part of href.split("#")[0].split("/")) {
+          if (part === "." || part === "") continue
+          if (part === "..") segments.pop()
+          else segments.push(part)
+        }
+        const target = segments.join("/")
+        if (fs.exists(target)) continue
+
+        if (a.hasAttribute("data-rel")) {
+          structural.push(`${path}  --${a.getAttribute("data-rel")}-->  ${href}`)
+          continue
+        }
+        console.log(`  ${path}  ${href}`)
+        if (args.apply) {
+          while (a.firstChild) a.parentNode.insertBefore(a.firstChild, a)
+          a.remove()
+        }
+        unwrapped++
+      }
+    }
+
+    console.log(`${args.apply ? "unwrapped" : "would unwrap"} ${unwrapped} prose link(s)`)
+    if (structural.length) {
+      console.log(`\n${structural.length} edge(s) need a person, since unwrapping one drops a claim:`)
+      for (const line of structural) console.log(`  ${line}`)
+    }
+  }
+</script>
+
+</body>
+</html>

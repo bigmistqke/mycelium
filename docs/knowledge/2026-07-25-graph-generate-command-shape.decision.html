@@ -12,6 +12,5 @@
   <knowledge-confidence>75</knowledge-confidence>
   <knowledge-status>active</knowledge-status>
   <knowledge-detail>mycelium run knowledge generate graph [--out &lt;path&gt;]. Node-side: reuse the extractGraph(documents) logic already duplicated in the orphans-except-goal/dangling-outcome audits to walk fs.list('knowledge') into {nodes, edges}. Output: a self-contained HTML file holding three things. The graph data inlined as JSON, a &lt;script src="https://cdn..."&gt; reference to a rendering lib such as cytoscape or d3, and a small inline script wiring the data into the lib. No npm bundling into the output, and no hand-rolled SVG layout. Without --out, write to a scratch/temp location and open it directly for a quick look; with --out &lt;path&gt;, write straight to a tracked path so it can be git-committed as a snapshot later. Tradeoff accepted: this is the first generated artifact in the family that needs network access to render, unlike every other template/live-demo which is self-contained and works offline over file://.</knowledge-detail>
-  <a data-rel="leads_to" href="./2026-07-25-implement-generate-graph-command.action.html">implementing the decided command shape</a>
 </knowledge-decision>
 </body></html>

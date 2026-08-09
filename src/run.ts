@@ -4,7 +4,7 @@
 // command, validate included, actually does. See
 // docs/specs/2026-07-23-mycelium-authoring-commands.spec.html.
 
-import { mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { basename, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
 import ts from "typescript"
@@ -231,6 +231,17 @@ class Filesystem {
   delete(path: string): void {
     const full = resolvePath(this.#root, path)
     this.#touched.set(full, { deleted: true })
+  }
+
+  // Whether a path will be there once this run's writes land, which is not the
+  // same question as what sits on disk right now. A command that deletes a file
+  // and then asks about it gets the answer its own run produced, so a migration
+  // walking the corpus it is halfway through rewriting sees that corpus rather
+  // than the one it started from.
+  exists(path: string): boolean {
+    const entry = this.#touched.get(resolvePath(this.#root, path))
+    if (entry) return !("deleted" in entry)
+    return existsSync(resolvePath(this.#root, path))
   }
 
   // Reads every .html file under dir (relative to this Filesystem's root)

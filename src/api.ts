@@ -45,6 +45,9 @@ export interface CommandFilesystem {
   get(path: string): Document
   create(path: string, seedHtml: string): Document
   delete(path: string): void
+  // True when a path will exist once this run's writes land — a file this run
+  // created counts, and one it deleted does not.
+  exists(path: string): boolean
   list(dir: string): { path: string; doc: Document }[]
   // Writes everything touched so far. The engine calls this once after a
   // command returns, so a command does not normally call it — plan check does,

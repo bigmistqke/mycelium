@@ -296,36 +296,6 @@
   CLAUDE.md: "Root goal nodes are the ONLY valid orphans." Every node whose type isn't
   <code>knowledge-goal</code> must appear in at least one edge, incoming or outgoing.
 </p>
-<script type="mycelium/audit" data-audits="orphans-except-goal" data-expects="sample-observation" data-touches="knowledge-goal knowledge-decision knowledge-option knowledge-action knowledge-outcome knowledge-observation">
-  import type { AuditFs } from "../../src/api.ts"
-  /**
-   * Every node but a root goal is reached by an edge or reaches one.
-   *
-   * A node nothing points at and which points at nothing is out of the graph
-   * whatever it says. Root goals are the exception because nothing precedes
-   * them.
-   */
-  import { extractGraph } from "./extract-graph.ts"
-
-  export default function (fs: AuditFs) {
-    // An audit is handed a filesystem, not a document list, so this line is
-    // what a check that wants documents does for itself. Written out rather
-    // than imported from a helper: this same script also runs in the demo
-    // below through a data: URL, which has no base to resolve a relative
-    // import against.
-    const documents = fs.list('docs', { ext: '.html' })
-      .map((path) => ({ path: `${fs.root}/${path}`, dom: fs.parse(path) }))
-
-    const { nodes, edges } = extractGraph(documents)
-    const connected = new Set()
-    for (const e of edges) { connected.add(e.from); connected.add(e.to) }
-    const violations = nodes
-      .filter(n => n.type !== 'knowledge-goal' && !connected.has(n.id))
-      .map(n => n.id)
-    return { ok: violations.length === 0, violations }
-  }
-</script>
-
 <h3>dangling-outcome</h3>
 <p>
   CLAUDE.md: "Does every outcome link back to what caused it?" Deliberately stricter than orphan-checking:
@@ -334,33 +304,6 @@
   checklist means. So this checks specifically for an <em>incoming</em> edge, the way this project's own
   <code>action &rarr;leads_to&rarr; outcome</code> links have worked all night.
 </p>
-<script type="mycelium/audit" data-audits="dangling-outcome" data-expects="sample-outcome" data-touches="knowledge-outcome">
-  import type { AuditFs } from "../../src/api.ts"
-  /**
-   * An outcome is linked back to whatever caused it.
-   *
-   * An outcome with no cause records that something happened and loses why.
-   */
-  import { extractGraph } from "./extract-graph.ts"
-
-  export default function (fs: AuditFs) {
-    // An audit is handed a filesystem, not a document list, so this line is
-    // what a check that wants documents does for itself. Written out rather
-    // than imported from a helper: this same script also runs in the demo
-    // below through a data: URL, which has no base to resolve a relative
-    // import against.
-    const documents = fs.list('docs', { ext: '.html' })
-      .map((path) => ({ path: `${fs.root}/${path}`, dom: fs.parse(path) }))
-
-    const { nodes, edges } = extractGraph(documents)
-    const resolved = new Set(edges.map(e => e.to))
-    const violations = nodes
-      .filter(n => n.type === 'knowledge-outcome' && !resolved.has(n.id))
-      .map(n => n.id)
-    return { ok: violations.length === 0, violations }
-  }
-</script>
-
 <h3>Title length is declared, not audited</h3>
 <p>
   A <code>knowledge-title</code> past 140 characters is a paragraph filed in the wrong field: the finding
@@ -376,9 +319,8 @@
   The rule
   did not change; where it lives did. A maximum length is a property of one field on one node,
   and the schema vocabulary could already say it, so saying it in code was writing by hand what the
-  template could declare. See
-  <a data-rel="elaborates" href="../knowledge/2026-07-31-schema-when-vocabulary-allows.decision.html">the
-  decision</a>, which also explains why <code>hollow-action</code> below did not move: it needs a word
+  template could declare. The decision that moved it also explains
+  why <code>hollow-action</code> below did not move: it needs a word
   the vocabulary does not have, and adding one to serve a single type is growing the engine rather
   than using it.
 </p>
@@ -419,44 +361,6 @@
   one is a property of the pair, which a per-field <code>required</code> attribute can't express and this
   audit can.
 </p>
-<script type="mycelium/audit" data-audits="hollow-action" data-expects="sample-hollow-action" data-touches="knowledge-action">
-  import type { AuditFs } from "../../src/api.ts"
-  /**
-   * An action carries a detail or a commit, so it records what it did.
-   *
-   * An action with neither is a note that work occurred and no note of what
-   * the work was.
-   */
-  function extractActions(documents) {
-    const actions = []
-    for (const { path, dom } of documents) {
-      for (const el of dom.querySelectorAll('knowledge-action')) {
-        actions.push({
-          id: el.id || path,
-          detail: (el.querySelector('knowledge-detail')?.textContent ?? '').trim(),
-          commit: (el.querySelector('knowledge-commit')?.textContent ?? '').trim(),
-        })
-      }
-    }
-    return actions
-  }
-
-  export default function (fs: AuditFs) {
-    // An audit is handed a filesystem, not a document list, so this line is
-    // what a check that wants documents does for itself. Written out rather
-    // than imported from a helper: this same script also runs in the demo
-    // below through a data: URL, which has no base to resolve a relative
-    // import against.
-    const documents = fs.list('docs', { ext: '.html' })
-      .map((path) => ({ path: `${fs.root}/${path}`, dom: fs.parse(path) }))
-
-    const violations = extractActions(documents)
-      .filter(a => !a.detail && !a.commit)
-      .map(a => a.id)
-    return { ok: violations.length === 0, violations }
-  }
-</script>
-
 <div class="worked-example">
   <h4>What the audits above are aimed at</h4>
   <p>

@@ -17,7 +17,5 @@
 <p>What autofix actually lacks is narrower than a new DOM: given an element <code>happy-dom</code> already found and validated, where is it, in bytes, in the specific source file. <code>parse5</code> alone, parsed with <code>sourceCodeLocationInfo: true</code> and read as a plain tree, answers exactly that. A plain tree means no DOM, no selector matching, since the leaf walk only tests tag membership against <code>BLOCK_TAGS</code>/<code>PROTECTED_TAGS</code>. A spike confirms exact <code>startTag</code>/<code>endTag</code> offsets. Since nothing is ever re-serialized, entities and unusual markup survive untouched with no round-trip risk. <code>happy-dom</code> keeps doing everything it already does, unchanged, everywhere in the project.</p>
 <p>This is exported as a small reusable utility rather than inlined into autofix alone. A second real consumer exists: a live editor diagnostic flagging a schema violation (a missing required child, for instance) in an open document. It would reuse the same existing <code>happy-dom</code>-based validation to find the problem, and would need exactly this same capability: position for an already-identified element to place the diagnostic.</p>
 </knowledge-detail>
-  <a data-rel="supports" href="./2026-08-02-live-schema-diagnostics-for-template-elements.goal.html">the reusable position utility this goal will need</a>
-  <a data-rel="supports" href="./2026-08-02-extend-autofix-corpus-html-leaf-paragraphs.action.html">replaces that action's outerHTML-search implementation</a>
 </knowledge-decision>
 </body></html>
