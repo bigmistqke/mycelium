@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A behaviour holds the case that proves it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A behaviour holds the case that proves it</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-09</spec-date>
+  <spec-problem>
+<p>A behaviour states a claim in one sentence and nothing in its own document
+can falsify it. The case that checks it sits in another directory, in another
+family, reached by an edge. Two audits exist to police that edge, and a third
+pair of audits describes properties of the document holding the case.</p>
+<p>The corpus says the two are one thing already. The canon documents declare 80
+behaviours, the test documents declare 80 cases, and every case carries exactly
+one <code>depends_on</code>. That bijection came partly out of retrofitting, so
+it is evidence about fit rather than a rule anybody wrote.</p>
+<p>A test document also repeats what the specification above it already
+declares. <code>test-subject</code> names the file a document exercises, and the
+specification names that same file with <code>specifies</code>. One of the two
+is a second copy, and this project treats a second copy as
+<a href="../language/terms/drift.term.html">drift</a> waiting to happen.</p>
+<p>The drawing shows the third symptom. It lays out axioms, behaviours, cases
+and declarations as four columns, and
+<a href="../templates/canon.template.html">the canon template's own prose</a>
+calls that a chain running <q>axiom, then behaviour, then test, then
+implementation</q>. No edge ever ran from a case to a declaration, so every wire
+out of the last column doubles back over the case column to reach a behaviour
+two columns away.</p>
+<p>Both citations point at the behaviour because both answer to it. A
+declaration does not answer to a test, and a case and a declaration sit at the
+same height, so an edge between them would have no up to point at. The layout
+is wrong about the shape, and the shape is worth changing.</p>
+</spec-problem>
+  <spec-design>
+<h3>The shape</h3>
+<p>A case becomes a declared child of the behaviour it checks:</p>
+<pre><code>&lt;canon-behaviour id="exits-non-zero-on-any-failure"&gt;
+  &lt;canon-title&gt;validate exits non-zero when any check fails.&lt;/canon-title&gt;
+  &lt;a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore"&gt;…&lt;/a&gt;
+  &lt;test-case id="one-failing-instance-fails-the-run"&gt;
+    &lt;test-name&gt;a corpus with one bad instance exits non-zero&lt;/test-name&gt;
+    &lt;test-status&gt;PENDING&lt;/test-status&gt;
+    &lt;test-fixture&gt;…&lt;/test-fixture&gt;
+    &lt;script type="mycelium/test"&gt;…&lt;/script&gt;
+  &lt;/test-case&gt;
+&lt;/canon-behaviour&gt;</code></pre>
+<p>The child is required and repeatable. Required is the whole point: a claim
+nothing can falsify is prose, and the template says so rather than an audit
+finding out later. Repeatable keeps the door open for several cases per
+behaviour, which nothing forbids today and which the flat count hides.</p>
+<p><code>test-case</code> keeps its name, its id, its name field, its PENDING
+status, its optional message, its fixture and its script. It loses the
+<code>depends_on</code> edge, since the element holding it is the answer that
+edge used to give.</p>
+<p><code>test-doc</code> goes, and <code>test-title</code> and
+<code>test-subject</code> go with it. The specification names the subsystem and
+each behaviour names its claim, so the document layer carries nothing the two
+ends do not already say.</p>
+<h3>What the audits become</h3>
+<p>Two die outright. <code>exhaustive</code> asked whether every behaviour has a
+case, which a required child answers in the schema. <code>cited</code> asked
+whether every case names a behaviour, which containment makes unaskable — a
+case has nowhere else to live.</p>
+<p>That follows
+<a href="../canon/root.canon.html#a-declaration-is-the-whole-contract">the axiom
+that a declaration carries the whole contract</a>. A cardinality an audit
+enforces is a cardinality the template failed to state.</p>
+<p><code>test-cases-carry-a-script</code> becomes the <code>required</code>
+attribute the placeholder already carries, so it dies too.
+<code>test-documents-pick-one-runner</code> and
+<code>test-documents-load-the-runner</code> survive, reworded, and now describe
+a canon document. Both hold: all four figure test documents cite
+<code>figure.canon.html</code> and carry browser cases, and every other document
+carries node cases, so one runner covers each canon today.</p>
+<p>Three worked examples in <code>canon.template.html</code> go with the audits
+that used them: <code>sample-untested-behaviour</code>,
+<code>sample-uncited-case</code>, and whichever half of
+<code>sample-freelancing-behaviour</code> the surviving <code>grounded</code>
+does not need.</p>
+<h3>Where a run walks</h3>
+<p><code>test run</code> lists <code>tests</code> today, in two places. It lists
+<code>canon</code> instead, and finds cases through
+<code>canon-behaviour</code> rather than through <code>test-doc</code>. The
+node-first ordering stays, so a run with no browser cases still never starts
+Chrome.</p>
+<p>A browser canon document loads <code>test.element.js</code> and reports
+itself. Opening <code>figure.canon.html</code> then shows the subsystem's claims
+turning green one at a time, which is the strongest form of what this change
+argues: prose becomes a promise once something in the same document can falsify
+it.</p>
+<p>PENDING stays the only verdict a file may hold, and the schema keeps
+enforcing it. A run belongs to a run.</p>
+<h3>Reading a canon document</h3>
+<p>This is the cost, and it needs a decision rather than a discovery. The
+comments canon holds 21 behaviours; folding puts 21 fixtures and 21 scripts
+between them, and the figure fixtures carry real markup. A document whose job is
+to list what a subsystem promises would turn into mostly test code.</p>
+<p><code>canon.template.css</code> collapses each case behind a
+<code>&lt;details&gt;</code>, closed, so the default reading stays one line per
+claim. A reader who wants the proof opens it, the same gesture the chain page
+already uses for a declaration's comment and code.</p>
+<p><code>canon generate chain</code> gains nothing here and loses a rank, which
+the next section covers. For a plain enumeration, <code>test list</code> keeps
+working and prints claims with their cases beneath them.</p>
+<h3>What the drawing loses</h3>
+<p>The chain drops to three ranks: axioms, behaviours, implementation. Every
+edge then crosses exactly one rank, nothing doubles back, and the sentence
+calling the chain a sequence becomes true.</p>
+<p>A behaviour box carries its case count, since the cases no longer have a
+column of their own. A behaviour with four cases and a behaviour with one look
+different, which is the same question the reach numbers already answer one rung
+up.</p>
+<h3>The migration</h3>
+<p>Eleven documents hold 80 cases, and each case moves into the behaviour its
+edge already names. The edge names it unambiguously, so a script can do the
+move: read the citation, find the behaviour, cut the element, drop the anchor.</p>
+<p>Every href inside a moved case shifts by one directory, since
+<code>docs/tests/</code> and <code>docs/canon/</code> sit at the same depth but
+a fixture path written from one does not resolve from the other. The
+<code>every-link-resolves</code> audit catches whatever the move gets wrong,
+which is the check earning its place.</p>
+<p>The order of arrival matters. The template change lands first, then the
+migration, then the audit removals, then the drawing. A run that goes red
+between two of those steps teaches people to skip the gate, and this project has
+watched that happen.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>A case still has no <code>add</code> command, and should not get one. Its
+substance is a fixture and a script, neither of which fits on a flag, so
+hand-authoring stays right for this one thing.</p>
+<p>A code citation keeps pointing at the behaviour. It does not move to the
+case, and a case does not gain a citation to code. Both answer to the claim, and
+which cases cover a declaration stays a join through the behaviour rather than a
+stored edge.</p>
+<p>Nothing here changes what a behaviour may claim or how it names its axiom.
+The upward edge, the id pattern and the one-line title all stay as they
+are.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Where the eleven test titles go. They group cases inside one subsystem —
+<q>validate fails the build and says why</q> covers a subset of validate's
+behaviours — and a flat list of 19 behaviours loses that. Dropping them is the
+cheap answer, and a grouping element inside a specification is the honest one,
+at the cost of a new type.</p>
+<p>What happens to the fixture canon documents the chain tests build. Those
+cases construct sample canons in a sandbox, and after this change a canon
+document holds the source for canon documents. Nothing breaks, since a fixture
+sits inside a script as a string, but a reader meets it in a surprising
+place.</p>
+<p>Whether one runner per canon should stay a rule or become a rule about one
+runner per behaviour. Today the split falls along subsystem lines by accident,
+and a subsystem that genuinely needs both would have to split its canon.</p>
+<p>How much a stylesheet may hide before a document stops being honest. A closed
+<code>&lt;details&gt;</code> keeps the claims scannable, and it also makes a
+behaviour with no real assertion in it easy to miss.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
