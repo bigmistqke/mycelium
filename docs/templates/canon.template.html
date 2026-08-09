@@ -1275,6 +1275,8 @@
       axioms: axioms.map((axiom) => ({
         address: axiom.address,
         title: axiom.title,
+        detail: axiom.detail,
+        kind: 'axiom',
         canon: canonOf(axiom.address),
         narrows: axiom.dependsOn,
         depth: depthOf.get(axiom.address) ?? 0,
@@ -1283,12 +1285,16 @@
       specifications: specifications.map((specification) => ({
         address: specification.address,
         title: specification.title,
+        detail: specification.detail,
+        kind: 'specification',
         canon: canonOf(specification.address),
         specifies: specification.specifies,
       })),
       behaviours: behaviours.map((behaviour) => ({
         address: behaviour.address,
         title: behaviour.title,
+        detail: behaviour.detail,
+        kind: behaviour.checks ? 'behaviour' : 'behaviour, proved by the claims beneath it',
         specification: behaviour.specification,
         refines: behaviour.parent ? [behaviour.parent] : behaviour.dependsOn,
         parent: behaviour.parent,
@@ -1376,7 +1382,22 @@ ${base}
 <style>
   :root { color-scheme: light dark; --line: color-mix(in oklab, currentColor 25%, transparent);
           --thumb: color-mix(in oklab, currentColor 35%, transparent); }
-  body { margin: 0; font: 13px/1.45 ui-sans-serif, system-ui, sans-serif; }
+  /* Three regions down the page: header, graph, pane. The graph takes what is
+     left and scrolls inside it, so a pane appearing beneath covers nothing. */
+  body { margin: 0; font: 13px/1.45 ui-sans-serif, system-ui, sans-serif;
+         height: 100vh; display: flex; flex-direction: column; }
+  #grid { flex: 1; min-height: 0; overflow: auto; }
+  #pane { flex: 0 0 auto; max-height: 40vh; overflow: auto; position: relative;
+          border-top: 1px solid var(--line); padding: 1rem 1.25rem 1.25rem; }
+  #pane[hidden] { display: none; }
+  #pane h2 { font-size: .95rem; margin: 0 0 .3rem; padding-right: 2rem; }
+  #pane-where { opacity: .6; margin: 0 0 .75rem; }
+  #pane-detail p { margin: 0 0 .6rem; max-width: 68ch; }
+  #pane-detail pre { overflow-x: auto; border: 1px solid var(--line); padding: .5rem; }
+  #pane-detail .doc { white-space: pre-wrap; max-width: 68ch; }
+  #pane-close { position: absolute; top: .6rem; right: .8rem; background: none;
+                border: 0; color: inherit; font-size: 1.1rem; cursor: pointer; opacity: .6; }
+  #pane-close:hover { opacity: 1; }
   * { scrollbar-width: thin; scrollbar-color: var(--thumb) transparent; }
   *::-webkit-scrollbar { width: 8px; height: 8px; }
   *::-webkit-scrollbar-track, *::-webkit-scrollbar-corner { background: transparent; }
@@ -1423,7 +1444,14 @@ ${base}
   </div>
 </header>
 <div id="grid"><svg id="wires"></svg></div>
-<footer>Select an axiom, a behaviour, a case or a subsystem heading to light its whole chain. Every title links back into the corpus.</footer>
+<footer>Select an axiom, a behaviour or a declaration to light its whole chain and read what it claims.</footer>
+<aside id="pane" hidden>
+  <button id="pane-close" type="button" aria-label="close">&times;</button>
+  <h2 id="pane-title"></h2>
+  <p id="pane-where"></p>
+  <div id="pane-detail"></div>
+  <a id="pane-anchor"></a>
+</aside>
 <script type="application/json" id="chain">${JSON.stringify(data)}<\/script>
 <script>
 ${pageScript}

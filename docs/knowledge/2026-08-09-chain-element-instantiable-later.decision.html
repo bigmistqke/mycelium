@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Leave the chain page's code a program for now, and make it instantiable when a check needs it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Leave the chain page's code a program for now, and make it instantiable when a check needs it</knowledge-title>
+  <knowledge-confidence>75</knowledge-confidence>
+  <knowledge-status>pending</knowledge-status>
+  <knowledge-detail><p>The page's code runs as a program bound to three ids in the document it
+draws. A check runs against a fixture inside its own document, so it cannot
+build one of these and let the real code lay it out. Making that possible means
+the shape the figure engine already has: an element a fixture can hold, taking
+its data from a child rather than from a lookup by id.</p>
+<p>Not now, and the reason is proportion rather than difficulty. Every change
+this page has had shipped verified by generating it and looking — the depth
+columns, the declaration boxes, the header that survives scrolling. The under
+pane gets the same treatment.</p>
+<p>The under-pane spec claimed a browser check would cover the scroll
+arithmetic, which was a standard invented that afternoon and met by nothing else
+in the file. The claim came from the fold having just made browser checks
+possible at all.</p>
+<p>What would earn the restructure is a fault that looking does not catch. A
+wire drawn at the wrong offset is the most visible failure this page can have,
+so the arithmetic is not it. Something quieter — a selection that lights the
+wrong set, a pane showing another node's reasoning — would be.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-09-chain-under-pane.goal.html">the check this defers</a>
+</knowledge-decision>
+</body></html>

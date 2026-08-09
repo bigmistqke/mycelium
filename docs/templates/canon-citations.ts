@@ -17,6 +17,11 @@ import { commentRanges } from "./code-comments.ts"
 export interface CanonEntry {
   address: string
   title: string
+  // The reasoning under the claim, as the markup it carries. A title states a
+  // rule in one line and one line has no room for what it rules out, so a
+  // reader wanting the why needs this beside the graph rather than behind a
+  // link. Empty for a claim carrying none.
+  detail: string
   // Where this entry points, already resolved to addresses. Stored edges point
   // up only: a specification names the axioms it serves and an axiom names the
   // one it narrows, so anything asking what sits beneath either computes it
@@ -85,6 +90,19 @@ function titleOf(element: Element): string {
     ?.textContent?.trim() ?? ""
 }
 
+/**
+ * A claim's own reasoning, as markup rather than text, since a detail holds
+ * paragraphs.
+ *
+ * Direct children only: a claim holds claims, and a parent showing a child's
+ * reasoning would put an argument under a heading it never made.
+ */
+function detailOf(element: Element): string {
+  return Array.from(element.children)
+    .find((child) => child.tagName.toLowerCase() === "canon-detail")
+    ?.innerHTML?.trim() ?? ""
+}
+
 // Every axiom and specification the corpus declares.
 //
 // This reads `data-conforms-to`, the same way everything here locates an
@@ -110,6 +128,7 @@ function behavioursIn(element: Element, path: string, parent: string | null): Be
     found.push({
       address: at,
       title: titleOf(child),
+      detail: detailOf(child),
       dependsOn: edges(child, path),
       parent,
       checks: Array.from(child.children).some((n) => n.tagName.toLowerCase() === "script"),
@@ -129,6 +148,7 @@ export function readCanon(fs: AuditFs): Canon {
       axioms.push({
         address: address(path, element.getAttribute("id")),
         title: titleOf(element),
+        detail: detailOf(element),
         dependsOn: edges(element, path),
       })
     }
@@ -136,6 +156,7 @@ export function readCanon(fs: AuditFs): Canon {
       specifications.push({
         address: address(path, element.getAttribute("id")),
         title: titleOf(element),
+        detail: detailOf(element),
         dependsOn: edges(element, path),
         specifies: edges(element, path, "specifies"),
         behaviours: behavioursIn(element, path, null),

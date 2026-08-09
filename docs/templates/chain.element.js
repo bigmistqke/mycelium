@@ -108,8 +108,8 @@ for (const rank of ranks) {
       el.className = 'node' + (item.file ? ' file' : '')
       el.dataset.address = item.address
       el.innerHTML = (item.reach === undefined ? '' : '<span class="reach">' + item.reach + '</span>')
-        + '<a href="' + item.address.replace(/^docs\//, '') + '">' + item.title + '</a>'
-      if (item.code) el.appendChild(codeFor(item.code))
+        + '<span class="title"></span>'
+      el.querySelector('.title').textContent = item.title
       g.appendChild(el)
     }
     column.appendChild(g)
@@ -124,18 +124,35 @@ for (const [child, parents] of Object.entries(parentsOf))
 
 const boxOf = (address) => grid.querySelector('[data-address="' + CSS.escape(address) + '"]')
 
-function draw() {
+/**
+ * Where a box sits on the canvas the wires run across.
+ *
+ * The browser measures a box against the viewport, and the canvas covers the
+ * grid's whole content rather than the part of it on screen. So the grid's own
+ * visible corner comes off, and whatever it has scrolled goes back on. Leaving
+ * the scroll out draws every wire at the offset the reader last scrolled by,
+ * which looks like a layout fault and is a stale measurement.
+ */
+function pointIn(rect) {
   const origin = grid.getBoundingClientRect()
-  wires.setAttribute('viewBox', '0 0 ' + origin.width + ' ' + origin.height)
-  wires.style.width = origin.width + 'px'
-  wires.style.height = origin.height + 'px'
+  return {
+    left: rect.left - origin.left + grid.scrollLeft,
+    right: rect.right - origin.left + grid.scrollLeft,
+    middle: rect.top - origin.top + grid.scrollTop + rect.height / 2,
+  }
+}
+
+function draw() {
+  wires.setAttribute('viewBox', '0 0 ' + grid.scrollWidth + ' ' + grid.scrollHeight)
+  wires.style.width = grid.scrollWidth + 'px'
+  wires.style.height = grid.scrollHeight + 'px'
   wires.innerHTML = ''
   for (const [from, to] of links) {
     const a = boxOf(from), b = boxOf(to)
     if (!a || !b) continue
-    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect()
-    const x1 = ra.left - origin.left, y1 = ra.top - origin.top + ra.height / 2
-    const x2 = rb.right - origin.left, y2 = rb.top - origin.top + rb.height / 2
+    const ra = pointIn(a.getBoundingClientRect()), rb = pointIn(b.getBoundingClientRect())
+    const x1 = ra.left, y1 = ra.middle
+    const x2 = rb.right, y2 = rb.middle
     const mid = (x1 + x2) / 2
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
     path.setAttribute('d', 'M' + x1 + ',' + y1 + ' C' + mid + ',' + y1 + ' ' + mid + ',' + y2 + ' ' + x2 + ',' + y2)
@@ -156,11 +173,49 @@ function chainOf(address) {
   return lit
 }
 
+const pane = document.getElementById('pane')
+
+/**
+ * Everything the corpus knows about one address, whichever rank it sits in.
+ *
+ * The page holds each rank as its own list, so this asks all of them rather
+ * than keeping a fifth index that could disagree with the four.
+ */
+function nodeAt(address) {
+  return data.axioms.find(a => a.address === address)
+    || data.behaviours.find(b => b.address === address)
+    || data.specifications.find(s => s.address === address)
+    || data.code.find(d => d.address === address)
+}
+
+/**
+ * Fill the pane from one node, or hide it when nothing is selected.
+ *
+ * One shape for every rank, so the gesture stays uniform and a reader never
+ * learns which boxes reward a click. A claim shows the reasoning it carries and
+ * a declaration shows the comment that named the claim with the lines beneath
+ * it, and a claim carrying neither shows what it is and where it lives.
+ *
+ * @behaviour canon/chain.canon.html#the-drawing-carries-the-comment-and-the-code
+ */
+function fillPane(address) {
+  const node = address && nodeAt(address)
+  if (!node) { pane.hidden = true; return }
+  const file = node.address.split('#')[0].replace(/^docs\//, '')
+  document.getElementById('pane-title').textContent = node.title || node.name
+  document.getElementById('pane-where').textContent = (node.kind || node.code_kind || 'declaration') + ' in ' + file
+  const detail = document.getElementById('pane-detail')
+  detail.textContent = ''
+  if (node.detail) detail.innerHTML = node.detail
+  if (node.doc !== undefined || node.snippet !== undefined) detail.appendChild(codeFor(node))
+  const anchor = document.getElementById('pane-anchor')
+  anchor.href = node.address.replace(/^docs\//, '')
+  anchor.textContent = 'open ' + file
+  pane.hidden = false
+}
+
 let selected = null
-grid.addEventListener('click', (event) => {
-  if (event.target.tagName === 'A') return
-  const box = event.target.closest('[data-address]')
-  const address = box && box.dataset.address
+function select(address) {
   selected = address === selected ? null : address
   const lit = selected ? chainOf(selected) : null
   for (const el of grid.querySelectorAll('[data-address]')) {
@@ -169,7 +224,18 @@ grid.addEventListener('click', (event) => {
   }
   for (const path of wires.querySelectorAll('path'))
     path.classList.toggle('lit', !!lit && lit.has(path.dataset.from) && lit.has(path.dataset.to))
+  fillPane(selected)
+  // The pane takes height from the grid, so every box has just moved and the
+  // wires still point where they were. Opening and closing join loading and
+  // resizing as the moments that redraw.
+  draw()
+}
+
+grid.addEventListener('click', (event) => {
+  const box = event.target.closest('[data-address]')
+  select(box && box.dataset.address)
 })
+document.getElementById('pane-close').addEventListener('click', () => select(selected))
 
 draw()
 addEventListener('resize', draw)

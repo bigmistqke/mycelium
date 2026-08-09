@@ -54,12 +54,17 @@ scroll container, because its rectangle is then the whole of its content.</p>
 <p>Once it scrolls, its rectangle is the visible box. Each coordinate needs the
 scroll offset added back, and the canvas needs the scroll size rather than the
 client size, or every wire lands where the content used to be.</p>
-<p>A browser check covers it, which was impossible this morning. The parser this
-project validates with computes no layout, so no audit sees a rectangle at all,
-and the drawing's two claims are checked against data rather than geometry. A
-claim can now carry a browser check, and one already drives a real page from
-inside a check, so the chain page gets measured the way the figure engine
-already is.</p>
+<p>Looking at the page catches it, which is how every change to this page has
+arrived: the depth columns, the declaration boxes, the header that survives
+scrolling. A wire drawn at the wrong offset is the most visible failure this
+page can have.</p>
+<p>An earlier draft required a browser check here instead. That was a standard
+invented the same afternoon, met by nothing else in the file, and it came from
+the fold having just made browser checks possible at all. The page's code is a
+program bound to ids in the document it draws, so a check cannot build one and
+drive it, and
+<a href="../knowledge/2026-08-09-chain-element-instantiable-later.decision.html">a
+separate decision</a> holds what would earn that restructure.</p>
 <h3>What the pane holds</h3>
 <p>One shape for every node, so the gesture stays uniform and a reader never
 learns which boxes are worth clicking. The pane carries the title, what kind of
@@ -88,9 +93,11 @@ doc comment and the lines beneath it. Its check reads the data the page gets and
 asserts the comment arrived with its tag lines stripped and the code arrived
 under it, which is everything a sandbox can reach.</p>
 <p>That content moves into the pane, so the claim stops describing a box in a
-column. Rewriting it makes it a claim about what a reader sees, and only a
-browser check settles that — the same check the geometry needs, reading the pane
-after a click rather than the data before one.</p>
+column. Its wording follows the content, and its check keeps reading the data,
+which is what the claim rests on: the pane can only show a comment the page was
+handed.</p>
+<p>What the check still cannot say is that a reader sees it. That gap is the
+same one the geometry has, and the same restructure closes both.</p>
 </spec-design>
   <spec-out-of-scope>
 <p>Nothing here changes what the graph draws. The three ranks, the depth
