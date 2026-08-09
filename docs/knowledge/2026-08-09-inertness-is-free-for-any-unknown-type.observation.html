@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A browser skips any script type it does not recognise, so inertness never separated the two test spellings</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>A browser skips any script type it does not recognise, so inertness never separated the two test spellings</knowledge-title>
+  <knowledge-confidence>95</knowledge-confidence>
+  <knowledge-detail><p>A browser executes a script only when it recognises the type as JavaScript.
+Every other string leaves the tag inert, so
+<code>text/mycelium-test</code> and any invented name behave identically at page
+load. The runner reaches the case afterwards and evaluates it itself.</p>
+<p>That retires an argument. Naming a browser case
+<code>mycelium/browser-test</code> was going to keep the case inert, which
+sounded like a property the rename preserved, and the current spelling has it
+just as freely.</p>
+<p>So the <code>text/</code> prefix does exactly one job: it keeps a browser
+case out of <code>mycelium/</code>, where
+<a href="../../src/script-hooks.ts">the loader hook</a> would tell Node the
+source may hold TypeScript and tooling would read it the same way. A type
+annotation would then pass every check and fail only once a person opened the
+page.</p>
+<p>The candidate that beats both invents no name at all.
+<code>type="module"</code> with a default export makes a browser case the same
+shape as a node case, at the cost of the browser running it at load, which an
+export-only module survives.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-09-defer-the-browser-case-script-type.decision.html">the property that retired one candidate</a>
+</knowledge-observation>
+</body></html>
