@@ -526,8 +526,14 @@
   import { join, resolve as resolvePath } from "node:path"
   import { readFileSync } from "node:fs"
   import { pathToFileURL } from "node:url"
+  import { execFileSync } from "node:child_process"
+  import { graphPage, templateFile } from "./graph-page.ts"
 
   const REQUIRES_STATUS = ['goal', 'decision', 'action']
+
+  /** Every node tag, which is what a whole-corpus read looks for. */
+  const NODE_TYPES = ['goal', 'decision', 'option', 'action', 'outcome', 'observation']
+    .map((type) => `knowledge-${type}`)
 
   // Where a node lives. Every node sits in one directory, so this is a single
   // prefix rather than the suffix lookup the language family needs. The engine
@@ -997,370 +1003,6 @@
     console.log('')
   }
 
-  // Node width/height handed to cytoscape for layout spacing and edge
-  // routing. The real overlay card (below) is free-sized by its own
-  // content, so this is a spacing estimate, not a pixel-exact match — cose's
-  // own padding absorbs the difference.
-  const CARD_W = 200
-  const CARD_H = 70
-
-  function renderGraphPage(graphJson, cardCss, docsBaseHref) {
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Knowledge graph</title>
-<!-- Every node id and every href inside a card's real markup is a path
-     relative to docs/, not to wherever this page itself ends up (see the
-     rewrite in extractCardHtml and the rel() calls in generate() below).
-     Written inside docs/ — the deploy workflow's own --out index.html, or
-     any --out for committing a snapshot — those links already resolve
-     correctly on their own, whether the page is opened as a local file or
-     served from a GitHub Pages site rooted at docs/, and docsBaseHref is
-     empty so no <base> tag renders at all. Written to the default temp
-     file, well outside docs/, the same relative links would 404 without
-     help, which is what this tag is for — but only there: baking today's
-     absolute local path into a page meant to be committed or deployed would
-     break every link for every other reader on every other machine. -->
-${docsBaseHref ? `<base href="${docsBaseHref}">` : ''}
-<style>
-${cardCss}
-</style>
-<style>
-  /* Page chrome, layered after the inlined stylesheets above so its
-     full-bleed body rule wins the cascade over theme.css's own
-     narrow-column article layout (same selector, later wins) — theme.css
-     is inlined whole, for its :root color variables, not just the parts
-     this page happens to use. */
-  /* overflow: hidden, not just a sizing rule — cards sit off in whatever
-     direction the cose layout or a drag put them, reachable only through
-     cytoscape's own pan/zoom (over #cy) or its edges (drawn on its canvas),
-     never through the page itself. Without this, a card positioned (via
-     transform) outside the viewport still contributes to html/body's own
-     scrollable overflow, and the browser grows a real scrollbar for it —
-     panning the actual page, a completely different mechanism from
-     cytoscape's own cy.pan() drag-to-pan, and one this graph has no reason
-     to expose. */
-  html, body { margin: 0; height: 100%; max-width: none; padding: 0; overflow: hidden; }
-  body { background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
-  #cy { width: 100%; height: 100vh; display: block; position: relative; overflow: hidden; }
-  #card-layer { position: absolute; inset: 0; top: 0; left: 0; pointer-events: none; }
-  .node-card { position: absolute; top: 0; left: 0; width: ${CARD_W}px; pointer-events: auto; cursor: grab;
-    transform-origin: 0 0; will-change: transform; }
-  .node-card :is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) {
-    margin: 0; padding: 0.55rem 0.7rem; font-size: 0.68rem; pointer-events: none; }
-  .node-card :is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation)::before {
-    font-size: 0.58rem; margin-bottom: 0.3rem; }
-  .node-card :is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) > knowledge-title {
-    font-size: 0.78rem; margin-bottom: 0.3rem; }
-  .node-card :is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) > knowledge-confidence,
-  .node-card :is(knowledge-goal, knowledge-decision, knowledge-option, knowledge-action, knowledge-outcome, knowledge-observation) > knowledge-status {
-    display: inline-block; margin-right: 0.6rem; font-size: 0.62rem; }
-  .node-card knowledge-goal { border-left: 3px solid #4c8bf5; }
-  .node-card knowledge-decision { border-left: 3px solid #9b59b6; }
-  .node-card knowledge-option { border-left: 3px solid #c39bd3; }
-  .node-card knowledge-action { border-left: 3px solid #27ae60; }
-  .node-card knowledge-outcome { border-left: 3px solid #e67e22; }
-  .node-card knowledge-observation { border-left: 3px solid #95a5a6; }
-  /* Explicit z-index, not just DOM order: #card-layer ends up nested inside
-     #cy (so wheel-to-zoom bubbles correctly — see below), which places it
-     later in the document than these two fixed panels. A position:fixed
-     element with no z-index doesn't open its own stacking context, so
-     without this it painted UNDER the cards regardless of being "on top" in
-     the markup. */
-  #legend { position: fixed; top: 10px; left: 10px; z-index: 10; background: var(--bg); padding: 8px 12px; opacity: 0.95;
-    border: 1px solid var(--border); border-radius: 6px; font-size: 12px; line-height: 1.7; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
-  #legend .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
-  #legend .line-swatch { display: inline-block; width: 14px; height: 2px; margin-right: 6px; margin-bottom: 2px; vertical-align: middle; }
-  #legend .divider { border-top: 1px solid var(--border); margin: 6px 0; }
-  #detail { position: fixed; top: 0; right: 0; bottom: 0; width: 440px; max-width: 90vw; overflow-y: auto; z-index: 10;
-    overscroll-behavior: none;
-    background: var(--bg); color: var(--fg); border-left: 1px solid var(--border); box-shadow: -2px 0 12px rgba(0,0,0,0.2);
-    box-sizing: border-box; padding: 1.5rem; transform: translateX(100%); transition: transform 0.18s ease; }
-  #detail.open { transform: translateX(0); }
-  #detail-close { position: absolute; top: 10px; right: 14px; border: none; background: none; font-size: 20px;
-    cursor: pointer; color: var(--muted); line-height: 1; padding: 0; }
-  .detail-edge-kind { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
-    margin-bottom: 6px; }
-  .detail-edge-title { font-size: 14px; font-weight: 600; }
-</style>
-</head>
-<body>
-<div id="legend">
-  <div><span class="swatch" style="background:#4c8bf5"></span>goal</div>
-  <div><span class="swatch" style="background:#9b59b6"></span>decision</div>
-  <div><span class="swatch" style="background:#c39bd3"></span>option</div>
-  <div><span class="swatch" style="background:#27ae60"></span>action</div>
-  <div><span class="swatch" style="background:#e67e22"></span>outcome</div>
-  <div><span class="swatch" style="background:#95a5a6"></span>observation</div>
-  <div class="divider"></div>
-  <div><span class="line-swatch" style="background:#3498db"></span>depends_on</div>
-  <div><span class="line-swatch" style="background:#e74c3c"></span>blocks</div>
-  <div><span class="line-swatch" style="background:#2ecc71"></span>supports</div>
-  <div><span class="line-swatch" style="background:#c0392b"></span>contradicts</div>
-  <div><span class="line-swatch" style="background:#8e44ad"></span>alternative_to</div>
-  <div><span class="line-swatch" style="background:#7f8c8d"></span>leads_to</div>
-</div>
-<div id="cy"></div>
-<div id="card-layer"></div>
-<div id="detail"></div>
-<script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"><\/script>
-<script id="graph-data" type="application/json">${graphJson}<\/script>
-<script>
-  const graph = JSON.parse(document.getElementById('graph-data').textContent)
-  const nodeById = new Map(graph.nodes.map(n => [n.id, n]))
-  // The six data-rel edge labels this project's whole knowledge graph uses
-  // (CLAUDE.md's own vocabulary, not something this page invents) — kept
-  // here as the single source of truth for edge color, reused below by both
-  // the cytoscape edge style and the legend markup.
-  const REL_COLORS = {
-    depends_on: '#3498db',
-    blocks: '#e74c3c',
-    supports: '#2ecc71',
-    contradicts: '#c0392b',
-    alternative_to: '#8e44ad',
-    leads_to: '#7f8c8d',
-  }
-
-  function truncate(text, max) {
-    return text.length > max ? text.slice(0, max - 1).trimEnd() + '…' : text
-  }
-
-  const detail = document.getElementById('detail')
-  function closeDetail() { detail.classList.remove('open') }
-
-  // Opens the node's own real markup — the same <knowledge-goal> element and
-  // the same stylesheet its own page uses — in the side panel, so this is a
-  // full-size, full-detail rendering of the node, not a summary of it. n.html
-  // is generated by this project from its own docs/knowledge/*.html files,
-  // not user input, so inserting it directly is the same trust boundary the
-  // node's own page already has.
-  function openNodeDetail(n) {
-    detail.innerHTML = '<button id="detail-close" aria-label="Close">×<\/button>' + n.html
-    detail.classList.add('open')
-    document.getElementById('detail-close').addEventListener('click', closeDetail)
-  }
-
-  function openEdgeDetail(label, fullLabel) {
-    detail.innerHTML = '<button id="detail-close" aria-label="Close">×<\/button>'
-      + '<div class="detail-edge-kind">' + label + '<\/div>'
-      + '<div class="detail-edge-title">' + fullLabel + '<\/div>'
-    detail.classList.add('open')
-    document.getElementById('detail-close').addEventListener('click', closeDetail)
-  }
-
-  // A compact card: the real element and the real field tags, just without
-  // knowledge-detail/knowledge-prompt/links — the same trick that makes a
-  // node's own page look right applies here for free, since knowledge.template.css
-  // (inlined above) styles the bare tag names, not a JS component. Full
-  // detail lives one click away, in the side panel.
-  function buildCompactCard(n) {
-    const el = document.createElement(n.type)
-    const title = document.createElement('knowledge-title')
-    title.textContent = truncate(n.title || n.id, 90)
-    el.appendChild(title)
-    if (n.confidence) {
-      const c = document.createElement('knowledge-confidence')
-      c.textContent = n.confidence
-      el.appendChild(c)
-    }
-    if (n.status) {
-      const s = document.createElement('knowledge-status')
-      s.textContent = n.status
-      el.appendChild(s)
-    }
-    return el
-  }
-
-  // Cards are plain DOM elements layered on top of cytoscape's own canvas,
-  // so a mousedown on one never reaches cytoscape's native hit-testing —
-  // dragging has to be driven from here, by writing straight into the
-  // underlying node's model position. cy isn't constructed until after this
-  // loop (it needs each card's measured size first, below), but by the time
-  // any of these listeners can actually fire — after a real user
-  // interaction — the whole script, cy included, has already finished
-  // running, so closing over it here is safe.
-  const DRAG_THRESHOLD = 4 // px in screen space, below which a pointer up/down counts as a click, not a drag
-  function wireCardInteraction(wrap, n) {
-    let pointerId = null
-    let startX = 0
-    let startY = 0
-    let startModelPos = null
-    let moved = false
-    wrap.addEventListener('pointerdown', (evt) => {
-      if (evt.button !== 0) return
-      const node = cy.getElementById(n.id)
-      if (node.empty()) return
-      pointerId = evt.pointerId
-      startX = evt.clientX
-      startY = evt.clientY
-      startModelPos = { ...node.position() }
-      moved = false
-      wrap.setPointerCapture(pointerId)
-      wrap.style.cursor = 'grabbing'
-      evt.stopPropagation()
-    })
-    wrap.addEventListener('pointermove', (evt) => {
-      if (pointerId === null || evt.pointerId !== pointerId) return
-      const dx = evt.clientX - startX
-      const dy = evt.clientY - startY
-      if (!moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return
-      moved = true
-      const zoom = cy.zoom()
-      cy.getElementById(n.id).position({ x: startModelPos.x + dx / zoom, y: startModelPos.y + dy / zoom })
-    })
-    wrap.addEventListener('pointerup', (evt) => {
-      if (pointerId === null || evt.pointerId !== pointerId) return
-      wrap.releasePointerCapture(pointerId)
-      pointerId = null
-      wrap.style.cursor = 'grab'
-      if (!moved) openNodeDetail(n)
-      evt.stopPropagation()
-    })
-  }
-
-  const cardLayer = document.getElementById('card-layer')
-  const cardEls = new Map()
-  for (const n of graph.nodes) {
-    const wrap = document.createElement('div')
-    wrap.className = 'node-card'
-    wrap.appendChild(buildCompactCard(n))
-    wireCardInteraction(wrap, n)
-    cardLayer.appendChild(wrap)
-    cardEls.set(n.id, wrap)
-  }
-
-  // Cytoscape needs its own node box for layout spacing and edge endpoints,
-  // and it has to match what a card actually renders at — titles run up to
-  // 90 characters and wrap to a variable number of lines, so a single fixed
-  // height (CARD_H) put that box well inside or outside the real card for
-  // most nodes, and every edge visibly missed the card it was supposed to
-  // touch. Measuring each card before cytoscape starts (still unscaled,
-  // untransformed, at its natural CSS width) gives cytoscape the same box
-  // the overlay actually occupies.
-  const cardSizes = new Map()
-  for (const [id, el] of cardEls) {
-    const rect = el.getBoundingClientRect()
-    cardSizes.set(id, { width: rect.width || ${CARD_W}, height: rect.height || ${CARD_H} })
-  }
-
-  const cy = cytoscape({
-    container: document.getElementById('cy'),
-    autoungrabify: true,
-    boxSelectionEnabled: false,
-    elements: [
-      ...graph.nodes.map(n => {
-        const size = cardSizes.get(n.id) || { width: ${CARD_W}, height: ${CARD_H} }
-        return { data: { id: n.id, width: size.width, height: size.height } }
-      }),
-      ...graph.edges.map(e => ({ data: {
-        source: e.from,
-        target: e.to,
-        label: e.rel,
-        fullLabel: e.label || e.rel,
-      } })),
-    ],
-    style: [
-      { selector: 'node', style: {
-          'shape': 'roundrectangle',
-          'width': 'data(width)',
-          'height': 'data(height)',
-          'background-opacity': 0,
-        } },
-      { selector: 'edge', style: {
-          'width': 1.5,
-          'line-color': (ele) => REL_COLORS[ele.data('label')] ?? '#bbb',
-          'target-arrow-color': (ele) => REL_COLORS[ele.data('label')] ?? '#bbb',
-          'target-arrow-shape': 'triangle',
-          'curve-style': 'bezier',
-          'label': 'data(label)',
-          'font-size': 7,
-          'color': '#999',
-        } },
-    ],
-    // cose's defaults (idealEdgeLength: 32, nodeRepulsion: 400000) are tuned
-    // for the ~30px circle nodes it usually lays out. Ours are 200px+ cards
-    // with real per-node width/height already fed in above, but cose's own
-    // spacing forces are still governed by these two numbers, not by the
-    // node boxes themselves — left at the defaults, it packed cards closer
-    // together than their own size, guaranteeing overlap.
-    layout: { name: 'cose', animate: false, padding: 40, idealEdgeLength: 260, nodeRepulsion: 8000000, nodeOverlap: 40 },
-  })
-  // A live Collection, queried once — cheap to iterate every frame, unlike
-  // re-querying cy.nodes() from the internal store on every call.
-  const cyNodes = cy.nodes()
-
-  // Moved into #cy only now, after cytoscape has already built its own
-  // canvases there — appending it before construction risked cytoscape
-  // clearing the container first. Being a real descendant of #cy (not just a
-  // same-position sibling) is what lets a wheel/trackpad gesture that starts
-  // on a card bubble up into cytoscape's own zoom handler, which is bound to
-  // #cy itself; as a sibling, that event had nowhere to bubble but past #cy
-  // entirely, which is why scrolling only zoomed when the cursor happened to
-  // be over empty canvas.
-  document.getElementById('cy').appendChild(cardLayer)
-
-  // Cards are real DOM descendants of #cy, not cytoscape elements, so they
-  // need their own position sync: on every redraw, read each node's rendered
-  // position back out of cytoscape and move its card to match. Bound to
-  // cytoscape's own 'render' event, which fires exactly once per actual
-  // repaint (cytoscape already runs its own internal animation-frame render
-  // loop) — not to 'pan'/'zoom' data-change events, which can each fire
-  // several times before cytoscape's own layout settles (its 'cose' layout
-  // auto-fits the viewport once it finishes, an extra pan/zoom change after
-  // this script's first paint) or several times within one gesture. Reacting
-  // to those directly, even batched through requestAnimationFrame, runs on a
-  // different clock than cytoscape's own redraw — the two visibly drifted
-  // apart while zooming, and the very first paint could be positioned against
-  // pre-auto-fit pan/zoom while the edges were already drawn post-fit.
-  // 'render' has neither problem: it only ever fires alongside an actual
-  // cytoscape repaint, so cards and edges always agree on the same frame.
-  function positionCards() {
-    const zoom = cy.zoom()
-    const pan = cy.pan()
-    cyNodes.forEach((node) => {
-      const el = cardEls.get(node.id())
-      if (!el) return
-      const pos = node.position()
-      const x = pos.x * zoom + pan.x
-      const y = pos.y * zoom + pan.y
-      // scale() must come before the centering translate(-50%,-50%), not
-      // after: a percentage translate always resolves against the card's
-      // unscaled layout size regardless of where it sits in the function
-      // list, so translate(-50%,-50%) scale(z) centers on the *shrunk* box
-      // (correct) while scale(z) translate(-50%,-50%) centers on the full-size
-      // box even though it's already drawn smaller (wrong by (zoom-1)*size/2,
-      // which is exactly the drift this was showing — zero only at zoom 1).
-      el.style.transform = 'translate(' + x + 'px, ' + y + 'px) scale(' + zoom + ') translate(-50%, -50%)'
-    })
-  }
-  positionCards()
-  cy.on('render', positionCards)
-  window.addEventListener('resize', () => { cy.resize() })
-
-  cy.on('tap', 'edge', (evt) => {
-    const d = evt.target.data()
-    openEdgeDetail(d.label, d.fullLabel)
-  })
-  cy.on('tap', (evt) => {
-    if (evt.target === cy) closeDetail()
-  })
-<\/script>
-</body>
-</html>
-`
-  }
-
-  const CARD_TYPES = [
-    'knowledge-goal',
-    'knowledge-decision',
-    'knowledge-option',
-    'knowledge-action',
-    'knowledge-outcome',
-    'knowledge-observation',
-  ]
-
   // This clones the full markup a node's own page renders — title,
   // confidence, status, detail, prompt, outgoing links. Cloning keeps the
   // rewrite below from touching the live document: fs.commit() writes back
@@ -1372,7 +1014,7 @@ ${cardCss}
   function extractCardHtml(documents, rel) {
     const html = new Map()
     for (const { path, dom } of documents) {
-      for (const tag of CARD_TYPES) {
+      for (const tag of NODE_TYPES) {
         for (const original of Array.from(dom.querySelectorAll(tag))) {
           const el = original.cloneNode(true)
           for (const a of Array.from(el.querySelectorAll('a[href]'))) {
@@ -1456,21 +1098,57 @@ ${cardCss}
     const relNodes = nodes.map((n) => ({ ...n, id: rel(n.id), html: cardHtml.get(n.id) ?? '' }))
     const relEdges = validEdges.map((e) => ({ ...e, from: rel(e.from), to: rel(e.to) }))
 
-    const payload = JSON.stringify({ nodes: relNodes, edges: relEdges }).replace(/</g, '\\u003c')
-    // Read live off disk rather than hand-copied into this file, so the
-    // card styling can never drift from what a node's own page actually
-    // looks like.
-    const cardCss = readFileSync(resolvePath('./docs/templates/knowledge.template.css'), 'utf8')
-      + '\n' + readFileSync(resolvePath('./docs/theme.css'), 'utf8')
-    // --base with no value parses to the string "true" (the same convention
-    // --diff elsewhere in this file already uses for a flag that takes no
-    // argument); --base <href> instead carries the exact string to use.
-    // Trailing slash matters for the computed default — without it, the
-    // browser treats docsRoot as a file and resolves relative links against
-    // its parent directory instead of docsRoot itself.
-    const docsBaseHref = args.base === undefined ? '' : args.base === 'true' ? pathToFileURL(docsRoot + '/').href : args.base
+    /**
+     * When each node arrived, read from the commit that added it.
+     *
+     * A day's own edges rank its nodes, and several open a day together
+     * whenever their edges all reach backwards. Git orders those, and it
+     * survives a clone because it is history rather than a fact about a
+     * filesystem — a fresh checkout stamps every file with one moment.
+     *
+     * One call rather than one per file. Additions come out newest first, so
+     * the first mention of a path is the commit that added it.
+     */
+    const arrived = {}
+    let when = ''
+    const log = execFileSync('git', ['log', '--diff-filter=A', '--format=%aI', '--name-only', '--', 'docs/knowledge'],
+      { cwd: resolvePath(fs.root, '..'), encoding: 'utf8' })
+    for (const line of log.split('\n')) {
+      if (/^\d{4}-\d{2}-\d{2}T/.test(line)) when = line
+      else if (line.startsWith('docs/knowledge/')) arrived[line.replace(/^docs\//, '')] ??= when
+    }
+
+    const drawn = relNodes.map((n) => ({
+      address: n.id,
+      title: n.title,
+      kind: n.type.replace('knowledge-', ''),
+      detail: n.html,
+    }))
+    const joins = relEdges.map((e) => ({ from: e.from, to: e.to, rel: e.rel }))
+    const days = new Set(drawn.map((n) => n.address.split('/').pop().slice(0, 10)))
+
+    // --base with no value parses to the string "true", the convention every
+    // flag here uses for one that takes no argument. The trailing slash matters
+    // for the computed default: without it a browser reads the root as a file
+    // and resolves every relative link against its parent.
+    const base = args.base === undefined ? ''
+      : `<base href="${args.base === 'true' ? pathToFileURL(docsRoot + '/').href : args.base}">`
+
+    // The shared drawing goes first and the knowledge graph's own ranking
+    // second, since the second calls what the first defines.
+    const page = graphPage({
+      title: 'The knowledge graph',
+      dataId: 'knowledge',
+      data: { nodes: drawn, edges: joins, arrived },
+      base,
+      counts: `<b>${drawn.length}</b> nodes &middot;
+    <b>${joins.length}</b> edges &middot;
+    <b>${days.size}</b> days`,
+      scripts: ['graph.element.js', 'knowledge.element.js'].map(templateFile),
+    })
+
     const outPath = args.out ?? join(tmpdir(), `mycelium-knowledge-graph-${Date.now()}.html`)
-    fs.create(outPath, renderGraphPage(payload, cardCss, docsBaseHref))
+    fs.create(outPath, page)
     console.log(`open: file://${resolvePath('./docs', outPath)}`)
   }
 </script>

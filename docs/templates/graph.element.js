@@ -17,6 +17,7 @@ const mountGraph = (() => {
 
 const grid = document.getElementById('grid')
 const wires = document.getElementById('wires')
+const litWires = document.getElementById('wires-lit')
 const pane = document.getElementById('pane')
 
 /** What the caller supplies, filled in by mountGraph. */
@@ -27,6 +28,14 @@ let bands = []
 let nodeAt = () => null
 let litFrom = (address) => new Set([address])
 let impactOf = () => 0
+/** The colour standing for each kind of node, and the kind each address is. */
+const kindColour = {}
+const kindOf = {}
+
+let sidesFor = (address) => [
+  { title: 'answers to', addresses: parentsOf[address] },
+  { title: 'answered by', addresses: childrenOf[address] },
+]
 
 const bandOf = (item) => {
   const at = bands.indexOf(item.subsystem)
@@ -120,12 +129,24 @@ async function paint(holder, source) {
 let shikiOnce = null
 const shiki = () => (shikiOnce ??= import('https://esm.sh/shiki@1.24.0'))
 
+/**
+ * One box.
+ *
+ * The kind rides on the box as a colour and not as a word: the heading over the
+ * group already names it, so spelling it again on every box spent a line
+ * repeating what sat directly above.
+ *
+ * The badge says something different on each rank, so it carries what it counts
+ * rather than leaving a bare number to guess at.
+ */
 function boxFor(item) {
   const el = document.createElement('div')
   el.className = 'node' + (item.file ? ' file' : '')
   el.dataset.address = item.address
-  // The badge says something different on each rank, so it carries what it
-  // counts rather than leaving a bare number to guess at.
+  if (item.kind) {
+    el.dataset.kind = item.kind
+    el.style.setProperty('--wire', kindColour[item.kind])
+  }
   el.innerHTML = (item.reach === undefined ? ''
       : '<span class="reach" title="' + item.counts + '">' + item.reach + '</span>')
     + '<span class="title"></span>'
@@ -218,22 +239,66 @@ function pointIn(rect) {
   }
 }
 
+/**
+ * An arrowhead every wire borrows, taking the colour of whatever it ends.
+ *
+ * One marker rather than one per relation: `context-stroke` fills it from the
+ * path it sits on, so a wire's colour reaches its head without a second
+ * definition to keep in step.
+ */
+function arrowhead() {
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs')
+  defs.innerHTML = '<marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5"'
+    + ' markerHeight="5" orient="auto-start-reverse">'
+    + '<path d="M0,0 L8,4 L0,8 z" fill="context-stroke" /></marker>'
+  return defs
+}
+
+/**
+ * Which side of a box a wire leaves and arrives on.
+ *
+ * Read off where the two boxes actually sit rather than which end of the edge
+ * is which. A wire meaning one thing runs either way here, since a day's edges
+ * reach back to earlier days and forward to later ones. Tying the side to the
+ * relation drew half of them looping backwards out of the wrong edge.
+ *
+ * Two boxes sharing a column use the same side at both ends, since neither sits
+ * left of the other and a wire between them has to bow out somewhere.
+ */
+function sidesOf(ra, rb) {
+  if (ra.right <= rb.left) return [ra.right, rb.left]
+  if (rb.right <= ra.left) return [ra.left, rb.right]
+  return [ra.right, rb.right]
+}
+
 function draw() {
-  wires.setAttribute('viewBox', '0 0 ' + grid.scrollWidth + ' ' + grid.scrollHeight)
-  wires.style.width = grid.scrollWidth + 'px'
-  wires.style.height = grid.scrollHeight + 'px'
-  wires.innerHTML = ''
-  for (const [from, to] of links) {
+  for (const layer of [wires, litWires]) {
+    layer.setAttribute('viewBox', '0 0 ' + grid.scrollWidth + ' ' + grid.scrollHeight)
+    layer.style.width = grid.scrollWidth + 'px'
+    layer.style.height = grid.scrollHeight + 'px'
+    layer.innerHTML = ''
+    layer.appendChild(arrowhead())
+  }
+  for (const { from, to, rel } of links) {
     const a = boxOf(from), b = boxOf(to)
     if (!a || !b) continue
     const ra = pointIn(a.getBoundingClientRect()), rb = pointIn(b.getBoundingClientRect())
-    const x1 = ra.left, y1 = ra.middle
-    const x2 = rb.right, y2 = rb.middle
+    const [x1, x2] = sidesOf(ra, rb)
+    const y1 = ra.middle, y2 = rb.middle
     const mid = (x1 + x2) / 2
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
     path.setAttribute('d', 'M' + x1 + ',' + y1 + ' C' + mid + ',' + y1 + ' ' + mid + ',' + y2 + ' ' + x2 + ',' + y2)
+    path.setAttribute('marker-end', 'url(#arrow)')
     path.dataset.from = from
     path.dataset.to = to
+    if (rel) path.dataset.rel = rel
+    // A wire takes the colour of the node it leaves, so following one out of a
+    // box follows that box's own colour.
+    const kind = kindOf[from]
+    if (kind) {
+      path.dataset.kind = kind
+      path.style.setProperty('--wire', kindColour[kind])
+    }
     wires.appendChild(path)
   }
 }
@@ -414,20 +479,23 @@ function fillDetail(node) {
 }
 
 /**
- * The two steps out of a node, side by side, since they read as a pair: what it
- * answers to, and what answers to it.
+ * One step out of a node, in whatever groups the caller names.
  *
- * A lone side takes the whole width, decided here rather than left to a
+ * A generic pair — what this derives from, what derives from it — said less
+ * than the edges already do. A graph whose relations mean different things
+ * names its own groups, so a reader sees which kind of step each neighbour is
+ * rather than which direction it happens to run.
+ *
+ * A lone group takes the whole width, decided here rather than left to a
  * selector, because any sibling added later would quietly break a rule that
- * asks whether a side is on its own.
+ * asks whether a group is on its own.
  */
 function fillSides(node) {
   const box = document.getElementById('pane-links')
   box.textContent = ''
-  const sides = [
-    neighbours('derives from', parentsOf[node.address]),
-    neighbours('derived from it', childrenOf[node.address]),
-  ].filter(Boolean)
+  const sides = sidesFor(node.address)
+    .map((side) => neighbours(side.title, side.addresses))
+    .filter(Boolean)
   for (const side of sides) {
     side.classList.toggle('alone', sides.length === 1)
     box.appendChild(side)
@@ -515,8 +583,16 @@ function show(address) {
     el.classList.toggle('lit', !!lit && lit.has(el.dataset.address))
     el.classList.toggle('dim', !!lit && !lit.has(el.dataset.address))
   }
-  for (const path of wires.querySelectorAll('path'))
-    path.classList.toggle('lit', !!lit && lit.has(path.dataset.from) && lit.has(path.dataset.to))
+  // The lit wires move to a layer above the boxes, and only those. A wire
+  // behind a box is what keeps the drawing readable at rest; a lit one is the
+  // thing a reader just asked to follow, and following it under a box is not
+  // following it.
+  litWires.innerHTML = ''
+  for (const path of wires.querySelectorAll('path')) {
+    const on = !!lit && lit.has(path.dataset.from) && lit.has(path.dataset.to)
+    path.classList.toggle('lit', on)
+    if (on) litWires.appendChild(path.cloneNode())
+  }
   fillPane(selected)
   if (selected) {
     const box = boxOf(selected)
@@ -572,6 +648,21 @@ function mount(model) {
   nodeAt = model.nodeAt
   litFrom = model.litFrom
   impactOf = model.impactOf ?? (() => 0)
+  if (model.sidesFor) sidesFor = model.sidesFor
+
+  /**
+   * One hue per kind, spread evenly around the wheel.
+   *
+   * Computed rather than listed, because each graph names its own kinds and a
+   * palette written down would have to know every vocabulary and go stale when
+   * one gains a kind. Even lightness and chroma keep them level against each
+   * other, and readable whichever way the reader's theme runs.
+   */
+  const kinds = [...new Set(ranks.flatMap((rank) => rank.items.map((item) => item.kind)).filter(Boolean))]
+  kinds.forEach((kind, at) => {
+    kindColour[kind] = `oklch(64% 0.125 ${Math.round((360 * at) / kinds.length)})`
+  })
+  for (const rank of ranks) for (const item of rank.items) kindOf[item.address] = item.kind
 
   // The reverse, built here and thrown away, the same as every other downward
   // reach on this page. One step only: the pane lists what a node touches
@@ -580,9 +671,11 @@ function mount(model) {
   for (const [child, parents] of Object.entries(parentsOf))
     for (const parent of parents) (childrenOf[parent] ??= []).push(child)
 
-  links = []
-  for (const [child, parents] of Object.entries(parentsOf))
-    for (const parent of parents) links.push([child, parent])
+  // What gets drawn, which is not what gets ranked. Ranking asks which node
+  // sits upstream; drawing asks which way the edge somebody wrote actually
+  // points, so an arrowhead lands where the corpus says it should.
+  links = model.edges ?? Object.entries(parentsOf)
+    .flatMap(([child, parents]) => parents.map((parent) => ({ from: child, to: parent })))
 
   for (const rank of ranks) orderRank(rank, parentsOf)
   numberRows()

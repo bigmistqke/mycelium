@@ -7,7 +7,7 @@
   body { margin: 0; font: 13px/1.45 ui-sans-serif, system-ui, sans-serif;
          height: 100vh; display: flex; flex-direction: column; }
   #grid { flex: 1; min-height: 0; overflow: auto; padding-bottom: calc(var(--pane-h) + 3rem); }
-  #pane { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 2;
+  #pane { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 6;
           width: min(36rem, calc(100vw - 2.5rem)); height: var(--pane-h); overflow: auto;
           border: 1px solid var(--line); border-radius: 6px; padding: 1rem 1.25rem;
           background: Canvas; }
@@ -74,16 +74,45 @@
      header. The breathing room goes under the headings instead. */
   #grid { display: grid; gap: 0 2.5rem; padding: 0 1.25rem 1.25rem; position: relative;
           grid-auto-rows: min-content; }
+  /* No stacking context here on purpose. A box has to be able to climb over the
+     lit wires when it belongs to the chain they light, and a cell carrying a
+     z-index would trap every box inside it at the cell's own layer. */
   .cell { min-height: 0; }
   .cell:empty { min-height: .5rem; }
-  #wires { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
-  #wires path { fill: none; stroke: var(--line); stroke-width: 1.2; }
-  #wires path.lit { stroke: currentColor; stroke-width: 1.8; }
+  /* Two layers. The resting wires sit behind every box, which is what keeps a
+     dense drawing readable; the lit ones sit in front, because a wire a reader
+     just asked to follow should not disappear under what it joins. */
+  #wires, #wires-lit { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  /* Bottom to top: resting wires, the boxes a selection left out, the wires it
+     lit, the boxes it lit, the sticky headings, the pane.
+
+     The lit wires sit between the two sets of boxes rather than above both. A
+     wire crossing what it has nothing to do with should be visible; the same
+     wire crossing a box at its own end is arriving somewhere, and running over
+     that box hides the thing it arrived at. */
+  #wires { z-index: 0; }
+  #wires-lit { z-index: 2; }
+  #wires path, #wires-lit path { fill: none; stroke: var(--line); stroke-width: 1.2; }
+  #wires path.lit, #wires-lit path { stroke-width: 1.8; }
+
+  /* A colour per kind of node, set from the page rather than listed here: each
+     graph names its own kinds, and a palette written in CSS would have to know
+     both vocabularies and go stale when either gains one.
+
+     A wire takes the colour of the node it leaves, so following one out of a
+     box is following its own colour. */
+  /* A resting wire is the kind's colour mixed towards the page, which is a
+     solid colour rather than a faded one — nothing here is see-through, and a
+     wire crossing another does not blend with it. Lighting one takes it to full
+     strength, which is the whole of the difference a reader is looking for. */
+  #wires path[data-kind] { stroke: color-mix(in oklab, var(--wire) 40%, Canvas); }
+  #wires path[data-kind].lit, #wires-lit path[data-kind] { stroke: var(--wire); }
+  #wires-lit path:not([data-kind]) { stroke: currentColor; }
   /* The headings follow the reader down their columns, over a backdrop that
      spans the whole row. Sticking each heading on its own leaves the column
      gaps uncovered, and boxes scroll up through them. */
-  .headband { position: sticky; top: 0; z-index: 1; align-self: stretch; background: Canvas; }
-  .rank { position: sticky; top: 0; z-index: 2; background: Canvas; }
+  .headband { position: sticky; top: 0; z-index: 4; align-self: stretch; background: Canvas; }
+  .rank { position: sticky; top: 0; z-index: 5; background: Canvas; }
   /* Scrolling something into view has to clear the headings, which cover the
      top of the graph and would otherwise hide whatever just got selected. */
   [data-address] { scroll-margin-top: 3.4rem; }
@@ -94,19 +123,36 @@
   h3.selectable { cursor: pointer; }
   h3.selectable:hover { opacity: .9; }
   h3.lit { opacity: 1; font-weight: 600; }
-  h3.dim { opacity: .18; }
+  h3.dim { color: color-mix(in oklab, currentColor 24%, Canvas); }
   .node.file { font-family: ui-monospace, monospace; font-size: .72rem; }
+  /* Opaque, which is what actually puts a box in front of a wire. Sitting on a
+     higher layer does nothing while the box is transparent: the wire is behind
+     it and still shows straight through. */
   .node { border: 1px solid var(--line); border-radius: 5px; padding: .4rem .55rem;
-          margin-bottom: .35rem; cursor: pointer; position: relative; }
+          margin-bottom: .35rem; cursor: pointer; position: relative; background: Canvas;
+          z-index: 1; }
   .node:hover { border-color: currentColor; }
   /* A lit chain stays one brightness, since dimming part of it made the whole
      thing harder to read. The node somebody picked takes a heavier border
      instead: weight separates it from what it lit without competing over
      colour. */
-  .node.lit { border-color: currentColor; }
-  .node.chosen { box-shadow: inset 0 0 0 1px currentColor,
-                             0 0 12px color-mix(in oklab, currentColor 50%, transparent); }
-  .node.dim { opacity: .18; }
+  .node.lit, .node.chosen { border-color: currentColor; z-index: 3; }
+  .node.chosen { box-shadow: inset 0 0 0 1px currentColor, 0 0 12px currentColor; }
+  /* Faded by colour, never by opacity. Opacity takes the box's background with
+     it, so a dimmed box turns see-through and the wires behind it read as
+     though they were in front. Mixing towards the page instead keeps the box
+     solid and only the ink recedes. */
+  .node.dim { color: color-mix(in oklab, currentColor 24%, Canvas);
+              border-color: color-mix(in oklab, currentColor 10%, Canvas); }
+  .node[data-kind].dim { border-color: color-mix(in oklab, var(--wire) 22%, Canvas); }
+  /* The kind shows in the border rather than the words. A title tinted per kind
+     costs contrast on the one thing every box exists to say, and the border
+     carries the same signal at the edge of the box where it competes with
+     nothing. */
+  .node[data-kind], .node[data-kind]:hover, .node[data-kind].lit { border-color: var(--wire); }
+  .node[data-kind].chosen { border-color: var(--wire);
+                            box-shadow: inset 0 0 0 1px var(--wire), 0 0 12px var(--wire); }
   .node .reach { float: right; opacity: .5; font-variant-numeric: tabular-nums; }
+
   .node a { color: inherit; text-decoration: none; }
   .node a:hover { text-decoration: underline; }

@@ -46,7 +46,8 @@ for (let d = 0; d <= axiomDepth; d++)
   // axioms too, narrower ones, and naming that again says nothing a reader
   // cannot see from the edges arriving into them.
   ranks.push({ name: d === 0 ? 'axioms' : '', items: data.axioms.filter(a => a.depth === d)
-    .map(a => ({ address: a.address, title: a.title, group: a.canon, subsystem: subsystemOf(a.address),
+    .map(a => ({ address: a.address, title: a.title, group: a.canon, kind: 'axiom',
+                 subsystem: subsystemOf(a.address),
                  reach: a.behaviours, counts: 'behaviours beneath this, at any depth' })) })
 
 const specTitle = Object.fromEntries(data.specifications.map(s => [s.address, s.title]))
@@ -74,6 +75,7 @@ for (let d = 0; d <= behaviourDepthMax; d++)
   ranks.push({ name: d === 0 ? 'behaviours' : '', items: data.behaviours
     .filter((b, i) => depths[i] === d)
     .map(b => ({ address: b.address, title: b.title, group: specTitle[b.specification] || 'unspecified',
+                 kind: b.checks ? 'behaviour' : 'behaviour, proved beneath',
                  subsystem: subsystemOf(b.specification), groupOf: b.specification })) })
 
 /**
@@ -102,7 +104,7 @@ const claimsOf = (d) => d.cites.length > 1 ? d.cites.length : undefined
 
 const declarations = data.code.map(d =>
   ({ address: d.address, title: d.name, group: shortFile(d.file), reach: claimsOf(d),
-     counts: 'claims this one declaration answers',
+     kind: d.kind || 'declaration', counts: 'claims this one declaration answers',
      subsystem: subsystemOfFile[d.file] ?? '', code: d }))
 const cited = new Set(data.code.map(d => d.file))
 for (const s of data.specifications)
@@ -170,4 +172,19 @@ function litFrom(address) {
  */
 const impactOf = (address) => (data.reach[address] || []).filter(a => behaviourAt.has(a)).length
 
-mountGraph({ ranks, parentsOf, bands, nodeAt, litFrom, impactOf })
+/**
+ * The edges as drawn, each carrying what kind of step it is.
+ *
+ * A claim narrows an axiom, a claim holds a narrower claim, a specification
+ * names a file, and a declaration answers a claim. All four run upward and
+ * nothing distinguished them on the page.
+ */
+const kindOfEdge = (from) =>
+  data.code.some(d => d.address === from) ? 'specifies'
+  : data.behaviours.some(b => b.address === from) ? 'depends_on'
+  : 'elaborates'
+
+const drawnEdges = Object.entries(parentsOf)
+  .flatMap(([child, parents]) => (parents || []).map(parent => ({ from: child, to: parent, rel: kindOfEdge(child) })))
+
+mountGraph({ ranks, parentsOf, edges: drawnEdges, bands, nodeAt, litFrom, impactOf })

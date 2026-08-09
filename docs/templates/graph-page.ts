@@ -68,7 +68,7 @@ ${templateFile("graph.template.css")}
     <b id="crossings">—</b> wires over boxes</span>
   </div>
 </header>
-<div id="grid"><svg id="wires"></svg></div>
+<div id="grid"><svg id="wires"></svg><svg id="wires-lit"></svg></div>
 <aside id="pane" hidden>
   <button id="pane-close" type="button" aria-label="close">&times;</button>
   <h2 id="pane-title"></h2>

@@ -78,7 +78,7 @@ for (const day of days) {
     const items = inDay
       .filter(n => depth[n.address] === d)
       .sort((a, b) => arrived(a.address).localeCompare(arrived(b.address)))
-      .map(n => ({ address: n.address, title: n.title, group: n.type, subsystem: '' }))
+      .map(n => ({ address: n.address, title: n.title, kind: n.kind, group: n.kind, subsystem: '' }))
     if (items.length) ranks.push({ name: d === 0 ? day : '', items })
   }
 }
@@ -108,8 +108,58 @@ function walk(address, edges) {
   return found
 }
 
+/**
+ * What each relation reads as, in the direction it runs.
+ *
+ * Eight relations join these nodes and each says something the others do not,
+ * so grouping a node's neighbours into what it derives from and what derives
+ * from it threw away the part worth reading. A step is a supporting
+ * observation, or a contradiction, or the outcome something led to, and the
+ * pane says which.
+ *
+ * Read backwards for an incoming edge, since a node supported by an
+ * observation is not supporting it.
+ */
+const RELATIONS = {
+  depends_on: ['depends on', 'depended on by'],
+  supports: ['supports', 'supported by'],
+  contradicts: ['contradicts', 'contradicted by'],
+  leads_to: ['leads to', 'came out of'],
+  blocks: ['blocks', 'blocked by'],
+  alternative_to: ['alternative to', 'alternative to'],
+  elaborates: ['elaborates', 'elaborated by'],
+  specifies: ['specifies', 'specified by'],
+}
+
+/**
+ * A node's neighbours, grouped by the relation joining them.
+ *
+ * Outgoing groups come first, since a node's own edges are what it says, and
+ * the incoming ones are what everything else said about it.
+ */
+function sidesFor(address) {
+  const groups = new Map()
+  const add = (title, target) => {
+    if (!groups.has(title)) groups.set(title, [])
+    groups.get(title).push(target)
+  }
+  for (const edge of knowledge.edges) {
+    const names = RELATIONS[edge.rel] ?? [edge.rel, edge.rel]
+    if (edge.from === address) add(names[0], edge.to)
+    if (edge.to === address) add(names[1], edge.from)
+  }
+  return [...groups].map(([title, addresses]) => ({ title, addresses }))
+}
+
 const nodeAt = (address) => nodeById.get(address)
 const litFrom = (address) => new Set([address, ...walk(address, parentsOf), ...walk(address, childrenOf)])
 const impactOf = (address) => walk(address, childrenOf).size
 
-mountGraph({ ranks, parentsOf, bands: [], nodeAt, litFrom, impactOf })
+// Drawn as the corpus stores them, so an arrowhead lands where somebody wrote
+// it. Ranking reverses leads_to and drawing must not: a goal leads to its
+// outcome, and the arrow saying so is the whole content of that edge.
+const drawnEdges = knowledge.edges
+  .filter(e => nodeById.has(e.from) && nodeById.has(e.to))
+  .map(e => ({ from: e.from, to: e.to, rel: e.rel }))
+
+mountGraph({ ranks, parentsOf, edges: drawnEdges, bands: [], nodeAt, litFrom, impactOf, sidesFor })
