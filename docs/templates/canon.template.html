@@ -1408,6 +1408,14 @@ ${base}
   @media (prefers-color-scheme: dark) {
     .shiki, .shiki span { color: var(--shiki-dark); background-color: var(--shiki-dark-bg); }
   }
+  #pane-links { margin-top: .9rem; }
+  #pane-links h3 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+                   opacity: .5; margin: .6rem 0 .25rem; font-weight: 500; }
+  #pane-links button { display: block; background: none; border: 0; padding: .1rem 0;
+                       color: inherit; font: inherit; text-align: left; cursor: pointer;
+                       text-decoration: underline; text-decoration-color: var(--line); }
+  #pane-links button:hover { text-decoration-color: currentColor; }
+  #pane-anchor { display: inline-block; margin-top: .9rem; }
   #pane-close { position: absolute; top: .6rem; right: .8rem; background: none;
                 border: 0; color: inherit; font-size: 1.1rem; cursor: pointer; opacity: .6; }
   #pane-close:hover { opacity: 1; }
@@ -1461,6 +1469,7 @@ ${base}
   <h2 id="pane-title"></h2>
   <p id="pane-where"></p>
   <div id="pane-detail"></div>
+  <div id="pane-links"></div>
   <a id="pane-anchor"></a>
 </aside>
 <script type="application/json" id="chain">${JSON.stringify(data)}<\/script>

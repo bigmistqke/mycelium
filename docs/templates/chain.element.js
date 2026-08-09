@@ -40,6 +40,14 @@ for (const b of data.behaviours) parentsOf[b.address] = b.refines
 for (const s of data.specifications) for (const f of s.specifies) parentsOf[f] = [s.address]
 for (const d of data.code) parentsOf[d.address] = d.cites
 
+// The reverse, built here and thrown away, the same as every other downward
+// reach on this page. One step only: the pane lists what a claim touches
+// directly, and the whole chain beneath it is what lighting the graph already
+// shows.
+const childrenOf = {}
+for (const [child, parents] of Object.entries(parentsOf))
+  for (const parent of parents) (childrenOf[parent] ??= []).push(child)
+
 // Fewer crossings, by putting each item near whatever it points at. A group
 // takes the mean position of its members, and members sort inside it, so the
 // subsystem stays readable while the lines stop fighting each other.
@@ -240,10 +248,41 @@ function fillPane(address) {
     detail.appendChild(doc)
   }
   if (node.snippet) detail.appendChild(codeFor(node))
+  const links = document.getElementById('pane-links')
+  links.textContent = ''
+  links.appendChild(neighbours('derives from', parentsOf[node.address]))
+  links.appendChild(neighbours('derived from it', childrenOf[node.address]))
   const anchor = document.getElementById('pane-anchor')
   anchor.href = node.address.replace(/^docs\//, '')
   anchor.textContent = 'open ' + file
   pane.hidden = false
+}
+
+/**
+ * One step of the chain, as buttons rather than links.
+ *
+ * Following one moves the selection: the graph lights around the neighbour and
+ * the pane fills from it, so a reader walks the chain without leaving the page.
+ * The anchor at the bottom stays the only thing that opens a document.
+ *
+ * An empty side renders nothing at all, since a heading over no items tells a
+ * reader the same thing its absence does.
+ */
+function neighbours(title, addresses) {
+  const box = document.createDocumentFragment()
+  const found = (addresses || []).map(nodeAt).filter(Boolean)
+  if (!found.length) return box
+  const h = document.createElement('h3')
+  h.textContent = title
+  box.appendChild(h)
+  for (const node of found) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.textContent = node.title || node.name
+    button.addEventListener('click', () => show(node.address))
+    box.appendChild(button)
+  }
+  return box
 }
 
 /**
@@ -262,8 +301,15 @@ function clearOfPane(box) {
 }
 
 let selected = null
-function select(address) {
-  selected = address === selected ? null : address
+
+/**
+ * Light one node's chain, fill the pane from it, and bring it into view.
+ *
+ * The one place selection changes, so a click on the graph and a step through
+ * the pane leave the page in the same state. Nothing else writes to `selected`.
+ */
+function show(address) {
+  selected = address
   const lit = selected ? chainOf(selected) : null
   for (const el of grid.querySelectorAll('[data-address]')) {
     el.classList.toggle('lit', !!lit && lit.has(el.dataset.address))
@@ -272,14 +318,23 @@ function select(address) {
   for (const path of wires.querySelectorAll('path'))
     path.classList.toggle('lit', !!lit && lit.has(path.dataset.from) && lit.has(path.dataset.to))
   fillPane(selected)
-  if (selected) clearOfPane(boxOf(selected))
+  if (selected) {
+    const box = boxOf(selected)
+    if (box) box.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    clearOfPane(box)
+  }
 }
+
+// Clicking the graph toggles, because clicking what is already selected means
+// putting it down. Stepping through the pane never does: a reader following the
+// chain named a different node, and the one they came from is not it.
+const toggle = (address) => show(address === selected ? null : address)
 
 grid.addEventListener('click', (event) => {
   const box = event.target.closest('[data-address]')
-  select(box && box.dataset.address)
+  toggle(box && box.dataset.address)
 })
-document.getElementById('pane-close').addEventListener('click', () => select(selected))
+document.getElementById('pane-close').addEventListener('click', () => show(null))
 
 draw()
 addEventListener('resize', draw)
