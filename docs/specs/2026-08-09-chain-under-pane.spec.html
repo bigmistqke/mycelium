@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: An under pane, so a claim's reasoning sits beside the chain rather than behind a link</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>An under pane, so a claim's reasoning sits beside the chain rather than behind a link</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-09</spec-date>
+  <spec-problem>
+<p>A node's title is a link. Following it leaves the page, which throws away the
+selection a reader built by clicking, so coming back means starting from the top
+again.</p>
+<p>The reasoning a claim carries has nowhere to appear. An axiom holds a
+required detail, a parent behaviour now holds one too, and a cited declaration
+holds a doc comment and the first lines beneath it. All three are what a reader
+following a claim downward came for, and the page shows a title.</p>
+<p>The implementation rank already answers half of this with a collapsible per
+declaration. That works and does not generalise: it puts a scrollable block of
+code inside a column two hundred pixels wide, and the same gesture on an axiom
+would put three paragraphs there.</p>
+<p>An overlay was the first shape and the wrong one. The graph overflows the
+viewport sideways by design, so an overlay pinned to the viewport covers
+whichever column a reader scrolled to, and one that scrolls with the columns
+leaves the screen.</p>
+</spec-problem>
+  <spec-design>
+<h3>Three regions down the page</h3>
+<p>The page becomes a column: the header, the graph, and a pane beneath it. The
+pane spans the viewport, holds its own height, and covers nothing, so the
+question of what an overlay hides never arises.</p>
+<p>The graph takes the height left over and scrolls inside it, in both
+directions. That is the change with teeth, and the next section is about
+it.</p>
+<h3>What moving the scroll costs</h3>
+<p>Every wire runs between two rectangles the browser measures against the
+viewport, and the drawing subtracts the grid's own rectangle to turn them into
+positions on its canvas. That subtraction is right while the grid is not a
+scroll container, because its rectangle is then the whole of its content.</p>
+<p>Once it scrolls, its rectangle is the visible box. Each coordinate needs the
+scroll offset added back, and the canvas needs the scroll size rather than the
+client size, or every wire lands where the content used to be.</p>
+<p>A browser check covers it, which was impossible this morning. The parser this
+project validates with computes no layout, so no audit sees a rectangle at all,
+and the drawing's two claims are checked against data rather than geometry. A
+claim can now carry a browser check, and one already drives a real page from
+inside a check, so the chain page gets measured the way the figure engine
+already is.</p>
+<h3>What the pane holds</h3>
+<p>One shape for every node, so the gesture stays uniform and a reader never
+learns which boxes are worth clicking. The pane carries the title, what kind of
+thing it is, which document holds it, and the anchor.</p>
+<p>Then whatever reasoning exists. An axiom and a parent behaviour show their
+detail. A cited declaration shows the doc comment that named the claim and the
+first lines under it, which is what the collapsible in the rank shows today and
+where that content moves to.</p>
+<p>A leaf behaviour has no detail, so it shows the first four fields and stops.
+That is the honest empty state: the claim is its title, and its check sits in
+the document the anchor reaches.</p>
+<h3>The anchor is the only route</h3>
+<p>A title stops being a link. Reaching a document means selecting the node and
+following the anchor in the pane, which is one more step than today for a reader
+who already knew where they were going.</p>
+<p>The step buys a consistent gesture. Clicking anything does one thing, and a
+reader who wants the document sees what the node claims before leaving for it,
+rather than arriving at a file and reconstructing why.</p>
+<h3>Selection is unchanged</h3>
+<p>Clicking a node still lights everything beneath it and dims the rest. The
+pane fills at the same time from the same click, so the blast radius and the
+reasoning arrive together.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Nothing here changes what the graph draws. The three ranks, the depth
+columns, the edges and the sample filter all stay as they are.</p>
+<p>The knowledge graph's own drawing keeps its current shape. It draws a mesh
+rather than a ranked chain, so what a pane would hold there is a separate
+question.</p>
+<p>No new field appears on any type. Everything the pane shows already exists on
+a node or in a comment the citation reader already reads.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>How tall the pane rests. A fixed height wastes space on a leaf and truncates
+an axiom, and one that grows with its content moves the graph under the
+reader's cursor.</p>
+<p>What the pane shows before anything is selected. A blank region reads as a
+bug, and instructions read as a page that needs them.</p>
+<p>Whether the drawing's two existing claims stay node checks once a browser
+check can reach the page. One of them says the rank draws a box per cited
+declaration, which data can answer; the other says the drawing carries the
+comment and the code, which it cannot.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
