@@ -189,7 +189,12 @@
   import type { CommandContext } from "../../src/api.ts"
   import { declaredOrder, placeField } from "./shared.ts"
   import { loadModule } from "../../src/utils.ts"
-  import { resolve } from "node:path"
+  import { extractGraph } from "./extract-graph.ts"
+  import { graphPage, templateFile } from "./graph-page.ts"
+  import { tmpdir } from "node:os"
+  import { join, resolve, resolve as resolvePath } from "node:path"
+  import { pathToFileURL } from "node:url"
+  import { execFileSync } from "node:child_process"
 
   function requireArgs(...checks) {
     for (const [value, label] of checks) {
@@ -199,6 +204,22 @@
 
   const DIR = "notebook"
   const TYPES = ["observation", "research", "experiment"]
+  const TAGS = TYPES.map((type) => `notebook-${type}`)
+
+  /**
+   * Every directory this corpus has lived in, newest first.
+   *
+   * Arrival comes from all of them, because a move that git records as an
+   * add rather than a rename would otherwise date every entry to the day it
+   * moved. Two such moves have happened: out of the monorepo in August, and out
+   * of the knowledge graph into the notebook.
+   */
+  const WHERE_IT_HAS_LIVED = [
+    "docs/notebook",
+    "docs/knowledge",
+    "experiments/v4/docs/knowledge",
+    "experiments/v4/knowledge",
+  ]
 
   /** Every value a flag carries, since a tag and a prompt both repeat. */
   const many = (value) => (value === undefined ? [] : Array.isArray(value) ? value : [value])
@@ -369,7 +390,10 @@
     requireArgs([args._[0], "<from-file>"], [args._[1], "<to-file>"], [args.rel, "--rel"])
     const doc = fs.get(`${DIR}/${args._[0]}`)
     const root = rootOf(doc)
-    const href = `./${args._[1]}`
+    // A target already reaching out of this directory says where it is, so
+    // prefixing it would write ./../ — a string no hand-written edge has, which
+    // upsert would then treat as a second, different edge.
+    const href = args._[1].startsWith(".") ? args._[1] : `./${args._[1]}`
     const existing = Array.from(root.querySelectorAll(":scope > a[data-rel]"))
       .find((a) => a.getAttribute("data-rel") === args.rel && a.getAttribute("href") === href)
     if (existing) {
@@ -395,8 +419,9 @@
     requireArgs([args._[0], "<from-file>"], [args._[1], "<to-file>"], [args.rel, "--rel"])
     const doc = fs.get(`${DIR}/${args._[0]}`)
     const root = rootOf(doc)
+    const href = args._[1].startsWith(".") ? args._[1] : `./${args._[1]}`
     for (const a of Array.from(root.querySelectorAll(":scope > a[data-rel]"))) {
-      if (a.getAttribute("data-rel") === args.rel && a.getAttribute("href") === `./${args._[1]}`) a.remove()
+      if (a.getAttribute("data-rel") === args.rel && a.getAttribute("href") === href) a.remove()
     }
   }
 
@@ -520,6 +545,160 @@
         placeField(root, el, order)
       }
     }
+  }
+
+  /**
+   * An entry's own detail, with every relative link inside it made durable.
+   *
+   * Cloned before rewriting, because the engine writes back anything that
+   * serialises differently from what it read, so touching the live element
+   * would edit the source file. Each href resolves the same way an address
+   * does, which keeps a link in a paragraph as good as the one the pane puts
+   * in its heading.
+   */
+  function detailHtml(documents, rel) {
+    const html = new Map()
+    for (const { path, dom } of documents) {
+      for (const tag of TAGS) {
+        for (const entry of Array.from(dom.querySelectorAll(tag))) {
+          const detail = entry.querySelector("notebook-detail")
+          if (!detail) { html.set(entry.id || path, ""); continue }
+          const el = detail.cloneNode(true)
+          for (const a of Array.from(el.querySelectorAll("a[href]"))) {
+            const href = a.getAttribute("href")
+            if (/^[a-z]+:/i.test(href)) continue
+            a.setAttribute("href", href.startsWith("#")
+              ? rel(path) + href
+              : rel(new URL(href, "file://" + path).pathname))
+          }
+          html.set(entry.id || path, el.innerHTML)
+        }
+      }
+    }
+    return html
+  }
+
+  /**
+   * Draw the notebook, as days in columns.
+   *
+   *   mycelium notebook generate graph [--out <path>] [--base [<href>]]
+   *
+   * A day is a partition rather than a rank: four fifths of the edges join
+   * two entries from the same day, so columns of days alone would leave most
+   * of them doubling back. Each day's own edges then rank its entries into
+   * sub-columns.
+   *
+   * The day comes from the commit that added a file, not from its name. An
+   * entry accretes, so a date on it would be a second copy of what git
+   * already answers. One git call rather than one per file: additions come
+   * out newest first, so the first mention of a path is the commit that added
+   * it.
+   *
+   * --out writes to that path, relative to docs/ or absolute. Omitted, this
+   * writes a temp file and prints a file:// URL. Every address in the page is
+   * relative to docs/, so a page written outside it needs --base to resolve
+   * them; --base with no value points at this machine's own docs/, which is
+   * right for looking and wrong for committing.
+   */
+  export function generate({ fs, args }: CommandContext) {
+    if (args._[0] !== "graph") throw new Error(`unknown generate kind "${args._[0]}" — expected "graph"`)
+
+    // extractGraph resolves cross-file edges against each document's own path,
+    // which has to be a real absolute one. fs.list returns paths relative to
+    // docs/, the root run.ts resolves as "./docs".
+    const documents = fs.list(DIR).map(({ path, doc }) => ({ path: resolvePath("./docs", path), dom: doc }))
+    const { nodes, edges } = extractGraph(documents)
+
+    const prompts = new Map()
+    for (const { path, dom } of documents) {
+      for (const tag of TAGS) {
+        for (const el of Array.from(dom.querySelectorAll(tag))) {
+          const said = Array.from(el.querySelectorAll("notebook-prompt"))
+            .map((p) => (p.textContent ?? "").trim()).filter(Boolean)
+          if (said.length) prompts.set(el.id || path, said.join("\n\n"))
+        }
+      }
+    }
+
+    // An edge can point outside the notebook — at a spec, or at a canon claim.
+    // The drawing needs both ends, so those get dropped and counted rather than
+    // silently vanishing.
+    const here = new Set(nodes.map((n) => n.id))
+    const kept = edges.filter((e) => here.has(e.from) && here.has(e.to))
+    if (kept.length < edges.length) {
+      console.log(`note: ${edges.length - kept.length} edge(s) leaving the notebook are not drawn`)
+    }
+
+    // An absolute path bakes one machine's home directory into the page, so
+    // both ends go back to paths relative to docs/, which is what a published
+    // site serves. An address then doubles as its own href.
+    const docsRoot = resolvePath("./docs")
+    const rel = (p) => (p.startsWith(docsRoot + "/") ? p.slice(docsRoot.length + 1) : p)
+    const detail = detailHtml(documents, rel)
+
+    // A slug is what survives. The migration out of docs/knowledge rewrote
+    // every file enough that git records an add rather than a rename, even with
+    // its rename limit lifted, so asking about the current path alone dates the
+    // whole corpus to the day it moved. Reading both paths and keying on the
+    // slug recovers the real arrival, and it stays right through any later move
+    // that keeps slugs.
+    //
+    // Additions and renames come out newest first, so overwriting on every
+    // mention leaves the oldest — which is the one that means anything. Renames
+    // count because a file can enter the corpus under one name and be reworked
+    // into another, and only the add of the first name is an add.
+    const slugOf = (path) => path.split("/").pop().replace(/^\d{4}-\d{2}-\d{2}-/, "").replace(/\.\w+\.html$/, "")
+    const firstSeen = {}
+    let when = ""
+    const log = execFileSync(
+      "git",
+      ["log", "--diff-filter=AR", "--format=%aI", "--name-only", "--", ...WHERE_IT_HAS_LIVED],
+      { cwd: resolvePath(fs.root, ".."), encoding: "utf8" }
+    )
+    for (const line of log.split("\n")) {
+      if (/^\d{4}-\d{2}-\d{2}T/.test(line)) { when = line; continue }
+      if (!line.trim()) continue
+      // A filename that carried a date beats the commit that added it. Sixty
+      // entries came in from an earlier log on one day in July, so the commit
+      // dates them all to the import while their names still said January.
+      // Both are facts git holds; the name is the one about the thinking.
+      const named = /\/(\d{4}-\d{2}-\d{2})-/.exec(line)
+      firstSeen[slugOf(line)] = named ? `${named[1]}T00:00:00+00:00` : when
+    }
+    const arrived = {}
+    for (const { path } of fs.list(DIR)) arrived[path] = firstSeen[slugOf(path)] ?? ""
+
+    const drawn = nodes.map((n) => ({
+      address: rel(n.id),
+      title: n.title,
+      kind: n.type.replace("notebook-", ""),
+      prompt: prompts.get(n.id) ?? "",
+      detail: detail.get(n.id) ?? "",
+    }))
+    const joins = kept.map((e) => ({ from: rel(e.from), to: rel(e.to), rel: e.rel }))
+    const days = new Set(drawn.map((n) => (arrived[n.address] ?? "").slice(0, 10)))
+
+    const base = args.base === undefined ? ""
+      : `<base href="${args.base === "true" ? pathToFileURL(docsRoot + "/").href : args.base}">`
+
+    // The shared drawing goes first and the notebook's own ranking second,
+    // since the second calls what the first defines.
+    const page = graphPage({
+      title: "The notebook",
+      dataId: "notebook",
+      data: { nodes: drawn, edges: joins, arrived },
+      base,
+      counts: `<b>${drawn.length}</b> entries &middot;
+    <b>${joins.length}</b> relations &middot;
+    <b>${days.size}</b> days`,
+      scripts: ["graph.element.js", "notebook.element.js"].map(templateFile),
+    })
+
+    const out = args.out
+      ? resolvePath("./docs", args.out)
+      : join(tmpdir(), `mycelium-notebook-${Date.now()}.html`)
+    fs.create(rel(out), page)
+    console.log(args.out ? out : pathToFileURL(out).href)
   }
 </script>
 

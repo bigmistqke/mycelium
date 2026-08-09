@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Template: spec-doc</title>
@@ -8,12 +7,11 @@
 <link rel="stylesheet" href="./spec.template.css">
 </head>
 <body>
-
 <h1>Template: spec-doc</h1>
 <div class="meta">
   <div><b>Node type:</b> <code>spec-doc</code></div>
   <div><b>File naming:</b> this file is <code>spec.template.html</code>, named after the <code>spec-*</code>
-    family it defines, not the single <code>spec-doc</code> type &mdash; the same file can hold more
+    family it defines, not the single <code>spec-doc</code> type — the same file can hold more
     <code>spec-*</code> template entries later without being renamed. Documents that conform to
     <code>spec-doc</code> are named <code>&lt;date&gt;-&lt;topic&gt;.spec.html</code></div>
   <div><b>Purpose:</b> the shape a design/brainstorming document takes when written as a v4 node instead of Markdown</div>
@@ -22,22 +20,20 @@
   <div><b>Styling:</b> <code>./spec.template.css</code>, this family's own rendering rules, plus the shared
     <code>../theme.css</code> every document links</div>
 </div>
-
 <h2>Why this template exists</h2>
 <p>
   The <code>superpowers:brainstorming</code> skill's default is to write an approved design to
   <code>docs/superpowers/specs/YYYY-MM-DD-&lt;topic&gt;-design.md</code>, with an explicit carve-out: "user
   preferences for spec location override this default." v4's preference is that a spec is a node like any
-  other &mdash; HTML, not Markdown, and conforming to a template like any other instance in this graph. This
+  other — HTML, not Markdown, and conforming to a template like any other instance in this graph. This
   template is that override, made concrete.
 </p>
-
 <h2>Naming: hyphenated, family-prefixed, and the file names the family</h2>
 <p>
   Every tag this project invents is hyphenated. Two reasons: the actual Custom Elements API
   (<code>customElements.define(name, Class)</code>) throws on an unhyphenated name, so a bare
   <code>&lt;spec&gt;</code> could never accept real behavior later without a breaking rename; and it's the
-  same guarantee HTML itself relies on to add new elements safely &mdash; no future standard tag will ever
+  same guarantee HTML itself relies on to add new elements safely — no future standard tag will ever
   contain a hyphen. This isn't hypothetical for this project specifically: an earlier, unhyphenated version
   of this very template used <code>&lt;title&gt;</code>, a real element with its own parsing rules, and the
   as-yet-unbuilt deciduous types include <code>option</code>, which collides even harder (real, heavily
@@ -46,13 +42,13 @@
 <p>
   The prefix isn't a decorative brand mark (not <code>v4-title</code>), it names the <em>family</em> a tag
   belongs to: <code>spec-*</code> for design-document types, <code>knowledge-*</code> for the six deciduous
-  node types that participate in the decision graph &mdash; <code>knowledge</code>, not <code>graph</code>,
+  node types that participate in the decision graph — <code>knowledge</code>, not <code>graph</code>,
   because "graph" only names the shape (and most of this project is graph-shaped, given every document
   links to others), while "knowledge" names what these six types actually are: captured reasoning, not
   structure for its own sake. Mirrors the project's own <code>knowledge/</code> directory of instances. A
   root type is <code>&lt;family&gt;-&lt;type&gt;</code> (<code>spec-doc</code>); its fields share just the
   family prefix, not the full type name (<code>spec-title</code>, not <code>spec-doc-title</code>), because
-  fields belong to the family, not to one specific type within it &mdash; every <code>spec-*</code> type
+  fields belong to the family, not to one specific type within it — every <code>spec-*</code> type
   would share <code>spec-title</code>, the same way every <code>knowledge-*</code> type will share
   <code>knowledge-title</code>.
 </p>
@@ -61,10 +57,9 @@
   <code>spec.template.html</code>, not <code>spec-doc.template.html</code>. That's what lets one file hold
   several related <code>&lt;template&gt;</code> entries under a shared prefix, addressed by fragment, the
   way <code>DESIGN.html</code>'s own worked example already does for the six deciduous types in one file
-  &mdash; the family prefix is what keeps that safe now, not physically splitting every type into its own
+  — the family prefix is what keeps that safe now, not physically splitting every type into its own
   file.
 </p>
-
 <h2>Shape</h2>
 <p>
   A first version of this template had a three-field header (<code>title</code>, <code>status</code>,
@@ -74,7 +69,7 @@
   freeform content and still be queryable <em>as a section</em>, by tag name, even though what's inside it
   isn't atomized into fields. What actually determines whether we can find something later isn't
   "structured vs. prose," it's "inside a named tag vs. bare in the document." A three-field template left
-  everything past its header outside any tag at all &mdash; invisible to any query, no matter how load-bearing
+  everything past its header outside any tag at all — invisible to any query, no matter how load-bearing
   the content was.
 </p>
 <p>
@@ -83,31 +78,31 @@
 </p>
 <template id="spec-doc">
   <spec-doc>
-    <spec-title required></spec-title>
-    <spec-status required enum="draft approved implemented"></spec-status>
-    <spec-date required></spec-date>
-    <spec-problem required markup></spec-problem>
-    <spec-design required markup></spec-design>
-    <spec-out-of-scope markup></spec-out-of-scope>
-    <spec-open-questions markup></spec-open-questions>
+    <spec-title required=""></spec-title>
+    <spec-status required="" enum="draft approved implemented"></spec-status>
+    <spec-date required=""></spec-date>
+    <spec-problem required="" markup=""></spec-problem>
+    <spec-design required="" markup=""></spec-design>
+    <spec-out-of-scope markup=""></spec-out-of-scope>
+    <spec-open-questions markup=""></spec-open-questions>
   </spec-doc>
 </template>
 <pre><code>&lt;spec-doc&gt;
-  &lt;spec-title&gt;&hellip;&lt;/spec-title&gt;
+  &lt;spec-title&gt;…&lt;/spec-title&gt;
   &lt;spec-status&gt;draft | approved | implemented&lt;/spec-status&gt;
   &lt;spec-date&gt;YYYY-MM-DD&lt;/spec-date&gt;
-  &lt;spec-problem&gt;&hellip; what motivates this design &hellip;&lt;/spec-problem&gt;
-  &lt;spec-design&gt;&hellip; the approved design itself, any content &hellip;&lt;/spec-design&gt;
-  &lt;spec-out-of-scope&gt;&hellip; optional &hellip;&lt;/spec-out-of-scope&gt;
-  &lt;spec-open-questions&gt;&hellip; optional &hellip;&lt;/spec-open-questions&gt;
+  &lt;spec-problem&gt;… what motivates this design …&lt;/spec-problem&gt;
+  &lt;spec-design&gt;… the approved design itself, any content …&lt;/spec-design&gt;
+  &lt;spec-out-of-scope&gt;… optional …&lt;/spec-out-of-scope&gt;
+  &lt;spec-open-questions&gt;… optional …&lt;/spec-open-questions&gt;
 &lt;/spec-doc&gt;</code></pre>
 <p>
   <code>spec-title</code>, <code>spec-status</code>, <code>spec-date</code>, <code>spec-problem</code>, and
-  <code>spec-design</code> are required &mdash; every spec has an identity, a motivation, and a decided
+  <code>spec-design</code> are required — every spec has an identity, a motivation, and a decided
   approach. <code>spec-out-of-scope</code> and <code>spec-open-questions</code> are optional: a spec that
   has nothing to exclude or nothing left open simply omits the tag, rather than including it empty. Related
   nodes, wherever they're mentioned inside any of these sections, are reached the usual way:
-  <code>&lt;a data-rel="&hellip;"&gt;</code>.
+  <code>&lt;a data-rel="…"&gt;</code>.
 </p>
 <p>
   <code>spec-status</code> tracks the brainstorming skill's own lifecycle: <code>draft</code> while under
@@ -117,16 +112,14 @@
 <p>
   This isn't license to keep growing the field list, though. A field earns its place when the same question
   should be askable across every <code>spec-doc</code> without opening each one by hand; a one-off
-  reference &mdash; a runnable experiment, a scratch calculation, anything tangential worth reaching from
-  here but not worth every spec having a slot for &mdash; stays a plain <code>data-rel</code> link, inside
+  reference — a runnable experiment, a scratch calculation, anything tangential worth reaching from
+  here but not worth every spec having a slot for — stays a plain <code>data-rel</code> link, inside
   <code>spec-design</code> or even outside <code>&lt;spec-doc&gt;</code> entirely. See "Field vs. link" in
   <a data-rel="elaborates" href="../specs/2026-07-23-deciduous-template-series.spec.html#field-vs-link">the
   design spec for this template series</a> for the fuller version of that distinction.
 </p>
-
 <h2>Validator</h2>
 <p>Validation is handled by the generic validator in <code>template.template.html</code> using the schema attributes on the <code>&lt;template&gt;</code> element above.</p>
-
 <div class="worked-example">
   <h4>A worked example</h4>
   <p>
@@ -139,26 +132,23 @@
     <code>data-conforms-to</code> the same way it finds every instance in the corpus, so it is checked on
     every run and this file fails if it stops conforming.
   </p>
-
   <div id="sample-instance">
     <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
-      <spec-title>Example design</spec-title>
-      <spec-status>draft</spec-status>
-      <spec-date>2026-01-01</spec-date>
-      <spec-problem>The thing this example is supposedly solving.</spec-problem>
-      <spec-design>The approach this example supposedly takes.</spec-design>
-    </spec-doc>
+  <spec-title>Example design</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-01-01</spec-date>
+  <spec-problem>The thing this example is supposedly solving.</spec-problem>
+  <spec-design>The approach this example supposedly takes.</spec-design>
+</spec-doc>
   </div>
-
 </div>
-
 <h2>Authoring commands</h2>
 <p>
-  <code>add</code> and <code>update</code>, declared once for this template &mdash; same
+  <code>add</code> and <code>update</code>, declared once for this template — same
   <code>type="mycelium/command"</code> convention
-  <a href="./knowledge.template.html">knowledge.template.html</a> already uses, and the same reasons: never
+  knowledge.template.html already uses, and the same reasons: never
   run in a browser (no live demo below, unlike <code>template.template.html</code>'s validator above), and each
-  command's own <code>/** &hellip; */</code> comment is its only documentation, so
+  command's own <code>/** … */</code> comment is its only documentation, so
   <code>mycelium spec --help</code> and the usage shown here can never drift apart. No
   <code>link</code>: every cross-reference a spec makes already lives inside one of its rich fields' own
   markup (a <code>&lt;a data-rel&gt;</code> written directly into <code>--body</code>'s content), so there's
@@ -350,7 +340,6 @@
     if (!result.ok) throw new Error(result.errors.join('\n'))
   }
 </script>
-
 <h2>Conformance</h2>
 <p>
   Conformance is declared as a <code>data-conforms-to</code> attribute on the element making the claim, not
@@ -363,8 +352,6 @@
   this document" once from <code>&lt;head&gt;</code>.
 </p>
 <pre><code>&lt;spec-doc data-conforms-to="../templates/spec.template.html#spec-doc"&gt;
-  &hellip;
+  …
 &lt;/spec-doc&gt;</code></pre>
-
-</body>
-</html>
+</body></html>

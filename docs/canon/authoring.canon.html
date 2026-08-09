@@ -25,14 +25,15 @@ path before asking for the href.</p>
 </canon-axiom>
 <canon-specification id="authoring-commands" data-conforms-to="../templates/canon.template.html#canon-specification">
   <canon-title>the authoring commands</canon-title>
-  <a data-rel="specifies" href="../templates/knowledge.template.html">the knowledge authoring commands</a>
+  <a data-rel="specifies" href="../templates/notebook.template.html">the notebook authoring commands</a>
+  <a data-rel="specifies" href="../templates/spec.template.html">the spec authoring commands</a>
   <a data-rel="specifies" href="../templates/language.template.html">the language authoring commands</a>
   <a data-rel="specifies" href="../templates/canon.template.html">the canon authoring commands</a>
   <canon-behaviour id="add-computes-the-date" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>knowledge add computes the filename's date rather than accepting one.</canon-title>
+    <canon-title>A command computes a filename's date rather than accepting one, or refuses the date outright.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">the principle this narrows</a>
     <canon-behaviour id="add-dates-the-filename" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-      <canon-title>knowledge add prepends today's date to a bare slug.</canon-title>
+      <canon-title>spec add prepends today's date to a bare topic.</canon-title>
       <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">the principle this narrows</a>
       <canon-verdict>PENDING</canon-verdict>
       <script type="mycelium/test">
@@ -43,31 +44,29 @@ path before asking for the href.</p>
       import { todayDate } from "../templates/shared.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         const done = sandbox.mycelium(
-          "knowledge", "add", "goal",
-          "--title", "A sandboxed goal",
-          "--confidence", "50",
-          "--status", "pending",
-          "--file", "sample-goal",
+          "spec", "add",
+          "--title", "A sandboxed design",
+          "--file", "sample-design",
+          "--body", "<spec-problem>The thing.</spec-problem><spec-design>The approach.</spec-design>",
         )
         assert(done.ok, `add failed: ${done.stderr || done.stdout}`)
 
         const today = todayDate()
-        const path = `knowledge/${today}-sample-goal.goal.html`
+        const path = `specs/${today}-sample-design.spec.html`
         assert(sandbox.exists(path), `wrote no ${path}; said: ${done.stdout.trim()}`)
 
         const html = sandbox.read(path)
-        assert(html.includes("<knowledge-title>A sandboxed goal</knowledge-title>"), "the title is missing")
-        assert(html.includes("<knowledge-confidence>50</knowledge-confidence>"), "the confidence is missing")
-        assert(html.includes("<knowledge-status>pending</knowledge-status>"), "the status is missing")
+        assert(html.includes("<spec-title>A sandboxed design</spec-title>"), "the title is missing")
+        assert(html.includes(`<spec-date>${today}</spec-date>`), "the date field does not match the filename")
         assert(
-          html.includes('data-conforms-to="../templates/knowledge.template.html#knowledge-goal"'),
-          "the node claims conformance to nothing",
+          html.includes('data-conforms-to="../templates/spec.template.html#spec-doc"'),
+          "the document claims conformance to nothing",
         )
       }
     </script>
     </canon-behaviour>
     <canon-behaviour id="add-refuses-a-dated-slug" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-      <canon-title>knowledge add refuses a slug that already carries a date.</canon-title>
+      <canon-title>notebook add refuses a slug that already carries a date.</canon-title>
       <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">refusing the hand-typed copy of a computed fact</a>
       <canon-verdict>PENDING</canon-verdict>
       <script type="mycelium/test">
@@ -78,16 +77,15 @@ path before asking for the href.</p>
       import type { TestContext } from "../../src/api.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         const done = sandbox.mycelium(
-          "knowledge", "add", "observation",
+          "notebook", "add", "observation",
           "--title", "Already dated",
-          "--confidence", "50",
           "--file", "2026-08-06-already-dated",
         )
         assert(!done.ok, "a slug carrying a date was accepted")
 
         const complaint = done.stderr + done.stdout
         assert(complaint.includes("already-dated"), `the error names no slug to use instead: ${complaint.trim()}`)
-        assert(!sandbox.exists("knowledge/2026-08-06-2026-08-06-already-dated.observation.html"), "it wrote the doubled name anyway")
+        assert(!sandbox.exists("notebook/2026-08-06-already-dated.observation.html"), "it wrote the dated name anyway")
       }
     </script>
     </canon-behaviour>
@@ -102,32 +100,24 @@ path before asking for the href.</p>
       // audit to catch, or for nothing to catch when the relation happens to
       // satisfy none of them.
       import type { TestContext } from "../../src/api.ts"
-      import { todayDate } from "../templates/shared.ts"
       export default async function ({ assert, sandbox }: TestContext) {
-        const today = todayDate()
-        const make = (type: string, slug: string, extra: string[]) => {
-          const done = sandbox.mycelium(
-            "knowledge", "add", type,
-            "--title", slug,
-            "--confidence", "50",
-            "--file", slug,
-            ...extra,
-          )
+        const make = (type: string, slug: string) => {
+          const done = sandbox.mycelium("notebook", "add", type, "--title", slug, "--file", slug)
           assert(done.ok, `add ${type} failed: ${done.stderr || done.stdout}`)
-          return `${today}-${slug}.${type}.html`
+          return `${slug}.${type}.html`
         }
 
-        const goal = make("goal", "the-goal", ["--status", "pending"])
-        const outcome = make("outcome", "the-outcome", [])
+        const noticed = make("observation", "the-thought")
+        const source = make("research", "the-reading")
 
-        const done = sandbox.mycelium("knowledge", "link", goal, outcome, "--rel", "leads_to", "--label", "what happened")
+        const done = sandbox.mycelium("notebook", "link", noticed, source, "--rel", "leads_to", "--label", "what came of it")
         assert(done.ok, `link failed: ${done.stderr || done.stdout}`)
 
-        const from = sandbox.read(`knowledge/${goal}`)
-        const to = sandbox.read(`knowledge/${outcome}`)
+        const from = sandbox.read(`notebook/${noticed}`)
+        const to = sandbox.read(`notebook/${source}`)
 
         assert(from.includes('data-rel="leads_to"'), "the edge is not in the file named first")
-        assert(from.includes(`href="./${outcome}"`), "the edge in the first file points somewhere else")
+        assert(from.includes(`href="./${source}"`), "the edge in the first file points somewhere else")
         assert(!to.includes('data-rel="leads_to"'), "the edge landed in the file named second as well")
       }
     </script>
@@ -194,29 +184,26 @@ path before asking for the href.</p>
       // that edge by hand. The command has to produce the same string, or the
       // upsert appends a second edge beside it and unlink never finds either.
       import type { TestContext } from "../../src/api.ts"
-      import { todayDate } from "../templates/shared.ts"
       export default async function ({ assert, sandbox }: TestContext) {
-        const today = todayDate()
         const made = sandbox.mycelium(
-          "knowledge", "add", "outcome",
+          "notebook", "add", "observation",
           "--title", "The templates exist",
-          "--confidence", "90",
           "--file", "templates-exist",
         )
         assert(made.ok, `add failed: ${made.stderr || made.stdout}`)
 
-        const node = `${today}-templates-exist.outcome.html`
-        const target = "../templates/knowledge.template.html"
-        const done = sandbox.mycelium("knowledge", "link", node, target, "--rel", "produced", "--label", "the six templates")
+        const node = "templates-exist.observation.html"
+        const target = "../templates/notebook.template.html"
+        const done = sandbox.mycelium("notebook", "link", node, target, "--rel", "elaborates", "--label", "the family itself")
         assert(done.ok, `link failed: ${done.stderr || done.stdout}`)
 
-        const html = sandbox.read(`knowledge/${node}`)
+        const html = sandbox.read(`notebook/${node}`)
         assert(html.includes(`href="${target}"`), `the edge reads ${html.match(/href="\.[^"]*"/)?.[0] ?? "nothing"}`)
         assert(!html.includes('href="./../'), "the href carries a leading ./ that no hand-written edge has")
 
-        const back = sandbox.mycelium("knowledge", "unlink", node, target, "--rel", "produced")
+        const back = sandbox.mycelium("notebook", "unlink", node, target, "--rel", "elaborates")
         assert(back.ok, `unlink failed: ${back.stderr || back.stdout}`)
-        assert(!sandbox.read(`knowledge/${node}`).includes("data-rel"), "unlink left the edge behind")
+        assert(!sandbox.read(`notebook/${node}`).includes("data-rel"), "unlink left the edge behind")
       }
     </script>
     </canon-behaviour>

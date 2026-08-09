@@ -1,7 +1,6 @@
-// Reads a knowledge graph out of a list of parsed documents: every
-// knowledge-* element becomes a node, every <a data-rel> inside one becomes an
-// edge. Used by knowledge.template.html's two edge-reading audits
-// (orphans-except-goal, dangling-outcome) and by its generate command.
+// Reads the notebook out of a list of parsed documents: every notebook-*
+// element becomes a node, every <a data-rel> inside one becomes an edge. Used
+// by notebook.template.html's generate command.
 //
 // A file rather than a <script> in that template, for the reason
 // docs/specs/2026-08-01-script-type-decides-the-language.spec.html gives: what
@@ -23,8 +22,6 @@ export interface GraphNode {
   id: string
   type: string
   title: string
-  status: string
-  confidence: string
 }
 
 export interface GraphEdge {
@@ -35,12 +32,9 @@ export interface GraphEdge {
 }
 
 const TYPES = [
-  "knowledge-goal",
-  "knowledge-decision",
-  "knowledge-option",
-  "knowledge-action",
-  "knowledge-outcome",
-  "knowledge-observation",
+  "notebook-observation",
+  "notebook-research",
+  "notebook-experiment",
 ]
 
 export function extractGraph(documents: GraphDocument[]): { nodes: GraphNode[]; edges: GraphEdge[] } {
@@ -54,8 +48,6 @@ export function extractGraph(documents: GraphDocument[]): { nodes: GraphNode[]; 
           id: el.id || path,
           type: tag,
           title: el.querySelector(`${family}-title`)?.textContent?.trim() ?? "",
-          status: el.querySelector(`${family}-status`)?.textContent?.trim() ?? "",
-          confidence: el.querySelector(`${family}-confidence`)?.textContent?.trim() ?? "",
         })
       }
     }

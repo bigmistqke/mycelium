@@ -466,12 +466,12 @@
     <script type="mycelium/test">
       // Every case above builds its own sample template, so each one tests the
       // mechanism and none of them tests a list any real document has to obey.
-      // This one reads knowledge.template.html itself, because the value of a
+      // This one reads notebook.template.html itself, because the value of a
       // closed vocabulary is which words are in it.
       //
-      // The six knowledge types carry the same declaration, and a goal stands
-      // for all six. A seventh copy of this case per type would assert that a
-      // find-and-replace replaced six things.
+      // The three notebook types carry the same declaration, and an observation
+      // stands for all three. A copy of this case per type would assert that a
+      // find-and-replace replaced three things.
       import type { TestContext } from "../../src/api.ts"
       import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
       import { readFileSync } from "node:fs"
@@ -482,18 +482,16 @@
 
       export default async function ({ assert }: TestContext) {
         const check = await loadGenericValidator(docs)
-        const real = parseHTML(readFileSync(resolve(docs, "templates/knowledge.template.html"), "utf8")).document
-        const template = real.querySelector('template[id="knowledge-goal"]')
-        assert(template, "knowledge.template.html declares no knowledge-goal")
+        const real = parseHTML(readFileSync(resolve(docs, "templates/notebook.template.html"), "utf8")).document
+        const template = real.querySelector('template[id="notebook-observation"]')
+        assert(template, "notebook.template.html declares no notebook-observation")
 
         const node = (rel: string) => parseHTML(`<body>
-          <knowledge-goal>
-            <knowledge-title>A goal</knowledge-title>
-            <knowledge-confidence>50</knowledge-confidence>
-            <knowledge-status>pending</knowledge-status>
+          <notebook-observation>
+            <notebook-title>A thought</notebook-title>
             <a data-rel="${rel}" href="./elsewhere.html">an edge</a>
-          </knowledge-goal>
-        </body>`).document.querySelector("knowledge-goal")!
+          </notebook-observation>
+        </body>`).document.querySelector("notebook-observation")!
 
         const listed = check(template!, node("leads_to"))
         assert(listed.errors.length === 0, `a listed relation failed: ${JSON.stringify(listed.errors)}`)

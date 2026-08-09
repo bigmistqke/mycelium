@@ -1,4 +1,4 @@
-// What a knowledge graph is, in the terms the drawing needs.
+// What the notebook is, in the terms the drawing needs.
 //
 // The chain ranks by a vocabulary of claims. Nothing here has one: eight
 // relations join six types in whatever order the thinking went. What it does
@@ -10,8 +10,8 @@
 // fault columns exist to remove. Days are the outer axis, and a day's own nodes
 // rank into sub-columns inside it.
 
-const knowledge = JSON.parse(document.getElementById('knowledge').textContent)
-const nodeById = new Map(knowledge.nodes.map(n => [n.address, n]))
+const notebook = JSON.parse(document.getElementById('notebook').textContent)
+const nodeById = new Map(notebook.nodes.map(n => [n.address, n]))
 
 /**
  * What each node sits downstream of.
@@ -22,14 +22,22 @@ const nodeById = new Map(knowledge.nodes.map(n => [n.address, n]))
  * same way would put an outcome to the left of the goal that produced it.
  */
 const parentsOf = {}
-for (const node of knowledge.nodes) parentsOf[node.address] = []
-for (const edge of knowledge.edges) {
+for (const node of notebook.nodes) parentsOf[node.address] = []
+for (const edge of notebook.edges) {
   if (edge.rel === 'leads_to') parentsOf[edge.to]?.push(edge.from)
   else parentsOf[edge.from]?.push(edge.to)
 }
 
-const dayOf = (address) => address.split('/').pop().slice(0, 10)
-const days = [...new Set(knowledge.nodes.map(n => dayOf(n.address)))].sort()
+/**
+ * The day an entry first arrived, read from the commit that added it.
+ *
+ * A filename used to carry this. An entry accretes now, so a date on it would
+ * be a second copy of something git already answers, and the first thing to go
+ * stale. What the column shows is therefore when a thought turned up, not when
+ * somebody last edited the page it lives on.
+ */
+const dayOf = (address) => (notebook.arrived[address] ?? '').slice(0, 10)
+const days = [...new Set(notebook.nodes.map(n => dayOf(n.address)))].sort()
 
 /**
  * How deep a node sits inside its own day.
@@ -53,7 +61,7 @@ function depthWithinDay(address, seen = new Set()) {
 }
 
 const depth = {}
-for (const node of knowledge.nodes) depth[node.address] = depthWithinDay(node.address)
+for (const node of notebook.nodes) depth[node.address] = depthWithinDay(node.address)
 
 /**
  * Order among nodes a day's edges say nothing about.
@@ -62,7 +70,7 @@ for (const node of knowledge.nodes) depth[node.address] = depthWithinDay(node.ad
  * history rather than a fact about a filesystem. Nodes added in one commit
  * share a moment, so this orders in clusters, and a commit is a unit of work.
  */
-const arrived = (address) => knowledge.arrived[address] ?? ''
+const arrived = (address) => notebook.arrived[address] ?? ''
 
 /**
  * One column per depth within a day, and the day's name on the first of them.
@@ -72,7 +80,7 @@ const arrived = (address) => knowledge.arrived[address] ?? ''
  */
 const ranks = []
 for (const day of days) {
-  const inDay = knowledge.nodes.filter(n => dayOf(n.address) === day)
+  const inDay = notebook.nodes.filter(n => dayOf(n.address) === day)
   const deepest = Math.max(0, ...inDay.map(n => depth[n.address]))
   for (let d = 0; d <= deepest; d++) {
     const items = inDay
@@ -146,7 +154,7 @@ function sidesFor(address) {
     if (!groups.has(title)) groups.set(title, { rel, column, addresses: [] })
     groups.get(title).addresses.push(target)
   }
-  for (const edge of knowledge.edges) {
+  for (const edge of notebook.edges) {
     const reading = RELATIONS[edge.rel] ?? { out: [edge.rel, 0], in: [edge.rel, 1] }
     if (edge.from === address) add(reading.out, edge.rel, edge.to)
     if (edge.to === address) add(reading.in, edge.rel, edge.from)
@@ -160,7 +168,7 @@ const litFrom = (address) => new Set([address, ...walk(address, parentsOf), ...w
 // Drawn as the corpus stores them, so an arrowhead lands where somebody wrote
 // it. Ranking reverses leads_to and drawing must not: a goal leads to its
 // outcome, and the arrow saying so is the whole content of that edge.
-const drawnEdges = knowledge.edges
+const drawnEdges = notebook.edges
   .filter(e => nodeById.has(e.from) && nodeById.has(e.to))
   .map(e => ({ from: e.from, to: e.to, rel: e.rel }))
 
