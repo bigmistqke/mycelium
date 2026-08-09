@@ -40,13 +40,12 @@
   #pane-detail p { margin: 0 0 .6rem; }
   #pane-detail .doc { white-space: pre-wrap; }
   /* Quoted the way prose quotes, since it is prose somebody else wrote. */
-  /* Monospaced, because it is a transcript rather than prose the project wrote.
-     Setting it apart from every other line in the pane says whose words these
-     are before a reader has to work it out from the quoting. */
+  /* Italic, because it is somebody else's words rather than the project's.
+     Monospace said the same thing and said it too loudly: a transcript is still
+     prose, and setting it in code type made a paragraph read like a payload. */
   #pane-detail blockquote { margin: 0 0 .7rem; padding-left: .8rem;
                             border-left: 3px solid var(--line); color: var(--ink-2);
-                            white-space: pre-line;
-                            font-family: ui-monospace, monospace; font-size: .78rem; }
+                            white-space: pre-line; font-style: italic; }
   #pane-detail details { margin-top: .5rem; }
   #pane-detail summary { cursor: pointer; color: var(--ink-3); }
   #pane-detail pre { overflow-x: auto; border: 1px solid var(--line);
