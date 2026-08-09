@@ -31,25 +31,24 @@ no citation at all.</p>
  * Delete the comments that earn no place, and leave every other one alone.
  *
  * @behaviour canon/comments.canon.html#autofix-removes-only-a-cut
- * @behaviour canon/comments.canon.html#a-promotion-stays-where-it-sits
  */
 export function autofix(ctx: CommandContext) {</code></pre>
-<p>The tag repeats, since one function usually answers several claims. Its value
-is an address in the form every citation here already takes: a path from the
-documents root, then a fragment.</p>
-<h3>A tag rather than an anchor</h3>
-<p>A document cites by writing an <code>&lt;a data-rel&gt;</code>, which the schema
-constrains and <code>every-link-resolves</code> checks. Code has no anchors and no
-element to hang an attribute on, so its citation lives in a comment.</p>
-<p>Of the two forms a comment allows, the tag costs less.
-<code>formatCodeComment</code> already drops a line opening with an at-sign before
-handing prose to the language rules, because a type is not a sentence. A citation
-written as prose instead would face <code>prose-follows-the-language</code>, where
-a long address trips sentence length and reads as noise to a passive-voice
-check.</p>
-<p>A tag is also findable. Matching a prose citation needs a pattern loose enough
-to match a sentence, and then every parenthesis in the corpus becomes a
-candidate.</p>
+<p>Its value is an address in the form every citation here already takes: a path
+from the documents root, then a fragment. The tag repeats where a declaration
+genuinely answers more than one claim, and a declaration needing that is a
+declaration worth splitting.</p>
+<h3>A doc comment, not a line comment</h3>
+<p>A doc comment declares what it belongs to. A run of line comments binds to
+whatever follows it, which is a different thing: the compiler hands a leading
+comment to the next node across a blank line, so the binding happens whether the
+author meant it or not.</p>
+<p>That accidental binding is the smell. A note about the file, a reminder, an
+aside about the line above — each lands on the declaration underneath it and
+claims to describe it. Moving a function then carries somebody else's paragraph
+along.</p>
+<p>So a comment about a declaration becomes a doc comment on that declaration, and
+a citation only ever sits in one. A note with nothing to bind to is either prose
+belonging in a document or a reminder that has finished being useful.</p>
 <h3>The citation points up</h3>
 <p>An earlier sketch had the behaviour carry <code>specifies</code>, aimed at an
 anchor inside the implementation. That points down, and
@@ -59,17 +58,25 @@ because a hand-maintained reverse index rots invisibly.</p>
 behaviour keeps the one relation it has. The code cites the behaviour the way a
 test case does, and which code answers a behaviour gets computed from the tags,
 like every other downward reach here.</p>
-<h3>What carries a tag, and what owes one</h3>
-<p>A declaration carries it: a function, a class, a type, a constant.
-<code>commentRanges</code> already reports the declaration a comment sits above,
-naming its kind and its identifier, so nothing new parses the code.</p>
-<p>An exported declaration owes a citation, and an internal one may carry one. An
-export is the unit a behaviour describes and the unit somebody could later
-contradict. An internal helper often carries part of a claim, and demanding a tag
-on each turns the check into noise.</p>
-<p>Granularity stops at the declaration. A tag on a file repeats what the
-<code>specifies</code> edge says, and a tag on one statement names something no
-reader could contradict on its own.</p>
+<h3>Every declaration names the behaviour it answers</h3>
+<p>Nothing about the tag concerns exports. A doc comment binds to whatever it sits
+on, and an internal helper carrying a claim is exactly as worth addressing as an
+entry point. A file exporting nothing at all still answers behaviours, and
+<code>figure.element.js</code> answers twelve.</p>
+<p>A declaration in a participating file names the behaviour it answers. One
+naming none is a finding with three possible fixes: cite the behaviour it already
+answers, split it until each part answers one, or write the behaviour nobody had
+written down. The third is the valuable case, and the project this borrows from
+turned sixteen of them into real rules.</p>
+<p>One citation per declaration is the target. A function carrying five is doing
+five things, and the count names the decomposition worth doing. So the tag applies
+pressure on the design rather than only recording it.</p>
+<p>This is the whole question mycelium exists to ask. A corpus where every
+declaration names its claim has an intent graph as dense as its call graph, and
+the code carries the reasoning rather than pointing at a document that holds it.
+One where a thousand lines hang off two citations has claims nobody can
+locate.</p>
+
 <h3>Scope comes from the corpus</h3>
 <p>A file participates when a specification names it. The eight
 <code>specifies</code> edges already declare which files belong to a subsystem, so
@@ -81,20 +88,27 @@ nothing about it is a finding.</p>
 makes silence ambiguous. An empty result must mean <q>nothing cites this</q>
 rather than <q>nobody got round to tagging</q>.</p>
 <h3>What the check reports</h3>
-<p>Three findings, each with a name this project already uses. An address
-resolving to nothing is rot, which <code>every-link-resolves</code> reports for a
-document and cannot see inside a comment. An exported declaration in a
-participating file with no tag is freelancing, which <code>grounded</code> reports
-for a behaviour naming no axiom. A behaviour no code cites is dead, which
-<code>grounded</code> reports for an axiom nothing reaches.</p>
+<p>Three findings fail. An address resolving to nothing is rot, which
+<code>every-link-resolves</code> reports for a document and cannot see inside a
+comment. A behaviour no code cites is dead, which <code>grounded</code> already
+reports for an axiom nothing reaches. A declaration citing no behaviour is
+freelancing, which <code>grounded</code> already reports for a behaviour naming no
+axiom.</p>
+<p>Both directions matter, and each catches what the other misses. Counted from
+the claim, coverage asks whether anything implements what the canon promises.
+Counted from the code, it asks whether the code does anything nobody promised.</p>
+<p>A fourth number gets reported and fails nothing: how many behaviours each
+declaration cites. A high one names a candidate for decomposition, which is a
+judgment about design rather than a defect.</p>
 <p>A citation gets judged on where it lands, never on what carries it. A tag
 landing on an axiom is a finding for the reason a test case doing it is one: the
 code knows something no behaviour states. Judging the resolved address rather than
 the tag name is what makes a separate <code>@axiom</code> spelling unnecessary.</p>
+
 <h3>What the drawing gains</h3>
 <p>The implementation rank stops being one box per file. It becomes one box per
-tagged declaration, sitting under the behaviours naming it, so an export answering
-six claims looks different from one answering none.</p>
+cited declaration, sitting under the behaviours naming it, so a function answering
+six claims looks different from one answering one.</p>
 <p>Selecting a behaviour then lights the code, which is the blast radius the chain
 draws for every other layer already.</p>
 <h3>Order of arrival</h3>
@@ -108,17 +122,16 @@ every count reads zero.</p>
 <p>Nothing here detects a wrong citation. A tag naming a behaviour the code does
 not implement resolves fine, and reading the two together stays a person's job.
 The graph records that same limit for a reworded behaviour.</p>
-<p>Internal helpers owe nothing. They may carry a tag where it helps, and no
-finding follows from leaving one bare.</p>
 <p>The <code>specifies</code> edge stays as it is. This adds a layer beneath it
 rather than replacing it, since naming the files a subsystem answers for is still
 worth saying in one place.</p>
+<p>Converting the corpus's line comments to doc comments is a separate pass. This
+one puts citations in doc comments and leaves the rest where it sits.</p>
 </spec-out-of-scope>
   <spec-open-questions>
-<p>Whether a behaviour owes an implementation citation the way it owes a test
-citation. <code>exhaustive</code> demands a case per behaviour and exempts
-nothing, and the same rule for code would be stronger than anything here has
-earned.</p>
+<p>Whether the decomposition count should ever fail rather than report. A ceiling
+of one citation per declaration is the honest reading of the rule, and no code
+here meets it yet.</p>
 <p>Whether rewording a behaviour should fail its citers until somebody
 re-confirms them. A stamp recording that a citation got read against the current
 wording is stronger and more annoying; reporting the reach alone leans on the

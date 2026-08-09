@@ -98,9 +98,13 @@
     reason: string
   }
 
-  // Reads the standard out of the corpus. A missing guide throws rather than
-  // falling back to a built-in default: a silent default is a second copy of
-  // the criteria that nobody can find and nobody edits.
+  /**
+   * Reads the standard out of the corpus. A missing guide throws rather than
+   * falling back to a built-in default: a silent default is a second copy of
+   * the criteria that nobody can find and nobody edits.
+   *
+   * @behaviour canon/comments.canon.html#a-missing-guide-fails
+   */
   function readGuide({ fs }: CommandContext): string {
     let doc
     try {
@@ -122,10 +126,15 @@
     ].join("\n")
   }
 
-  // An .html file's comments come from each <script> it embeds, offset by
-  // where that script's text starts in the outer file. This is the same walk
-  // language autofix does, and for the same reason: this project keeps most of
-  // its code inside templates.
+  /**
+   * An .html file's comments come from each <script> it embeds, offset by
+   * where that script's text starts in the outer file. This is the same walk
+   * language autofix does, and for the same reason: this project keeps most of
+   * its code inside templates.
+   *
+   * @behaviour canon/comments.canon.html#an-html-file-comes-through-its-scripts
+   * @behaviour canon/comments.canon.html#an-unreadable-kind-fails
+   */
   function candidates(source: string, target: string, cli): Candidate[] {
     const found: { pos: number; end: number; raw: string; text: string }[] = []
     if (SOURCE_EXTENSIONS.some((ext) => target.endsWith(ext))) {
@@ -154,11 +163,16 @@
     }))
   }
 
-  // The three verdicts say what happens to a comment, never what makes one
-  // clutter. An earlier version defined them by criteria instead — "cut" listed
-  // the four failing kinds — which put a second copy of the standard in a string
-  // nothing can query, directly below the guide it was copied from. Editing the
-  // guide left that copy asserting the old thing, and the model read both.
+  /**
+   * The three verdicts say what happens to a comment, never what makes one
+   * clutter. An earlier version defined them by criteria instead — "cut" listed
+   * the four failing kinds — which put a second copy of the standard in a string
+   * nothing can query, directly below the guide it was copied from. Editing the
+   * guide left that copy asserting the old thing, and the model read both.
+   *
+   * @behaviour canon/comments.canon.html#the-guide-supplies-every-criterion
+   * @behaviour canon/comments.canon.html#nothing-else-describes-what-earns-a-place
+   */
   function verdictPrompt(guide: string, items: Candidate[]): string {
     const sections = items
       .map((c) => `### comment ${c.id}\n"""\n${c.text}\n"""\n\nThe code it introduces:\n"""\n${c.context}\n"""`)
@@ -204,21 +218,29 @@
     return out
   }
 
-  // A comment opening with this tag is a working note: useful while someone
-  // writes the code, and never part of what the file ships. It needs no model to
-  // recognise, so it never reaches one — the tag is the author saying the
-  // verdict out loud, and asking anyway would let a model overrule them.
+  /**
+   * A comment opening with this tag is a working note: useful while someone
+   * writes the code, and never part of what the file ships. It needs no model to
+   * recognise, so it never reaches one — the tag is the author saying the
+   * verdict out loud, and asking anyway would let a model overrule them.
+   *
+   * @behaviour canon/comments.canon.html#a-working-note-goes-without-asking
+   */
   const WORKING_NOTE = /^\s*WIP\b:?/
 
-  // A doc comment on an exported function is not documentation about the code,
-  // it IS the code's output: `mycelium --help` prints the roster by reading
-  // these. Cutting one silently empties a command's description, and no gate
-  // catches it, because nothing validates the roster against anything.
-  //
-  // So these never reach the model at all. Asking whether they earn their place
-  // is asking the wrong question — an unread doc comment is still the only
-  // source of a line the tool prints. A first run of this command flagged three
-  // of them, including this command's own.
+  /**
+   * A doc comment on an exported function is not documentation about the code,
+   * it IS the code's output: `mycelium --help` prints the roster by reading
+   * these. Cutting one silently empties a command's description, and no gate
+   * catches it, because nothing validates the roster against anything.
+   *
+   * So these never reach the model at all. Asking whether they earn their place
+   * is asking the wrong question — an unread doc comment is still the only
+   * source of a line the tool prints. A first run of this command flagged three
+   * of them, including this command's own.
+   *
+   * @behaviour canon/comments.canon.html#a-doc-comment-on-an-export-stays-without-asking
+   */
   function isRosterDoc(c: { raw: string; context: string }): boolean {
     return c.raw.trimStart().startsWith("/**") && /^\s*export\b/.test(c.context)
   }
@@ -245,11 +267,16 @@
     return { verdicts, protectedCount }
   }
 
-  // What to remove for a cut. The comment's own range stops at its last
-  // character, so deleting exactly that leaves the blank indented line it sat
-  // on. Both ends widen together, and only for a comment that owns its whole
-  // line: one trailing code shares that newline with the code, so taking it
-  // joins the line to the one below and quietly changes what runs.
+  /**
+   * What to remove for a cut. The comment's own range stops at its last
+   * character, so deleting exactly that leaves the blank indented line it sat
+   * on. Both ends widen together, and only for a comment that owns its whole
+   * line: one trailing code shares that newline with the code, so taking it
+   * joins the line to the one below and quietly changes what runs.
+   *
+   * @behaviour canon/comments.canon.html#a-cut-takes-its-whole-line
+   * @behaviour canon/comments.canon.html#a-comment-beside-code-leaves-the-code
+   */
   function cutRange(source: string, c: Candidate): { pos: number; end: number } {
     let pos = c.pos
     let end = c.end
@@ -292,6 +319,12 @@
    * The count at the end is the number worth reading. Every comment here can
    * look defensible one at a time while the file as a whole exhausts a reader,
    * and only the ratio shows that.
+   *
+   * @behaviour canon/comments.canon.html#every-comment-in-the-file-gets-a-verdict
+   * @behaviour canon/comments.canon.html#the-summary-names-what-nothing-judged
+   * @behaviour canon/comments.canon.html#check-exits-non-zero-on-a-cut
+   * @behaviour canon/comments.canon.html#a-promotion-alone-exits-zero
+   * @behaviour canon/comments.canon.html#check-writes-nothing
    */
   export function check(ctx: CommandContext) {
     const { target, source, items } = loadCandidates(ctx)
@@ -340,6 +373,12 @@
    *
    * Ranges splice back to front. Cutting front to back shifts every later
    * position by what the earlier cut removed.
+   *
+   * @behaviour canon/comments.canon.html#autofix-removes-only-a-cut
+   * @behaviour canon/comments.canon.html#a-promotion-stays-where-it-sits
+   * @behaviour canon/comments.canon.html#a-promotion-prints-the-line-that-moves-it
+   * @behaviour canon/comments.canon.html#diff-writes-nothing
+   * @behaviour canon/comments.canon.html#several-cuts-land-where-they-were-judged
    */
   export function autofix(ctx: CommandContext) {
     const { target, absPath, source, items } = loadCandidates(ctx)
