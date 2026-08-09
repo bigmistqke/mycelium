@@ -64,10 +64,18 @@ on, and an internal helper carrying a claim is exactly as worth addressing as an
 entry point. A file exporting nothing at all still answers behaviours, and
 <code>figure.element.js</code> answers twelve.</p>
 <p>A declaration in a participating file names the behaviour it answers. One
-naming none is a finding with three possible fixes: cite the behaviour it already
-answers, split it until each part answers one, or write the behaviour nobody had
-written down. The third is the valuable case, and the project this borrows from
-turned sixteen of them into real rules.</p>
+naming none has three fixes available: cite what it already answers, split it
+until each part answers one, or write the behaviour nobody had written down. The
+third is the valuable case, and the project this borrows from turned sixteen of
+them into real rules.</p>
+<p>Nothing fails for want of a citation, and nothing gets exempted either. A
+declaration naming no behaviour is uncommitted, the check counts it, and the count
+is the point. That is how <code>any</code> works in a typed language: legal,
+visible, and a standing signal about where the guarantees stop.</p>
+<p>Some code is honestly uncommitted. <code>MODEL</code> picks which model to ask
+and could pick another tomorrow, so it is a setting rather than a promise. Forcing
+a behaviour on it would buy a test that goes red when somebody edits the line and
+never catches a mistake.</p>
 <p>One citation per declaration is the target. A function carrying five is doing
 five things, and the count names the decomposition worth doing. So the tag applies
 pressure on the design rather than only recording it.</p>
@@ -88,18 +96,16 @@ nothing about it is a finding.</p>
 makes silence ambiguous. An empty result must mean <q>nothing cites this</q>
 rather than <q>nobody got round to tagging</q>.</p>
 <h3>What the check reports</h3>
-<p>Three findings fail. An address resolving to nothing is rot, which
+<p>Two findings fail. An address resolving to nothing is rot, which
 <code>every-link-resolves</code> reports for a document and cannot see inside a
 comment. A behaviour no code cites is dead, which <code>grounded</code> already
-reports for an axiom nothing reaches. A declaration citing no behaviour is
-freelancing, which <code>grounded</code> already reports for a behaviour naming no
-axiom.</p>
-<p>Both directions matter, and each catches what the other misses. Counted from
-the claim, coverage asks whether anything implements what the canon promises.
-Counted from the code, it asks whether the code does anything nobody promised.</p>
-<p>A fourth number gets reported and fails nothing: how many behaviours each
-declaration cites. A high one names a candidate for decomposition, which is a
-judgment about design rather than a defect.</p>
+reports for an axiom nothing reaches.</p>
+<p>Two numbers get reported and fail nothing. How much of a file names a claim,
+which is the ratio this whole design exists to move. And how many behaviours each
+declaration cites, where a high one names a candidate for decomposition.</p>
+<p>Both directions still get counted, and each shows what the other misses. From
+the claim, the count asks whether anything implements what the canon promises.
+From the code, it asks how much of what runs answers to anything at all.</p>
 <p>A citation gets judged on where it lands, never on what carries it. A tag
 landing on an axiom is a finding for the reason a test case doing it is one: the
 code knows something no behaviour states. Judging the resolved address rather than
@@ -132,6 +138,9 @@ one puts citations in doc comments and leaves the rest where it sits.</p>
 <p>Whether the decomposition count should ever fail rather than report. A ceiling
 of one citation per declaration is the honest reading of the rule, and no code
 here meets it yet.</p>
+<p>What a type owes. A shape makes no promise on its own, and the functions using
+it carry the claims, so an interface may be permanently uncommitted by kind rather
+than by accident. The count will show whether that distinction earns a rule.</p>
 <p>Whether rewording a behaviour should fail its citers until somebody
 re-confirms them. A stamp recording that a citation got read against the current
 wording is stronger and more annoying; reporting the reach alone leans on the
