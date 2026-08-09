@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Tag the four template files, so the implementation rank stops showing them as bare file boxes</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal">
+  <knowledge-title>Tag the four template files, so the implementation rank stops showing them as bare file boxes</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-prompt>now figure.element.js has granular entries, but implementation
+templates/knowledge.template.html
+templates/knowledge.template.html
+templates/language.template.html
+templates/language.template.html
+templates/canon.template.html
+templates/canon.template.html
+templates/canon.template.html
+templates/template.template.html
+templates/template.template.h -&gt; this is still too coarse</knowledge-prompt>
+  <knowledge-detail><p>The chain's implementation rank draws one box per cited declaration. Four of
+the eight files a specification names carry no <code>@behaviour</code> tag yet,
+so each shows as a bare file box repeated once per behaviour reaching it —
+which is what the user is reading off the page.</p>
+<p>The four are <code>template.template.html</code> (the generic validator),
+<code>canon.template.html</code> (the three chain checks and the canon authoring
+commands), <code>knowledge.template.html</code> and
+<code>language.template.html</code> (the rest of the authoring commands).</p>
+</knowledge-detail>
+</knowledge-goal>
+</body></html>

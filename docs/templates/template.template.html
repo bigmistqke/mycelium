@@ -300,10 +300,16 @@
   the DOM engine this project runs on).
 </p>
 <script type="module" id="validate-from-template">
-  // Given a type's own <template> definition (with required/pattern/enum
-  // attributes on its field placeholders) and a real instance element,
-  // validates the instance purely from what the template declares -- no
-  // per-type code. See "The generic validator" above.
+  /**
+   * Given a type's own <template> definition (with required/pattern/enum
+   * attributes on its field placeholders) and a real instance element,
+   * validates the instance purely from what the template declares -- no
+   * per-type code. See "The generic validator" above.
+   *
+   * Everything it promises it delegates, so the claims sit on the four
+   * functions below rather than here. This one locates the root and collects
+   * what they find.
+   */
   export function validateFromTemplate(templateEl, instanceRoot) {
     const shape = templateEl.content.firstElementChild
     const rootTag = shape.tagName.toLowerCase()
@@ -325,6 +331,18 @@
     // misspelt schema word becomes a requirement for an attribute of that name,
     // which fails loudly rather than silently.
     const SCHEMA_WORDS = new Set(['required', 'pattern', 'enum', 'repeatable', 'markup', 'conforms-to'])
+
+    /**
+     * Every attribute a placeholder declares, checked against the instance
+     * carrying it: present when the declaration demands it, and matching the
+     * pattern the declaration writes as its value.
+     *
+     * A relation vocabulary is exactly this and nothing more. Each type writes
+     * the relations it allows as a pattern on data-rel, so a ninth label fails
+     * here rather than in a list some other file keeps.
+     *
+     * @behaviour canon/schema.canon.html#the-relation-vocabulary-is-closed
+     */
     function checkAttributes(placeholder, target, label) {
       for (const attr of Array.from(placeholder.attributes)) {
         if (SCHEMA_WORDS.has(attr.name)) continue
@@ -347,6 +365,17 @@
     }
     checkAttributes(shape, el, `<${rootTag}>`)
 
+    /**
+     * One occurrence of one field, against the placeholder declaring it: its
+     * text against a pattern or an enumeration, its attributes, and its
+     * interior.
+     *
+     * Empty text is the interesting case. A field carrying declared attributes
+     * holds its meaning there, so an edge with no label is complete and this
+     * says nothing about it.
+     *
+     * @behaviour canon/schema.canon.html#attribute-borne-element-may-be-empty
+     */
     function checkField(slot, node) {
       // Collapsed, not just trimmed. A field's value must not depend on how
       // its source happens to be wrapped: a title written across three
@@ -379,17 +408,23 @@
       checkContent(slot.placeholder, node, `<${slot.tag}>`)
     }
 
-    // What a placeholder says about its own interior. A placeholder's children
-    // are its content model, read the same way at every depth.
-    //
-    //   nothing declared  — text, and no elements at all
-    //   markup            — any elements, for prose whose shape nobody fixes
-    //   conforms-to="#id" — the type at that id, in this same template file
-    //   children declared — those tags, with their own cardinality and order
-    //
-    // Strict is the default because the opposite left every field unexamined:
-    // a bold tag inside a title flattens into textContent and nothing ever
-    // looked past it.
+    /**
+     * What a placeholder says about its own interior. A placeholder's children
+     * are its content model, read the same way at every depth.
+     *
+     *   nothing declared  — text, and no elements at all
+     *   markup            — any elements, for prose whose shape nobody fixes
+     *   conforms-to="#id" — the type at that id, in this same template file
+     *   children declared — those tags, with their own cardinality and order
+     *
+     * Strict is the default because the opposite left every field unexamined:
+     * a bold tag inside a title flattens into textContent and nothing ever
+     * looked past it.
+     *
+     * @behaviour canon/schema.canon.html#a-plain-field-holds-text-only
+     * @behaviour canon/schema.canon.html#a-field-may-declare-its-own-vocabulary
+     * @behaviour canon/schema.canon.html#a-placeholder-may-name-a-nested-type
+     */
     function checkContent(placeholder, node, label) {
       if (placeholder.hasAttribute('markup')) return
 
@@ -422,21 +457,34 @@
       walkChildren(placeholder, node, label)
     }
 
-    // One slot per placeholder. `repeatable` says the child may appear more
-    // than once; without it a second one is an error rather than the silence
-    // a first-match lookup used to give. Together with `required` that covers
-    // at most one, exactly one, zero or more, and one or more.
-    //
-    // Gather first, check second, so the errors come out in the order the
-    // template declares its fields rather than the order the instance happens
-    // to write them.
-    //
-    // The order of the placeholders is the content model, and it always
-    // binds: a document that does not match its declared shape is wrong
-    // the same way one missing a required field is wrong. A cursor that only
-    // moves forward reports both ways of breaking it. A tag ranked behind the
-    // cursor sits out of order, and a run split by another tag trips the same
-    // check, since the cursor has already passed it.
+    /**
+     * One slot per placeholder. `repeatable` says the child may appear more
+     * than once; without it a second one is an error rather than the silence
+     * a first-match lookup used to give. Together with `required` that covers
+     * at most one, exactly one, zero or more, and one or more.
+     *
+     * Gather first, check second, so the errors come out in the order the
+     * template declares its fields rather than the order the instance happens
+     * to write them.
+     *
+     * The order of the placeholders is the content model, and it always
+     * binds: a document that does not match its declared shape is wrong
+     * the same way one missing a required field is wrong. A cursor that only
+     * moves forward reports both ways of breaking it. A tag ranked behind the
+     * cursor sits out of order, and a run split by another tag trips the same
+     * check, since the cursor has already passed it.
+     *
+     * Six claims land on this one function, which names the decomposition
+     * worth doing rather than a fault to hide. Cardinality, order and the
+     * closed set of names all come off the same single pass.
+     *
+     * @behaviour canon/schema.canon.html#the-root-is-closed
+     * @behaviour canon/schema.canon.html#declared-order-binds
+     * @behaviour canon/schema.canon.html#a-run-stays-contiguous
+     * @behaviour canon/schema.canon.html#duplicate-field-fails
+     * @behaviour canon/schema.canon.html#repeatable-child-may-repeat
+     * @behaviour canon/schema.canon.html#every-occurrence-is-checked
+     */
     function walkChildren(container, target, label) {
       const slots = Array.from(container.children).map((placeholder) => ({
         tag: placeholder.tagName.toLowerCase(),
