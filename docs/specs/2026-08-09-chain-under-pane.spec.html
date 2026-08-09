@@ -36,6 +36,16 @@ question of what an overlay hides never arises.</p>
 <p>The graph takes the height left over and scrolls inside it, in both
 directions. That is the change with teeth, and the next section is about
 it.</p>
+<p>Nothing selected means no pane at all. It has no resting state to design,
+because a region explaining that it is empty is a region earning nothing, so the
+graph holds the whole height until somebody clicks.</p>
+<h3>Opening the pane moves every box</h3>
+<p>A pane that appears takes height from the graph, so the grid reflows and
+every box lands somewhere new. The wires run between measured rectangles, so
+they follow only if something redraws them.</p>
+<p>Opening and closing therefore join loading and resizing as the moments that
+trigger a redraw. Forgetting one leaves the wires pointing at where the boxes
+used to be, which looks like a layout bug and is a stale measurement.</p>
 <h3>What moving the scroll costs</h3>
 <p>Every wire runs between two rectangles the browser measures against the
 viewport, and the drawing subtracts the grid's own rectangle to turn them into
@@ -72,6 +82,15 @@ rather than arriving at a file and reconstructing why.</p>
 <p>Clicking a node still lights everything beneath it and dims the rest. The
 pane fills at the same time from the same click, so the blast radius and the
 reasoning arrive together.</p>
+<h3>One claim has to move with its content</h3>
+<p>A claim in the chain canon says the drawing carries each cited declaration's
+doc comment and the lines beneath it. Its check reads the data the page gets and
+asserts the comment arrived with its tag lines stripped and the code arrived
+under it, which is everything a sandbox can reach.</p>
+<p>That content moves into the pane, so the claim stops describing a box in a
+column. Rewriting it makes it a claim about what a reader sees, and only a
+browser check settles that — the same check the geometry needs, reading the pane
+after a click rather than the data before one.</p>
 </spec-design>
   <spec-out-of-scope>
 <p>Nothing here changes what the graph draws. The three ranks, the depth
@@ -84,14 +103,12 @@ a node or in a comment the citation reader already reads.</p>
 </spec-out-of-scope>
   <spec-open-questions>
 <p>How tall the pane rests. A fixed height wastes space on a leaf and truncates
-an axiom, and one that grows with its content moves the graph under the
-reader's cursor.</p>
-<p>What the pane shows before anything is selected. A blank region reads as a
-bug, and instructions read as a page that needs them.</p>
-<p>Whether the drawing's two existing claims stay node checks once a browser
-check can reach the page. One of them says the rank draws a box per cited
-declaration, which data can answer; the other says the drawing carries the
-comment and the code, which it cannot.</p>
+an axiom, and one growing with its content moves the graph under the reader's
+cursor. This one settles by looking at it rather than by argument, so the first
+version picks a height and the second one earns its change.</p>
+<p>Whether the claim about drawing one box per cited declaration also becomes a
+browser check. The rank it describes survives this change, and data answers it
+today, so it may stay where it is while its sibling moves.</p>
 </spec-open-questions>
 </spec-doc>
 </body></html>
