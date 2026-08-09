@@ -200,7 +200,7 @@ export function collectCodeCitations(fs: AuditFs, specifies: string[]): CodeCita
       continue
     }
 
-    const blocks: { text: string; offset: number }[] = []
+    const blocks: { text: string; offset: number; label: string | null }[] = []
     if (file.endsWith(".html")) {
       const doc = fs.parse(file)
       let searchFrom = 0
@@ -209,10 +209,10 @@ export function collectCodeCitations(fs: AuditFs, specifies: string[]): CodeCita
         const offset = source.indexOf(text, searchFrom)
         if (offset === -1) continue
         searchFrom = offset + text.length
-        blocks.push({ text, offset })
+        blocks.push({ text, offset, label: script.getAttribute("data-audits") ?? script.getAttribute("id") })
       }
     } else {
-      blocks.push({ text: source, offset: 0 })
+      blocks.push({ text: source, offset: 0, label: null })
     }
 
     for (const block of blocks) {
@@ -220,7 +220,12 @@ export function collectCodeCitations(fs: AuditFs, specifies: string[]): CodeCita
         const cites = [...comment.raw.matchAll(TAG)].map((m) => `docs/${m[1]}`)
         if (!cites.length) continue
         const at = block.offset + comment.pos
-        const name = comment.subject.name ?? `at-line-${source.slice(0, at).split("\n").length}`
+        // An audit exports one default function and never names it, since the
+        // tag above the script already says which audit it is. The script's own
+        // name is that name, so a nameless declaration takes it rather than a
+        // line number nobody can read.
+        const name = comment.subject.name ?? block.label ??
+          `at-line-${source.slice(0, at).split("\n").length}`
         found.push({
           address: `${file}#${name}`,
           file,
