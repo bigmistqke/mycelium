@@ -1460,14 +1460,26 @@ ${base}
   @media (prefers-color-scheme: dark) {
     .shiki, .shiki span { color: var(--shiki-dark); background-color: var(--shiki-dark-bg); }
   }
-  #pane-links { margin-top: .9rem; }
+  /* Two halves that stay halves. minmax(0, 1fr) is 1fr without its min-content
+     floor, so a long title wraps instead of widening its own column, and the
+     split cannot drift.
+
+     No column gap either: the divider is a border on the second half, so a gap
+     would put it half a gap right of centre. The space between the two comes
+     from padding inside each half, which leaves the line itself exactly on the
+     middle. */
+  #pane-links { margin-top: .9rem; display: grid; align-items: start;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 0; }
+  #pane-links .side { padding-right: 1.25rem; }
+  #pane-links .side:only-child { grid-column: 1 / -1; padding-right: 0; }
+  #pane-links .side + .side { border-left: 1px solid var(--line);
+                              padding-left: 1.25rem; padding-right: 0; }
   #pane-links h3 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
                    opacity: .5; margin: .6rem 0 .25rem; font-weight: 500; }
   #pane-links button { display: block; background: none; border: 0; padding: .1rem 0;
                        color: inherit; font: inherit; text-align: left; cursor: pointer;
                        text-decoration: underline; text-decoration-color: var(--line); }
   #pane-links button:hover { text-decoration-color: currentColor; }
-  #pane-anchor { display: inline-block; margin-top: .9rem; }
   #pane-close { position: absolute; top: .6rem; right: .8rem; background: none;
                 border: 0; color: inherit; font-size: 1.1rem; cursor: pointer; opacity: .6; }
   #pane-close:hover { opacity: 1; }
@@ -1504,7 +1516,13 @@ ${base}
   .node { border: 1px solid var(--line); border-radius: 5px; padding: .4rem .55rem;
           margin-bottom: .35rem; cursor: pointer; position: relative; }
   .node:hover { border-color: currentColor; }
+  /* A lit chain stays one brightness, since dimming part of it made the whole
+     thing harder to read. The node somebody picked takes a heavier border
+     instead: weight separates it from what it lit without competing over
+     colour. */
   .node.lit { border-color: currentColor; }
+  .node.chosen { box-shadow: inset 0 0 0 1px currentColor,
+                             0 0 12px color-mix(in oklab, currentColor 50%, transparent); }
   .node.dim { opacity: .18; }
   .node .reach { float: right; opacity: .5; font-variant-numeric: tabular-nums; }
   .node a { color: inherit; text-decoration: none; }
@@ -1529,7 +1547,6 @@ ${base}
   <p id="pane-where"></p>
   <div id="pane-detail"></div>
   <div id="pane-links"></div>
-  <a id="pane-anchor"></a>
 </aside>
 <script type="application/json" id="chain">${JSON.stringify(data)}<\/script>
 <script>

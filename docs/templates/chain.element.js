@@ -487,7 +487,16 @@ function fillPane(address) {
   if (!node) { pane.hidden = true; return }
   const file = node.address.split('#')[0].replace(/^docs\//, '')
   document.getElementById('pane-title').textContent = node.title || node.name
-  document.getElementById('pane-where').textContent = (node.kind || node.code_kind || 'declaration') + ' in ' + file
+  // The document's name is the way out, rather than a separate line offering to
+  // open it. A reader already reads that line to learn where the claim lives,
+  // and the href carries the fragment, so following it lands on the claim
+  // itself rather than the top of the file.
+  const where = document.getElementById('pane-where')
+  where.textContent = (node.kind || 'declaration') + ' in '
+  const anchor = document.createElement('a')
+  anchor.href = node.address.replace(/^docs\//, '')
+  anchor.textContent = file
+  where.appendChild(anchor)
   const detail = document.getElementById('pane-detail')
   detail.textContent = ''
   // A claim's reasoning is markup it wrote; a declaration's is the prose of its
@@ -503,11 +512,13 @@ function fillPane(address) {
   if (node.snippet) detail.appendChild(codeFor(node))
   const links = document.getElementById('pane-links')
   links.textContent = ''
-  links.appendChild(neighbours('derives from', parentsOf[node.address]))
-  links.appendChild(neighbours('derived from it', childrenOf[node.address]))
-  const anchor = document.getElementById('pane-anchor')
-  anchor.href = node.address.replace(/^docs\//, '')
-  anchor.textContent = 'open ' + file
+  // Side by side, since the two read as a pair: what a claim answers to, and
+  // what answers to it. A side with nothing in it stays out entirely rather
+  // than leaving a heading over an empty column.
+  for (const side of [
+    neighbours('derives from', parentsOf[node.address]),
+    neighbours('derived from it', childrenOf[node.address]),
+  ]) if (side) links.appendChild(side)
   pane.hidden = false
 }
 
@@ -522,9 +533,10 @@ function fillPane(address) {
  * reader the same thing its absence does.
  */
 function neighbours(title, addresses) {
-  const box = document.createDocumentFragment()
   const found = (addresses || []).map(nodeAt).filter(Boolean)
-  if (!found.length) return box
+  if (!found.length) return null
+  const box = document.createElement('div')
+  box.className = 'side'
   const h = document.createElement('h3')
   h.textContent = title
   box.appendChild(h)
@@ -565,6 +577,10 @@ function show(address) {
   selected = address
   const lit = selected ? chainOf(selected) : null
   for (const el of grid.querySelectorAll('[data-address]')) {
+    // Three states, not two. Lighting the chain says which claims are involved
+    // and says nothing about which one a reader picked, so the one they picked
+    // gets the full colour and the chain around it a little less.
+    el.classList.toggle('chosen', el.dataset.address === selected)
     el.classList.toggle('lit', !!lit && lit.has(el.dataset.address))
     el.classList.toggle('dim', !!lit && !lit.has(el.dataset.address))
   }
