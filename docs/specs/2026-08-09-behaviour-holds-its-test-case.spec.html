@@ -86,6 +86,19 @@ tree, and every claim in the corpus has exactly one parent today — 91 with one
 citation and 5 with none. The <code>depends_on</code> edge stays declared beside
 the nesting, so a behaviour narrowing two others still has somewhere to say
 so.</p>
+<h3>What proves a behaviour</h3>
+<p>A behaviour carries cases, or child behaviours, and never both. A leaf claim
+earns a case, and a claim made of narrower claims takes its proof from them.</p>
+<p>The permissive rule looks free and is not. A parent holding a case beside its
+children has two kinds of proof and no rule saying which answers for what, so a
+reader cannot tell whether that case covers the whole claim or one corner
+somebody worried about. A broad claim wanting an end-to-end check gets one as
+another child, which makes that check state what it asserts.</p>
+<p>The schema states the choice and the <code>grounded</code> walk needs no
+change to see it. That replaces the audit asking whether every behaviour has a
+case, which is cardinality the declaration can hold —
+<a href="../canon/root.canon.html#a-declaration-is-the-whole-contract">the axiom
+that a declaration carries the whole contract</a> says to put it there.</p>
 <h3>Which titles become parents</h3>
 <p>Eleven of the fifteen. The rule is structural rather than a matter of taste:
 a parent whose children are every behaviour in the specification has the
@@ -99,20 +112,17 @@ are genuinely subdivided: figure's 12 behaviours across 4 documents, validate's
 <p>One more goes for a different reason. The figure placement document holds a
 single case, and a parent with one child adds a level without grouping anything,
 so the child claim stands on its own.</p>
-<p>Two of the eleven need writing rather than rewording. <q>What validate hands
-an audit, and which tree it reads</q> names a topic and asserts nothing, and
-<q>knowledge add and knowledge link write what they promise</q> asserts almost
-nothing. Both mean stating a claim nobody has stated, which is the valuable case
-rather than a chore.</p>
-<h3>What proves a behaviour</h3>
-<p>A behaviour carries at least one case or at least one child behaviour. A leaf
-claim earns a case, and a claim made of narrower claims takes its proof from
-them.</p>
-<p>The schema states the pair and the <code>grounded</code> walk needs no change
-to see it. That replaces the audit asking whether every behaviour has a case,
-which is cardinality the declaration can hold —
-<a href="../canon/root.canon.html#a-declaration-is-the-whole-contract">the axiom
-that a declaration carries the whole contract</a> says to put it there.</p>
+<p>Two of the eleven turn out to group one child too many, which is the
+mechanism working rather than a problem with it. The scope title covers four
+claims, and three of them fit <q>every audit the corpus declares runs, and each
+one sees the whole tree the run names</q>, while an audit's permission to reach
+outside that tree narrows nothing there. The knowledge add title covers three,
+and two of them are one claim wearing two faces — the command computes the
+filename's date rather than accepting one — while an edge reaching a template
+has nothing to do with dates.</p>
+<p>So both parents get written over the children that genuinely narrow them, and
+the odd child in each pair hangs directly off the specification. No id changes
+and no case moves.</p>
 <h3>Which runtime runs a case</h3>
 <p>A case's script type picks its runtime, and nothing larger picks anything.
 <code>mycelium/test</code> means a sandbox on disk, and
@@ -122,9 +132,6 @@ case in the corpus by that label and makes one pass per runtime.</p>
 needing both is the one this change lands in: the chain canon holds three checks
 a sandbox settles and two drawing claims only a page can, since the disclosure
 the drawing builds exists once the page runs.</p>
-<p>A browser page then meets cases it cannot host. It has to leave them alone
-and show that it did, rather than letting a node case read as still working —
-PENDING that never resolves looks exactly like a page still thinking.</p>
 <h3>A fixture is not a claim</h3>
 <p>A browser case writes its fixture as real markup, and after this change that
 markup sits inside a canon document. A figure fixture holds figure elements and
@@ -170,16 +177,20 @@ to list what a subsystem promises would turn into mostly test code.</p>
 reader who wants the proof opens it, the same gesture the chain page already
 uses for a declaration's comment and code.</p>
 <p>Nesting helps here rather than hurting. The validate canon that used to list
-19 flat behaviours lists 4 broad ones, each opening onto its own, which is the
-structure its five test documents were carrying informally.</p>
+19 flat behaviours lists 4 broad ones and one loose claim, each opening onto its
+own, which is the structure its five test documents were carrying
+informally.</p>
 <h3>What the drawing gains</h3>
 <p>The chain drops to three ranks: axioms, behaviours, implementation. Every
 edge then crosses exactly one rank, nothing doubles back, and the sentence
 calling the chain a sequence becomes true.</p>
-<p>Behaviours rank by depth the way axioms already do, so a narrowing behaviour
-sits one column right of the one it narrows. A behaviour box carries its case
-count, since the cases lose their column, and a behaviour with four cases looks
-different from one with one.</p>
+<p>Behaviours rank by depth into columns, the way axioms already do, so a
+narrowing behaviour sits one column right of the one it narrows. That reuses the
+filter the page already runs per axiom depth rather than growing a second idea
+about what a rank is. A deep subsystem then spreads the page sideways, which is
+a cost axioms already carry.</p>
+<p>A behaviour box carries its case count, since the cases lose their column,
+and a behaviour with four cases looks different from one with one.</p>
 <h3>The migration, in order</h3>
 <p>Fifteen documents hold 80 cases, and each case moves into the behaviour its
 edge already names. The edge names it unambiguously, so a script can do the
@@ -213,21 +224,14 @@ separate decision</a> weighs the candidates. It waits because this change
 already rewrites eighty tags and moving the same eighty twice buys nothing.</p>
 </spec-out-of-scope>
   <spec-open-questions>
-<p>What the two unwritten parents actually claim. One covers what validate hands
-an audit and which tree it reads, and the other covers what knowledge add and
-link promise. Writing either means stating something the project has never
-stated, so neither is a rewording exercise and both could turn out to hold no
-claim at all.</p>
-<p>Whether a parent behaviour may also carry its own case. Allowing both costs
-nothing in the schema and gives a broad claim an end-to-end check above its
-parts. Forbidding it keeps one clean rule about where proof lives.</p>
 <p>How a page shows a case it cannot host. Hiding a node case understates what
 the document claims, and showing it greyed asks a reader to know why. Neither
-answer is obvious and the page is the only report a browser case has.</p>
-<p>Whether behaviour depth should rank into columns or nest inside one box.
-Columns reuse what the axiom rank already does and spread a deep subsystem
-across the page. Nesting keeps a subsystem together and makes the rank's widths
-uneven.</p>
+answer is obvious and the page is the only report a browser case has, so this
+waits for its own pass rather than getting guessed at here.</p>
+<p>Whether the two narrowed groupings hold together once written. The scope
+title and the knowledge add title each turn out to cover one child that does not
+narrow them, and both fixes rest on reading four claims and three claims
+carefully. A second reading may find another child in the wrong place.</p>
 </spec-open-questions>
 </spec-doc>
 </body></html>
