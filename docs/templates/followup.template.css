@@ -1,0 +1,30 @@
+/* The followup-* field vocabulary. Every tag is hyphenated so it can never
+   collide with a current or future standard HTML element, and selectors stay
+   scoped under followup-item so this file's rules can never leak onto another
+   template's same-named field tags.
+
+   An item reads as one line and a caveat, because that is all it is: what to
+   come back to, where it applies, and what would end it. Nothing here styles a
+   status, a priority or a size, since the family declares none of them. */
+followup-item {
+  display: block;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.9rem 1.1rem;
+  background: var(--code-bg);
+  margin: 0.75rem 0;
+}
+followup-item > followup-title { display: block; font-weight: 600; font-size: 1.1rem; }
+followup-item > followup-at,
+followup-item > followup-when { display: block; margin-top: 0.4rem; font-size: 0.9rem; color: var(--muted); }
+followup-item > followup-at::before,
+followup-item > followup-when::before {
+  color: var(--accent);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 0.5rem;
+}
+followup-item > followup-at::before { content: "at"; }
+followup-item > followup-when::before { content: "when"; }

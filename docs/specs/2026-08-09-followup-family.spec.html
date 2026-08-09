@@ -2,14 +2,14 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Spec: A backlog that drains: an intention names where it applies, and nothing marks it done</title>
+<title>Spec: A followup that drains: an intention names where it applies, and nothing marks it done</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/spec.template.css">
 </head>
 <body>
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
-  <spec-title>A backlog that drains: an intention names where it applies, and nothing marks it done</spec-title>
-  <spec-status>draft</spec-status>
+  <spec-title>A followup that drains: an intention names where it applies, and nothing marks it done</spec-title>
+  <spec-status>approved</spec-status>
   <spec-date>2026-08-09</spec-date>
   <spec-problem>
 <p>Work interrupts itself. You are inside one thing when you notice another,
@@ -33,19 +33,29 @@ one of them says completed, so the family shows what happens when a store meant
 to drain keeps a declared record of its own progress.</p>
 </spec-problem>
   <spec-design>
-<p>A backlog item is one intention with somewhere to land. It carries a title, a
+<p>A followup is one intention with somewhere to land. It carries a title, a
 required link to what it concerns, and an optional condition that would end it.
 Nothing else.</p>
+<h3>The name</h3>
+<p>Backlog was the other candidate and it loses on freight. Grooming, sprints,
+points and prioritisation ride along with the word, and this design rejects
+every one of them. Followup is what a person reaching for the concept actually
+says.</p>
 <h3>The place is what makes it survive</h3>
 <p>The link is required because it does two jobs no list can do. It puts the
 item in front of a reader at the moment they open the thing it is about, so
-nobody has to read a backlog to find it. And it dates the item against the
+nobody has to read a list to find it. And it dates the item against the
 repository rather than against a calendar.</p>
 <p><code>every-link-resolves</code> already fails a build on an href pointing at
 something that no longer exists, across the whole corpus and out to source
 files. So an item about a deleted file or a retired claim breaks validation.
 Staleness gets loud instead of accumulating quietly, which is the failure the
 January deferrals demonstrate.</p>
+<p>The link sits inside a <code>followup-at</code> child rather than carrying a
+<code>data-rel</code>. Containment already says what the link is, so no ninth
+relation joins the vocabulary, and the audits reading direct-child edges never
+see it. The canon's own <code>canon-references</code> works the same way for the
+same reason.</p>
 <h3>Deletion is the success state</h3>
 <p>This is the only family here where removing a document means the work went
 well. A notebook entry is a dated record and an axiom is a claim somebody
@@ -55,37 +65,41 @@ thing and drops the note.</p>
 <p>Two more forces remove one, and they cover the items nobody acts on. The
 condition fires, or the place stops existing. Both come from outside the
 document, which is what keeps an abandoned item from sitting there forever.</p>
-<p>Git holds every item this backlog ever carried, so neither route throws away
+<p>Git holds every item this family ever carried, so neither route throws away
 the history. What the project decided not to do last month stays answerable
 without a single field recording it.</p>
 <h3>Doneness is an act, not a state</h3>
-<p>No status field, and nothing to update. <code>mycelium backlog done
-&lt;item&gt;</code> deletes the file, and the command carries the meaning that a
+<p>No status field, and nothing to update. <code>mycelium followup done
+&lt;file&gt;</code> deletes the file, and the command carries the meaning that a
 field would try to store.</p>
-<p>This is the line against becoming a task tracker. A backlog needs somebody
+<p>This is the line against becoming a task tracker. A tracker needs somebody
 to keep its progress current, and that upkeep is what rots — 286 plan statuses
 reading completed is what a maintained field becomes once everyone stops. An
 item that only ever disappears cannot rot in that direction.</p>
-<h3>A condition may be a script</h3>
-<p>A condition in prose reads to a person. A condition as a script answers on
-request, and <code>mycelium backlog due</code> reports which items have come
-due. That turns remembering into asking, which is the whole point of writing
-one down mid-work.</p>
-<p>The script type is <code>mycelium/experiment</code>, shared with the
-notebook, because the machinery is identical: a question, code, and a reading.
-The question differs — a notebook experiment asks what is true and a condition
-asks whether the moment arrived.</p>
-<p>Nothing here runs during <code>validate</code>. A condition that fails a
-build is a gate, and a backlog holding a gate would stop work on the strength
-of something somebody jotted down while thinking about something else.</p>
+<h3>A condition may become a script</h3>
+<p>A condition in prose reads to a person, and that is where this family
+starts. A condition as a script would answer on request, and <code>mycelium
+followup due</code> would report which items have come due. That turns
+remembering into asking, which is the whole point of writing one down
+mid-work.</p>
+<p>The runner belongs to the notebook's experiment type, which does not exist
+yet, so nothing here ships a script condition. <code>list</code> prints the
+conditions and a person reads them. The family's own first item records
+that.</p>
+<p>Nothing here will ever run during <code>validate</code>. A condition that
+fails a build is a gate, and a followup holding a gate would stop work on the
+strength of something somebody jotted down while thinking about something
+else.</p>
 <h3>What an item becomes</h3>
 <p>A spec, or a plan, or nothing. That is why an item carries no steps of its
 own: the thing it turns into holds those, and an item that has grown steps
 stopped being an item some time ago.</p>
-<p>Capture has to be one line, without leaving the work. <code>mycelium backlog
-add --at &lt;place&gt; --title "…" [--when "…"]</code> is the whole surface. If
-it costs more than that, a person opens the parallel session instead and the
-family means nothing.</p>
+<p>Capture has to be one line, without leaving the work. <code>mycelium
+followup add --at &lt;path&gt; --title "…" [--when "…"]</code> is the whole
+surface, and <code>--at</code> takes a path from the repository root so a
+person never has to know where this family stores its files. If capture costs
+more than that, somebody opens the parallel session instead and the family
+means nothing.</p>
 </spec-design>
   <spec-out-of-scope>
 <p>Priority, size, assignment, and ordering. Every one of them is a field that
@@ -94,19 +108,14 @@ fields become.</p>
 <p>Retiring <code>plan</code>. The family's twelve documents and single-valued
 status field raise the question, and answering it needs a look at what would
 miss it.</p>
-<p>Moving the eleven existing deferrals. They belong here rather than in the
-notebook, and they arrive with the migration that renames everything else.</p>
 </spec-out-of-scope>
   <spec-open-questions>
-<p>The family's name. Backlog carries freight from agile practice — grooming,
-sprints, points — and this project holds that a tag prefix has to name a thing.</p>
-<p>Which relation the required link uses. None of the eight quite says
-concerns, and minting a ninth is a deliberate act rather than a convenience.</p>
 <p>Whether an item with a script condition differs from a notebook experiment
-in anything but intent. If it does not, one of the two is a wrapper.</p>
+in anything but intent. If it does not, one of the two is a wrapper around the
+other.</p>
 <p>What happens when a place moves rather than disappears. A rename breaks the
 link exactly as a deletion does, and a reader cannot tell which happened from
-the failure.</p>
+the failure alone.</p>
 </spec-open-questions>
 </spec-doc>
 </body></html>

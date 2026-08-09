@@ -183,6 +183,34 @@ No hand-authoring gap remains for either family. Full design:
 rich fields at once, and the date-prefixed-filename convention both
 families now share).
 
+### Follow-ups: the store that drains
+
+When you notice something mid-work that belongs later, it goes here and not
+in the knowledge graph. Eleven knowledge nodes read as deferrals before this
+family existed, seven of them naming no condition at all, and two have been
+dead since January without anything saying so.
+
+```bash
+pnpm mycelium followup add --title "…" --at <repo-relative-path> [--label "…"] [--when "…"] [--file <slug>]
+pnpm mycelium followup list
+pnpm mycelium followup done <file>
+```
+
+`--at` is required and it is the whole design. It takes a path from the
+repository root — a document, a template or a source file, optionally with a
+`#fragment` — and the command works out the relative href itself. The item then
+sits in front of whoever next opens that file, so nobody reads a list to find
+it, and `every-link-resolves` fails the build when the target goes away. A
+stale item cannot sit there quietly.
+
+An item carries **no date and no status**. It exists in order to stop existing,
+so `done` deletes the file rather than marking it, and git holds what the
+project decided not to do. Do not add priority, size or assignment: `plan`'s
+twelve documents hold 286 statuses that all say `completed`, which is what a
+maintained progress field becomes.
+
+Design: `docs/specs/2026-08-09-followup-family.spec.html`.
+
 ### Tests
 
 `test.template.html` holds a family whose instances are tests. A test
