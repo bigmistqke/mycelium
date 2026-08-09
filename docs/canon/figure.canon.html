@@ -9,14 +9,42 @@
 <body>
 <canon-axiom id="a-figure-is-declared" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>A figure's arrangement is declared in the document, not inferred from its content.</canon-title>
+  <canon-detail><p>A node lands in the row and column its own data-at names. Nothing infers an
+arrangement from what the boxes contain, and nothing runs a force layout to settle
+one.</p>
+<p>An inferred arrangement moves when the content changes, so a diagram somebody
+tuned last month redraws differently today with no edit behind it. A declared one
+sits in the document, which is where a person can argue with it.</p>
+<p>It also keeps the page free of anything a network serves. The layout is
+arithmetic over declared cells, so a figure renders from the file alone.</p>
+</canon-detail>
   <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">what a document being the source means for a drawing</a>
 </canon-axiom>
 <canon-axiom id="nothing-drawn-may-hide-anything" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>Nothing a figure draws may cover anything else it drew.</canon-title>
+  <canon-detail><p>A picture that covers part of itself has stopped doing the one thing it exists
+for. Overlap is not a cosmetic fault here: a hidden box is a claim the reader
+never sees, and nothing about the page says it is missing.</p>
+<p>This is the figure's reading of the rule that a document is for a person. The
+checks under it are geometric because that is the only form the fault takes.</p>
+<p>No audit can catch it by parsing. The corpus validates with happy-dom, which
+computes no layout, so every rect measures zero and the real check has to run in a
+browser.</p>
+</canon-detail>
   <a data-rel="depends_on" href="./root.canon.html#a-document-is-read-by-a-person">a picture that covers itself has stopped being readable</a>
 </canon-axiom>
 <canon-axiom id="an-edge-runs-in-space-reserved-for-it" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>An edge runs through space reserved for it rather than over whatever lies in the way.</canon-title>
+  <canon-detail><p>An edge gets its own room: a lane the arrivals at one box share, a column kept
+clear for a back edge, the gap between two facing sides for a peer. It never
+simply takes the shortest path and crosses whatever lies there.</p>
+<p>Routing over the top is how a drawing hides something without any single step
+looking wrong. Reserving the space first makes the collision impossible rather
+than unlikely.</p>
+<p>Three audits check the geometry, and they check the claim rather than the
+intent: an edge runs the direction it says it runs, and a peer edge reaches its
+neighbour without crossing a box between them.</p>
+</canon-detail>
   <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">how an edge avoids covering what it crosses</a>
 </canon-axiom>
 <canon-specification id="figure-layout" data-conforms-to="../templates/canon.template.html#canon-specification">

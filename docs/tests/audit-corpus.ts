@@ -90,8 +90,12 @@ export function canonDoc(options: {
   const conforms = (type: string) => `data-conforms-to="../templates/canon.template.html#canon-${type}"`
   const axioms = (options.axioms ?? []).map((axiom) => {
     const up = axiom.narrows ? `\n  <a data-rel="depends_on" href="${axiom.narrows}">narrows</a>` : ""
+    // Every axiom carries a detail, because the template requires one. These
+    // fixtures exist to make a chain check fire, and a document that fails to
+    // validate would stop the check before it ever ran.
     return `<canon-axiom id="${axiom.id}" ${conforms("axiom")}>
-  <canon-title>${axiom.title}</canon-title>${up}
+  <canon-title>${axiom.title}</canon-title>
+  <canon-detail><p>The reasoning under a fixture principle.</p></canon-detail>${up}
 </canon-axiom>`
   })
   const specification = options.specification

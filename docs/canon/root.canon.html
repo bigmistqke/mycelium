@@ -9,25 +9,102 @@
 <body>
 <canon-axiom id="documents-are-the-source" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>A document is the source of truth, and the tooling reads it.</canon-title>
+  <canon-detail><p>Everything the tooling knows sits in a document somebody can open. A template
+declares a type, a command lives inside the template it serves, a check rides
+along with the vocabulary it checks, and the command line finds all of it by
+crawling rather than by holding a list.</p>
+<p>The alternative is a program that knows the shapes and a pile of files that
+merely hold data. That splits every claim in two, and the copy in the program is
+the one nobody reading the corpus can see.</p>
+<p>This is why a node may only refer to what a reader can open. A number in a
+deleted database and a fact recoverable only from git history both fail the same
+test.</p>
+</canon-detail>
 </canon-axiom>
 <canon-axiom id="a-document-is-read-by-a-person" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>A document is for a person to read as well as a machine.</canon-title>
+  <canon-detail><p>Every document here renders. A knowledge node is a page, a browser test
+document reports its own verdicts as it runs, and the canon chain draws as a
+picture because an axiom's reach is a thing to look at rather than a boolean to
+assert.</p>
+<p>Machine-readability alone would allow a corpus nobody opens, and a corpus
+nobody opens drifts from the system without anybody noticing. Rendering is what
+makes a wrong claim visible at the moment somebody reads past it.</p>
+<p>It also binds the prose. Rules about passive voice, sentence length and
+paragraph shape exist because a person reads these, and a check enforces them
+across the corpus rather than trusting anybody's care.</p>
+</canon-detail>
 </canon-axiom>
 <canon-axiom id="derive-do-not-maintain" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>Derive whatever can be derived, because a second copy drifts from the first.</canon-title>
+  <canon-detail><p>Two copies of one fact drift, and the drift is silent because each copy looks
+right on its own. So the second copy should not exist: compute it, or read it out
+of the one place that holds it.</p>
+<p>The corpus is full of instances. A filename's date comes from the clock rather
+than a typed slug, and the command roster prints from the doc comments on the
+commands themselves. A worked example gets derived from where it sits rather than
+from an attribute somebody has to remember.</p>
+<p>The failures teach the same thing. A hand-maintained list of commands in
+CLAUDE.md sent an agent off to build an unlink that already existed, and two test
+cases computing a date in UTC against commands using local time turned the suite
+red for two hours a night.</p>
+</canon-detail>
 </canon-axiom>
 <canon-axiom id="a-gate-people-ignore" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>A gate people ignore is not a gate.</canon-title>
+  <canon-detail><p>A check that reports without failing is invisible to everything downstream: to
+CI, to a hook, to a plan step, to a script. Only a person who happens to read the
+output sees it, and only until the day they stop reading.</p>
+<p>The project learned this from its own gate. Until 2026-07-30 validate counted
+failures, printed them, and exited zero regardless, so every audit ever written
+here had been advisory for its whole existence while the documentation claimed
+otherwise.</p>
+<p>The corollary matters as much. A gate that fails constantly, or that repairs
+what it measures, or that gives different answers on different runs, teaches
+people to skip it just as effectively as one that never fails at all. That is why
+autofix sits beside each check rather than inside it, and why a model call stays
+out of validate.</p>
+</canon-detail>
 </canon-axiom>
 <canon-axiom id="a-check-lives-with-its-vocabulary" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>A check belongs beside the vocabulary it checks, not inside an engine that names it.</canon-title>
+  <canon-detail><p>The engine names no check. It crawls for scripts that declare what they
+validate or audit, and runs whatever it finds, so adding a type means adding one
+document and adding a rule means adding one entry.</p>
+<p>A central list of checks is a second copy of the vocabulary, and it rots in the
+familiar direction: a type arrives, nobody adds it to the list, and the gate keeps
+passing because it never knew to look.</p>
+<p>It also puts the reasoning in front of whoever edits the type. A check sitting
+inside an engine reaches the person maintaining the engine, who is the one person
+already convinced.</p>
+</canon-detail>
 </canon-axiom>
 <canon-axiom id="edges-point-up-only" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>A stored edge points up, and every downward reach gets computed from the edges rather than authored.</canon-title>
+  <canon-detail><p>A behaviour names the axiom it refines, an axiom names the general one it
+narrows, and a test names the behaviour it checks. Nothing stores the other
+direction. Which behaviours an axiom reaches is a question answered by walking the
+stored edges.</p>
+<p>A hand-maintained reverse index rots, and it rots invisibly: a forgotten entry
+in one looks exactly like an axiom nothing derives from. The two are opposite
+findings, and no reader could tell them apart.</p>
+<p>This is where the drawing earns its place. The reach nobody authors is the
+thing hardest to picture, so the chain computes it and shows it.</p>
+</canon-detail>
   <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">the reverse index this refuses to keep</a>
 </canon-axiom>
 <canon-axiom id="a-declaration-is-the-whole-contract" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>What a template declares is the whole contract: which children an instance may hold, how many, and in what order.</canon-title>
+  <canon-detail><p>A template says which children an instance may hold, how many, and in what
+order. All three bind. A field the template never declared fails, a field written
+before one the template ranks earlier fails, and a cardinality the grammar rules
+out fails.</p>
+<p>A schema that only lists permitted names leaves the rest to habit, and habit is
+what a corpus of hand-edited documents runs out of first. Closing the contract
+turns a question of taste into something a check answers the same way twice.</p>
+<p>It has to hold both ways to be worth anything. An instance may not invent a
+field, and it may not quietly omit one the template requires either.</p>
+</canon-detail>
   <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">what a document being the source means for a type</a>
 </canon-axiom>
 </body></html>

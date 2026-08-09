@@ -9,18 +9,58 @@
 <body>
 <canon-axiom id="the-file-may-state-its-own-verdict" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>The command reads a verdict the file already states, rather than asking a model to repeat it.</canon-title>
+  <canon-detail><p>Two comments carry their own verdict. A comment opening with WIP is the author
+saying out loud that it is a working note, and a doc comment on an export is not
+documentation about the code but the code's own output, since the roster prints
+it.</p>
+<p>Asking a model about either is asking the wrong question. On the first it would
+let a model overrule the author. On the second it would weigh whether an unread
+comment earns its place, while that comment stays the only source of a line the
+tool prints. A first run of this command flagged three of those, including this
+command's own.</p>
+<p>So neither reaches the model, and the summary says how many went that way. A
+count that hides its own exemptions gets trusted for more than it checked.</p>
+</canon-detail>
   <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">the file is the source, so the command reads it</a>
 </canon-axiom>
-<canon-axiom id="rationale-moves-rather-than-dies" data-conforms-to="../templates/canon.template.html#canon-axiom">
-  <canon-title>Rationale in the wrong place moves to where something can query it, and nothing deletes it.</canon-title>
+<canon-axiom id="never-deletes-rationale" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>This command never deletes rationale, and only ever says where it belongs.</canon-title>
+  <canon-detail><p>A comment recording a rejected alternative is the most expensive thing in a
+file to lose, because nothing anywhere else records it. A comment that repeats the
+code costs a reader a few seconds. Those two are not symmetric, so the command
+treats them differently.</p>
+<p>That asymmetry is why three verdicts exist rather than two. A checker offering
+only keep and cut either leaves rationale in a comment, where nothing can query
+it, or destroys it.</p>
+<p>Moving it stays a person's job. The command cannot write the decision node's
+own content, so the most it can do is print the line that starts the move and name
+the comment it came from. A promotion is therefore an offer and not a finding,
+which is why a file full of them still exits zero.</p>
+</canon-detail>
   <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">a decision belongs where something can query it</a>
 </canon-axiom>
 <canon-axiom id="nothing-changes-a-file-unasked" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>A command changes a file only when the person asked it to fix one.</canon-title>
+  <canon-detail><p>Three ways in, and one of them writes. The check command reports, autofix with
+--diff previews, and autofix alone applies. The person picked which one to run,
+and that choice is the whole permission the command holds.</p>
+<p>A gate that repairs what it measures reports nothing, which is why this project
+splits check from autofix wherever it has both. The same split gives a hook
+something to run: a command that fixed as it looked would leave a person nothing
+to review.</p>
+</canon-detail>
   <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a gate that edits what it measures</a>
 </canon-axiom>
 <canon-axiom id="a-fix-changes-only-what-it-reported" data-conforms-to="../templates/canon.template.html#canon-axiom">
   <canon-title>A fix removes exactly what the report named, and leaves the rest of the file alone.</canon-title>
+  <canon-detail><p>The report is the contract. Anything else the fix changes is damage nobody
+approved, and it lands in a file the person had no reason to reread.</p>
+<p>The edges are where this goes wrong, because the range a comment occupies is
+not the range a person would delete. A comment alone on its line takes the line
+with it; one trailing code takes only itself and the spaces before it. Widening
+both ends the same way joined two lines into one, and the tests caught it only
+because this axiom says the fix touches nothing it did not report.</p>
+</canon-detail>
   <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a fix people cannot trust is one they run once</a>
 </canon-axiom>
 <canon-specification id="comments" data-conforms-to="../templates/canon.template.html#canon-specification">
@@ -64,7 +104,7 @@
   </canon-behaviour>
   <canon-behaviour id="a-promotion-alone-exits-zero" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>A file whose only finding is a promotion exits zero.</canon-title>
-    <a data-rel="depends_on" href="./comments.canon.html#rationale-moves-rather-than-dies">rationale in the wrong place is not a failure</a>
+    <a data-rel="depends_on" href="./comments.canon.html#never-deletes-rationale">saying where something belongs is not finding a fault</a>
   </canon-behaviour>
   <canon-behaviour id="check-writes-nothing" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>check leaves the file exactly as it found it.</canon-title>
@@ -80,11 +120,11 @@
   </canon-behaviour>
   <canon-behaviour id="a-promotion-stays-where-it-sits" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>autofix leaves a comment with a promote verdict exactly where it sits.</canon-title>
-    <a data-rel="depends_on" href="./comments.canon.html#rationale-moves-rather-than-dies">moving it is a person's job, and deleting it is nobody's</a>
+    <a data-rel="depends_on" href="./comments.canon.html#never-deletes-rationale">the comment survives the fix that found it</a>
   </canon-behaviour>
   <canon-behaviour id="a-promotion-prints-the-line-that-moves-it" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>A promotion prints the knowledge add line that would move it into the graph, naming the line it came from.</canon-title>
-    <a data-rel="depends_on" href="./comments.canon.html#rationale-moves-rather-than-dies">the move has to be one command away</a>
+    <a data-rel="depends_on" href="./comments.canon.html#never-deletes-rationale">saying where it belongs, in a line somebody can run</a>
   </canon-behaviour>
   <canon-behaviour id="a-cut-takes-its-whole-line" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>Cutting a comment that sits alone on its line takes the line with it, and leaves no blank behind.</canon-title>

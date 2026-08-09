@@ -75,13 +75,13 @@
 <template id="canon-axiom">
   <canon-axiom id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
     <canon-title required></canon-title>
-    <canon-detail markup></canon-detail>
+    <canon-detail markup required></canon-detail>
     <a repeatable href=".+" data-rel="^(depends_on)$"></a>
   </canon-axiom>
 </template>
 <pre><code>&lt;canon-axiom&gt;
   &lt;canon-title&gt;&hellip; the principle, in one line &hellip;&lt;/canon-title&gt;
-    &lt;canon-detail&gt;&hellip; optional, free-form: the reasoning &hellip;&lt;/canon-detail&gt;
+    &lt;canon-detail&gt;&hellip; required, free-form: the reasoning &hellip;&lt;/canon-detail&gt;
   &lt;a data-rel="depends_on" href="./documents-are-the-source.axiom.html"&gt;narrows&lt;/a&gt;
 &lt;/canon-axiom&gt;</code></pre>
 
@@ -115,8 +115,10 @@
   answer it. The eleven values sat between 80 and 95, nothing read them, and not one ever moved.
 </p>
 <p>
-  An axiom carries an optional detail, holding the reasoning behind the principle. A specification
-  carries no detail, and that absence is load-bearing rather than an oversight.
+  An axiom carries a required detail, holding the reasoning behind the principle. A title states a
+  principle in one line, and one line compresses hard: the first eleven axioms all reached a reader
+  with their reasoning missing, because a field nobody has to fill is a field nobody fills. A
+  specification carries no detail at all, and that absence is load-bearing rather than an oversight.
 </p>
 <p>
   Each kind of content that is not a behaviour already has a family here. A criterion is an axiom,
@@ -257,10 +259,15 @@
 <div id="sample-instances" class="samples">
   <canon-axiom id="sample-axiom" data-conforms-to="./canon.template.html#canon-axiom">
     <canon-title>A principle the sample behaviours refine, so the chain has one rung that holds.</canon-title>
+    <canon-detail><p>The detail carries the reasoning a title has no room for: what the principle
+    rules out, what it cost to learn, and which cheaper rule it beat. This one exists so the
+    grounded check has an axiom a behaviour reaches.</p></canon-detail>
   </canon-axiom>
 
   <canon-axiom id="sample-ungrounded-axiom" data-conforms-to="./canon.template.html#canon-axiom">
     <canon-title>A principle nobody has read down into any subsystem yet.</canon-title>
+    <canon-detail><p>Nothing reaches this one, which is what grounded reports as dead. An axiom
+    with no behaviour beneath it has nothing that could push back on it.</p></canon-detail>
   </canon-axiom>
 
   <canon-specification id="sample-specification" data-conforms-to="./canon.template.html#canon-specification">
@@ -494,6 +501,7 @@
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
   import { readCanon, collectTests } from "./canon-citations.ts"
+  import { declaredOrders, placeField } from "./shared.ts"
   import { writeFileSync, mkdtempSync } from "node:fs"
   import { tmpdir } from "node:os"
   import { join, resolve as resolvePath } from "node:path"
@@ -501,13 +509,30 @@
 
   const TYPES = ['axiom', 'specification']
 
-  // Fields in the order they should appear in a written document, per type.
-  // The validator does not care about order; a reader does, and laying out
-  // every instance the same way makes a directory of them skimmable.
-  const FIELD_ORDER = {
-    axiom: ['canon-title', 'canon-detail'],
-    specification: ['canon-title'],
-    behaviour: ['canon-title'],
+  // Each type's children, in the order its own template declares them. This
+  // was a hand-written copy of the three shapes, and it left out the <a> every
+  // one of them ends with, so update and link each grew their own idea of
+  // where to put what they wrote. Both got it wrong in the same week.
+  //
+  // Read once per run, since one process runs one command.
+  let FIELD_ORDER = null
+  function primeFieldOrder(fs) {
+    if (FIELD_ORDER) return
+    const orders = declaredOrders(fs.get('templates/canon.template.html'))
+    FIELD_ORDER = Object.fromEntries(
+      [...TYPES, 'behaviour'].map((type) => [type, orders.get(`canon-${type}`) ?? []]),
+    )
+  }
+
+  // The declared children that a flag can write, which is every one but the
+  // edge. rejectForeignFields asks what a type's fields are, never what may
+  // sit inside it.
+  function fieldsOf(type) {
+    return FIELD_ORDER[type].filter((tag) => tag !== 'a')
+  }
+
+  function typeOf(el) {
+    return el.tagName.toLowerCase().replace('canon-', '')
   }
 
   // Fields whose value is free-form markup rather than plain text.
@@ -533,7 +558,7 @@
   // a specification's missing detail field exists to prevent, so letting it
   // through silently here would undo the point of leaving the field out.
   function rejectForeignFields(type, values) {
-    const allowed = new Set(FIELD_ORDER[type])
+    const allowed = new Set(fieldsOf(type))
     for (const tag of Object.keys(values)) {
       if (values[tag] === undefined || allowed.has(tag)) continue
       if (tag === 'canon-detail' && type !== 'axiom') {
@@ -643,7 +668,7 @@
    * specification that already exists.
    *
    *   mycelium canon add axiom --canon <name> --id <slug> --title "…"
-   *     [--detail "…" | --detail -]
+   *     --detail "…" | --detail -
    *
    *   mycelium canon add specification --canon <name> --id <slug> --title "…"
    *
@@ -664,10 +689,15 @@
    * retired, and a specification that no longer matches the system is a bug in
    * one of the two.
    *
-   * For an axiom, --title is the principle itself. How far to trust one is not a
-   * field here: a knowledge node records the decision that established or
-   * revised it, dated and carrying the prompt behind it, so the history lives
-   * where history lives.
+   * For an axiom, --title is the principle itself and --detail is the reasoning
+   * under it, and both are required. One line compresses hard, and the first
+   * eleven axioms here all reached a reader with everything but the rule
+   * missing: what it rules out, what it cost to learn, which cheaper rule it
+   * beat. A field nobody has to fill is a field nobody fills.
+   *
+   * How far to trust an axiom is still not a field here: a knowledge node
+   * records the decision that established or revised it, dated and carrying the
+   * prompt behind it, so the history lives where history lives.
    *
    * For a specification, --title names the subsystem. There is no --detail: each
    * kind of content that is not a behaviour already has a family, and a detail
@@ -694,6 +724,10 @@
       throw new Error(`<type> must be one of ${[...TYPES, 'behaviour'].join('|')}, got "${type ?? '(nothing)'}"`)
     }
     requireArgs([args.canon, '--canon'], [args.id, '--id'])
+    primeFieldOrder(fs)
+    // Named here rather than left to the schema, which would report a missing
+    // tag for a flag the person never typed.
+    if (type === 'axiom') requireArgs([args.detail, '--detail'])
 
     const values = fieldValues(args)
     rejectForeignFields(type, values)
@@ -811,7 +845,8 @@
     const path = canonPathFor(fileOf(args._[0]))
     const doc = fs.get(path)
     const target = entryOf(doc, args._[0])
-    const type = target.tagName.toLowerCase().replace('canon-', '')
+    primeFieldOrder(fs)
+    const type = typeOf(target)
 
     // Renaming, which is a different act from editing the wording. An id names
     // the claim rather than the sentence, so a copy-edit never touches one.
@@ -837,7 +872,7 @@
       const el = doc.createElement(tag)
       if (RICH_FIELDS.has(tag)) el.innerHTML = value
       else el.textContent = value
-      target.appendChild(el)
+      placeField(target, el, FIELD_ORDER[type])
     }
 
     const result = await cli.validate(target, path)
@@ -942,6 +977,7 @@
     const path = canonPathFor(fileOf(args._[0]))
     const doc = fs.get(path)
     const root = entryOf(doc, args._[0])
+    primeFieldOrder(fs)
     const target = targetOf(args._[1])
     const href = `${cli.href(path, target.path)}${target.fragment ? `#${target.fragment}` : ''}`
     const label = args.label ?? ''
@@ -955,7 +991,7 @@
     a.setAttribute('data-rel', args.rel)
     a.setAttribute('href', href)
     a.textContent = label
-    root.appendChild(a)
+    placeField(root, a, FIELD_ORDER[typeOf(root)])
   }
 
   /**

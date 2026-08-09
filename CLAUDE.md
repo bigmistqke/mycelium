@@ -239,7 +239,11 @@ with happy-dom, which computes no layout, so every rect is zero. See
 
 A canon document is one subsystem: `docs/canon/<subsystem>.canon.html`, holding
 that subsystem's own axioms and the specification its behaviours belong to. An
-axiom carries no confidence and no date, because it states what holds now. How
+axiom carries no confidence and no date, because it states what holds now. It
+does carry a required `--detail`: a title states the principle in one line, and
+one line has no room for what the principle rules out or what it cost to learn.
+The first eleven axioms here all reached a reader with that missing, which is
+what a field nobody has to fill gets you. How
 it came to hold, and how sure anybody was, belongs to a knowledge node — dated,
 carrying the prompt behind it, and never rewritten afterwards.
 `root.canon.html` holds the axioms that govern everything, and a subsystem axiom
@@ -248,7 +252,7 @@ narrows one of those. Full design:
 `docs/specs/2026-08-08-behaviour-cites-its-axiom.spec.html`.
 
 ```bash
-pnpm mycelium canon add axiom --canon <name> --id <slug> --title "…" [--detail "…" | --detail -]
+pnpm mycelium canon add axiom --canon <name> --id <slug> --title "…" --detail "…" | --detail -
 pnpm mycelium canon add specification --canon <name> --id <slug> --title "…"
 pnpm mycelium canon add behaviour --canon <name> --id <slug> --title "…"
 pnpm mycelium canon update <canon>#<id> [--title "…"] [--id <slug>] [--detail "…"]
