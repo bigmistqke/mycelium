@@ -239,15 +239,17 @@ with happy-dom, which computes no layout, so every rect is zero. See
 
 A canon document is one subsystem: `docs/canon/<subsystem>.canon.html`, holding
 that subsystem's own axioms and the specification its behaviours belong to. An
-axiom carries no confidence and no date, because it states what holds now. It
-does carry a required `--detail`: a title states the principle in one line, and
-one line has no room for what the principle rules out or what it cost to learn.
-The first eleven axioms here all reached a reader with that missing, which is
-what a field nobody has to fill gets you. How
+axiom carries no confidence and no date, because it states what holds now. How
 it came to hold, and how sure anybody was, belongs to a knowledge node — dated,
 carrying the prompt behind it, and never rewritten afterwards.
 `root.canon.html` holds the axioms that govern everything, and a subsystem axiom
-narrows one of those. Full design:
+narrows one of those.
+
+An axiom also carries a required `--detail`, holding the reasoning under the
+principle. A title states the rule in one line, and one line has no room for
+what the rule rules out or what it cost to learn. The field was optional until
+2026-08-09 and the first eleven axioms used it zero times, which is what a
+field nobody has to fill gets you. Full design:
 `docs/specs/2026-08-06-canon-template-html.spec.html` and
 `docs/specs/2026-08-08-behaviour-cites-its-axiom.spec.html`.
 
