@@ -8,230 +8,167 @@
 </head>
 <body>
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
-  <spec-title>A behaviour holds the case that proves it</spec-title>
-  <spec-status>draft</spec-status>
+  <spec-title>A behaviour holds the check that proves it</spec-title>
+  <spec-status>implemented</spec-status>
   <spec-date>2026-08-09</spec-date>
   <spec-problem>
 <p>A behaviour states a claim in one sentence and nothing in its own document
-can falsify it. The case that checks it sits in another directory, in another
-family, reached by an edge. Two audits exist to police that edge, and two more
-describe properties of the document holding the case.</p>
-<p>The corpus says the two are one thing already. The canon documents declare 80
-behaviours, the test documents declare 80 cases, and every case carries exactly
-one <code>depends_on</code>. That bijection came partly out of retrofitting, so
-it is evidence about fit rather than a rule anybody wrote.</p>
-<p>A test document also repeats what the specification above it already
-declares. <code>test-subject</code> names the file a document exercises, and the
-specification names that same file with <code>specifies</code>. One of the two
-is a second copy, and this project treats a second copy as
-<a href="../language/terms/drift.term.html">drift</a> waiting to happen.</p>
-<p>Fifteen test titles carry something the canon does not. <q>validate fails the
-build and says why</q> groups five of validate's nineteen behaviours, and
-nothing checks it, because a document title is prose. The grouping is real and
-the canon has no way to hold it.</p>
-<p>The drawing shows the next symptom. It lays out axioms, behaviours, cases and
-declarations as four columns, and
-<a href="../templates/canon.template.html">the canon template's own prose</a>
-calls that a chain running <q>axiom, then behaviour, then test, then
-implementation</q>. No edge ever ran from a case to a declaration, so every wire
-out of the last column doubles back over the case column.</p>
-<p>Both citations point at the behaviour because both answer to it. A
-declaration does not answer to a test, and a case and a declaration sit at the
-same height, so an edge between them would have no up to point at. The layout is
-wrong about the shape, and the shape is worth changing.</p>
-<p>One more constraint turns out to belong to the command rather than to the
-corpus. A test document's cases must all run in the same place, because the
-command reads one kind per file and opens the whole file one way. The script
-type on each case already says which runtime hosts it.</p>
+can falsify it. The check that settles it sat in another directory, in another
+family, reached by an edge. Two audits existed to police that edge, and two more
+described properties of the document holding the check.</p>
+<p>The corpus said the two were one thing already. The canon documents declared
+80 behaviours, the test documents declared 80 cases, and every case carried
+exactly one <code>depends_on</code>. That bijection came partly out of
+retrofitting, so it was evidence about fit rather than a rule anybody wrote.</p>
+<p>A case also had nothing of its own to say. Counted before deciding: 61 of the
+80 case names repeated their behaviour's title word for word, 12 overlapped
+substantially, and the 7 that read differently said the same thing in scenario
+voice. That last group is the worst kind of second copy, because it reads like
+new information.</p>
+<p>Fifteen test titles carried something the canon could not hold. <q>validate
+fails the build and says why</q> groups five of validate's nineteen behaviours,
+and nothing checked it, because a document title is prose.</p>
+<p>The drawing showed the last symptom. It laid out axioms, behaviours, cases
+and declarations as four columns, and called that a chain running <q>axiom, then
+behaviour, then test, then implementation</q>. No edge ever ran from a case to a
+declaration, so every wire out of the last column doubled back over the case
+column.</p>
+<p>One further constraint turned out to belong to the command rather than to the
+corpus. A test document's cases all had to run in the same place, because the
+command read one kind per file and opened the whole file one way.</p>
 </spec-problem>
   <spec-design>
 <h3>The shape</h3>
-<p>A case becomes a declared child of the behaviour it checks:</p>
+<p>A leaf behaviour carries the check that falsifies it, with no wrapper around
+it:</p>
 <pre><code>&lt;canon-behaviour id="exits-non-zero-on-any-failure"&gt;
-  &lt;canon-title&gt;validate exits non-zero when any check fails.&lt;/canon-title&gt;
-  &lt;test-case id="one-failing-instance-fails-the-run"&gt;
-    &lt;test-name&gt;a corpus with one bad instance exits non-zero&lt;/test-name&gt;
-    &lt;test-status&gt;PENDING&lt;/test-status&gt;
-    &lt;test-fixture&gt;…&lt;/test-fixture&gt;
-    &lt;script type="mycelium/test"&gt;…&lt;/script&gt;
-  &lt;/test-case&gt;
+  &lt;canon-title&gt;validate exits non-zero when any instance or audit fails.&lt;/canon-title&gt;
+  &lt;a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore"&gt;…&lt;/a&gt;
+  &lt;canon-verdict&gt;PENDING&lt;/canon-verdict&gt;
+  &lt;canon-fixture&gt;…&lt;/canon-fixture&gt;
+  &lt;script type="mycelium/test"&gt;…&lt;/script&gt;
 &lt;/canon-behaviour&gt;</code></pre>
-<p><code>test-case</code> keeps its name, its id, its name field, its PENDING
-status, its optional message, its fixture and its script. It loses the
-<code>depends_on</code> edge, since the element holding it is the answer that
-edge used to give.</p>
-<p><code>test-doc</code> goes, and <code>test-title</code> and
-<code>test-subject</code> go with it. The specification names the subsystem, so
-the subject repeats it; the title becomes a behaviour, which the next section
-covers.</p>
+<p>There is no case element and no case title, because the measurement said a
+case name restates the claim above it. The behaviour is the test. Its id is the
+one id, its title is the one title, and <code>canon-verdict</code> holds the
+PENDING that a run replaces in the page.</p>
+<p>One check per claim therefore holds by construction rather than by count. A
+claim wanting two checks is two claims, which is the decomposition a broad claim
+already gets.</p>
 <h3>A behaviour narrows a behaviour</h3>
-<p>A behaviour gains itself as a declared child, so a broad claim holds the
-narrower ones that make it up:</p>
-<pre><code>&lt;canon-behaviour id="the-gate-fails-and-says-why"&gt;
-  &lt;canon-title&gt;validate fails the build and says why.&lt;/canon-title&gt;
-  &lt;canon-behaviour id="exits-non-zero-on-any-failure"&gt;…&lt;/canon-behaviour&gt;
-  &lt;canon-behaviour id="prints-every-failure-before-exiting"&gt;…&lt;/canon-behaviour&gt;
-&lt;/canon-behaviour&gt;</code></pre>
-<p>This needs no new type, because an axiom already narrows an axiom and
+<p>A behaviour holds the narrower behaviours that make it up, so the grouping
+fifteen document titles carried informally becomes a claim the canon states and
+the children prove.</p>
+<p>This needed no new type, because an axiom already narrows an axiom and
 <a href="../canon/chain.canon.html#reach-through-a-narrower-axiom-counts">reach
-through a narrower axiom counts</a>. A behaviour narrowing a behaviour is that
-same shape one rung down, and the walk that finds an axiom beneath an axiom
-finds this too.</p>
-<p>A child names no axiom of its own. Its parent names one, and the reach walk
-goes as far as it needs, so the citation sits where the claim genuinely
-narrows.</p>
-<p>Containment carries the parent rather than an edge, since the grouping earns
+through a narrower axiom counts</a>. The walk that finds an axiom beneath an
+axiom finds this too.</p>
+<p>Containment carries the parent rather than an edge, since a grouping earns
 its place by showing up when somebody reads the document. Containment gives a
-tree, and every claim in the corpus has exactly one parent today — 91 with one
+tree, and every claim in the corpus has exactly one parent — 91 with one
 citation and 5 with none. The <code>depends_on</code> edge stays declared beside
-the nesting, so a behaviour narrowing two others still has somewhere to say
-so.</p>
+the nesting for the claim that eventually narrows two.</p>
 <h3>What proves a behaviour</h3>
-<p>A behaviour carries cases, or child behaviours, and never both. A leaf claim
-earns a case, and a claim made of narrower claims takes its proof from them.</p>
-<p>The permissive rule looks free and is not. A parent holding a case beside its
-children has two kinds of proof and no rule saying which answers for what, so a
-reader cannot tell whether that case covers the whole claim or one corner
-somebody worried about. A broad claim wanting an end-to-end check gets one as
-another child, which makes that check state what it asserts.</p>
-<p>The schema states the choice and the <code>grounded</code> walk needs no
-change to see it. That replaces the audit asking whether every behaviour has a
-case, which is cardinality the declaration can hold —
-<a href="../canon/root.canon.html#a-declaration-is-the-whole-contract">the axiom
-that a declaration carries the whole contract</a> says to put it there.</p>
-<h3>Which titles become parents</h3>
-<p>Eleven of the fifteen. The rule is structural rather than a matter of taste:
-a parent whose children are every behaviour in the specification has the
-specification's own extent, so it asserts what the specification already
-asserts.</p>
-<p>Three fall to that rule. The chain, comments and schema canons each have one
-test document covering every behaviour they declare — 9, 21 and 11 — so those
-titles restate a specification title in different words. The other three canons
-are genuinely subdivided: figure's 12 behaviours across 4 documents, validate's
-19 across 5, and authoring's 8 across 3.</p>
-<p>One more goes for a different reason. The figure placement document holds a
-single case, and a parent with one child adds a level without grouping anything,
-so the child claim stands on its own.</p>
-<p>Two of the eleven turn out to group one child too many, which is the
-mechanism working rather than a problem with it. The scope title covers four
-claims, and three of them fit <q>every audit the corpus declares runs, and each
-one sees the whole tree the run names</q>, while an audit's permission to reach
-outside that tree narrows nothing there. The knowledge add title covers three,
-and two of them are one claim wearing two faces — the command computes the
-filename's date rather than accepting one — while an edge reaching a template
-has nothing to do with dates.</p>
-<p>So both parents get written over the children that genuinely narrow them, and
-the odd child in each pair hangs directly off the specification. No id changes
-and no case moves.</p>
-<h3>Which runtime runs a case</h3>
-<p>A case's script type picks its runtime, and nothing larger picks anything.
-<code>mycelium/test</code> means a sandbox on disk, and
+<p>A behaviour carries a check, or child behaviours, and exactly one of the two.
+A leaf earns a check, and a claim made of narrower claims takes its proof from
+them.</p>
+<p>A hand-written validator holds this, because the schema states cardinality
+and has no word for a choice. Neither side of the rule is a gap the schema can
+see: a claim with no check and no children is unproved, and a claim with both
+has two kinds of proof and no rule saying which answers for what.</p>
+<p><code>canon add behaviour</code> requires <code>--check</code>, reading the
+script from stdin the way <code>--detail</code> already does. That is the same
+argument as an axiom's required reasoning, one rung down, and it is what keeps a
+claim from ever arriving unproved — the command creating it is the last place
+able to insist.</p>
+<h3>Which runtime runs a check</h3>
+<p>A check's script type picks its runtime and nothing larger picks anything.
+<code>mycelium/test</code> means a sandbox on disk and
 <code>text/mycelium-test</code> means a page in a browser. The run groups every
-case in the corpus by that label and makes one pass per runtime.</p>
-<p>So the audit demanding one runner per document goes. The first subsystem
-needing both is the one this change lands in: the chain canon holds three checks
-a sandbox settles and two drawing claims only a page can, since the disclosure
-the drawing builds exists once the page runs.</p>
+check by that label and makes one pass per runtime.</p>
+<p>So the audit demanding one runner per document went with it. The chain canon needs
+both already: three checks a sandbox settles, and two drawing claims only a page
+can, since the disclosure the drawing builds exists once the page runs.</p>
 <h3>A fixture is not a claim</h3>
-<p>A browser case writes its fixture as real markup, and after this change that
-markup sits inside a canon document. A figure fixture holds figure elements and
-nothing notices. A chain fixture holds canon elements, and
-<code>readCanon</code> would count them as claims the project makes.</p>
-<p>That reaches further than the drawing. <code>readCanon</code> feeds
-<code>grounded</code>, so a fixture axiom would arrive as a real axiom nothing
-derives from, and the gate would fail on a claim nobody made.</p>
-<p>Every reader of the canon skips anything inside a
-<code>test-fixture</code>. The drawing already skips a template's worked
-examples by asking whether the document declares a template, and this is the
-same exemption one level in.</p>
+<p>A browser check writes its fixture as real markup, and that markup now sits
+inside a canon document. A figure fixture holds figure elements and nothing
+notices. A chain fixture holds canon elements, and the canon reader would count
+them as claims the project makes.</p>
+<p>That reaches further than the drawing, since the same reader feeds
+<code>grounded</code>: a fixture axiom would arrive as a real axiom nothing
+derives from, and the gate would fail on a claim nobody made. Every reader of
+the canon skips anything inside a <code>canon-fixture</code>.</p>
 <h3>What the audits become</h3>
-<p>Four go. <code>exhaustive</code> and <code>cited</code> both police the joint
-that containment makes unbreakable, since a case now has nowhere else to live.
-<code>test-cases-carry-a-script</code> becomes the <code>required</code>
-attribute the placeholder already carries.
-<code>test-documents-pick-one-runner</code> goes with the constraint it
-enforced.</p>
-<p><code>test-documents-load-the-runner</code> survives, reworded. A canon
-document holding any browser case loads <code>test.element.js</code>, or its
-cases render as a list that reads PENDING and always will.</p>
-<p>Three worked examples in <code>canon.template.html</code> go with the audits
-that used them: <code>sample-untested-behaviour</code>,
-<code>sample-uncited-case</code>, and whichever half of
-<code>sample-freelancing-behaviour</code> the surviving <code>grounded</code>
-does not need.</p>
-<h3>Where a run walks</h3>
-<p><code>test run</code> lists <code>tests</code> today, in two places. It lists
-<code>canon</code> instead, and finds cases through
-<code>canon-behaviour</code> at any depth rather than through
-<code>test-doc</code>. Node cases still run first and alone, so a run with no
-browser case never starts Chrome.</p>
-<p>PENDING stays the only verdict a file may hold, and the schema keeps
-enforcing it. A result belongs to a run.</p>
-<h3>Reading a canon document</h3>
-<p>This is the cost, and it needs a decision rather than a discovery. The
-comments canon holds 21 behaviours; folding puts 21 fixtures and 21 scripts
-between them, and the figure fixtures carry real markup. A document whose job is
-to list what a subsystem promises would turn into mostly test code.</p>
-<p><code>canon.template.css</code> collapses each case behind a closed
-<code>&lt;details&gt;</code>, so the default reading stays one line per claim. A
-reader who wants the proof opens it, the same gesture the chain page already
-uses for a declaration's comment and code.</p>
-<p>Nesting helps here rather than hurting. The validate canon that used to list
-19 flat behaviours lists 4 broad ones and one loose claim, each opening onto its
-own, which is the structure its five test documents were carrying
-informally.</p>
+<p>Four go. Every behaviour has a case and every case cites a behaviour both
+police a joint that containment makes unbreakable. Every case carries a script
+becomes the schema's own <code>required</code>. And one runner per document goes
+with the constraint it enforced.</p>
+<p>One survives, reworded: a canon document holding any browser check loads
+<code>test.element.js</code>, or its checks render as a list reading PENDING
+that always will.</p>
+<h3>Where the runner lives</h3>
+<p>The runner is <code>mycelium canon test</code>, merged into the canon command
+host. It queries <code>canon-behaviour</code>, <code>canon-verdict</code> and
+<code>canon-fixture</code> directly, and
+<a href="../canon/root.canon.html#a-check-lives-with-its-vocabulary">a check
+lives with its vocabulary</a> settles where that belongs.</p>
+<p>An earlier draft put it beside <code>validate</code>, reasoning from a
+resemblance: both exit non-zero and both are what a build runs. The resemblance
+is real and the axiom is better evidence, since <code>validate</code> is generic
+over every template and knows no family's tags at all.</p>
+<p><code>test.template.html</code> declared no types once its family dissolved,
+so it went too. Every link naming it now reaches the file holding what it
+described, which is what <code>move</code> already does for a claim.</p>
 <h3>What the drawing gains</h3>
 <p>The chain drops to three ranks: axioms, behaviours, implementation. Every
-edge then crosses exactly one rank, nothing doubles back, and the sentence
-calling the chain a sequence becomes true.</p>
+edge crosses exactly one rank, nothing doubles back, and the sentence calling
+the chain a sequence is true.</p>
 <p>Behaviours rank by depth into columns, the way axioms already do, so a
-narrowing behaviour sits one column right of the one it narrows. That reuses the
-filter the page already runs per axiom depth rather than growing a second idea
-about what a rank is. A deep subsystem then spreads the page sideways, which is
-a cost axioms already carry.</p>
-<p>A behaviour box carries its case count, since the cases lose their column,
-and a behaviour with four cases looks different from one with one.</p>
-<h3>The migration, in order</h3>
-<p>Fifteen documents hold 80 cases, and each case moves into the behaviour its
-edge already names. The edge names it unambiguously, so a script can do the
-move: read the citation, find the behaviour, cut the element, drop the
-anchor.</p>
-<p>Every href inside a moved case shifts by one directory, since
-<code>docs/tests/</code> and <code>docs/canon/</code> sit at the same depth but a
-fixture path written from one does not resolve from the other. The
-<code>every-link-resolves</code> audit catches whatever the move gets wrong.</p>
-<p>The template change lands first, then the migration, then the eleven parent
-behaviours, then the audit removals, then the drawing. A run that goes red
-between two steps teaches people to skip the gate, and this project has watched
-that happen.</p>
+narrowing behaviour sits one column right of the one it narrows. The header
+sticks at the left edge, since the number of columns stopped being fixed at
+four. A behaviour box carries whether it holds a check.</p>
+<h3>The migration</h3>
+<p>Fifteen documents held 80 checks, and each moved into the behaviour its edge
+already named. The five helper modules those checks import moved with them, and nothing
+remains under <code>docs/tests/</code>.</p>
+<p>The move ran through a parser. An early attempt used indentation to decide
+which tag was a field and which was a string inside a script, and it renamed
+opening tags while leaving their closing tags behind, across six documents. The
+rewrite asks parse5 which elements are children and asks source ranges where to
+cut, so every script survived byte for byte.</p>
+<p>The template change, the migration and the audit removals are one commit
+rather than three. The gate is red between any two of them, since a check that
+has left its document but not yet reached its claim satisfies nothing.</p>
 </spec-design>
   <spec-out-of-scope>
-<p>A case still has no <code>add</code> command, and should not get one. Its
-substance is a fixture and a script, neither of which fits on a flag, so
-hand-authoring stays right for this one thing.</p>
-<p>A code citation keeps pointing at the behaviour. It does not move to the
-case, and a case does not gain a citation to code. Both answer to the claim, and
-which cases cover a declaration stays a join through the behaviour rather than a
-stored edge.</p>
+<p>A check still has no <code>add</code> of its own beyond
+<code>--check</code> on the behaviour. Its substance is a fixture and a script,
+and a fixture does not fit on a flag, so a browser check stays hand-authored
+after the claim exists.</p>
+<p>A code citation keeps pointing at the behaviour. Both a check and a
+declaration answer to the claim, and which checks cover a declaration stays a
+join through the behaviour rather than a stored edge.</p>
 <p>Nothing here changes how an axiom works. The axiom rank, its own nesting and
-its detail field all stay as they are, and a behaviour still reaches an axiom
-rather than replacing one.</p>
-<p>A case keeps the script type it carries today. <code>mycelium/test</code> and
-<code>text/mycelium-test</code> name one idea two ways, which is a concept this
-project pays for on every reading, and
+its detail field all stay as they are.</p>
+<p>A check keeps the script type it carries today.
+<code>mycelium/test</code> and <code>text/mycelium-test</code> name one idea two
+ways, and
 <a href="../knowledge/2026-08-09-defer-the-browser-case-script-type.decision.html">a
-separate decision</a> weighs the candidates. It waits because this change
-already rewrites eighty tags and moving the same eighty twice buys nothing.</p>
+separate decision</a> weighs the candidates for a follow-up.</p>
 </spec-out-of-scope>
   <spec-open-questions>
-<p>How a page shows a case it cannot host. Hiding a node case understates what
-the document claims, and showing it greyed asks a reader to know why. Neither
-answer is obvious and the page is the only report a browser case has, so this
-waits for its own pass rather than getting guessed at here.</p>
-<p>Whether the two narrowed groupings hold together once written. The scope
-title and the knowledge add title each turn out to cover one child that does not
-narrow them, and both fixes rest on reading four claims and three claims
-carefully. A second reading may find another child in the wrong place.</p>
+<p>Nothing creates a grouping. <code>canon add behaviour</code> makes a leaf and
+requires a check, and turning existing leaves into children of a new parent
+moves elements rather than adding one. The eleven parents the fifteen titles
+become need either a command or a hand edit, and this project prefers the
+command.</p>
+<p>How a page shows a check it cannot host. Hiding a node check understates what
+the document claims, and showing it greyed asks a reader to know why. The page
+is the only report a browser check has, so guessing at this is worse than
+waiting.</p>
+<p>Whether the two rewritten parents hold together. The scope title and the
+knowledge add title each cover one child that does not narrow them, and both
+fixes rest on reading four claims and three claims carefully.</p>
 </spec-open-questions>
 </spec-doc>
 </body></html>
