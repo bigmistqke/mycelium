@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Draw the knowledge graph as days in columns, rather than a force layout of everything at once</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal">
+  <knowledge-title>Draw the knowledge graph as days in columns, rather than a force layout of everything at once</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-prompt>i didn't mean to sort them by type, i meant specifically if we could use columns instead of forced graph layout. a lot of the stuff is sort of linear because that is how knowledge moves. maybe it could be by day and then per day it could have multi-columns or something. this forced graph layout doesn't really tell much because it's too much information.</knowledge-prompt>
+  <knowledge-detail><p>565 nodes in one force layout says almost nothing. The drawing settles into a
+shape nobody chose, and reading it means untangling rather than following.</p>
+<p>Knowledge moves through time, and every node carries its day in its filename,
+so the axis the drawing needs already exists and nothing uses it.</p>
+<p>Counted before designing: 502 of 629 edges join two nodes from the same day,
+and 127 cross days. A day is therefore a partition rather than a rank — making
+each day a column would leave four fifths of the edges inside one column, which
+is the fault the chain page exists to avoid.</p>
+<p>That gives two levels rather than one. Days run left to right, and a day's
+own nodes rank into sub-columns inside it, which is the shape the chain already
+draws well.</p>
+</knowledge-detail>
+</knowledge-goal>
+</body></html>

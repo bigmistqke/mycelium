@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Days in columns, so the knowledge graph reads as a sequence rather than a mesh</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Days in columns, so the knowledge graph reads as a sequence rather than a mesh</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-09</spec-date>
+  <spec-problem>
+<p>The knowledge graph draws 565 nodes with a force layout, which settles into a
+shape nobody chose. Reading it means untangling it first, and the arrangement
+carries no meaning a reader can rely on: two nodes near each other are near
+because the simulation put them there.</p>
+<p>The axis it needs already exists. Every node carries its day in its filename,
+and knowledge accumulates through time, so the corpus records the one ordering
+that is true of it and the drawing ignores that ordering entirely.</p>
+<p>The canon chain answers the same question with columns, but it earns them: an
+axiom narrows an axiom, a behaviour narrows a behaviour, a declaration cites a
+behaviour, and no edge in that vocabulary can skip sideways. Nothing about the
+knowledge graph's eight relations says the same.</p>
+<p>Counting decides how far the comparison carries. Of 629 edges between
+knowledge nodes, 502 join two nodes from the same day and 127 cross days, 85
+pointing back and 42 forward. Twenty days hold the whole graph, and the busiest
+holds 82 nodes.</p>
+</spec-problem>
+  <spec-design>
+<h3>A day is a partition, not a rank</h3>
+<p>Four fifths of the edges live inside one day. Making a day a column and
+stopping there would leave those edges doubling back inside a rank, which is the
+fault columns exist to remove, and twenty tidy columns would each hold a small
+mesh.</p>
+<p>So the drawing gets two levels. Days run left to right as the outer axis, and
+each day's own nodes rank into sub-columns inside it.</p>
+<h3>What ranks inside a day</h3>
+<p>A day holds a piece of thinking: a goal, the decisions it forced, the options
+weighed, what somebody did, and what came back. That is the shape the chain
+already draws, and 80% of a day's edges stay inside it.</p>
+<p>Rank by distance from whatever the day starts with, walking the edges rather
+than the types. A node nothing in the day points at opens the day, and every
+node sits one column right of the furthest thing pointing at it. Type ordering
+was the other candidate and it fails on the counts: observations are 224 of 565,
+so a type column holds two fifths of the graph and its edges reach everywhere.</p>
+<h3>Edges that cross days</h3>
+<p>127 of them, and they are the interesting minority. A claim reaching back to a
+goal from three weeks ago earns attention exactly because it is rare, and the
+longest spans thirteen columns.</p>
+<p>They stay drawn. This is the one place the chain's lesson does not transfer:
+there, a long wire is noise from an arrangement that could have been better;
+here it is the fact worth seeing.</p>
+<h3>What the two drawings share</h3>
+<p>Most of what makes the chain readable has nothing to do with its ranks: a
+pane carrying what a node claims and its neighbours, selecting a node to light
+what it reaches, headings that stay put, bands that hold a group together, and a
+command that measures the result rather than asking somebody to squint at it.</p>
+<p>All of that sits in one file that also computes the chain's own ranks. The
+shared half moves out, the same way provisioning a browser moved out of the test
+runner once a second caller wanted it. What stays behind on each side is the
+part that knows its own data: ranks from a vocabulary in one, days and local
+depth in the other.</p>
+<h3>What a reader does with twenty columns</h3>
+<p>A day reads on its own, which is the point. Today's 42 nodes are legible;
+565 at once never will be, whatever the layout.</p>
+<p>So the drawing keeps the horizontal scrolling the chain already has, and a
+day is the unit somebody navigates to. Nothing here collapses or hides a day —
+that is a filter, and a filter is worth building once the arrangement stops
+being the problem.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>The canon chain keeps its ranks. Its data is genuinely ranked and time says
+nothing about it, so nothing here changes what it draws.</p>
+<p>No filtering, no collapsing, no search. Twenty columns of days is more than
+one screen holds, and the answer to that is a filter, which earns its own pass
+once the arrangement is settled.</p>
+<p>Nothing changes about what a knowledge node holds. This is a drawing, and the
+eight relations, the six types and the dated filename all stay as they are.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>What opens a day that starts in the middle of something. A node whose only
+edges reach back to earlier days has nothing inside the day pointing at it, so
+it opens the day by the rule above, and several such nodes open it together.
+Whether that reads as a start or as a pile is a question for looking at it.</p>
+<p>Whether a day with two unrelated pieces of thinking should say so. Bands
+carried subsystems on the chain page, and the equivalent here is the root goal a
+node traces back to, which would split a day into stripes the way a subsystem
+splits a column.</p>
+<p>Whether the measurement transfers. Wires over boxes counted something the
+chain could act on; here the long edges stay by design, so the number would
+report a cost nobody intends to pay down.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
