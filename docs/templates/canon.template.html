@@ -1497,15 +1497,23 @@ ${base}
   /* A column per rank and a row per subsystem, so a band holds one stripe of
      the page. A cell with nothing in it stays empty on purpose: that space is
      what keeps the bands in line across the columns. */
-  #grid { display: grid; gap: 0 2.5rem; padding: 1.25rem; position: relative;
+  /* No padding above the columns: the headings stick at the very top, and a
+     padded scrollport would leave a strip of nothing between them and the page
+     header. The breathing room goes under the headings instead. */
+  #grid { display: grid; gap: 0 2.5rem; padding: 0 1.25rem 1.25rem; position: relative;
           grid-auto-rows: min-content; }
   .cell { min-height: 0; }
   .cell:empty { min-height: .5rem; }
   #wires { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
   #wires path { fill: none; stroke: var(--line); stroke-width: 1.2; }
   #wires path.lit { stroke: currentColor; stroke-width: 1.8; }
+  /* The headings follow the reader down their columns, over a backdrop that
+     spans the whole row. Sticking each heading on its own leaves the column
+     gaps uncovered, and boxes scroll up through them. */
+  .headband { position: sticky; top: 0; z-index: 1; align-self: stretch; background: Canvas; }
+  .rank { position: sticky; top: 0; z-index: 2; background: Canvas; }
   .rank > h2 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
-               opacity: .55; margin: 0 0 .6rem; }
+               opacity: .55; margin: 0; padding: 1rem 0 .6rem; }
   .group { margin-bottom: 1rem; }
   .group > h3 { font-size: .7rem; opacity: .5; margin: 0 0 .35rem; font-weight: 500; }
   h3.selectable { cursor: pointer; }

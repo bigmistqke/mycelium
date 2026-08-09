@@ -253,9 +253,18 @@ function groupBox(group) {
  * always the arrangement being measured.
  */
 function render() {
-  for (const cell of Array.from(grid.querySelectorAll('.rank, .cell'))) cell.remove()
+  for (const cell of Array.from(grid.querySelectorAll('.rank, .cell, .headband'))) cell.remove()
   const used = bands.filter(band => ranks.some(rank => rank.groups.some(g => g.band === bands.indexOf(band))))
   const loose = ranks.some(rank => rank.groups.some(g => g.band >= bands.length))
+
+  // A backdrop under the headings, spanning every column so the gaps between
+  // them are covered too. Each heading sticks on its own, and without this the
+  // boxes scroll through the space between one heading and the next.
+  const backdrop = document.createElement('div')
+  backdrop.className = 'headband'
+  backdrop.style.gridRow = 1
+  backdrop.style.gridColumn = '1 / -1'
+  grid.appendChild(backdrop)
 
   ranks.forEach((rank, column) => {
     const head = document.createElement('div')
