@@ -45,6 +45,23 @@ than the types. A node nothing in the day points at opens the day, and every
 node sits one column right of the furthest thing pointing at it. Type ordering
 was the other candidate and it fails on the counts: observations are 224 of 565,
 so a type column holds two fifths of the graph and its edges reach everywhere.</p>
+<h3>Ordering what the edges say nothing about</h3>
+<p>Several nodes open a day, since anything whose edges all reach backwards has
+nothing inside the day pointing at it. Their order among themselves has to come
+from somewhere, and so does the order of two nodes in the same sub-column.</p>
+<p>Git holds it. The commit that added a file carries the moment it arrived, and
+that survives a clone because it is history rather than a fact about a
+filesystem — a fresh checkout stamps every file with the same time and would
+order the whole graph identically.</p>
+<p>The drawing reads it at generate time and stores nothing.
+<a href="../canon/root.canon.html#derive-do-not-maintain">Deriving rather than
+maintaining</a> rules out a created field on a node, which would be a second
+copy of something git already stores, and a stale one would look exactly like a
+fresh one.</p>
+<p>It orders in clusters rather than one by one, since nodes added in the same
+commit share a moment — 43 nodes arrived in 22 commits on the day this spec
+names. A commit is a unit of work, so the cluster means something, and the
+edges still decide wherever they say anything at all.</p>
 <h3>Edges that cross days</h3>
 <p>127 of them, and they are the interesting minority. A claim reaching back to a
 goal from three weeks ago earns attention exactly because it is rare, and the
@@ -80,10 +97,13 @@ once the arrangement is settled.</p>
 eight relations, the six types and the dated filename all stay as they are.</p>
 </spec-out-of-scope>
   <spec-open-questions>
-<p>What opens a day that starts in the middle of something. A node whose only
-edges reach back to earlier days has nothing inside the day pointing at it, so
-it opens the day by the rule above, and several such nodes open it together.
-Whether that reads as a start or as a pile is a question for looking at it.</p>
+<p>Whether several nodes opening one day reads as a start or as a pile. Git
+orders them, so they arrive in the sequence somebody wrote them, and whether
+that looks like a beginning is a question for looking at it.</p>
+<p>What a drawing does with a node git does not hold yet. Every node here
+arrived in a commit, and one still sitting in the working tree has no moment to
+read, so it sorts against everything already committed. Whether that matters
+depends on whether anybody draws a graph mid-session.</p>
 <p>Whether a day with two unrelated pieces of thinking should say so. Bands
 carried subsystems on the chain page, and the equivalent here is the root goal a
 node traces back to, which would split a day into stripes the way a subsystem
