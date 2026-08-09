@@ -29,23 +29,26 @@ whichever column a reader scrolled to, and one that scrolls with the columns
 leaves the screen.</p>
 </spec-problem>
   <spec-design>
-<h3>Three regions down the page</h3>
-<p>The page becomes a column: the header, the graph, and a pane beneath it. The
-pane spans the viewport, holds its own height, and covers nothing, so the
-question of what an overlay hides never arises.</p>
-<p>The graph takes the height left over and scrolls inside it, in both
-directions. That is the change with teeth, and the next section is about
-it.</p>
+<h3>A pane floating over the corner</h3>
+<p>The page becomes a header above a graph that takes the rest and scrolls
+inside it, in both directions. The pane floats over the bottom right corner at a
+fixed height, so a wide graph keeps its full page rather than giving a band of
+it away.</p>
 <p>Nothing selected means no pane at all. It has no resting state to design,
-because a region explaining that it is empty is a region earning nothing, so the
-graph holds the whole height until somebody clicks.</p>
-<h3>Opening the pane moves every box</h3>
-<p>A pane that appears takes height from the graph, so the grid reflows and
-every box lands somewhere new. The wires run between measured rectangles, so
-they follow only if something redraws them.</p>
-<p>Opening and closing therefore join loading and resizing as the moments that
-trigger a redraw. Forgetting one leaves the wires pointing at where the boxes
-used to be, which looks like a layout bug and is a stale measurement.</p>
+because a region explaining that it is empty is a region earning nothing.</p>
+<h3>Covering something is answerable, taking height is not</h3>
+<p>An earlier draft ran the pane across the bottom as its own region, on the
+argument that a floating one covers whatever sits under it. What that costs is
+permanent: every reading of the graph loses the same band, whether or not
+anybody wanted the pane.</p>
+<p>Floating costs something a reader can undo instead. The graph carries the
+pane's own height as padding beneath its content, so a box under the pane can
+always scroll clear, and selecting one that the pane covers scrolls it clear
+without being asked.</p>
+<p>It also keeps the wires still. A pane taking height moves every box when it
+opens, which makes opening a layout event and every wire a stale measurement
+until something redraws. A floating one reflows nothing, so loading and resizing
+stay the only moments that matter.</p>
 <h3>What moving the scroll costs</h3>
 <p>Every wire runs between two rectangles the browser measures against the
 viewport, and the drawing subtracts the grid's own rectangle to turn them into

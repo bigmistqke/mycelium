@@ -214,6 +214,21 @@ function fillPane(address) {
   pane.hidden = false
 }
 
+/**
+ * Scroll a selected box out from under the pane.
+ *
+ * The pane floats over the bottom right corner, so selecting something down
+ * there answers a click by hiding what was clicked. This moves the grid just
+ * far enough that the box clears the pane's top edge, which is always possible
+ * because the grid carries the pane's height as padding beneath its content.
+ */
+function clearOfPane(box) {
+  if (!box || pane.hidden) return
+  const b = box.getBoundingClientRect(), p = pane.getBoundingClientRect()
+  const covered = b.bottom > p.top && b.top < p.bottom && b.right > p.left && b.left < p.right
+  if (covered) grid.scrollTop += b.bottom - p.top + 12
+}
+
 let selected = null
 function select(address) {
   selected = address === selected ? null : address
@@ -225,10 +240,7 @@ function select(address) {
   for (const path of wires.querySelectorAll('path'))
     path.classList.toggle('lit', !!lit && lit.has(path.dataset.from) && lit.has(path.dataset.to))
   fillPane(selected)
-  // The pane takes height from the grid, so every box has just moved and the
-  // wires still point where they were. Opening and closing join loading and
-  // resizing as the moments that redraw.
-  draw()
+  if (selected) clearOfPane(boxOf(selected))
 }
 
 grid.addEventListener('click', (event) => {

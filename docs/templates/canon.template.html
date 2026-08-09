@@ -1381,14 +1381,18 @@
 ${base}
 <style>
   :root { color-scheme: light dark; --line: color-mix(in oklab, currentColor 25%, transparent);
-          --thumb: color-mix(in oklab, currentColor 35%, transparent); }
-  /* Three regions down the page: header, graph, pane. The graph takes what is
-     left and scrolls inside it, so a pane appearing beneath covers nothing. */
+          --thumb: color-mix(in oklab, currentColor 35%, transparent); --pane-h: 15rem; }
+  /* The pane floats over the bottom right corner rather than taking a band of
+     the page, so a wide graph keeps its full height. It covers whatever is
+     under it, which the grid answers by carrying the pane's own height as
+     padding: there is always somewhere to scroll a box clear. */
   body { margin: 0; font: 13px/1.45 ui-sans-serif, system-ui, sans-serif;
          height: 100vh; display: flex; flex-direction: column; }
-  #grid { flex: 1; min-height: 0; overflow: auto; }
-  #pane { flex: 0 0 auto; max-height: 40vh; overflow: auto; position: relative;
-          border-top: 1px solid var(--line); padding: 1rem 1.25rem 1.25rem; }
+  #grid { flex: 1; min-height: 0; overflow: auto; padding-bottom: calc(var(--pane-h) + 3rem); }
+  #pane { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 2;
+          width: min(36rem, calc(100vw - 2.5rem)); height: var(--pane-h); overflow: auto;
+          border: 1px solid var(--line); border-radius: 6px; padding: 1rem 1.25rem;
+          background: Canvas; }
   #pane[hidden] { display: none; }
   #pane h2 { font-size: .95rem; margin: 0 0 .3rem; padding-right: 2rem; }
   #pane-where { opacity: .6; margin: 0 0 .75rem; }
@@ -1414,7 +1418,7 @@ ${base}
   #wires path { fill: none; stroke: var(--line); stroke-width: 1.2; }
   #wires path.lit { stroke: currentColor; stroke-width: 1.8; }
   .rank > h2 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
-               opacity: .55; margin: 0 0 .6rem; position: sticky; top: 0; }
+               opacity: .55; margin: 0 0 .6rem; }
   .group { margin-bottom: 1rem; }
   .group > h3 { font-size: .7rem; opacity: .5; margin: 0 0 .35rem; font-weight: 500; }
   h3.selectable { cursor: pointer; }
@@ -1430,7 +1434,6 @@ ${base}
   .node .reach { float: right; opacity: .5; font-variant-numeric: tabular-nums; }
   .node a { color: inherit; text-decoration: none; }
   .node a:hover { text-decoration: underline; }
-  footer { padding: .75rem 1.25rem; border-top: 1px solid var(--line); opacity: .6; }
 </style>
 </head>
 <body>
@@ -1444,7 +1447,6 @@ ${base}
   </div>
 </header>
 <div id="grid"><svg id="wires"></svg></div>
-<footer>Select an axiom, a behaviour or a declaration to light its whole chain and read what it claims.</footer>
 <aside id="pane" hidden>
   <button id="pane-close" type="button" aria-label="close">&times;</button>
   <h2 id="pane-title"></h2>
