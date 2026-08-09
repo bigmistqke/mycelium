@@ -13,78 +13,584 @@
   <canon-behaviour id="exits-non-zero-on-any-failure" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>validate exits non-zero when any instance or audit fails.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">the gate failing rather than warning</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The exit code is the whole of what a build reads, so this case runs the
+      // real command line in its own process rather than calling the function.
+      // Nothing an in-memory run reports can establish what a process returns.
+      //
+      // The tree carries its own validator so it needs no generic one, which
+      // keeps it self-contained: --dir names it, and the run reads nothing else.
+      import type { TestContext } from "../../src/api.ts"
+      import { tidyTree } from "./validate-fixture.ts"
+
+      export default async function ({ assert, sandbox }: TestContext) {
+        for (const [path, text] of Object.entries(tidyTree({ withBroken: false }))) sandbox.write(path, text)
+        const clean = sandbox.mycelium("validate", "--dir", "docs/tidy")
+        assert(clean.ok, `a clean tree exited ${clean.status}: ${clean.stdout}${clean.stderr}`)
+
+        sandbox.write("tidy/bad.thing.html", tidyTree({ withBroken: true })["tidy/bad.thing.html"])
+        const dirty = sandbox.mycelium("validate", "--dir", "docs/tidy")
+        assert(!dirty.ok, `a tree with a failure in it still exited zero: ${dirty.stdout}`)
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="exits-zero-when-everything-passes" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>validate exits zero when every instance and every audit passes.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a gate that always fails gets ignored the same way</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // A gate that always fails gets ignored exactly as fast as one that never
+      // does, so the clean case is a promise in its own right.
+      //
+      // The corpus is a tree of its own rather than this repository, because
+      // the real one carries deliberate violations that its own audits declare
+      // in data-expects. Pointing at a small tree is what --dir exists for.
+      import type { TestContext } from "../../src/api.ts"
+      import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/thing.template.html": typeDoc("thing"),
+          "tidy/one.thing.html": typeInstance("thing", "something", "./thing.template.html"),
+        }, { docsDir: "tidy" })
+        assert(report.fail === 0, `a clean corpus reported ${report.fail} failure(s): ${report.failures.join(" | ")}`)
+        assert(report.checked > 0, "nothing got checked at all, so a clean verdict says nothing")
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="prints-every-failure-before-exiting" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>validate prints each failure before it exits, so a red run says what went wrong.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a verdict nobody can read is a verdict nobody acts on</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // A verdict nobody can read is a verdict nobody acts on. The command sets
+      // process.exitCode rather than calling exit(), so the output above it
+      // still flushes; a case that only read the code could not tell the
+      // difference.
+      import type { TestContext } from "../../src/api.ts"
+      import { tidyTree } from "./validate-fixture.ts"
+
+      export default async function ({ assert, sandbox }: TestContext) {
+        for (const [path, text] of Object.entries(tidyTree({ withBroken: true }))) sandbox.write(path, text)
+        const run = sandbox.mycelium("validate", "--dir", "docs/tidy")
+
+        assert(!run.ok, `expected the run to fail: ${run.stdout}`)
+        assert(
+          run.stdout.includes("a thing needs a title"),
+          `the failing run printed no reason: ${run.stdout}${run.stderr}`,
+        )
+        assert(
+          run.stdout.includes("bad.thing.html"),
+          `the failing run did not name what failed: ${run.stdout}`,
+        )
+        assert(
+          /\d+ checked, \d+ fail/.test(run.stdout),
+          `the failing run printed no counts: ${run.stdout}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="every-conforming-element-is-checked" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>Every element carrying data-conforms-to gets validated, however deeply it sits.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">the element making the claim is where conformance is declared</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // Conformance is claimed by the element making the claim, at whatever
+      // depth it sits, so a test-case inside a test-doc answers for itself. A
+      // pass that only looked at a document's outermost element would let every
+      // nested claim through unread.
+      import type { TestContext } from "../../src/api.ts"
+      import { runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        // The outer type declares inner-doc as an ordinary field holding text,
+        // so the outer check does not descend into it and passes. The inner
+        // element still claims a type of its own, which requires a title it
+        // does not have, so it answers for itself or nothing does.
+        const template = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>nest</title></head>
+<body>
+<template id="outer">
+  <outer-doc>
+    <outer-title required></outer-title>
+    <inner-doc></inner-doc>
+  </outer-doc>
+</template>
+<template id="inner">
+  <inner-doc>
+    <inner-title required></inner-title>
+  </inner-doc>
+</template>
+</body></html>
+`
+        const instance = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>nested</title></head>
+<body>
+<outer-doc data-conforms-to="./nest.template.html#outer">
+  <outer-title>the outer one, which is shaped correctly</outer-title>
+  <inner-doc data-conforms-to="./nest.template.html#inner">text, which the outer type allows here</inner-doc>
+</outer-doc>
+</body></html>
+`
+        const report = await runValidateOn({
+          "tidy/nest.template.html": template,
+          "tidy/nested.outer.html": instance,
+        }, { docsDir: "tidy" })
+        assert(report.checked === 2, `expected both the outer and inner instance to be checked, got ${report.checked}`)
+        assert(report.fail === 1, `expected only the inner instance to fail, got ${report.fail}`)
+        assert(
+          report.failures.join(" ").includes("inner-title"),
+          `the failure is not the inner one: ${report.failures.join(" | ")}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="a-missing-template-fails-the-instance" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>An instance naming a template that does not exist fails, naming the address it looked for.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a conformance claim reaching nothing fails rather than passing</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // A conformance claim reaching nothing is the quietest way to go
+      // unchecked, so it fails rather than passing. The address it looked for
+      // goes in the message, because a claim and the file it meant to name sit
+      // in different places.
+      import type { TestContext } from "../../src/api.ts"
+      import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/thing.template.html": typeDoc("thing"),
+          "tidy/lost.thing.html": typeInstance("thing", "pointing nowhere", "./absent.template.html"),
+        }, { docsDir: "tidy" })
+        assert(report.fail === 1, `expected the dangling conformance claim to fail, got ${report.fail}`)
+        assert(
+          report.failures.join(" ").includes("tidy/absent.template.html#thing"),
+          `the failure does not name the address it looked for: ${report.failures.join(" | ")}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="the-schema-checks-the-instance" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>An instance gets checked against the schema its own template declares.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the contract the template declares is what gets checked</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The contract the template declares is what an instance answers to, and
+      // this is the check the whole command exists to run.
+      import type { TestContext } from "../../src/api.ts"
+      import { runValidateOn, typeDoc } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const empty = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>empty</title></head>
+<body>
+<thing-doc data-conforms-to="./thing.template.html#thing"></thing-doc>
+</body></html>
+`
+        const report = await runValidateOn({
+          "tidy/thing.template.html": typeDoc("thing"),
+          "tidy/empty.thing.html": empty,
+        }, { docsDir: "tidy" })
+        assert(report.fail === 1, `expected the missing required field to fail, got ${report.fail}`)
+        assert(
+          report.failures.join(" ").includes("thing-title"),
+          `the failure does not name the field: ${report.failures.join(" | ")}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="a-custom-validator-runs-as-well" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>A type carrying its own data-validates script gets checked by that as well as by the schema.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-check-lives-with-its-vocabulary">a type carrying its own validator beside its declaration</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // As well as, never instead of. A type declaring a validator for what the
+      // vocabulary cannot say still answers to the shape the schema states.
+      import type { TestContext } from "../../src/api.ts"
+      import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/thing.template.html": typeDoc("thing", { ownValidator: true }),
+          "tidy/one.thing.html": typeInstance("thing", "shaped correctly", "./thing.template.html"),
+        }, {
+          docsDir: "tidy",
+          checks: {
+            "tidy/thing.template.html#thing": () => ({ ok: false, errors: ["the custom validator disagreed"] }),
+          },
+        })
+        assert(report.fail === 1, `the custom validator did not run alongside the schema, got ${report.fail} failure(s)`)
+        assert(
+          report.failures.join(" ").includes("the custom validator disagreed"),
+          `the failure does not carry what the custom validator said: ${report.failures.join(" | ")}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="an-instance-no-validator-covers-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>An instance that no validator covers fails, rather than passing unchecked.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">passing unchecked is the quietest way to be ignored</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // A corpus with no generic validator falls back to whatever each type
+      // declares for itself, and a type declaring nothing leaves its instances
+      // covered by nothing. Passing them would be the quietest failure this
+      // command has.
+      import type { TestContext } from "../../src/api.ts"
+      import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/thing.template.html": typeDoc("thing"),
+          "tidy/one.thing.html": typeInstance("thing", "covered by nothing", "./thing.template.html"),
+        }, { docsDir: "tidy", withoutGenericValidator: true })
+        assert(report.fail === 1, `an uncovered instance passed instead of failing, got ${report.fail}`)
+        assert(
+          report.failures.join(" ").includes("no generic validator available"),
+          `the failure does not say why nothing checked it: ${report.failures.join(" | ")}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="a-throwing-validator-fails-one-instance" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>A validator that throws fails that instance and leaves the rest of the run going.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">one broken validator may not silence the rest</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // One broken validator may not decide the verdict for everything after
+      // it. A run that stopped here would report the rest of a corpus as fine
+      // on the strength of never having looked at it.
+      import type { TestContext } from "../../src/api.ts"
+      import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/thing.template.html": typeDoc("thing", { ownValidator: true }),
+          "tidy/one.thing.html": typeInstance("thing", "the one it throws on", "./thing.template.html"),
+          "tidy/two.thing.html": typeInstance("thing", "the one after it", "./thing.template.html"),
+        }, {
+          docsDir: "tidy",
+          checks: {
+            "tidy/thing.template.html#thing": (instance: any) =>
+              instance.textContent.includes("throws on")
+                ? (() => { throw new Error("this validator is broken") })()
+                : { ok: true, errors: [] },
+          },
+        })
+        assert(report.fail === 1, `expected only the throwing instance to fail, got ${report.fail}`)
+        assert(
+          report.failures.join(" ").includes("this validator is broken"),
+          `the failure does not carry the thrown message: ${report.failures.join(" | ")}`,
+        )
+        assert(report.checked === 2, `expected both instances to be counted, got ${report.checked}`)
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="every-declared-audit-runs" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>Every script carrying data-audits runs over the whole tree.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-check-lives-with-its-vocabulary">an audit found by crawling, never named by the engine</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The engine finds an audit by crawling for the tag that declares it, so adding
+      // one adds no case to any list in the engine. A run that stopped at the
+      // first would make that discovery worthless.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const ran: string[] = []
+        const report = await runValidateOn({
+          "tidy/first.template.html": auditDoc("first"),
+          "tidy/second.template.html": auditDoc("second"),
+          "tidy/third.template.html": auditDoc("third"),
+        }, {
+          docsDir: "tidy",
+          checks: {
+            "tidy/first.template.html#first": () => { ran.push("first"); return { ok: true, violations: [] } },
+            "tidy/second.template.html#second": () => { ran.push("second"); return { ok: true, violations: [] } },
+            "tidy/third.template.html#third": () => { ran.push("third"); return { ok: true, violations: [] } },
+          },
+        })
+        assert(ran.length === 3, `expected all three audits to run, these did: ${ran.join(", ") || "none"}`)
+        assert(report.checked === 3, `expected all three to be counted, got ${report.checked}`)
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="an-undeclared-violation-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>A violation that no data-expects declares fails the run.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a finding nobody declared is the audit doing its job</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The audit is substituted so the case decides what it reports. That is
+      // the only way to test the comparison rather than whichever audit happens
+      // to exist, and it is deliberate: a document a case wrote has no real file
+      // for the module hook to load a script out of.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/noisy.template.html": auditDoc("noisy"),
+        }, {
+          docsDir: "tidy",
+          checks: { "tidy/noisy.template.html#noisy": () => ({ ok: false, violations: ["a-thing-nobody-declared"] }) },
+        })
+        assert(report.fail === 1, `expected the undeclared violation to fail the run, got ${report.fail}`)
+        assert(
+          report.failures.join(" ").includes("a-thing-nobody-declared"),
+          `the failure does not name what was found: ${report.failures.join(" | ")}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="a-declared-violation-that-vanished-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>A violation declared in data-expects that the audit no longer finds fails the run.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">an example that stopped demonstrating anything</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The other way to be wrong, and the quieter one. An example built to
+      // demonstrate a check has stopped demonstrating it, so the check is no
+      // longer known to work even though it now reports nothing.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/quiet.template.html": auditDoc("quiet", "a-thing-that-should-still-be-found"),
+        }, {
+          docsDir: "tidy",
+          checks: { "tidy/quiet.template.html#quiet": () => ({ ok: true, violations: [] }) },
+        })
+        assert(report.fail === 1, `expected the vanished expectation to fail the run, got ${report.fail}`)
+        assert(
+          report.failures.join(" ").includes("declared in data-expects but not found"),
+          `the failure does not say the expectation went missing: ${report.failures.join(" | ")}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="the-comparison-is-the-verdict" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>An audit reporting failure passes when every violation it found is declared.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">the engine decides, not the audit's own opinion of itself</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // An audit reports what it found and the engine decides whether that is
+      // acceptable, so an audit's own opinion of itself carries no weight. This
+      // one says ok:false and still passes, because everything it found was
+      // declared.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/honest.template.html": auditDoc("honest", "the-declared-one"),
+        }, {
+          docsDir: "tidy",
+          checks: { "tidy/honest.template.html#honest": () => ({ ok: false, violations: ["the-declared-one"] }) },
+        })
+        assert(
+          report.fail === 0,
+          `the audit's own ok was taken as the verdict rather than the comparison: ${report.failures.join(" | ")}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="a-throwing-audit-fails-one-audit" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>An audit that throws fails and leaves the rest of the run going.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">one broken audit may not silence the rest</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // One broken audit may not silence the others. A run that stopped at the
+      // first throw would report a corpus as fine on the strength of never
+      // having looked at most of it.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const report = await runValidateOn({
+          "tidy/broken.template.html": auditDoc("broken"),
+          "tidy/working.template.html": auditDoc("working"),
+        }, {
+          docsDir: "tidy",
+          checks: {
+            "tidy/broken.template.html#broken": () => { throw new Error("this audit is broken") },
+            "tidy/working.template.html#working": () => ({ ok: true, violations: [] }),
+          },
+        })
+        assert(report.fail === 1, `expected only the broken audit to fail, got ${report.fail}`)
+        assert(
+          report.failures.join(" ").includes("this audit is broken"),
+          `the failure does not carry the thrown message: ${report.failures.join(" | ")}`,
+        )
+        assert(report.checked === 2, `expected both audits to be counted, got ${report.checked}`)
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="an-audit-sees-every-document" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>An audit sees every document in the tree, templates included.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">every document, with no directory meaning fixture</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // A template builds its worked examples to fail the audit they
+      // illustrate, and each audit declares those in data-expects, so a
+      // deliberate violation is an assertion rather than a failure. Filtering
+      // templates out instead would make a directory mean "fixture", and an
+      // audit declared in one template could never see anything in another.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        let seen: string[] = []
+        await runValidateOn({
+          "tidy/watcher.template.html": auditDoc("watcher"),
+          "tidy/thing.template.html": typeDoc("thing"),
+          "tidy/one.thing.html": typeInstance("thing", "an ordinary instance", "./thing.template.html"),
+        }, {
+          docsDir: "tidy",
+          checks: {
+            "tidy/watcher.template.html#watcher": (fs: any) => {
+              seen = fs.list("tidy", { ext: ".html" })
+              return { ok: true, violations: [] }
+            },
+          },
+        })
+        assert(
+          seen.includes("tidy/thing.template.html"),
+          `the audit could not see a template; it saw: ${seen.join(", ") || "nothing"}`,
+        )
+        assert(
+          seen.includes("tidy/one.thing.html") && seen.includes("tidy/watcher.template.html"),
+          `the audit could not see every document; it saw: ${seen.join(", ")}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="an-audit-reaches-outside-docs" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>An audit's filesystem is rooted above the docs directory, so it can read source files.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-check-lives-with-its-vocabulary">a rule about prose applies to a comment in source too</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // A rule about language applies to a comment in a source file as much as
+      // to prose in a document, and an audit that could only see HTML could
+      // never say so. The filesystem is rooted above the documents directory
+      // for that reason, so src/ is reachable.
+      import type { TestContext } from "../../src/api.ts"
+      import { auditDoc, runValidateOn } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        let reached = ""
+        let sources: string[] = []
+        await runValidateOn({
+          "tidy/reader.template.html": auditDoc("reader"),
+        }, {
+          docsDir: "tidy",
+          checks: {
+            "tidy/reader.template.html#reader": (fs: any) => {
+              reached = fs.read("src/api.ts")
+              sources = fs.list("src", { ext: ".ts" })
+              return { ok: true, violations: [] }
+            },
+          },
+        })
+        assert(
+          reached.includes("export interface AuditFs"),
+          "the audit could not read a source file above the documents directory",
+        )
+        assert(sources.length > 0, "the audit could not list anything outside the documents directory")
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="dir-validates-another-corpus" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>The --dir flag validates a corpus somewhere other than this project's own.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">the corpus is whatever tree it is pointed at</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // Pointing the command somewhere else is what lets a corpus be checked
+      // without being this project's own, which every case in these documents
+      // relies on. A broken instance sitting outside the named tree stays
+      // outside it.
+      import type { TestContext } from "../../src/api.ts"
+      import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const broken = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>broken</title></head>
+<body>
+<thing-doc data-conforms-to="../tidy/thing.template.html#thing"></thing-doc>
+</body></html>
+`
+        const report = await runValidateOn({
+          "tidy/thing.template.html": typeDoc("thing"),
+          "tidy/one.thing.html": typeInstance("thing", "inside the named tree", "./thing.template.html"),
+          "elsewhere/broken.thing.html": broken,
+        }, { docsDir: "tidy" })
+        assert(report.fail === 0, `something outside the named tree was checked: ${report.failures.join(" | ")}`)
+        assert(report.checked === 1, `expected only the instance inside the tree, got ${report.checked}`)
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="autofix-sorts-fields-into-declared-order" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>autofix sorts an instance's fields into the order its template declares.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the declared order is what it restores</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      /**
+       * The order a template lists its placeholders in binds, so a hand-edited
+       * document that gets it wrong fails the gate. This is the repair, and it
+       * had no test and no behaviour until the code got tagged and turned out
+       * to be answering to nothing.
+       */
+      import type { TestContext } from "../../src/api.ts"
+      import { orderedTree } from "./validate-autofix-fixture.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        for (const [path, text] of Object.entries(orderedTree({ shuffled: true }))) sandbox.write(path, text)
+
+        const done = sandbox.mycelium("validate", "autofix")
+        assert(done.ok, `autofix failed: ${(done.stderr || done.stdout).trim()}`)
+
+        const after = sandbox.read("tidy/one.thing.html")
+        assert(
+          after.indexOf("<thing-title>") < after.indexOf("<thing-note>"),
+          `the title still sits below the note:\n${after}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="autofix-moves-nothing-but-fields" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>autofix moves declared fields relative to each other, and leaves an edge or a script where it sits.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a repair people cannot trust gets run once</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      /**
+       * A repair that tidies more than it was asked to is one people run once.
+       * Declared fields move relative to each other; an edge and an embedded
+       * script keep their place, so a diff shows lines swapping and no content
+       * changing.
+       */
+      import type { TestContext } from "../../src/api.ts"
+      import { orderedTree } from "./validate-autofix-fixture.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        for (const [path, text] of Object.entries(orderedTree({ shuffled: true }))) sandbox.write(path, text)
+        const before = sandbox.read("tidy/one.thing.html")
+
+        const done = sandbox.mycelium("validate", "autofix")
+        assert(done.ok, `autofix failed: ${(done.stderr || done.stdout).trim()}`)
+
+        const after = sandbox.read("tidy/one.thing.html")
+        assert(after !== before, "autofix changed nothing at all, so this case checked nothing")
+        assert(after.includes('<a data-rel="supports" href="./two.thing.html">a peer</a>'), "the edge went missing")
+        assert(after.includes("const kept = 1"), "the embedded script went missing")
+        assert(
+          after.indexOf("<a data-rel") > after.indexOf("<thing-note>"),
+          `the edge climbed above a field it started below:\n${after}`,
+        )
+        assert(
+          after.indexOf("const kept = 1") > after.indexOf("<a data-rel"),
+          `the script moved relative to the edge:\n${after}`,
+        )
+      }
+    </script>
   </canon-behaviour>
 </canon-specification>
 </body></html>

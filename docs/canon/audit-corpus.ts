@@ -121,19 +121,6 @@ ${[...axioms, ...specification].join("\n\n")}
 `
 }
 
-export function testDoc(id: string, name: string, cites?: string): string {
-  const citation = cites ? `\n    <a data-rel="depends_on" href="${cites}">the behaviour this checks</a>` : ""
-  return `<test-doc data-conforms-to="../templates/test.template.html#test-doc">
-  <test-title>${name}</test-title>
-  <test-subject><a href="../templates/canon.template.html">canon.template.html</a></test-subject>
-  <test-case id="${id}" data-conforms-to="../templates/test.template.html#test-case">
-    <test-name>${name}</test-name>
-    <test-status>PENDING</test-status>${citation}
-    <script type="text/mycelium-test">assert(true)</script>
-  </test-case>
-</test-doc>`
-}
-
 // A corpus that reads through to the real repository unless the case provided
 // the path, and a way to run the whole of validate against one.
 //

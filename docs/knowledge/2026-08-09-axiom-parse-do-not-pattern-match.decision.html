@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Propose an axiom: read a document with a parser, never with a pattern</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-decision data-conforms-to="../templates/knowledge.template.html#knowledge-decision">
+  <knowledge-title>Propose an axiom: read a document with a parser, never with a pattern</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>pending</knowledge-status>
+  <knowledge-detail><p>A candidate for <a href="../canon/root.canon.html">the root canon</a>, since
+it would govern every subsystem that opens a file rather than one of them.
+Roughly: a tool that reads structure uses a parser for it, and a pattern that
+recognises structure is a bug waiting for a file somebody formatted
+differently.</p>
+<p>The reasoning an axiom would carry has two halves. A pattern encodes an
+assumption about the shape of the text rather than the shape of the document, so
+it answers a question it was never asked. And it fails quietly: a rename that
+matched half of what it should have matched produces a file, not an error.</p>
+<p>What it would rule out is narrower than it sounds. Reading a value out of a
+line is fine, and the comment reader already matches a tag inside prose that a
+parser has handed it. What it rules out is deciding <em>what an element is</em>
+from how the text around it looks.</p>
+<p>Left as a proposal rather than written, because an axiom needs a behaviour
+beneath it or <code>grounded</code> reports it as a principle nothing derives
+from. Writing it means finding the subsystem that answers for it and the check
+that could fail.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-08-09-fold-test-family-into-canon.goal.html">the work this came out of</a>
+</knowledge-decision>
+</body></html>

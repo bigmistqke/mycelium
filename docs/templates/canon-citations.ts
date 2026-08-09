@@ -12,20 +12,7 @@
 import type { AuditFs } from "../../src/api.ts"
 import { commentRanges } from "./code-comments.ts"
 
-export interface Citation {
-  // The behaviour this case claims to check, as an address.
-  target: string
-  // The case that made the claim, also as an address, since a case carries an
-  // id and therefore needs no invented name.
-  source: string
-}
 
-export interface TestSite {
-  // `docs/tests/link-href.test.html#language-link-crosses-directories`.
-  address: string
-  name: string
-  citations: Citation[]
-}
 
 export interface CanonEntry {
   address: string
@@ -38,11 +25,21 @@ export interface CanonEntry {
 }
 
 export interface Specification extends CanonEntry {
-  behaviours: CanonEntry[]
+  behaviours: Behaviour[]
   // The files this subsystem answers for, already resolved. A specification
   // points at code rather than naming a subsystem, so this link set is the
   // whole of what the subsystem covers.
   specifies: string[]
+}
+
+export interface Behaviour extends CanonEntry {
+  // The behaviour this one narrows, when it sits inside another. A claim made
+  // of narrower claims holds them, so the parent is where the markup puts it
+  // rather than an edge somebody wrote.
+  parent: string | null
+  // Whether this claim carries the check that falsifies it. A leaf does; a
+  // claim proved by the ones beneath it does not.
+  checks: boolean
 }
 
 export interface Canon {
@@ -82,32 +79,6 @@ function edges(element: Element, path: string, rel = "depends_on"): string[] {
     .map((child) => resolveHref(path, child.getAttribute("href") ?? ""))
 }
 
-// Every test case in the corpus, with whatever behaviour each one cites.
-//
-// Found through `data-conforms-to`, the same way readCanon finds an axiom, so
-// the declaration inside test.template.html's own `<template>` is not mistaken
-// for a case somebody wrote.
-//
-// A case with no edge comes back carrying no citations rather than not coming
-// back at all. That is the whole point. A case citing nothing is what `cited`
-// exists to catch, and a reader enumerating citations could never see one.
-export function collectTests(fs: AuditFs): TestSite[] {
-  const sites: TestSite[] = []
-  for (const path of fs.list("docs", { ext: ".html" })) {
-    for (const element of Array.from(fs.parse(path).querySelectorAll("test-case[data-conforms-to][id]"))) {
-      const at = address(path, element.getAttribute("id"))
-      sites.push({
-        address: at,
-        name: Array.from(element.children)
-          .find((child) => child.tagName.toLowerCase() === "test-name")
-          ?.textContent?.trim() ?? "",
-        citations: edges(element, path).map((target) => ({ target, source: at })),
-      })
-    }
-  }
-  return sites
-}
-
 function titleOf(element: Element): string {
   return Array.from(element.children)
     .find((child) => child.tagName.toLowerCase() === "canon-title")
@@ -122,6 +93,32 @@ function titleOf(element: Element): string {
 // takes behaviours by tag name inside a conforming specification, since a
 // behaviour nested in its specification carries no separate conformance of its
 // own.
+// Every behaviour under one element, however deep, each carrying the claim it
+// narrows.
+//
+// Anything inside a canon-fixture is a worked example a check builds, not a
+// claim the project makes. A figure fixture holds figure elements and nobody
+// notices; a chain fixture holds canon elements, and counting those would put
+// an axiom nobody wrote in front of grounded.
+function behavioursIn(element: Element, path: string, parent: string | null): Behaviour[] {
+  const found: Behaviour[] = []
+  for (const child of Array.from(element.children)) {
+    const tag = child.tagName.toLowerCase()
+    if (tag === "canon-fixture") continue
+    if (tag !== "canon-behaviour" || !child.getAttribute("id")) continue
+    const at = address(path, child.getAttribute("id"))
+    found.push({
+      address: at,
+      title: titleOf(child),
+      dependsOn: edges(child, path),
+      parent,
+      checks: Array.from(child.children).some((n) => n.tagName.toLowerCase() === "script"),
+    })
+    found.push(...behavioursIn(child, path, at))
+  }
+  return found
+}
+
 export function readCanon(fs: AuditFs): Canon {
   const axioms: CanonEntry[] = []
   const specifications: Specification[] = []
@@ -141,11 +138,7 @@ export function readCanon(fs: AuditFs): Canon {
         title: titleOf(element),
         dependsOn: edges(element, path),
         specifies: edges(element, path, "specifies"),
-        behaviours: Array.from(element.querySelectorAll("canon-behaviour[id]")).map((behaviour) => ({
-          address: address(path, behaviour.getAttribute("id")),
-          title: titleOf(behaviour),
-          dependsOn: edges(behaviour, path),
-        })),
+        behaviours: behavioursIn(element, path, null),
       })
     }
   }

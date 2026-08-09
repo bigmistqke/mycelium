@@ -31,7 +31,7 @@
    * @returns {Element | null}
    */
   function statusOf(testCase) {
-    return testCase.querySelector("test-status")
+    return testCase.querySelector("canon-verdict")
   }
 
   /**
@@ -51,11 +51,11 @@
    * @param {string} text
    */
   function say(testCase, text) {
-    var el = testCase.querySelector("test-message")
+    var el = testCase.querySelector("canon-message")
     if (!el) {
       var status = statusOf(testCase)
       if (!status || !status.parentNode) return
-      el = document.createElement("test-message")
+      el = document.createElement("canon-message")
       status.parentNode.insertBefore(el, status.nextSibling)
     }
     el.textContent = text
@@ -152,7 +152,7 @@
    * @returns {Promise<void>}
    */
   function run(testCase) {
-    var script = testCase.querySelector('script[type="text/mycelium-test"]')
+    var script = testCase.querySelector(':scope > script[type="text/mycelium-test"]')
     if (!script) {
       write(testCase, "FAILURE", "this case carries no <script type=\"text/mycelium-test\">")
       return Promise.resolve()
@@ -166,7 +166,7 @@
       write(testCase, "FAILURE", "this case does not parse: " + reason(err))
       return Promise.resolve()
     }
-    var fixture = testCase.querySelector("test-fixture")
+    var fixture = testCase.querySelector("canon-fixture")
     var started
     try {
       started = made(fixture, settle, assert)
@@ -183,7 +183,8 @@
 
   /** @returns {Element[]} */
   function cases() {
-    return Array.prototype.slice.call(document.querySelectorAll("test-case"))
+    return Array.prototype.slice.call(document.querySelectorAll('canon-behaviour[id] > script[type="text/mycelium-test"]'))
+      .map(function (script) { return script.parentNode })
   }
 
   // A plain div rather than a test-* element. Anything carrying the family's

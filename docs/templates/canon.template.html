@@ -97,8 +97,53 @@
   <canon-behaviour id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
     <canon-title required></canon-title>
     <a repeatable href=".+" data-rel="^(depends_on)$"></a>
+    <canon-verdict enum="PENDING"></canon-verdict>
+    <canon-message></canon-message>
+    <canon-fixture markup></canon-fixture>
+    <script></script>
+    <canon-behaviour repeatable conforms-to="#canon-behaviour"></canon-behaviour>
   </canon-behaviour>
 </template>
+<script type="mycelium/validate" data-validates="#canon-behaviour">
+  /**
+   * A behaviour carries its own check, or child behaviours, and exactly one of
+   * the two.
+   *
+   * There is no case element, because a case never had anything of its own to
+   * say. Its name repeated the claim above it — 61 of 80 word for word, and the
+   * seven that read differently said the same thing in scenario voice, which is
+   * the second copy that looks like new information. So a leaf claim carries
+   * the script that falsifies it, and the behaviour is the test.
+   *
+   * One check per claim therefore holds by construction rather than by count.
+   * A claim wanting two checks is two claims, which is the same decomposition a
+   * broad claim already gets.
+   *
+   * The schema states cardinality and cannot state a choice, so this holds the
+   * half the vocabulary has no words for. Neither side is a gap the schema can
+   * see: a claim with no script and no children is unproved, and a claim with
+   * both has two kinds of proof and no rule saying which answers for what.
+   *
+   * Direct children only. A script belonging to a grandchild is that
+   * grandchild's proof and says nothing about this one.
+   */
+  export default function (root) {
+    const id = root.getAttribute('id')
+    const children = Array.from(root.children)
+    const checks = children.some((child) => child.tagName.toLowerCase() === 'script')
+    const narrows = children.some((child) => child.tagName.toLowerCase() === 'canon-behaviour')
+    if (checks && narrows) {
+      return { ok: false, errors: [`<canon-behaviour id="${id}"> carries a check beside its children; a claim is proved by one or the other`] }
+    }
+    if (!checks && !narrows) {
+      return { ok: false, errors: [`<canon-behaviour id="${id}"> carries no check and no children, so nothing can falsify it`] }
+    }
+    if (checks && !root.querySelector(':scope > canon-verdict')) {
+      return { ok: false, errors: [`<canon-behaviour id="${id}"> carries a check and no <canon-verdict>`] }
+    }
+    return { ok: true, errors: [] }
+  }
+</script>
 <pre><code>&lt;canon-specification&gt;
   &lt;canon-title&gt;validate&lt;/canon-title&gt;
   &lt;a data-rel="specifies" href="../../commands/validate.command.html"&gt;the subsystem&lt;/a&gt;
@@ -274,48 +319,25 @@
     <canon-title>a sample subsystem</canon-title>
     <a data-rel="specifies" href="./canon.template.css">the file it specifies</a>
     <canon-behaviour id="sample-tested-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
-      <canon-title>A claim the sample case below cites, so the whole chain has one rung that holds.</canon-title>
+      <canon-title>A claim naming a principle, so the whole chain has one rung that holds.</canon-title>
       <a data-rel="depends_on" href="#sample-axiom">the principle this refines</a>
-    </canon-behaviour>
-    <canon-behaviour id="sample-untested-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
-      <canon-title>A claim no case cites, kept here so the exhaustive check has something to find.</canon-title>
-      <a data-rel="depends_on" href="#sample-axiom">the principle this refines</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="text/mycelium-test">assert(true)</script>
     </canon-behaviour>
     <canon-behaviour id="sample-freelancing-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
       <canon-title>A claim naming no principle, kept here so the grounded check has something to find.</canon-title>
       <a data-rel="depends_on" href="./canon.template.css">a target that is not an axiom, so this claim still names none</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="text/mycelium-test">assert(true)</script>
     </canon-behaviour>
   </canon-specification>
 </div>
-
-<h3>The sample cases</h3>
 <p>
-  The bottom rung needs a worked example too. These are real
-  <code>test-case</code> instances, checked against
-  <a href="./test.template.html">test.template.html</a> like any other, and they sit here rather than
-  in <code>docs/tests/</code> because a case built to fail a check is not one anybody wants a runner
-  to open.
+  Both samples carry a browser script, which keeps them out of the node runner and out of
+  <code>check-scripts</code>. A check built to sit in a template is not one anybody wants a runner to
+  open, and the audits about scripts skip a document declaring a template anyway. The citation
+  reader does not skip it, which is what makes <code>grounded</code> fire on the second one.
 </p>
-<p>
-  They carry a browser script, which keeps them out of the node runner and out of
-  <code>check-scripts</code>, and the two audits about case scripts skip a document declaring a
-  template anyway. The citation reader does not skip it, which is what makes these fire.
-</p>
-
-<div id="sample-cases" class="samples">
-  <test-case id="sample-citing-case" data-conforms-to="./test.template.html#test-case">
-    <test-name>cites a behaviour, which is what the passing side of the joint looks like</test-name>
-    <test-status>PENDING</test-status>
-    <a data-rel="depends_on" href="#sample-tested-behaviour">the behaviour this checks</a>
-    <script type="text/mycelium-test">assert(true)</script>
-  </test-case>
-
-  <test-case id="sample-uncited-case" data-conforms-to="./test.template.html#test-case">
-    <test-name>cites nothing at all, which is the violation cited declares</test-name>
-    <test-status>PENDING</test-status>
-    <script type="text/mycelium-test">assert(true)</script>
-  </test-case>
-</div>
 
 <h2>Validator</h2>
 <p>
@@ -433,72 +455,43 @@
   }
 </script>
 
-<h3>exhaustive</h3>
 <p>
-  Every behaviour has a test citing it. Nothing is exempt, so this counts the whole list rather than
-  a marked subset of it, which is what the absence of a requirement marking buys.
+  Two more checks used to sit here, and the shape retired both. One asked whether every behaviour
+  had a case citing it, and one asked whether every case cited a behaviour. A behaviour now carries
+  its own check, so a claim with nothing beneath it fails against its own template and a check has
+  nowhere to live except the claim it answers.
 </p>
-<script type="mycelium/audit" data-audits="exhaustive" data-expects="docs/templates/canon.template.html#sample-untested-behaviour docs/templates/canon.template.html#sample-freelancing-behaviour" data-touches="canon-behaviour">
+
+<script type="mycelium/audit" data-audits="test-documents-load-the-runner" data-touches="canon-behaviour">
   import type { AuditFs } from "../../src/api.ts"
-  import { collectTests, readCanon } from "./canon-citations.ts"
 
   /**
-   * Every behaviour has a test citing it.
+   * Every canon document holding a browser check loads test.element.js, so
+   * something in the page runs it.
    *
-   * A behaviour nothing cites is a claim with no evidence under it, which is
-   * the same failure an axiom reaching nothing already names, one rung lower.
+   * Without the runner a document renders as a list of cases that all read
+   * PENDING and always will. A person sees a page that looks like it is still
+   * working, and the command waits out its whole deadline before saying the
+   * same thing.
    *
-   * @behaviour canon/chain.canon.html#a-behaviour-no-case-cites-fails
+   * A canon whose checks all run under node is exempt, and needs to be:
+   * nothing opens it in a browser, so a page runner in it would be dead weight
+   * that also never runs.
+   *
+   * Matches on the filename rather than the exact path, since a document's
+   * depth below the documents directory decides how many steps up it writes.
    */
-  export default function (fs: AuditFs) {
-    const cited = new Set()
-    for (const test of collectTests(fs)) {
-      for (const citation of test.citations) cited.add(citation.target)
+  export default async function (fs: AuditFs) {
+    const violations = []
+    for (const path of fs.list("docs", { ext: ".html" })) {
+      const doc = fs.parse(path)
+      if (doc.querySelector("template[id]")) continue
+      if (!doc.querySelector("canon-specification")) continue
+      if (!doc.querySelector('script[type="text/mycelium-test"]')) continue
+      const scripts = Array.from(doc.querySelectorAll("script[src]"))
+      if (scripts.some((s) => (s.getAttribute("src") ?? "").endsWith("test.element.js"))) continue
+      violations.push(`${path}: a canon holding browser checks that never loads test.element.js, so no check can run`)
     }
-    const violations = readCanon(fs).specifications
-      .flatMap((specification) => specification.behaviours)
-      .filter((behaviour) => !cited.has(behaviour.address))
-      .map((behaviour) => behaviour.address)
-    return { ok: violations.length === 0, violations }
-  }
-</script>
-
-<h3>cited</h3>
-<p>
-  Every test cites a behaviour. This is the one that closes the loop: a test citing nothing is a
-  claim about the system that no specification makes, so either a behaviour is missing above it or
-  the test checks something nobody meant to promise.
-</p>
-<p>
-  A citation gets judged on where it lands, never on which tag carries it. One test citing an axiom
-  directly fails here, because it reaches past the layer that was supposed to state the claim. The
-  project that ran this methodology before checked the tag name instead and let sixteen such
-  citations through, and every one of them turned out to be a real gap.
-</p>
-<script type="mycelium/audit" data-audits="cited" data-expects="docs/templates/canon.template.html#sample-uncited-case" data-touches="canon-behaviour">
-  import type { AuditFs } from "../../src/api.ts"
-  import { collectTests, readCanon } from "./canon-citations.ts"
-
-  /**
-   * Every test cites a behaviour.
-   *
-   * One check covers all three ways to fail, because all three are the same
-   * failure: a case carrying no edge, an edge resolving to nothing, and an edge
-   * landing on an axiom rather than on a behaviour. What decides is where the
-   * citation lands.
-   *
-   * A case carries an id, so a violation names the address somebody can open.
-   *
-   * @behaviour canon/chain.canon.html#a-case-citing-nothing-fails
-   * @behaviour canon/chain.canon.html#a-citation-landing-on-an-axiom-fails
-   */
-  export default function (fs: AuditFs) {
-    const behaviours = new Set(
-      readCanon(fs).specifications.flatMap((specification) => specification.behaviours.map((b) => b.address)),
-    )
-    const violations = collectTests(fs)
-      .filter((test) => !test.citations.some((citation) => behaviours.has(citation.target)))
-      .map((test) => test.address)
     return { ok: violations.length === 0, violations }
   }
 </script>
@@ -516,11 +509,13 @@
 
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
-  import { readCanon, collectTests, collectCodeCitations } from "./canon-citations.ts"
+  import { readCanon, collectCodeCitations } from "./canon-citations.ts"
   import { declaredOrders, declaresATemplate, placeField } from "./shared.ts"
-  import { writeFileSync, mkdtempSync, readFileSync } from "node:fs"
+  import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync, chmodSync, rmSync } from "node:fs"
   import { tmpdir } from "node:os"
-  import { join, resolve as resolvePath } from "node:path"
+  import { dirname, join, resolve as resolvePath } from "node:path"
+  import { spawn, spawnSync, execFileSync } from "node:child_process"
+  import { loadModule } from "../../src/utils.ts"
   import { pathToFileURL } from "node:url"
 
   const TYPES = ['axiom', 'specification']
@@ -810,8 +805,19 @@
 `
   }
 
+  // A behaviour arrives with the check that falsifies it, which is why --check
+  // is required rather than optional. A claim nothing can falsify is prose, and
+  // this command is the last place able to insist on that: once the file
+  // exists, a missing check is somebody else's problem to notice.
+  //
+  // The same argument as an axiom's required detail, one rung down. That field
+  // was optional and the first eleven axioms used it zero times.
+  //
+  // --check reads from stdin, the way --detail does, since a script does not
+  // fit on a flag. --browser picks the runtime, and the script type is the only
+  // thing that decides which runner opens it.
   async function addBehaviour({ fs, args, cli }) {
-    requireArgs([args.canon, '--canon'], [args.id, '--id'], [args.title, '--title'])
+    requireArgs([args.canon, '--canon'], [args.id, '--id'], [args.title, '--title'], [args.check, '--check'])
     const path = canonPathFor(args.canon)
     const doc = fs.get(path)
     const root = doc.querySelector('canon-specification')
@@ -820,12 +826,20 @@
       throw new Error(`${args.canon} already carries an entry with id "${args.id}"`)
     }
 
+    const check = args.check === '-' ? await cli.readStdin() : args.check
     const el = doc.createElement('canon-behaviour')
     el.setAttribute('id', args.id)
     el.setAttribute('data-conforms-to', '../templates/canon.template.html#canon-behaviour')
     const title = doc.createElement('canon-title')
     title.textContent = args.title
     el.appendChild(title)
+    const verdict = doc.createElement('canon-verdict')
+    verdict.textContent = 'PENDING'
+    el.appendChild(verdict)
+    const script = doc.createElement('script')
+    script.setAttribute('type', args.browser ? 'text/mycelium-test' : 'mycelium/test')
+    script.textContent = check
+    el.appendChild(script)
     root.appendChild(el)
 
     const result = await cli.validate(el, path)
@@ -1097,7 +1111,6 @@
     const read = readCanon(corpus)
     const axioms = read.axioms.filter((axiom) => claims(axiom.address))
     const specifications = read.specifications.filter((specification) => claims(specification.address))
-    const cases = collectTests(corpus).filter((testCase) => claims(testCase.address))
     const code = collectCodeCitations(corpus, specifications.flatMap((s) => s.specifies))
 
     const behaviours = specifications.flatMap((specification) =>
@@ -1113,11 +1126,13 @@
         beneath.get(target)!.push(entry.address)
       }
     }
-    for (const testCase of cases) {
-      for (const citation of testCase.citations) {
-        if (!beneath.has(citation.target)) beneath.set(citation.target, [])
-        beneath.get(citation.target)!.push(testCase.address)
-      }
+    // A behaviour nested in another narrows it, so the downward step comes from
+    // the markup rather than from an edge. Everything else here reverses a
+    // stored edge; this one reverses containment.
+    for (const behaviour of behaviours) {
+      if (!behaviour.parent) continue
+      if (!beneath.has(behaviour.parent)) beneath.set(behaviour.parent, [])
+      beneath.get(behaviour.parent)!.push(behaviour.address)
     }
     for (const declaration of code) {
       for (const target of declaration.cites) {
@@ -1129,7 +1144,6 @@
     // What each node points at, which is the direction the corpus stores.
     const above = new Map<string, string[]>()
     for (const entry of [...axioms, ...behaviours]) above.set(entry.address, entry.dependsOn)
-    for (const testCase of cases) above.set(testCase.address, testCase.citations.map((c) => c.target))
     for (const declaration of code) above.set(declaration.address, declaration.cites)
 
     // Everything one way from a node, following the whole distance rather than
@@ -1184,12 +1198,9 @@
         address: behaviour.address,
         title: behaviour.title,
         specification: behaviour.specification,
-        refines: behaviour.dependsOn,
-      })),
-      cases: cases.map((testCase) => ({
-        address: testCase.address,
-        name: testCase.name,
-        checks: testCase.citations.map((citation) => citation.target),
+        refines: behaviour.parent ? [behaviour.parent] : behaviour.dependsOn,
+        parent: behaviour.parent,
+        checks: behaviour.checks,
       })),
       // Both directions, precomputed, so selecting anything can light the whole
       // chain it belongs to rather than only what hangs beneath it.
@@ -1202,9 +1213,9 @@
         snippet: declaration.snippet,
         cites: declaration.cites,
       })),
-      reach: Object.fromEntries([...axioms, ...behaviours, ...cases, ...code]
+      reach: Object.fromEntries([...axioms, ...behaviours, ...code]
         .map((entry) => [entry.address, reachOf(entry.address)])),
-      above: Object.fromEntries([...axioms, ...behaviours, ...cases, ...code]
+      above: Object.fromEntries([...axioms, ...behaviours, ...code]
         .map((entry) => [entry.address, walk(entry.address, above)])),
     }
 
@@ -1226,9 +1237,9 @@
     console.log(pathToFileURL(out).href)
   }
 
-  // An AuditFs over the command's own filesystem, since readCanon and
-  // collectTests both take one and a command is handed the other. Reading is
-  // all either needs.
+  // An AuditFs over the command's own filesystem, since readCanon and the
+  // citation reader both take one and a command is handed the other. Reading
+  // is all either needs.
   function auditFsOver(fs) {
     const docs = fs.list('').map(({ path, doc }) => ({ path: `docs/${path}`, doc }))
     const byPath = new Map(docs.map((d) => [d.path, d.doc]))
@@ -1311,7 +1322,7 @@ ${base}
   <div class="counts">
     <b>${data.axioms.length}</b> axioms &middot;
     <b>${data.behaviours.length}</b> behaviours &middot;
-    <b>${data.cases.length}</b> cases &middot;
+    <b>${data.behaviours.filter(b => b.checks).length}</b> checks &middot;
     <b>${data.specifications.length}</b> subsystems
   </div>
 </header>
@@ -1347,8 +1358,6 @@ for (let d = 0; d <= axiomDepth; d++)
 const specTitle = Object.fromEntries(data.specifications.map(s => [s.address, s.title]))
 ranks.push({ name: 'behaviours', items: data.behaviours.map(b =>
   ({ address: b.address, title: b.title, group: specTitle[b.specification] || 'unspecified', groupOf: b.specification })) })
-ranks.push({ name: 'test cases', items: data.cases.map(c =>
-  ({ address: c.address, title: c.name, group: c.address.split('/').pop().split('#')[0] })) })
 // One box per cited declaration, grouped by the file holding it. A file
 // nothing cites still appears, carrying no declarations, because a subsystem
 // naming a file with no claims in it is worth seeing rather than hiding.
@@ -1365,7 +1374,6 @@ ranks.push({ name: 'implementation', items: declarations })
 const parentsOf = {}
 for (const a of data.axioms) parentsOf[a.address] = a.narrows
 for (const b of data.behaviours) parentsOf[b.address] = b.refines
-for (const c of data.cases) parentsOf[c.address] = c.checks
 for (const s of data.specifications) for (const f of s.specifies) parentsOf[f] = [s.address]
 for (const d of data.code) parentsOf[d.address] = d.cites
 
@@ -1494,6 +1502,431 @@ draw()
 addEventListener('resize', draw)
 `
 
-</script>
+
+  // Loading a case's script means turning a file and a script tag into a
+  // module, and the rule for addressing one lives in script-hooks.ts. Writing
+  // that rule out again here would be a second copy to keep in step, so this
+  // imports the one the engine uses, the way language.template.html already
+  // does for its rules.
+
+  // A case's script type says which runtime can host it, which is the rule the
+  // engine already applies to every script inside a document. A mycelium/* type
+  // loads under Node and may be TypeScript. Anything else has to stay valid in
+  // a browser. So nothing extra has to be declared: the type a case already
+  // carries is the whole answer to which runner opens it.
+  const NODE_CASE = 'script[type="mycelium/test"]'
+  const BROWSER_CASE = 'script[type="text/mycelium-test"]'
+
+  function kindOf(doc) {
+    if (doc.querySelector(NODE_CASE)) return "node"
+    if (doc.querySelector(BROWSER_CASE)) return "browser"
+    return "empty"
+  }
+
+  function assert(ok, text) {
+    if (!ok) throw new Error(text || "assertion failed")
+  }
+
+  // The same tolerance the browser runner offers, so one contract covers both.
+  assert.near = function (a, b, tolerance, text) {
+    const slack = tolerance === undefined ? 0.5 : tolerance
+    if (!(Math.abs(a - b) <= slack)) {
+      throw new Error(`${text || "expected these to match"}: ${a} and ${b} differ by more than ${slack}`)
+    }
+  }
+
+  // A throwaway documents tree, one per case, so no test can see what another
+  // one wrote. The templates arrive as a symlink rather than a copy. A command
+  // lives inside a template, so a sandbox without them has no command to run,
+  // and a copy would let a test pass against a stale duplicate of the thing it
+  // is testing.
+  //
+  // src arrives the same way, one level up, because a command script imports
+  // from it by a path relative to its own file: language.template.html reaches
+  // for ../../src/utils.ts, and the module hook resolves that inside whatever
+  // tree the document sits in. Node follows the symlink before resolving
+  // anything further, so the real file's own imports find the real
+  // node_modules.
+  function sandboxFor(root) {
+    const dir = mkdtempSync(join(tmpdir(), "mycelium-test-"))
+    const docs = join(dir, "docs")
+    mkdirSync(docs, { recursive: true })
+    symlinkSync(join(root, "docs", "templates"), join(docs, "templates"))
+    // commands/ arrives for the same reason templates/ does. A command hosted
+    // outside a family lives here — validate is the one that matters — and a
+    // sandbox without it can run `knowledge add` but not the check that says
+    // whether what it wrote is valid. That gap is why nothing tested validate.
+    symlinkSync(join(root, "docs", "commands"), join(docs, "commands"))
+    symlinkSync(join(root, "src"), join(dir, "src"))
+    return {
+      dir,
+      // The real command, in a real process, against this tree. Slower than
+      // calling the function would be, and it covers what calling it would
+      // miss: argument parsing, the path a command chooses, how a document
+      // serializes, and the exit code.
+      mycelium(...argv) {
+        const done = spawnSync(process.execPath, [join(root, "src", "run.ts"), ...argv], { cwd: dir, encoding: "utf8" })
+        return { ok: done.status === 0, status: done.status, stdout: done.stdout ?? "", stderr: done.stderr ?? "" }
+      },
+      read: (path) => readFileSync(join(docs, path), "utf8"),
+      exists: (path) => existsSync(join(docs, path)),
+      write(path, text) {
+        mkdirSync(dirname(join(docs, path)), { recursive: true })
+        writeFileSync(join(docs, path), text)
+      },
+      remove: () => rmSync(dir, { recursive: true, force: true }),
+    }
+  }
+
+  // A node document runs here rather than in a page. It gets the same fields and
+  // the same words, but nothing writes them into the file: a node test has no
+  // rendering to look at, so the report is what the command prints. Only a
+  // browser document is also its own report.
+  async function runNodeDocument(entry, root, fsRoot) {
+    const full = resolvePath(fsRoot, entry.path)
+    const results = []
+    for (const testCase of Array.from(entry.doc.querySelectorAll("canon-behaviour"))) {
+      const id = testCase.getAttribute("id")
+      const name = testCase.querySelector("canon-title")?.textContent?.trim() ?? ""
+      const script = testCase.querySelector(NODE_CASE)
+      if (!script) {
+        results.push({ id, name, status: "FAILURE", message: "this case carries no mycelium/test script" })
+        continue
+      }
+      const sandbox = sandboxFor(root)
+      try {
+        const mod = await loadModule(full, script)
+        if (typeof mod.default !== "function") throw new Error("this case exports no default function")
+        await mod.default({ assert, sandbox })
+        results.push({ id, name, status: "SUCCESS", message: "" })
+      } catch (err) {
+        results.push({ id, name, status: "FAILURE", message: err?.message ?? String(err) })
+      } finally {
+        sandbox.remove()
+      }
+    }
+    return results
+  }
+
+  // W3C's fixed key for a web element reference. Every conforming driver
+  // returns this exact string, which is why it can be a constant here.
+  const ELEMENT = "element-6066-11e4-a52e-4f735466cecf"
+  const BUILDS = "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json"
+
+  // Where a run looks for Chrome when CHROME_PATH says nothing. Ordered by
+  // platform, and a miss here is a clear error rather than a guess: the command
+  // names the variable to set.
+  const CHROME_GUESSES = {
+    darwin: [
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+      "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    ],
+    linux: ["/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/chromium", "/usr/bin/chromium-browser"],
+    win32: ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"],
+  }
+
+  const PLATFORMS = {
+    "darwin-arm64": "mac-arm64",
+    "darwin-x64": "mac-x64",
+    "linux-x64": "linux64",
+    "win32-x64": "win64",
+  }
+
+  function sleep(ms) {
+    return new Promise((done) => setTimeout(done, ms))
+  }
+
+  function chromePath() {
+    if (process.env.CHROME_PATH) return process.env.CHROME_PATH
+    for (const guess of CHROME_GUESSES[process.platform] ?? []) {
+      if (existsSync(guess)) return guess
+    }
+    throw new Error("no Chrome found — set CHROME_PATH to the browser binary")
+  }
+
+  // The build number, which is the version without its patch. A driver matches
+  // Chrome by build, so 150.0.7871.124 drives 150.0.7871.189 and the exact
+  // patch never has to line up.
+  function chromeBuild(binary) {
+    const printed = execFileSync(binary, ["--version"], { encoding: "utf8" })
+    const found = /(\d+\.\d+\.\d+)\.\d+/.exec(printed)
+    if (!found) throw new Error(`could not read a version out of "${printed.trim()}"`)
+    return found[1]
+  }
+
+  function unpack(zip, into) {
+    // Node ships no zip reader, so this borrows one. unzip covers macOS and
+    // every CI image; bsdtar reads zip too and covers Windows.
+    try {
+      execFileSync("unzip", ["-oq", zip, "-d", into], { stdio: "ignore" })
+    } catch {
+      execFileSync("tar", ["-xf", zip, "-C", into], { stdio: "ignore" })
+    }
+  }
+
+  // A driver matching the installed Chrome, downloaded once and kept. Under
+  // node_modules so the cache is already ignored by git and already something a
+  // clean checkout expects to rebuild.
+  async function chromedriver(root) {
+    if (process.env.CHROMEWEBDRIVER) {
+      const given = join(process.env.CHROMEWEBDRIVER, "chromedriver")
+      if (existsSync(given)) return given
+    }
+    const build = chromeBuild(chromePath())
+    const platform = PLATFORMS[`${process.platform}-${process.arch}`]
+    if (!platform) throw new Error(`Chrome for Testing publishes no driver for ${process.platform}-${process.arch}`)
+
+    const cache = join(root, "node_modules", ".cache", "mycelium", `chromedriver-${build}-${platform}`)
+    const binary = join(cache, `chromedriver-${platform}`, process.platform === "win32" ? "chromedriver.exe" : "chromedriver")
+    if (existsSync(binary)) return binary
+
+    const catalogue = await (await fetch(BUILDS)).json()
+    const downloads = catalogue.builds?.[build]?.downloads?.chromedriver
+    const match = (downloads ?? []).find((entry) => entry.platform === platform)
+    if (!match) throw new Error(`Chrome for Testing lists no ${platform} driver for build ${build}`)
+
+    console.log(`downloading chromedriver ${build} for ${platform}`)
+    mkdirSync(cache, { recursive: true })
+    const zip = join(cache, "chromedriver.zip")
+    writeFileSync(zip, Buffer.from(await (await fetch(match.url)).arrayBuffer()))
+    unpack(zip, cache)
+    rmSync(zip, { force: true })
+    if (!existsSync(binary)) throw new Error(`the driver archive held no ${binary}`)
+    chmodSync(binary, 0o755)
+    return binary
+  }
+
+  // A thin WebDriver client. Six endpoints cover a whole run, so this is the
+  // whole protocol layer and there is no library under it.
+  function session(base) {
+    async function call(method, path, body) {
+      const response = await fetch(base + path, {
+        method,
+        headers: body ? { "content-type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      })
+      const payload = await response.json()
+      if (!response.ok) {
+        const value = payload.value ?? {}
+        throw new Error(`${value.error ?? "webdriver error"}: ${(value.message ?? "").split("\n")[0]}`)
+      }
+      return payload.value
+    }
+    return call
+  }
+
+  // What the page gets asked. It resolves the moment no case reads PENDING,
+  // which is also how a person reading the page knows the run has finished.
+  const WAIT = `
+    const done = arguments[arguments.length - 1]
+    const read = () => Array.from(document.querySelectorAll("canon-behaviour")).map((el) => ({
+      id: el.getAttribute("id"),
+      name: (el.querySelector("canon-title") || {}).textContent?.trim() ?? "",
+      status: ((el.querySelector("canon-verdict") || {}).textContent || "").trim(),
+      message: ((el.querySelector("canon-message") || {}).textContent || "").trim(),
+    }))
+    const tick = () => {
+      const cases = read()
+      if (!cases.length || cases.every((one) => one.status !== "PENDING")) return done(cases)
+      setTimeout(tick, 50)
+    }
+    tick()
+  `
+
+  // Every canon document, because a check lives on the claim it answers and a
+  // claim lives in the canon of its subsystem. A document with no leaf claim
+  // in it comes back anyway and reports no cases, which is the honest answer
+  // for a canon that is all grouping.
+  function testDocuments(fs, only) {
+    const found = fs.list("canon")
+      .filter((entry) => entry.path.endsWith(".canon.html"))
+      .sort((a, b) => a.path.localeCompare(b.path))
+    if (!only) return found
+    const matched = found.filter(({ path }) => path === only || path.endsWith(`/${only}`) || path.endsWith(`/${only}.canon.html`))
+    if (!matched.length) throw new Error(`no canon document matching "${only}" under canon/`)
+    return matched
+  }
+
+  // One line per case, in the order the document declares them. A case still
+  // reading PENDING failed: a thrown assertion already writes FAILURE, so
+  // PENDING at the end means nothing ever answered.
+  function report(results, deadline) {
+    let failed = 0
+    if (!results.length) console.log("  no cases in this document")
+    for (const one of results) {
+      const pending = one.status === "PENDING"
+      console.log(`  ${one.status.padEnd(8)} ${one.name}`)
+      if (!pending && one.status !== "FAILURE") continue
+      failed++
+      if (one.message) console.log(`           ${one.message}`)
+      if (pending) console.log(`           nothing answered before the ${deadline}ms deadline`)
+    }
+    return failed
+  }
+
+  /**
+   * Run every test document and report what it decided.
+   *
+   *   mycelium test run [<file>] [--show] [--timeout MS] [--port N]
+   *
+   * <file> narrows the run to one document, by path or by slug. Without it
+   * every canon/*.canon.html runs.
+   *
+   * A document's cases say which runner opens it, through the type on their
+   * scripts. Nothing else declares it, because a script type already means
+   * exactly this everywhere else in the project.
+   *
+   * A mycelium/test case runs here, under Node, with its own throwaway
+   * documents tree and the real command line pointed at it. A
+   * text/mycelium-test case runs in a page: the command opens it in a headless
+   * browser, waits for no test-status to read PENDING, and reads the statuses
+   * out. In that second case it knows nothing about cases, fixtures or
+   * assertions, since test.element.js runs those in the page, so the document a
+   * person opens and the document this opens behave identically.
+   *
+   * Node documents go first and on their own, so a repository whose tests all
+   * run there never starts a browser and never fetches a driver.
+   *
+   * Past --timeout (30000 by default) the driver gives up on the wait, and a
+   * case still reading PENDING counts as failed. A thrown assertion already
+   * writes FAILURE, so PENDING at the end means the case hung or the page never
+   * loaded its subject.
+   *
+   * Every failing case leaves a screenshot of its own fixture next to the
+   * document, named for the case. The window opens large enough that a tall
+   * figure fits, because a driver captures the part of an element that fits the
+   * viewport and silently crops the rest.
+   *
+   * --show runs a visible browser instead of a headless one, for watching a
+   * case that only misbehaves under the command.
+   *
+   * Exits nonzero if any case failed, so a build can gate on it.
+   */
+  export async function test({ fs, args }: CommandContext) {
+    const root = dirname(fs.root)
+    const entries = testDocuments(fs, args._[0])
+    if (!entries.length) {
+      console.log("no test documents under tests/")
+      return
+    }
+
+    const port = Number(args.port ?? 9515)
+    const timeout = Number(args.timeout ?? 30000)
+    let failures = 0
+    let total = 0
+
+    // Node documents first, and on their own. A repository whose tests all run
+    // here never starts a browser and never fetches a driver.
+    for (const entry of entries.filter((one) => kindOf(one.doc) === "node")) {
+      console.log(`\n${entry.path}`)
+      const results = await runNodeDocument(entry, root, fs.root)
+      total += results.length
+      failures += report(results, timeout)
+    }
+
+    const paths = entries.filter((one) => kindOf(one.doc) === "browser")
+    if (!paths.length) {
+      console.log(`\n${total} cases, ${failures} failed`)
+      if (failures) throw new Error(`${failures} of ${total} cases failed`)
+      return
+    }
+
+    const driver = await chromedriver(root)
+    const server = spawn(driver, [`--port=${port}`], { stdio: "ignore" })
+    const call = session(`http://127.0.0.1:${port}`)
+
+    try {
+      for (let i = 0; i < 100; i++) {
+        try { if ((await call("GET", "/status")).ready) break } catch {}
+        await sleep(50)
+      }
+
+      const options = ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
+      if (args.show === undefined) options.push("--headless")
+      const opened = await call("POST", "/session", {
+        capabilities: { alwaysMatch: { browserName: "chrome", "goog:chromeOptions": { args: options } } },
+      })
+      const at = `/session/${opened.sessionId}`
+
+      try {
+        // Large enough that an element screenshot of a tall figure is whole.
+        await call("POST", `${at}/window/rect`, { width: 1400, height: 2200 })
+        await call("POST", `${at}/timeouts`, { script: timeout })
+
+        for (const entry of paths) {
+          const path = entry.path
+          const full = resolvePath(fs.root, path)
+          console.log(`\n${path}`)
+          let cases
+          try {
+            await call("POST", `${at}/url`, { url: `file://${full}` })
+            cases = await call("POST", `${at}/execute/async`, { script: WAIT, args: [] })
+          } catch (err) {
+            failures++
+            console.log(`  FAILURE  the page never finished — ${err.message}`)
+            continue
+          }
+          // A page that answers with fewer cases than the file declares has not
+          // run them, it has lost them, and reporting nothing wrong would be a
+          // pass nobody earned.
+          const declared = entry.doc.querySelectorAll("canon-behaviour").length
+          if (cases.length !== declared) {
+            failures++
+            console.log(`  FAILURE  the document declares ${declared} cases and the page answered with ${cases.length}`)
+          }
+          total += cases.length
+          failures += report(cases, timeout)
+          for (const one of cases) {
+            if (one.status === "SUCCESS") continue
+            await capture(call, at, path, one.id, full)
+          }
+        }
+      } finally {
+        await call("DELETE", at).catch(() => {})
+      }
+    } finally {
+      server.kill()
+    }
+
+    console.log(`\n${total} cases, ${failures} failed`)
+    if (failures) throw new Error(`${failures} of ${total} cases failed`)
+  }
+
+  // A picture of the case that failed, written beside its document. Not through
+  // the document filesystem, which serializes HTML — a screenshot is not a
+  // document and has no business going through that path.
+  async function capture(call, at, path, id, full) {
+    if (!id) return
+    try {
+      const found = await call("POST", `${at}/element`, { using: "css selector", value: `canon-behaviour[id="${id}"] canon-fixture` })
+      const encoded = await call("GET", `${at}/element/${found[ELEMENT]}/screenshot`)
+      const png = `${full.replace(/\.canon\.html$/, "")}.${id}.failure.png`
+      writeFileSync(png, Buffer.from(encoded, "base64"))
+      console.log(`           wrote ${png.slice(full.length - path.length)}`)
+    } catch {
+      // A case can fail before it ever renders anything, and a missing picture
+      // is not itself a failure worth reporting over the one that caused it.
+    }
+  }
+
+  /**
+   * Print every test document and the cases in it, without running anything.
+   *
+   *   mycelium test list
+   *
+   * Reports what is on disk, which is every status reading PENDING. For a
+   * verdict, use run — the repository never holds one, on purpose.
+   */
+  export function list({ fs }: CommandContext) {
+    for (const { path, doc } of fs.list("canon")) {
+      if (!path.endsWith(".canon.html")) continue
+      const title = doc.querySelector("canon-title")?.textContent?.trim() ?? ""
+      console.log(`${path}\t${title}`)
+      for (const one of Array.from(doc.querySelectorAll("canon-behaviour"))) {
+        const name = one.querySelector("canon-title")?.textContent?.trim() ?? ""
+        console.log(`  ${one.getAttribute("id")}\t${name}`)
+      }
+    }
+  }</script>
 
 </body></html>

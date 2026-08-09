@@ -13,38 +13,215 @@
   <canon-behaviour id="an-axiom-reaching-no-behaviour-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>An axiom that no behaviour reaches from beneath fails validation.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a gap in the chain fails the build</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // An axiom with nothing under it cannot be falsified, because nothing
+      // beneath it can push back. That is what grounded exists to say.
+      import type { TestContext } from "../../src/api.ts"
+      import { canonDoc, violationsFrom } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const found = await violationsFrom("canon.template.html", "grounded", {
+          "docs/canon/lonely.canon.html": canonDoc({
+            axioms: [{ id: "lonely", title: "A principle nothing derives from." }],
+          }),
+        })
+        assert(
+          found.includes("docs/canon/lonely.canon.html#lonely"),
+          `grounded did not report the lonely axiom; it reported: ${found.join(", ") || "nothing"}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="a-behaviour-naming-no-axiom-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>A behaviour naming no axiom above it fails validation.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a gap in the chain fails the build</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The other half of the same check. A specification answering to nothing
+      // is a list of assertions nobody can argue with.
+      import type { TestContext } from "../../src/api.ts"
+      import { canonDoc, violationsFrom } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const found = await violationsFrom("canon.template.html", "grounded", {
+          "docs/canon/floating.canon.html": canonDoc({
+            specification: { id: "floating", title: "a floating subsystem", behaviours: [
+              { id: "does-a-thing", title: "It does a thing." },
+            ] },
+          }),
+        })
+        assert(
+          found.includes("docs/canon/floating.canon.html#does-a-thing"),
+          `grounded did not report the freelancing behaviour; it reported: ${found.join(", ") || "nothing"}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="reach-through-a-narrower-axiom-counts" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>An axiom reached through a narrower axiom counts as grounded.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#edges-point-up-only">the downward reach computed from the stored edges</a>
-  </canon-behaviour>
-  <canon-behaviour id="a-behaviour-no-case-cites-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>A behaviour that no test case cites fails validation.</canon-title>
-    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a gap in the chain fails the build</a>
-  </canon-behaviour>
-  <canon-behaviour id="a-case-citing-nothing-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>A test case citing no behaviour fails validation.</canon-title>
-    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a gap in the chain fails the build</a>
-  </canon-behaviour>
-  <canon-behaviour id="a-citation-landing-on-an-axiom-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>A citation resolving to an axiom rather than a behaviour fails validation.</canon-title>
-    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a citation reaching past a layer fails the build</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The downward reach gets computed from the upward edges rather than
+      // authored, so it has to walk the whole way down and not one step. A
+      // general axiom that only a narrower one names is still grounded.
+      //
+      // `unreached` is the control. This case decides on an absence, and a
+      // check that has stopped working also reports an absence, so it has to
+      // find something first.
+      import type { TestContext } from "../../src/api.ts"
+      import { canonDoc, violationsFrom } from "./audit-corpus.ts"
+
+      export default async function ({ assert }: TestContext) {
+        const found = await violationsFrom("canon.template.html", "grounded", {
+          "docs/canon/general.canon.html": canonDoc({
+            axioms: [
+              { id: "general", title: "The general principle." },
+              { id: "unreached", title: "A principle nothing serves." },
+            ],
+          }),
+          "docs/canon/under.canon.html": canonDoc({
+            axioms: [{ id: "narrow", title: "The narrower principle.", narrows: "./general.canon.html#general" }],
+            specification: { id: "under", title: "a subsystem", behaviours: [
+              { id: "does-a-thing", title: "It does a thing.", refines: "#narrow" },
+            ] },
+          }),
+        })
+        assert(
+          found.includes("docs/canon/general.canon.html#unreached"),
+          `the control is missing, so this case cannot read an absence; grounded reported: ${found.join(", ") || "nothing"}`,
+        )
+        assert(
+          !found.includes("docs/canon/general.canon.html#general"),
+          "grounded reported the general axiom, so it stopped after one step down instead of walking the chain",
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="the-drawing-counts-only-claims" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>The drawing counts only claims, and never a template's worked examples.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">nothing marks a sample; the document holding it says so</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The sandbox links the real templates in, so canon.template.html's own
+      // sample axioms are present and conform. They are what the three chain
+      // checks fire on, which is why readCanon still hands them over and every
+      // consumer decides for itself. This one is counting the system, and a
+      // sample counted among real principles overstates every number drawn.
+      import type { TestContext } from "../../src/api.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        sandbox.write("canon/sample.canon.html", `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Canon: sample</title></head>
+<body>
+<canon-axiom id="a-real-principle" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>A principle a real subsystem narrows.</canon-title>
+  <canon-detail><p>Reasoning, because an axiom carries one.</p></canon-detail>
+</canon-axiom>
+</body></html>
+`)
+
+        const done = sandbox.mycelium("canon", "generate", "chain", "--out", "chain.html")
+        assert(done.ok, `generate failed: ${(done.stderr || done.stdout).trim()}`)
+
+        const page = sandbox.read("chain.html")
+        assert(page.includes("a-real-principle"), "the real axiom never made it onto the page")
+        assert(!page.includes("sample-axiom"), "a worked example is drawn as though it were a principle")
+        assert(!page.includes("sample-ungrounded-axiom"), "a worked example is drawn as though it were a principle")
+        assert(page.includes("<b>1</b> axioms"), `the count includes something that claims nothing: ${page.match(/<b>\d+<\/b> axioms/)?.[0]}`)
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="the-rank-shows-a-cited-declaration" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>The implementation rank draws one box per cited declaration, under the behaviours naming it.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">the rank gets read off the tags, never authored</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      /**
+       * The implementation rank used to draw one box per file, which is as
+       * coarse as the specifies edge that fed it. A citation in the code is
+       * what makes a finer box possible, and reading it is what makes the box
+       * appear without anybody authoring one.
+       */
+      import type { TestContext } from "../../src/api.ts"
+      import { chainOf, tinySubsystem } from "./canon-chain-fixture.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        for (const [path, text] of Object.entries(tinySubsystem())) sandbox.write(path, text)
+
+        const data = chainOf(sandbox, assert)
+        const cited = data.code.find((d) => d.name === "widen")
+        assert(cited, `no declaration reached the drawing; it carried ${JSON.stringify(data.code.map((d) => d.name))}`)
+        assert(
+          cited.cites.includes("docs/canon/sample.canon.html#a-claim"),
+          `the declaration cites ${JSON.stringify(cited.cites)}`,
+        )
+        assert(cited.kind === "function", `the drawing calls it a ${cited.kind || "(nothing)"}`)
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="the-drawing-carries-the-comment-and-the-code" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>The drawing carries each cited declaration's doc comment and the lines beneath it.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-document-is-read-by-a-person">a reader following a claim down wants the code</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      /**
+       * A reader following a claim down to the code came for the code. The
+       * comment is the half worth showing, since it holds the reasoning, and
+       * the tag lines come out of it because a citation is not prose.
+       */
+      import type { TestContext } from "../../src/api.ts"
+      import { chainOf, tinySubsystem } from "./canon-chain-fixture.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        for (const [path, text] of Object.entries(tinySubsystem())) sandbox.write(path, text)
+
+        const cited = chainOf(sandbox, assert).code.find((d) => d.name === "widen")
+        assert(cited, "no declaration reached the drawing")
+        assert(
+          cited.doc.includes("the blank line it sat on"),
+          `the comment never arrived: ${JSON.stringify(cited.doc)}`,
+        )
+        assert(!cited.doc.includes("@behaviour"), `the citation was left in the prose: ${JSON.stringify(cited.doc)}`)
+        assert(
+          cited.snippet.includes("function widen"),
+          `the lines beneath it never arrived: ${JSON.stringify(cited.snippet)}`,
+        )
+      }
+    </script>
+  </canon-behaviour>
+  <canon-behaviour id="a-claim-nothing-falsifies-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A behaviour carrying no check and no children fails validation.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a gap in the chain fails the build</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">// The rule that replaced two audits. One asked whether every behaviour had a
+// case citing it and the other whether every case cited a behaviour, and a
+// check living inside the claim it answers makes both unaskable.
+//
+// The half a schema cannot state survives: a claim with nothing beneath it,
+// and a claim with two kinds of proof. This covers the first, which is the one
+// a person actually writes by accident.
+import type { TestContext } from "../../src/api.ts"
+
+export default async function ({ assert, sandbox }: TestContext) {
+  sandbox.write("canon/bare.canon.html", `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Canon: bare</title></head>
+<body>
+<canon-specification id="bare" data-conforms-to="../templates/canon.template.html#canon-specification">
+  <canon-title>a subsystem</canon-title>
+  <a data-rel="specifies" href="../templates/canon.template.html">the files it answers for</a>
+  <canon-behaviour id="nothing-falsifies-this" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A claim with nothing underneath it.</canon-title>
+  </canon-behaviour>
+</canon-specification>
+</body></html>`)
+
+  const done = sandbox.mycelium("validate")
+  assert(!done.ok, "a claim nothing can falsify passed validation")
+  assert(
+    done.stdout.includes("carries no check and no children"),
+    `the failure names something else: ${done.stdout}`,
+  )
+}
+</script>
   </canon-behaviour>
 </canon-specification>
 </body></html>

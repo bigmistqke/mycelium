@@ -31,34 +31,282 @@ path before asking for the href.</p>
   <canon-behaviour id="add-dates-the-filename" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>knowledge add prepends today's date to a bare slug.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">the date is computed, never typed</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The slug a caller passes carries no date, and the command supplies one.
+      // That split is the reason add takes an undated slug while every other
+      // command takes a whole filename.
+      import type { TestContext } from "../../src/api.ts"
+      import { todayDate } from "../templates/shared.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        const done = sandbox.mycelium(
+          "knowledge", "add", "goal",
+          "--title", "A sandboxed goal",
+          "--confidence", "50",
+          "--status", "pending",
+          "--file", "sample-goal",
+        )
+        assert(done.ok, `add failed: ${done.stderr || done.stdout}`)
+
+        const today = todayDate()
+        const path = `knowledge/${today}-sample-goal.goal.html`
+        assert(sandbox.exists(path), `wrote no ${path}; said: ${done.stdout.trim()}`)
+
+        const html = sandbox.read(path)
+        assert(html.includes("<knowledge-title>A sandboxed goal</knowledge-title>"), "the title is missing")
+        assert(html.includes("<knowledge-confidence>50</knowledge-confidence>"), "the confidence is missing")
+        assert(html.includes("<knowledge-status>pending</knowledge-status>"), "the status is missing")
+        assert(
+          html.includes('data-conforms-to="../templates/knowledge.template.html#knowledge-goal"'),
+          "the node claims conformance to nothing",
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="add-refuses-a-dated-slug" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>knowledge add refuses a slug that already carries a date.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">refusing the hand-typed copy of a computed fact</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // This used to write a filename carrying the date twice. Such a node
+      // validates, so the only symptom was the name, and the surrounding prose
+      // talks about dated filenames constantly enough that the mistake looks
+      // like it is following the convention.
+      import type { TestContext } from "../../src/api.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        const done = sandbox.mycelium(
+          "knowledge", "add", "observation",
+          "--title", "Already dated",
+          "--confidence", "50",
+          "--file", "2026-08-06-already-dated",
+        )
+        assert(!done.ok, "a slug carrying a date was accepted")
+
+        const complaint = done.stderr + done.stdout
+        assert(complaint.includes("already-dated"), `the error names no slug to use instead: ${complaint.trim()}`)
+        assert(!sandbox.exists("knowledge/2026-08-06-2026-08-06-already-dated.observation.html"), "it wrote the doubled name anyway")
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="link-writes-into-the-from-file" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>link writes the edge into the first file, not the second.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#edges-point-up-only">which end of the edge stores it</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // Argument order decides direction, and getting it backwards still runs
+      // without complaint. It leaves an edge pointing the wrong way for a later
+      // audit to catch, or for nothing to catch when the relation happens to
+      // satisfy none of them.
+      import type { TestContext } from "../../src/api.ts"
+      import { todayDate } from "../templates/shared.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        const today = todayDate()
+        const make = (type: string, slug: string, extra: string[]) => {
+          const done = sandbox.mycelium(
+            "knowledge", "add", type,
+            "--title", slug,
+            "--confidence", "50",
+            "--file", slug,
+            ...extra,
+          )
+          assert(done.ok, `add ${type} failed: ${done.stderr || done.stdout}`)
+          return `${today}-${slug}.${type}.html`
+        }
+
+        const goal = make("goal", "the-goal", ["--status", "pending"])
+        const outcome = make("outcome", "the-outcome", [])
+
+        const done = sandbox.mycelium("knowledge", "link", goal, outcome, "--rel", "leads_to", "--label", "what happened")
+        assert(done.ok, `link failed: ${done.stderr || done.stdout}`)
+
+        const from = sandbox.read(`knowledge/${goal}`)
+        const to = sandbox.read(`knowledge/${outcome}`)
+
+        assert(from.includes('data-rel="leads_to"'), "the edge is not in the file named first")
+        assert(from.includes(`href="./${outcome}"`), "the edge in the first file points somewhere else")
+        assert(!to.includes('data-rel="leads_to"'), "the edge landed in the file named second as well")
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="language-link-crosses-directories" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>An edge from a term to a guide climbs out of the directory holding the term.</canon-title>
     <a data-rel="depends_on" href="./authoring.canon.html#a-family-owns-its-paths">the family knows where its terms and guides sit</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The engine used to resolve both filenames against docs/ while the
+      // command resolved them against language/terms/ or language/guides/. Two
+      // bases, so the href came out right only for two files sharing a
+      // directory, where the mistakes cancelled.
+      import type { TestContext } from "../../src/api.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        const term = sandbox.mycelium(
+          "language", "add", "term",
+          "--title", "drift",
+          "--file", "drift",
+          "--part-of-speech", "noun",
+          "--status", "approved",
+          "--meaning", "a copy of a rule that stops matching the rule",
+        )
+        assert(term.ok, `add term failed: ${term.stderr || term.stdout}`)
+
+        const guide = sandbox.mycelium(
+          "language", "add", "guide",
+          "--title", "Say what a thing does",
+          "--file", "say-what-it-does",
+          "--pass", "the command writes the edge",
+          "--fail", "the edge is written",
+        )
+        assert(guide.ok, `add guide failed: ${guide.stderr || guide.stdout}`)
+
+        const done = sandbox.mycelium(
+          "language", "link", "drift.term.html", "say-what-it-does.guide.html",
+          "--rel", "supports", "--label", "why drift matters",
+        )
+        assert(done.ok, `link failed: ${done.stderr || done.stdout}`)
+
+        const html = sandbox.read("language/terms/drift.term.html")
+        assert(
+          html.includes('href="../guides/say-what-it-does.guide.html"'),
+          `the edge points somewhere else: ${html.match(/<a data-rel[^>]*>/)?.[0] ?? "no edge at all"}`,
+        )
+
+        const back = sandbox.mycelium(
+          "language", "unlink", "drift.term.html", "say-what-it-does.guide.html", "--rel", "supports",
+        )
+        assert(back.ok, `unlink failed: ${back.stderr || back.stdout}`)
+        assert(!sandbox.read("language/terms/drift.term.html").includes("data-rel"), "unlink left the edge behind")
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="knowledge-link-reaches-a-template" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>An edge to a template keeps the leading dot-dot that reaches it.</canon-title>
     <a data-rel="depends_on" href="./authoring.canon.html#a-family-owns-its-paths">the family resolves its own path before asking for the href</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // One node in the real graph points at a template, and a person wrote
+      // that edge by hand. The command has to produce the same string, or the
+      // upsert appends a second edge beside it and unlink never finds either.
+      import type { TestContext } from "../../src/api.ts"
+      import { todayDate } from "../templates/shared.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        const today = todayDate()
+        const made = sandbox.mycelium(
+          "knowledge", "add", "outcome",
+          "--title", "The templates exist",
+          "--confidence", "90",
+          "--file", "templates-exist",
+        )
+        assert(made.ok, `add failed: ${made.stderr || made.stdout}`)
+
+        const node = `${today}-templates-exist.outcome.html`
+        const target = "../templates/knowledge.template.html"
+        const done = sandbox.mycelium("knowledge", "link", node, target, "--rel", "produced", "--label", "the six templates")
+        assert(done.ok, `link failed: ${done.stderr || done.stdout}`)
+
+        const html = sandbox.read(`knowledge/${node}`)
+        assert(html.includes(`href="${target}"`), `the edge reads ${html.match(/href="\.[^"]*"/)?.[0] ?? "nothing"}`)
+        assert(!html.includes('href="./../'), "the href carries a leading ./ that no hand-written edge has")
+
+        const back = sandbox.mycelium("knowledge", "unlink", node, target, "--rel", "produced")
+        assert(back.ok, `unlink failed: ${back.stderr || back.stdout}`)
+        assert(!sandbox.read(`knowledge/${node}`).includes("data-rel"), "unlink left the edge behind")
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="an-axiom-needs-its-reasoning" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>canon add refuses an axiom carrying no detail, and writes nothing.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">a required field is part of what the template declares</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The failure names --detail rather than the tag it would have become,
+      // because the person typed a flag and never saw a tag.
+      import type { TestContext } from "../../src/api.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        const done = sandbox.mycelium(
+          "canon", "add", "axiom",
+          "--canon", "sample",
+          "--id", "a-principle",
+          "--title", "A principle stated with nothing under it.",
+        )
+        const said = done.stdout + done.stderr
+        assert(!done.ok, `an axiom with no detail should fail, and it exited ${done.status}`)
+        assert(said.includes("--detail"), `the failure should name the flag; said: ${said.trim()}`)
+        assert(!sandbox.exists("canon/sample.canon.html"), "the document appeared anyway")
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="update-places-a-field-where-the-template-ranks-it" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>update puts a new field where its template ranks it, ahead of the entry's own edges.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the declared order binds the command too</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // The axiom here carries an edge and no detail, which is a shape the
+      // commands no longer produce and a hand-edit still can. Appending the
+      // field put it below the edge, and the closed-schema check then rejected
+      // the document the command had just written, so the update failed
+      // outright rather than landing in the wrong place.
+      import type { TestContext } from "../../src/api.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        sandbox.write("canon/sample.canon.html", `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Canon: sample</title></head>
+<body>
+<canon-axiom id="a-principle" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>A principle somebody wrote by hand, carrying an edge and no reasoning.</canon-title>
+  <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">the general one it narrows</a>
+</canon-axiom>
+</body></html>
+`)
+
+        const done = sandbox.mycelium(
+          "canon", "update", "sample#a-principle",
+          "--detail", "<p>The reasoning that had nowhere to go.</p>",
+        )
+        assert(done.ok, `update failed: ${(done.stderr || done.stdout).trim()}`)
+
+        const after = sandbox.read("canon/sample.canon.html")
+        assert(after.includes("The reasoning that had nowhere to go."), "the detail never arrived")
+        assert(
+          after.indexOf("<canon-detail>") < after.indexOf("<a data-rel"),
+          `the detail landed after the edge:\n${after}`,
+        )
+      }
+    </script>
   </canon-behaviour>
   <canon-behaviour id="link-places-an-edge-where-the-template-ranks-it" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>link puts a new edge where its template ranks it, ahead of a specification's behaviours.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the declared order binds the command too</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">
+      // A specification ranks its edges above the behaviours it holds, so an
+      // edge added after the first behaviour has somewhere wrong to land. An
+      // axiom has nothing ranked below its edges, which is why appending went
+      // unnoticed until a specification grew a second edge.
+      import type { TestContext } from "../../src/api.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        const add = (...argv: string[]) => {
+          const done = sandbox.mycelium("canon", ...argv)
+          assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
+        }
+        add("add", "axiom", "--canon", "sample", "--id", "a-principle",
+          "--title", "A principle with something under it.",
+          "--detail", "<p>Reasoning, so the axiom validates.</p>")
+        add("add", "specification", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
+        add("add", "behaviour", "--canon", "sample", "--id", "a-claim", "--title", "A claim the subsystem makes.",
+          "--check", "export default function ({ assert }) { assert(true) }")
+        add("link", "sample#a-claim", "sample#a-principle", "--rel", "depends_on", "--label", "the axiom it refines")
+
+        add("link", "sample#a-subsystem", "templates/canon.template.html", "--rel", "specifies", "--label", "the files it answers for")
+
+        const after = sandbox.read("canon/sample.canon.html")
+        assert(
+          after.indexOf('data-rel="specifies"') < after.indexOf("<canon-behaviour"),
+          `the edge landed below the behaviours:\n${after}`,
+        )
+
+        const checked = sandbox.mycelium("validate")
+        assert(!checked.stdout.includes("comes after"), `the document it wrote does not validate: ${checked.stdout.trim()}`)
+      }
+    </script>
   </canon-behaviour>
 </canon-specification>
 </body></html>
