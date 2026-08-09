@@ -207,6 +207,40 @@
       }
     </script>
   </test-case>
+  <test-case id="the-drawing-counts-only-claims" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>the drawing leaves a template's worked examples out</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/chain.canon.html#the-drawing-counts-only-claims">the behaviour this checks</a>
+    <script type="mycelium/test">
+      // The sandbox links the real templates in, so canon.template.html's own
+      // sample axioms are present and conform. They are what the three chain
+      // checks fire on, which is why readCanon still hands them over and every
+      // consumer decides for itself. This one is counting the system, and a
+      // sample counted among real principles overstates every number drawn.
+      import type { TestContext } from "../../src/api.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        sandbox.write("canon/sample.canon.html", `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Canon: sample</title></head>
+<body>
+<canon-axiom id="a-real-principle" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>A principle a real subsystem narrows.</canon-title>
+  <canon-detail><p>Reasoning, because an axiom carries one.</p></canon-detail>
+</canon-axiom>
+</body></html>
+`)
+
+        const done = sandbox.mycelium("canon", "generate", "chain", "--out", "chain.html")
+        assert(done.ok, `generate failed: ${(done.stderr || done.stdout).trim()}`)
+
+        const page = sandbox.read("chain.html")
+        assert(page.includes("a-real-principle"), "the real axiom never made it onto the page")
+        assert(!page.includes("sample-axiom"), "a worked example is drawn as though it were a principle")
+        assert(!page.includes("sample-ungrounded-axiom"), "a worked example is drawn as though it were a principle")
+        assert(page.includes("<b>1</b> axioms"), `the count includes something that claims nothing: ${page.match(/<b>\d+<\/b> axioms/)?.[0]}`)
+      }
+    </script>
+  </test-case>
+
 </test-doc>
 
 </body>

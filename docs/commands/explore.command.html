@@ -34,6 +34,7 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
+  import { declaresATemplate } from "../templates/shared.ts"
   /**
    * List every data-conforms-to instance across the whole docs/ tree,
    * regardless of which family it belongs to.
@@ -62,7 +63,7 @@
    */
   export async function list({ fs }: CommandContext) {
     for (const { path, doc } of fs.list(".")) {
-      if (doc.querySelector("template[id]")) continue
+      if (declaresATemplate(doc)) continue
       for (const root of Array.from(doc.querySelectorAll("[data-conforms-to]"))) {
         const tag = root.tagName.toLowerCase()
         const conformsTo = root.getAttribute("data-conforms-to")

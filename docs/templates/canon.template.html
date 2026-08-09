@@ -501,7 +501,7 @@
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
   import { readCanon, collectTests } from "./canon-citations.ts"
-  import { declaredOrders, placeField } from "./shared.ts"
+  import { declaredOrders, declaresATemplate, placeField } from "./shared.ts"
   import { writeFileSync, mkdtempSync } from "node:fs"
   import { tmpdir } from "node:os"
   import { join, resolve as resolvePath } from "node:path"
@@ -1046,8 +1046,21 @@
     if (kind !== 'chain') throw new Error(`unknown generate kind "${kind}" — expected "chain"`)
 
     const corpus = auditFsOver(fs)
-    const { axioms, specifications } = readCanon(corpus)
-    const cases = collectTests(corpus)
+
+    // A template's worked examples conform, and claim nothing. The three chain
+    // checks want them, since a sample's job is to make a check fire, so
+    // readCanon hands everything over and each consumer decides. This one is
+    // counting the system, and a sample principle counted among real ones
+    // overstates every number on the page.
+    const declaring = new Set(
+      corpus.list('docs', { ext: '.html' }).filter((path) => declaresATemplate(corpus.parse(path))),
+    )
+    const claims = (address: string) => !declaring.has(address.split('#')[0])
+
+    const read = readCanon(corpus)
+    const axioms = read.axioms.filter((axiom) => claims(axiom.address))
+    const specifications = read.specifications.filter((specification) => claims(specification.address))
+    const cases = collectTests(corpus).filter((testCase) => claims(testCase.address))
 
     const behaviours = specifications.flatMap((specification) =>
       specification.behaviours.map((behaviour) => ({ ...behaviour, specification: specification.address })))

@@ -59,3 +59,18 @@ export function placeField(root: Element, el: Element, order: string[]): void {
       : Array.from(root.children).find((c) => order.indexOf(c.tagName.toLowerCase()) > rank)
   root.insertBefore(el, later ?? null)
 }
+
+/**
+ * Whether a document declares types rather than making claims.
+ *
+ * An instance inside one demonstrates its type and asserts nothing about the
+ * system, so anything counting or drawing the corpus skips it. Nothing marks
+ * one: the document it sits in says so, and a marker would be a hand-written
+ * copy of that with somewhere to forget it.
+ *
+ * validate still checks every worked example, since conforming is half their
+ * job. This answers a different question.
+ */
+export function declaresATemplate(doc: Document): boolean {
+  return doc.querySelector("template[id]") !== null
+}
