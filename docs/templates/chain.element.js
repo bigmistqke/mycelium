@@ -15,8 +15,30 @@ for (let d = 0; d <= axiomDepth; d++)
     .map(a => ({ address: a.address, title: a.title, group: a.canon, reach: a.behaviours })) })
 
 const specTitle = Object.fromEntries(data.specifications.map(s => [s.address, s.title]))
-ranks.push({ name: 'behaviours', items: data.behaviours.map(b =>
-  ({ address: b.address, title: b.title, group: specTitle[b.specification] || 'unspecified', groupOf: b.specification })) })
+const behaviourAt = new Map(data.behaviours.map(b => [b.address, b]))
+
+/**
+ * How many claims a claim sits inside.
+ *
+ * A behaviour narrows a behaviour by holding it, so its depth is the walk up
+ * to a claim nothing holds. The axiom rank ranks by narrowing depth for the
+ * same reason: a narrower thing belongs one column right of the thing it
+ * narrows, and then its edge crosses a column like every other edge instead of
+ * doubling back inside one.
+ */
+function behaviourDepth(behaviour) {
+  let depth = 0
+  let at = behaviour
+  while (at && at.parent) { depth++; at = behaviourAt.get(at.parent) }
+  return depth
+}
+
+const depths = data.behaviours.map(behaviourDepth)
+const behaviourDepthMax = Math.max(0, ...depths)
+for (let d = 0; d <= behaviourDepthMax; d++)
+  ranks.push({ name: d === 0 ? 'behaviours' : '', items: data.behaviours
+    .filter((b, i) => depths[i] === d)
+    .map(b => ({ address: b.address, title: b.title, group: specTitle[b.specification] || 'unspecified', groupOf: b.specification })) })
 /**
  * One box per cited declaration, grouped by the file holding it. A file
  * nothing cites still appears, carrying no declarations, because a subsystem
