@@ -46,15 +46,26 @@ something that no longer exists, across the whole corpus and out to source
 files. So an item about a deleted file or a retired claim breaks validation.
 Staleness gets loud instead of accumulating quietly, which is the failure the
 January deferrals demonstrate.</p>
-<h3>Nothing marks it done</h3>
-<p>There is no status field, and no command closes an item. Deletion is the
-only edit, and two forces cause it: the condition fires, or the place stops
-existing. Both come from outside the document, so nothing here declares
-progress.</p>
+<h3>Deletion is the success state</h3>
+<p>This is the only family here where removing a document means the work went
+well. A notebook entry is a dated record and an axiom is a claim somebody
+relied on, so deleting either one throws something away. An item exists in
+order to stop existing, and the ordinary way it goes is that a person does the
+thing and drops the note.</p>
+<p>Two more forces remove one, and they cover the items nobody acts on. The
+condition fires, or the place stops existing. Both come from outside the
+document, which is what keeps an abandoned item from sitting there forever.</p>
+<p>Git holds every item this backlog ever carried, so neither route throws away
+the history. What the project decided not to do last month stays answerable
+without a single field recording it.</p>
+<h3>Doneness is an act, not a state</h3>
+<p>No status field, and nothing to update. <code>mycelium backlog done
+&lt;item&gt;</code> deletes the file, and the command carries the meaning that a
+field would try to store.</p>
 <p>This is the line against becoming a task tracker. A backlog needs somebody
-to close items, and closing is the act that rots — 286 statuses reading
-completed is what a store looks like once everyone stopped. An item that only
-ever disappears cannot go stale in that direction.</p>
+to keep its progress current, and that upkeep is what rots — 286 plan statuses
+reading completed is what a maintained field becomes once everyone stops. An
+item that only ever disappears cannot rot in that direction.</p>
 <h3>A condition may be a script</h3>
 <p>A condition in prose reads to a person. A condition as a script answers on
 request, and <code>mycelium backlog due</code> reports which items have come
