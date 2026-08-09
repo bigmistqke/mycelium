@@ -249,10 +249,15 @@ class Filesystem {
   // get() call would be — no separate read-only path, no separate tracking.
   list(dir: string): { path: string; doc: Document }[] {
     const full = resolvePath(this.#root, dir)
-    return walkHtmlFiles(full).map((file) => {
-      const path = relativePath(this.#root, file)
-      return { path, doc: this.get(path) }
-    })
+    return walkHtmlFiles(full)
+      .map((file) => relativePath(this.#root, file))
+      // A file this run deleted is gone from the corpus this run is building,
+      // so listing it would hand back a document nobody can open — get() throws
+      // on one. Same answer exists() gives. A file this run *created* is still
+      // absent here, because the walk reads the disk and nothing is written
+      // until the command returns.
+      .filter((path) => this.exists(path))
+      .map((path) => ({ path, doc: this.get(path) }))
   }
 
   commit(): string[] {

@@ -149,6 +149,148 @@
       for (const line of structural) console.log(`  ${line}`)
     }
   }
+
+  /** What each old field becomes. Anything absent here carries forward nowhere. */
+  const FIELDS = {
+    "knowledge-title": "notebook-title",
+    "knowledge-prompt": "notebook-prompt",
+    "knowledge-detail": "notebook-detail",
+  }
+
+  /**
+   * Move the knowledge graph into the notebook.
+   *
+   *   mycelium migrate rename --research <file> [--apply]
+   *
+   * Six types collapse to two. --research names the entries that came from
+   * someone else, and everything else came from thinking, so it is an
+   * observation. Nothing becomes an experiment: that type carries the script
+   * producing its reading, and no entry written under the old schema has one.
+   *
+   * Confidence, status, commit, files and branch stop here. Confidence sat on
+   * three values across 570 nodes with nothing reading it, status belonged to
+   * the goals that left, and the last three name what git already holds.
+   *
+   * The date leaves the filename, since an entry accretes and git knows when
+   * one first appeared. Nothing collides: 376 entries hold 376 distinct slugs.
+   */
+  export function rename({ fs, args }: CommandContext) {
+    requireArgs([args.research, "--research"])
+    const research = new Set(
+      readFileSync(args.research, "utf8").split("\n").map((line) => line.trim()).filter(Boolean)
+    )
+
+    // Every rename settled before anything moves, so a href can resolve a
+    // target whose own file has not been rewritten yet.
+    const moved = new Map()
+    for (const { path } of fs.list("knowledge")) {
+      const name = path.slice("knowledge/".length)
+      const match = /^\d{4}-\d{2}-\d{2}-(.+)\.\w+\.html$/.exec(name)
+      if (!match) throw new Error(`cannot read a slug out of ${name}`)
+      moved.set(name, `${match[1]}.${research.has(name) ? "research" : "observation"}.html`)
+    }
+
+    /** An href, aimed at wherever its target went. Unchanged if it stayed put. */
+    const reaim = (href) => {
+      const [file, fragment] = href.split("#")
+      const name = file.split("/").pop()
+      if (!moved.has(name)) return href
+      const prefix = file.slice(0, file.length - name.length).replace(/knowledge\/$/, "notebook/")
+      return (prefix || "./") + moved.get(name) + (fragment ? `#${fragment}` : "")
+    }
+
+    /**
+     * Every anchor inside one element, aimed again.
+     *
+     * An entry's own edges are its direct children, and its detail holds prose
+     * that links too. Both name neighbours that are moving, and the corpus pass
+     * below reaches neither: it walks the disk, where these files do not exist
+     * yet.
+     */
+    const reaimWithin = (el) => {
+      let n = 0
+      const anchors = el.tagName.toLowerCase() === "a" ? [el] : Array.from(el.querySelectorAll("a[href]"))
+      for (const a of anchors) {
+        const href = a.getAttribute("href") ?? ""
+        const aimed = reaim(href)
+        if (aimed === href) continue
+        a.setAttribute("href", aimed)
+        n++
+      }
+      return n
+    }
+
+    let lost = 0
+    let inside = 0
+    for (const { path, doc } of fs.list("knowledge")) {
+      const target = moved.get(path.slice("knowledge/".length))
+      const tag = `notebook-${target.endsWith(".research.html") ? "research" : "observation"}`
+      const old = doc.querySelector("[data-conforms-to]")
+      const keep = Array.from(old.children).filter((child) => {
+        const from = child.tagName.toLowerCase()
+        if (from === "a" || FIELDS[from]) return true
+        lost++
+        return false
+      })
+      if (!args.apply) {
+        inside += keep.reduce((n, child) => n + reaimWithin(child.cloneNode(true)), 0)
+        continue
+      }
+
+      const fresh = fs.create(`notebook/${target}`, `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${doc.querySelector("title")?.textContent ?? ""}</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+
+<${tag} data-conforms-to="../templates/notebook.template.html#${tag}">
+</${tag}>
+
+</body>
+</html>
+`)
+      const root = fresh.querySelector(tag)
+      for (const child of keep) {
+        const from = child.tagName.toLowerCase()
+        let el
+        if (from === "a") {
+          el = child.cloneNode(true)
+        } else {
+          el = fresh.createElement(FIELDS[from])
+          el.innerHTML = child.innerHTML
+        }
+        inside += reaimWithin(el)
+        root.appendChild(el)
+        root.appendChild(fresh.createTextNode("\n"))
+      }
+      fs.delete(path)
+    }
+
+    // Everything else in the corpus. A spec pointing into the graph names a
+    // file that just moved, and nothing about the move itself finds it.
+    let outside = 0
+    for (const { path, doc } of fs.list(".")) {
+      if (!path.endsWith(".html") || path.startsWith("knowledge/")) continue
+      for (const a of Array.from(doc.querySelectorAll("a[href]"))) {
+        const href = a.getAttribute("href") ?? ""
+        const aimed = reaim(href)
+        if (aimed === href) continue
+        if (args.apply) a.setAttribute("href", aimed)
+        outside++
+      }
+    }
+
+    console.log(
+      `${args.apply ? "moved" : "would move"} ${moved.size} entries ` +
+      `(${research.size} research, ${moved.size - research.size} observation), ` +
+      `dropped ${lost} field(s), reaimed ${inside} link(s) inside and ${outside} elsewhere`
+    )
+  }
 </script>
 
 </body>
