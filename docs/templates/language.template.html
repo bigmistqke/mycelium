@@ -391,15 +391,20 @@
     }
   }
 
-  // Where an entry lives, derived from its own name. The .term.html and
-  // .rule.html suffix already says which type a file is, so the directory
-  // follows from it and a caller never has to type one. That is also what
-  // keeps the suffix from being redundant now that the directory repeats it.
-  // Exported, because the engine computes the href between two file arguments
-  // and can only do that correctly if it knows where each one sits. Without
-  // it both resolve straight against docs/, which is right only when the two
-  // share a directory: a term linking to another term worked, and a term
-  // linking to a rule wrote ./passive-voice.rule.html from inside terms/.
+  /**
+   * Where an entry lives, derived from its own name. The .term.html and
+   * .rule.html suffix already says which type a file is, so the directory
+   * follows from it and a caller never has to type one. That is also what
+   * keeps the suffix from being redundant now that the directory repeats it.
+   *
+   * Exported, because the engine computes the href between two file arguments
+   * and can only do that correctly if it knows where each one sits. Without
+   * it both resolve straight against docs/, which is right only when the two
+   * share a directory: a term linking to another term worked, and a term
+   * linking to a rule wrote ./passive-voice.rule.html from inside terms/.
+   *
+   * @behaviour canon/authoring.canon.html#language-link-crosses-directories
+   */
   export function pathFor(file) {
     const match = /\.(term|rule|guide)\.html$/.exec(file)
     if (!match) throw new Error(`<file> must end in .term.html, .rule.html or .guide.html, got "${file}"`)
@@ -577,6 +582,12 @@
    * if present, append if not), and an explicit empty value ("") removes it.
    * Removing a required field fails validation and the command leaves the file
    * on disk untouched.
+   *
+   * A field this appends goes where the template ranks it rather than at the
+   * end, so a meaning added to a term already carrying edges lands ahead of
+   * them.
+   *
+   * @behaviour canon/authoring.canon.html#update-places-a-field-where-the-template-ranks-it
    */
   export async function update({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<file>'])
@@ -638,6 +649,8 @@
    *
    * Upserts on (rel, href): re-linking the same pair with the same rel
    * rewrites that edge's label rather than appending a second copy.
+   *
+   * @behaviour canon/authoring.canon.html#link-writes-into-the-from-file
    */
   export function link({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])

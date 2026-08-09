@@ -583,6 +583,9 @@
    * history into one day. See link-do-not-tag.decision.html, which leans on the
    * filename date to argue that a separate topic-tag vocabulary is unnecessary.
    * Backdating something you are writing now defeats that, so don't.
+   *
+   * @behaviour canon/authoring.canon.html#add-dates-the-filename
+   * @behaviour canon/authoring.canon.html#add-refuses-a-dated-slug
    */
   export async function add({ fs, args, cli }: CommandContext) {
     requireArgs([args.file, '--file'])
@@ -682,6 +685,9 @@
    * the command is idempotent and a label can be corrected without
    * hand-editing. A different rel between the same two nodes is a
    * different edge and is added alongside.
+   *
+   * @behaviour canon/authoring.canon.html#link-writes-into-the-from-file
+   * @behaviour canon/authoring.canon.html#knowledge-link-reaches-a-template
    */
   export function link({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<from-file>'], [args._[1], '<to-file>'], [args.rel, '--rel'])
@@ -769,6 +775,12 @@
    * validator checks the resulting node against its own type and writes it to
    * disk — unless it contains a disallowed field or omits a required field, in
    * which case the validator rejects it without modifying the file.
+   *
+   * A field this appends goes where the template ranks it, read off the
+   * template itself. Adding a commit to an action that already carries edges
+   * puts the commit ahead of them rather than at the end.
+   *
+   * @behaviour canon/authoring.canon.html#update-places-a-field-where-the-template-ranks-it
    */
   export async function update({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<file>'])
