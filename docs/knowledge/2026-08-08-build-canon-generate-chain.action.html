@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Build canon generate chain</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Build canon generate chain</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Reading the corpus through <code>canon-citations.ts</code>, which already
+holds both readings the drawing needs, and emitting one self-contained page with
+ranks as columns.</p>
+<p>One reader change falls out: <code>readCanon</code> keeps only
+<code>depends_on</code> edges today, so a specification's <code>specifies</code>
+links never reach a caller. The implementation rank needs them.</p>
+</knowledge-detail>
+  <knowledge-commit>6041046</knowledge-commit>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-08-08-visualize-the-canon-chain.goal.html">the goal this carries out</a>
+  <a data-rel="leads_to" href="../specs/2026-08-08-canon-generate-chain.spec.html">the design it follows</a>
+</knowledge-action>
+</body></html>

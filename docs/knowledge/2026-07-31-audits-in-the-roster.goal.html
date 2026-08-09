@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Make audits visible in the roster, the way commands already are</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal">
+  <knowledge-title>Make audits visible in the roster, the way commands already are</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <knowledge-prompt>The roster I built this morning lists commands. It does not list audits. -&gt; true, we probably need to make this transparent too</knowledge-prompt>
+  <knowledge-detail><p>
+  Four audits exist and every one of them gates the build. The only way to find out they exist is
+  to grep the templates for <code>data-audits</code>. Two of them turned out to be writing rules
+  that duplicate a rule authored by hand yesterday, and that duplication happened because the
+  author could not see them.
+</p>
+<p>
+  Building the roster this morning aimed to fix this same failure, in the dimension the roster
+  does not cover. Commands are one half of what this tool does; audits are the other half, and
+  only one half is visible.
+</p>
+</knowledge-detail>
+</knowledge-goal>
+</body></html>

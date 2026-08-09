@@ -20,8 +20,8 @@
   That filter names a location to mean "fixture", and the imprecision costs something concrete: an
   audit declared in one template file can never see anything declared in another, so a template
   cannot hold a check about anything but itself. That is the wall the
-  template-audit
-  design hit.
+  <a href="./2026-07-31-audit-belongs-to-template-vocabulary.decision.html">template-audit
+  design</a> hit.
 </p>
 <p>
   Each audit now names its own fixtures in <code>data-expects</code>, and the engine compares what
@@ -40,5 +40,6 @@
   assertion rather than a failure.
 </p>
 </knowledge-detail>
+  <a data-rel="supports" href="./2026-07-31-audit-belongs-to-template-vocabulary.decision.html">unblocks an audit living in a template file</a>
 </knowledge-decision>
 </body></html>

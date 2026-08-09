@@ -28,7 +28,8 @@
   Nothing machine-readable ties these together. A tool wanting to answer "what fields does
   <code>knowledge-goal</code> require, and what values does <code>knowledge-status</code> allow?" has no
   structured place to read that from today — it would have to scrape prose or parse validator JS. This is
-  what blocks an LLM-context overview command from showing field-level detail. It's also why
+  what blocks <a data-rel="elaborates" href="../knowledge/2026-07-25-llm-context-overview-doc.goal.html">the
+  LLM-context overview command</a> from showing field-level detail. It's also why
   <a data-rel="elaborates" href="../knowledge/2026-07-25-template-template-html-now-prerequisite.decision.html">this
   work was promoted from a deferred idea to a prerequisite</a> — it had already been named as explicitly out
   of scope in <a href="./2026-07-25-virtual-module-script-imports.spec.html">the virtual-module-imports spec</a>.
@@ -109,7 +110,8 @@
   <spec-out-of-scope>
 <ul>
   <li>The LLM-context overview command itself — depends on this work
-   , but isn't built here.</li>
+    (<a data-rel="elaborates" href="../knowledge/2026-07-25-llm-context-overview-doc.goal.html">tracked as its own
+    goal</a>), but isn't built here.</li>
   <li>Reverse-DNS-style filename inference for <code>docs/knowledge/*.html</code> instance files (inferring
     <code>data-conforms-to</code> from a <code>slug.type.family.html</code> naming convention instead of declaring
     it) — a separate, bigger change to the crawler's "protocol-only, doesn't know about filenames" contract,

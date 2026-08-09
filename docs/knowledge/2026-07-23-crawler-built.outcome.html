@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outcome: mycelium v4 crawler runs for real against the docs/ corpus: all 24 instances pass, both audits fire</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-outcome data-conforms-to="../templates/knowledge.template.html#knowledge-outcome">
+  <knowledge-title>mycelium v4 crawler runs for real against the docs/ corpus: all 24 instances pass, both audits fire</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-detail><p>Building the crawler and running it for real against the actual <code>docs/</code> corpus, not against fixtures, worked: <strong>24 real instances all pass their validators</strong>, and <strong>both audits correctly flag real violations</strong>.</p>
+<p>
+  The two audit failures in that run are real and correct, not bugs: they flag
+  <code>knowledge.template.html</code>'s own deliberately-broken live-demo sample markup
+  (<code>sample-observation</code>, <code>sample-outcome</code>), which the crawler has no way to know is
+  "just a demo" — and isn't supposed to, per <a href="../DESIGN.html">DESIGN.html</a>'s "no built-in
+  ontology" argument. This is the first time any of this project's audits have run against something other
+  than a hand-typed fixture or local sample markup.
+</p>
+</knowledge-detail>
+  <knowledge-commit>b6c4e3a</knowledge-commit>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="leads_to" href="./2026-07-23-reverse-runtime-to-globalthis.decision.html">led to reconsidering the
+    shared-runtime approach itself</a>
+</knowledge-outcome>
+</body></html>

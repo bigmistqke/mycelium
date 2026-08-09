@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option: Rejected: add a fifth status value, retired</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-option data-conforms-to="../templates/knowledge.template.html#knowledge-option">
+  <knowledge-title>Rejected: add a fifth status value, retired</knowledge-title>
+  <knowledge-confidence>25</knowledge-confidence>
+  <knowledge-detail><p>Cheapest change — one enum value in <code>knowledge.template.html</code>, no
+engine change, and it names exactly what
+<a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">the
+note on permanently-pending decisions</a> says is missing.</p>
+<p>Rejected because it is the hand-maintained metadata that
+<a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">derive,
+do not curate</a> predicts will decay, and it denormalizes a single fact (v0 was
+abandoned) across ~200 nodes. It also keeps the linearity assumption the enum
+already carries: retirement is not a state a node progresses to, it is a
+consequence of what happened to its surroundings.</p>
+</knowledge-detail>
+  <a data-rel="depends_on" href="./2026-07-30-declare-belonging-derive-liveness.decision.html">rejected alternative</a>
+  <a data-rel="alternative_to" href="./2026-07-30-option-knowledge-subdirectories.option.html">both reject deriving liveness</a>
+</knowledge-option>
+</body></html>

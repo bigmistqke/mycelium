@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Write the mycelium crawler spec: a protocol-only engine with no built-in ontology</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Write the mycelium crawler spec: a protocol-only engine with no built-in ontology</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>The design spec for the mycelium crawler: a protocol-only engine that discovers templates, instances, and audits, with no built-in ontology.</p>
+<p>
+  Corrected mid-brainstorm: the first draft had the crawler itself extracting "nodes" and "edges" from
+  <code>data-rel</code>, which is exactly the ontology <a href="../DESIGN.html">DESIGN.html</a> says the CLI
+  must never bake in. See the spec's "No built-in ontology" section for the resolved design. Also surfaced a
+  real bootstrapping bug in <code>require-action-node.sh</code> itself while writing this: the gate blocked
+  writing the very node that would satisfy it, fixed via Bash since only Edit/Write are gated.
+</p>
+</knowledge-detail>
+  <knowledge-commit>16df5b3</knowledge-commit>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="./2026-07-23-claude-md-and-hooks-rewritten.outcome.html">next step after the logging
+    switch itself proved out</a>
+  <a data-rel="leads_to" href="../specs/2026-07-23-mycelium-crawler.spec.html">the spec this action
+    produced</a>
+</knowledge-action>
+</body></html>

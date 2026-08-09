@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Rewrite the README to describe the engine, not the templates it happens to carry</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal">
+  <knowledge-title>Rewrite the README to describe the engine, not the templates it happens to carry</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-prompt>the current README.md is very bad -&gt; let's work on it in a worktree.</knowledge-prompt>
+  <knowledge-detail><p>
+  The README opened with the file tree, the validator's flags and a tour of
+  <code>knowledge add</code>/<code>link</code>, so a reader met the CLI surface
+  before learning what the engine does. Successive passes cut it to the engine:
+  a worked example of one template, the command its doc comment produces, and
+  the shape every conforming document answers to.
+</p>
+<p>
+  Three framings were tried and dropped for overreaching. Intent decay borrowed
+  <a href="../DESIGN.html">DESIGN.html</a>'s pitch, which promises a fix this does
+  not deliver. <q>A substrate for structured thought</q> is exploratory language
+  between two people who already share the context. Metadata for LLM-assisted
+  coding is narrower than the language family already reaches, since its checks
+  run over source comments too.
+</p>
+</knowledge-detail>
+</knowledge-goal>
+</body></html>

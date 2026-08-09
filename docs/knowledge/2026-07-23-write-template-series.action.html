@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: write the template series</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-action data-conforms-to="../templates/knowledge.template.html#knowledge-action">
+  <knowledge-title>Write the deciduous template series and its design spec</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-detail><p>Eight commits across one session, which is why this node deliberately carries
+no <code>knowledge-commit</code> — CLAUDE.md cites it as the worked example of
+that rule:</p>
+<ul>
+  <li><code>1628d92</code> — add a template for design specs, and write one</li>
+  <li><code>3766d2e</code> — rework the spec template to hold named sections, adopt the file-naming convention</li>
+  <li><code>3286838</code> — move <code>conforms-to</code> from a head link to an element attribute</li>
+  <li><code>bec9aae</code> — hyphenate every invented tag, prefix by family</li>
+  <li><code>5f643b6</code> — split shared CSS into stylesheets, write down field-vs-link</li>
+  <li><code>08e555b</code> — rename the <code>graph-*</code> tag family to <code>knowledge-*</code></li>
+  <li><code>a01a379</code> — build <code>knowledge.template.html</code>, deciduous's six node types as templates</li>
+  <li><code>fe57b12</code> — collocate the graph-wide audits, derive their input from real markup</li>
+</ul>
+<p>The sequence is a series of corrections rather than a build: each commit
+overturns a choice made in the one before it. Sections replaced a header,
+attributes replaced a head link, hyphenated names replaced colliding ones, and
+collocated audits replaced a separate audits file.</p>
+<p>
+  Spans several commits, not one — the design spec itself, the header-vs-sections correction,
+  <code>data-conforms-to</code>, hyphenated family-prefixed tags, the shared stylesheets, and finally
+  <a href="../templates/knowledge.template.html">knowledge.template.html</a> with its collocated audits.
+  <code>knowledge-commit</code>/<code>knowledge-files</code> are omitted rather than pointing at just one of
+  them.
+</p>
+</knowledge-detail>
+  <knowledge-branch>main</knowledge-branch>
+  <a data-rel="depends_on" href="../specs/2026-07-23-deciduous-template-series.spec.html">scoped by this
+    design spec</a>
+</knowledge-action>
+</body></html>

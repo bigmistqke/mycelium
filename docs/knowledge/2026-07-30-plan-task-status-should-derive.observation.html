@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: plan-task status is declared, and went stale after one task</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>plan-task status is declared, and went stale after one task</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-detail><p><code>plan check</code> flips a <strong>step</strong> to
+<code>completed</code> automatically when its check passes, and
+<code>plan list</code> renders the progress view. Neither derives the
+<strong>task</strong> or <strong>doc</strong> status. Those are declared fields
+that someone has to remember to update.</p>
+<p>It went stale immediately. After task-1 ran, all three of its
+steps read <code>completed</code> while the task containing them still read
+<code>pending</code>. One task in, and the plan already misreported itself. It
+took a hand-run <code>plan update task … --status completed</code> to correct,
+which is the same "remember to X" the harness work has been removing everywhere
+else.</p>
+<p>A task's status is fully determined by its steps. All steps
+completed means completed; some means active; none means pending. Storing it
+separately creates two sources of truth that can disagree, and one of them is
+maintained by memory. Same for a doc over its tasks.</p>
+<p>This project already knows the answer.
+<a href="./2026-07-13-pending-decisions-are-abandonment-not-rot.observation.html">The permanently-pending correction</a>
+and <a href="./2026-07-13-status-derived-not-declared.observation.html">derived status, not declared</a> reached it — status should be computed from
+the layer below, not stored. <a href="./2026-07-15-derive-the-graph-do-not-curate-it.decision.html">Derive, do not curate</a> generalized it: derive the graph,
+do not curate it, because every hand-maintained thing here has decayed. The
+evidence is on both sides of the comparison: 361 of the earlier log's 400 nodes sit at
+<code>pending</code> because nobody went back, and this plan managed the same
+failure inside a single task.</p>
+<p>Scope note. Fixing this means <code>plan list</code> and
+<code>plan check</code> computing task and doc status from steps rather than
+reading a stored field — plausibly with the stored field removed from the
+template entirely, since a derived value that is also writable is just a slower
+way to disagree with yourself. That is outside the current plan and should not be
+smuggled into it.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-07-30-declare-belonging-derive-liveness.decision.html">same derive-not-declare argument, found in the plan family</a>
+  <a data-rel="supports" href="./2026-07-30-tms-derives-liveness-from-justifications.observation.html">steps are the justifications a task status should fold</a>
+  <a data-rel="supports" href="./2026-07-13-status-derived-not-declared.observation.html">same argument, rediscovered in the plan family</a>
+</knowledge-observation>
+</body></html>
