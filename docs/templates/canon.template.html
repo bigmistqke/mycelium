@@ -537,6 +537,7 @@
   import { dirname, join, resolve as resolvePath } from "node:path"
   import { spawn, spawnSync, execFileSync } from "node:child_process"
   import { loadModule } from "../../src/utils.ts"
+  import { ELEMENT, chromePath, sleep, withBrowser } from "../../src/webdriver.ts"
   import { pathToFileURL } from "node:url"
 
   const TYPES = ['axiom', 'specification']
@@ -1233,9 +1234,15 @@
       }
     }
 
-    // What each node points at, which is the direction the corpus stores.
+    // What each node points at, which is the direction the corpus stores — plus
+    // the claim holding a claim, which the markup stores instead of an edge.
+    // Leaving that out lit a child on its own: selecting it reached its axiom
+    // and skipped the behaviour it is part of.
     const above = new Map<string, string[]>()
-    for (const entry of [...axioms, ...behaviours]) above.set(entry.address, entry.dependsOn)
+    for (const axiom of axioms) above.set(axiom.address, axiom.dependsOn)
+    for (const behaviour of behaviours) {
+      above.set(behaviour.address, behaviour.parent ? [behaviour.parent] : behaviour.dependsOn)
+    }
     for (const declaration of code) above.set(declaration.address, declaration.cites)
 
     // Everything one way from a node, following the whole distance rather than
@@ -1339,6 +1346,49 @@
     console.log(pathToFileURL(out).href)
   }
 
+  /**
+   * Draw the chain and report what the page measures about itself.
+   *
+   * The drawing counts the wires running across boxes, which is the number a
+   * reader is complaining about when they say the picture is a mess. Opening the
+   * page to read it works and does not compare two attempts, so this asks a
+   * browser instead and prints the answer.
+   *
+   *   mycelium canon measure [--show] [--port N]
+   *
+   * The same driver the checks run on. Provisioning Chrome and speaking
+   * WebDriver stopped belonging to the runner the moment a second caller wanted
+   * them.
+   */
+  export async function measure({ fs, args }: CommandContext) {
+    const out = join(mkdtempSync(join(tmpdir(), 'mycelium-chain-')), 'chain.html')
+    generate({ fs, args: { ...args, _: ['chain'], out } } as CommandContext)
+
+    const root = resolvePath(fs.root, '..')
+    await withBrowser({ root, show: args.show !== undefined, port: Number(args.port ?? 9515) }, async (call) => {
+      await call('POST', '/url', { url: pathToFileURL(out).href })
+      await call('POST', '/timeouts', { script: 30000 })
+      const found = await call('POST', '/execute/async', {
+        script: `const done = arguments[arguments.length - 1]
+          const tick = () => {
+            const el = document.getElementById('crossings')
+            if (!el || el.textContent === '—') return setTimeout(tick, 50)
+            done({ before: Number(el.dataset.before), after: Number(el.textContent), bySpan: el.dataset.bySpan, collisions: Number(el.dataset.collisions),
+                   boxes: document.querySelectorAll('.node').length,
+                   wires: document.querySelectorAll('#wires path').length,
+                   columns: document.querySelectorAll('.rank').length })
+          }
+          tick()`,
+        args: [],
+      })
+      console.log(`${found.columns} columns, ${found.boxes} boxes, ${found.wires} wires`)
+      console.log(`wires over boxes: ${found.before} before sweeping, ${found.after} after`)
+      console.log(`by how many columns a wire spans: ${found.bySpan}`)
+      console.log(`boxes sitting on each other: ${found.collisions}`)
+
+    })
+  }
+
   // An AuditFs over the command's own filesystem, since readCanon and the
   // citation reader both take one and a command is handed the other. Reading
   // is all either needs.
@@ -1430,7 +1480,13 @@ ${base}
   h1 { font-size: 1rem; margin: 0 0 .25rem; }
   .counts { opacity: .65; }
   .counts b { font-weight: 600; }
-  #grid { display: grid; gap: 0 2.5rem; padding: 1.25rem; position: relative; align-items: start; }
+  /* A column per rank and a row per subsystem, so a band holds one stripe of
+     the page. A cell with nothing in it stays empty on purpose: that space is
+     what keeps the bands in line across the columns. */
+  #grid { display: grid; gap: 0 2.5rem; padding: 1.25rem; position: relative;
+          grid-auto-rows: min-content; }
+  .cell { min-height: 0; }
+  .cell:empty { min-height: .5rem; }
   #wires { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
   #wires path { fill: none; stroke: var(--line); stroke-width: 1.2; }
   #wires path.lit { stroke: currentColor; stroke-width: 1.8; }
@@ -1460,7 +1516,8 @@ ${base}
     <b>${data.axioms.length}</b> axioms &middot;
     <b>${data.behaviours.length}</b> behaviours &middot;
     <b>${data.behaviours.filter(b => b.checks).length}</b> checks &middot;
-    <b>${data.specifications.length}</b> subsystems
+    <b>${data.specifications.length}</b> subsystems &middot;
+    <b id="crossings">—</b> wires over boxes
   </div>
 </header>
 <div id="grid"><svg id="wires"></svg></div>
@@ -1595,113 +1652,6 @@ ${pageScript}
     return results
   }
 
-  // W3C's fixed key for a web element reference. Every conforming driver
-  // returns this exact string, which is why it can be a constant here.
-  const ELEMENT = "element-6066-11e4-a52e-4f735466cecf"
-  const BUILDS = "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json"
-
-  // Where a run looks for Chrome when CHROME_PATH says nothing. Ordered by
-  // platform, and a miss here is a clear error rather than a guess: the command
-  // names the variable to set.
-  const CHROME_GUESSES = {
-    darwin: [
-      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-      "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    ],
-    linux: ["/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/chromium", "/usr/bin/chromium-browser"],
-    win32: ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"],
-  }
-
-  const PLATFORMS = {
-    "darwin-arm64": "mac-arm64",
-    "darwin-x64": "mac-x64",
-    "linux-x64": "linux64",
-    "win32-x64": "win64",
-  }
-
-  function sleep(ms) {
-    return new Promise((done) => setTimeout(done, ms))
-  }
-
-  function chromePath() {
-    if (process.env.CHROME_PATH) return process.env.CHROME_PATH
-    for (const guess of CHROME_GUESSES[process.platform] ?? []) {
-      if (existsSync(guess)) return guess
-    }
-    throw new Error("no Chrome found — set CHROME_PATH to the browser binary")
-  }
-
-  // The build number, which is the version without its patch. A driver matches
-  // Chrome by build, so 150.0.7871.124 drives 150.0.7871.189 and the exact
-  // patch never has to line up.
-  function chromeBuild(binary) {
-    const printed = execFileSync(binary, ["--version"], { encoding: "utf8" })
-    const found = /(\d+\.\d+\.\d+)\.\d+/.exec(printed)
-    if (!found) throw new Error(`could not read a version out of "${printed.trim()}"`)
-    return found[1]
-  }
-
-  function unpack(zip, into) {
-    // Node ships no zip reader, so this borrows one. unzip covers macOS and
-    // every CI image; bsdtar reads zip too and covers Windows.
-    try {
-      execFileSync("unzip", ["-oq", zip, "-d", into], { stdio: "ignore" })
-    } catch {
-      execFileSync("tar", ["-xf", zip, "-C", into], { stdio: "ignore" })
-    }
-  }
-
-  // A driver matching the installed Chrome, downloaded once and kept. Under
-  // node_modules so the cache is already ignored by git and already something a
-  // clean checkout expects to rebuild.
-  async function chromedriver(root) {
-    if (process.env.CHROMEWEBDRIVER) {
-      const given = join(process.env.CHROMEWEBDRIVER, "chromedriver")
-      if (existsSync(given)) return given
-    }
-    const build = chromeBuild(chromePath())
-    const platform = PLATFORMS[`${process.platform}-${process.arch}`]
-    if (!platform) throw new Error(`Chrome for Testing publishes no driver for ${process.platform}-${process.arch}`)
-
-    const cache = join(root, "node_modules", ".cache", "mycelium", `chromedriver-${build}-${platform}`)
-    const binary = join(cache, `chromedriver-${platform}`, process.platform === "win32" ? "chromedriver.exe" : "chromedriver")
-    if (existsSync(binary)) return binary
-
-    const catalogue = await (await fetch(BUILDS)).json()
-    const downloads = catalogue.builds?.[build]?.downloads?.chromedriver
-    const match = (downloads ?? []).find((entry) => entry.platform === platform)
-    if (!match) throw new Error(`Chrome for Testing lists no ${platform} driver for build ${build}`)
-
-    console.log(`downloading chromedriver ${build} for ${platform}`)
-    mkdirSync(cache, { recursive: true })
-    const zip = join(cache, "chromedriver.zip")
-    writeFileSync(zip, Buffer.from(await (await fetch(match.url)).arrayBuffer()))
-    unpack(zip, cache)
-    rmSync(zip, { force: true })
-    if (!existsSync(binary)) throw new Error(`the driver archive held no ${binary}`)
-    chmodSync(binary, 0o755)
-    return binary
-  }
-
-  // A thin WebDriver client. Six endpoints cover a whole run, so this is the
-  // whole protocol layer and there is no library under it.
-  function session(base) {
-    async function call(method, path, body) {
-      const response = await fetch(base + path, {
-        method,
-        headers: body ? { "content-type": "application/json" } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
-      })
-      const payload = await response.json()
-      if (!response.ok) {
-        const value = payload.value ?? {}
-        throw new Error(`${value.error ?? "webdriver error"}: ${(value.message ?? "").split("\n")[0]}`)
-      }
-      return payload.value
-    }
-    return call
-  }
-
   // What the page gets asked. It resolves the moment no case reads PENDING,
   // which is also how a person reading the page knows the run has finished.
   const WAIT = `
@@ -1820,27 +1770,10 @@ ${pageScript}
       return
     }
 
-    const driver = await chromedriver(root)
-    const server = spawn(driver, [`--port=${port}`], { stdio: "ignore" })
-    const call = session(`http://127.0.0.1:${port}`)
-
-    try {
-      for (let i = 0; i < 100; i++) {
-        try { if ((await call("GET", "/status")).ready) break } catch {}
-        await sleep(50)
-      }
-
-      const options = ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
-      if (args.show === undefined) options.push("--headless")
-      const opened = await call("POST", "/session", {
-        capabilities: { alwaysMatch: { browserName: "chrome", "goog:chromeOptions": { args: options } } },
-      })
-      const at = `/session/${opened.sessionId}`
-
-      try {
-        // Large enough that an element screenshot of a tall figure is whole.
-        await call("POST", `${at}/window/rect`, { width: 1400, height: 2200 })
-        await call("POST", `${at}/timeouts`, { script: timeout })
+    // Large enough that an element screenshot of a tall figure is whole.
+    await withBrowser({ root, show: args.show !== undefined, port, width: 1400, height: 2200 }, async (call) => {
+      {
+        await call("POST", `/timeouts`, { script: timeout })
 
         for (const entry of paths) {
           const path = entry.path
@@ -1848,8 +1781,8 @@ ${pageScript}
           console.log(`\n${path}`)
           let cases
           try {
-            await call("POST", `${at}/url`, { url: `file://${full}` })
-            cases = await call("POST", `${at}/execute/async`, { script: WAIT, args: [] })
+            await call("POST", `/url`, { url: `file://${full}` })
+            cases = await call("POST", `/execute/async`, { script: WAIT, args: [] })
           } catch (err) {
             failures++
             console.log(`  FAILURE  the page never finished — ${err.message}`)
@@ -1867,15 +1800,11 @@ ${pageScript}
           failures += report(cases, timeout)
           for (const one of cases) {
             if (one.status === "SUCCESS") continue
-            await capture(call, at, path, one.id, full)
+            await capture(call, path, one.id, full)
           }
         }
-      } finally {
-        await call("DELETE", at).catch(() => {})
       }
-    } finally {
-      server.kill()
-    }
+    })
 
     console.log(`\n${total} cases, ${failures} failed`)
     if (failures) throw new Error(`${failures} of ${total} cases failed`)
@@ -1884,11 +1813,11 @@ ${pageScript}
   // A picture of the case that failed, written beside its document. Not through
   // the document filesystem, which serializes HTML — a screenshot is not a
   // document and has no business going through that path.
-  async function capture(call, at, path, id, full) {
+  async function capture(call, path, id, full) {
     if (!id) return
     try {
-      const found = await call("POST", `${at}/element`, { using: "css selector", value: `canon-behaviour[id="${id}"] canon-fixture` })
-      const encoded = await call("GET", `${at}/element/${found[ELEMENT]}/screenshot`)
+      const found = await call("POST", `/element`, { using: "css selector", value: `canon-behaviour[id="${id}"] canon-fixture` })
+      const encoded = await call("GET", `/element/${found[ELEMENT]}/screenshot`)
       const png = `${full.replace(/\.canon\.html$/, "")}.${id}.failure.png`
       writeFileSync(png, Buffer.from(encoded, "base64"))
       console.log(`           wrote ${png.slice(full.length - path.length)}`)
