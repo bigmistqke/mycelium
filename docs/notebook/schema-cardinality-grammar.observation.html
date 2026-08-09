@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Give the template schema a grammar for cardinality</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Give the template schema a grammar for cardinality</notebook-title>
+  <notebook-prompt>let's look at the schema still checks one child of each kind and ignores the rest — eleven plan documents lose the same way -&gt; we need maybe &lt;template-list&gt; or something? we are missing grammar</notebook-prompt>
+  <notebook-detail><p>The schema vocabulary can say a child is required, matches a pattern, or comes
+from an enum. It cannot say how many times a child may appear. Every placeholder
+means <q>at most one</q>, and the validator looks each one up by first match, so
+a duplicate disappears silently and a run gets checked once.</p>
+</notebook-detail>
+</notebook-observation>
+</body></html>

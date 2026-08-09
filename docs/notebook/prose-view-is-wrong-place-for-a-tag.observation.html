@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A prose view is the wrong place to read a tag, and it fails by finding nothing</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>A prose view is the wrong place to read a tag, and it fails by finding nothing</notebook-title>
+  <notebook-detail><p>Two branches met and the citation reader went quiet. Every behaviour read as
+untested and every test as citing nothing. No check threw and no message
+appeared, because a chain holding no citations is a real state the audits
+report, and they reported it faithfully.</p>
+<p>Neither change that caused it was wrong.
+<code>formatCodeComment</code> began dropping JSDoc tag lines, because a tag
+declares a type rather than saying anything a rule could ask somebody to
+reword. <code>commentRanges</code> already dropped a comment left holding no
+prose. A comment carrying one <code>@specification</code> line and nothing
+else meets both, so it left the reader's world entirely.</p>
+<p>The fault was in the reader, which asked a prose-shaped question about
+something that is not prose. <code>text</code> exists for the language rules. A
+citation is a tag, so it has to come off the raw comment, and now does.</p>
+<p>This is the second failure at the same joint with the same shape. The first
+was a walk over comments that could never see a test carrying none. Both read
+an empty answer as a negative one, and running the code found both: a probe
+caught the first, and for the second, two audits disagreed with a chain that
+visibly had a citation in it.</p>
+<p>What it says about the design: a check reporting absence cannot also
+establish that it can perceive presence. <code>data-expects</code> covers that
+here, which is why each of these audits keeps a worked example that makes it
+fire.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./comment-walk-misses-uncommented-test.observation.html">the first failure at this joint, with the same shape</a>
+</notebook-observation>
+</body></html>

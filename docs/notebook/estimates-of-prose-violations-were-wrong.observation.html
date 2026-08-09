@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Every estimate of how much prose broke a rule was wrong until the rule ran</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Every estimate of how much prose broke a rule was wrong until the rule ran</notebook-title>
+  <notebook-detail><p>
+  Three rules went in today. I measured each one first, to pick a threshold from the corpus rather
+  than from the standard. Two of the three estimates were badly wrong.
+</p>
+<p>
+  Passive voice: I guessed 416 with a pattern. The library found 162. My pattern could not tell
+  <q>is written</q> from <q>is required</q>, so most of its hits were adjectives.
+</p>
+<p>
+  Sentence length: I estimated 211 over forty words. The rule reported 436 on its first run. The
+  real number is 45. Both errors came from how the code split the text, not from the rule itself.
+</p>
+<p>
+  Two separate bugs caused that. The audit joined every block of text with no separator, so two
+  paragraphs read as one sentence. And a list item rarely ends in a full stop, so a run of items
+  read as one very long sentence. That second bug alone accounted for 391 of the 436.
+</p>
+<p>
+  The estimate that held up is the one I did not write. The library measured passive voice within
+  three percent. Every number I produced by hand missed by a factor of two or more.
+</p>
+<p>
+  A pattern over prose looks like a measurement and is a guess. The lesson is narrow and worth
+  keeping: a threshold picked from a hand-rolled count is picked from noise.
+</p>
+</notebook-detail>
+  <a data-rel="supports" href="./dictionary-family-for-voice-and-terms.observation.html">found while building the rules this goal called for</a>
+</notebook-observation>
+</body></html>

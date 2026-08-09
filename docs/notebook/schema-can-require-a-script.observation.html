@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: The schema can require a non-family child, so an audit's script is declarable after all</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>The schema can require a non-family child, so an audit's script is declarable after all</notebook-title>
+  <notebook-detail><p>
+  I claimed the schema could not require that a <code>template-audit</code> actually contain a
+  check, because the closed-field rule only inspects children whose tag carries the family prefix,
+  and a <code>&lt;script&gt;</code> does not. That was wrong, and it was wrong about code I had
+  read.
+</p>
+<p>
+  The closed-field rule is only the last loop in <code>validateFromTemplate</code>. The
+  <code>required</code> check above it iterates the shape's children by tag name and cares nothing
+  for prefixes. So <code>&lt;script required&gt;&lt;/script&gt;</code> in a template declaration
+  requires a non-empty script in every instance.
+</p>
+<p>
+  Verified rather than reasoned: a scratch corpus with one instance carrying a script and one
+  without produced <q>2 checked, 1 fail — missing or empty &lt;script&gt;</q>. The probe was
+  deleted.
+</p>
+<p>
+  What remains undeclarable is narrower than I said. The schema cannot check that the script
+  carries <code>data-audits</code>, because the vocabulary has no attribute checks at all, and it
+  cannot see inside the script to know it exports <code>check</code>. So the residue is one small
+  audit rather than the larger one first sketched.
+</p>
+<p>
+  The general lesson is about where a limit was assumed. The vocabulary was described to me as
+  field-oriented, and I extended that description into a constraint the code does not have. The
+  rule that a check moves into the schema
+  <a href="./schema-when-vocabulary-allows.observation.html">when the vocabulary can say
+  it</a> is only as good as knowing what the vocabulary can say.
+</p>
+</notebook-detail>
+  <a data-rel="supports" href="./audit-belongs-to-template-vocabulary.observation.html">narrows what that decision leaves as code</a>
+</notebook-observation>
+</body></html>

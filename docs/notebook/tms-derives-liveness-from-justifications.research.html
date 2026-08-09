@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Truth maintenance solved derived liveness in 1979</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-research data-conforms-to="../templates/notebook.template.html#notebook-research">
+  <notebook-title>Truth maintenance solved derived liveness in 1979</notebook-title>
+  <notebook-detail><p>Doyle's TMS: every belief carries its <strong>justifications</strong>. A belief is <em>in</em> if at least one valid justification holds, otherwise <em>out</em>. On a contradiction, both contradicting beliefs go out, and the system <strong>recursively propagates</strong> — anything derived from them loses that justification and goes out too, unless independently supported.</p>
+<p>That is a more rigorous version of what this project reached for by hand. Status is not typed in; it is computed from what still supports what. Assumption-based TMS additionally holds multiple contexts of belief at once, which is the multi-membership problem (v0's query-interface decision belongs both to v0 and to the v3 synthesis leaning on it).</p>
+<p>Applied across template families, propagation is what the unified system buys that ADRs cannot: an outcome refuting a claim can walk to the spec that relied on it and the plan derived from that spec. ADRs only link to other ADRs.</p>
+<p>Sources: <a href="https://scispace.com/pdf/a-truth-maintenance-system-pim519w5js.pdf">A Truth Maintenance System (Doyle, 1979)</a>; <a href="https://cse.buffalo.edu/~shapiro/Papers/br-overview.pdf">Belief Revision and Truth Maintenance Systems: An Overview</a>.</p></notebook-detail>
+  <a data-rel="supports" href="./declare-belonging-derive-liveness.observation.html">prior art: liveness computed from justifications</a>
+</notebook-research>
+</body></html>

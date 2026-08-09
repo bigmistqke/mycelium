@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Generalize autofix's HTML region-finding via a block-level leaf test, not a hardcoded <p></p></title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Generalize autofix's HTML region-finding via a block-level leaf test, not a hardcoded &lt;p&gt;</notebook-title>
+  <notebook-detail><p>Autofix could close its corpus-HTML gap narrowly (only <code>&lt;p&gt;</code>) or generically (every block tag <code>extractProse</code> already knows). Neither is right as stated: the developers built <code>BLOCK_TAGS</code> for <code>extractProse</code>'s job (concatenate a whole document's text), not for <q>atomic unit that developers can rewrite and splice back.</q> A <code>&lt;li&gt;</code> or <code>&lt;div&gt;</code> can contain further block tags (a list item with two paragraphs, a div wrapping several <code>&lt;p&gt;</code>s). Treating one as a single splice unit risks reprinting nested structure we never asked the model to preserve, the same reason <code>markdownParagraphRanges</code> already skips inside lists.</p>
+<p>The chosen rule: any <code>BLOCK_TAGS</code> element with no <code>BLOCK_TAGS</code> descendant is a leaf, computed with one filter over the existing <code>BLOCK_TAGS</code> set. This covers <code>p</code>/<code>dd</code>/<code>td</code>/<code>th</code>/<code>dt</code>/<code>figcaption</code>/headings as atomic candidates unconditionally, and <code>li</code>/<code>div</code> only when they turn out to be leaves themselves, letting their nested <code>&lt;p&gt;</code>s get picked up individually instead.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./retire-family-term-from-language.observation.html">closes the gap the term retirement needs</a>
+</notebook-observation>
+</body></html>

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Spec: remove runtime.js, move loadModule/loadCheck into utils.ts, inline the browser copy</title>
@@ -8,12 +7,10 @@
 <link rel="stylesheet" href="../templates/spec.template.css">
 </head>
 <body>
-
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
   <spec-title>remove runtime.js, move loadModule/loadCheck into utils.ts, inline the browser copy</spec-title>
   <spec-status>approved</spec-status>
   <spec-date>2026-07-24</spec-date>
-
   <spec-problem>
     <p>
       <code>src/runtime.js</code> exists for exactly one reason: <code>loadModule</code>/<code>loadCheck</code>
@@ -33,7 +30,6 @@
       what it's carrying.
     </p>
   </spec-problem>
-
   <spec-design>
     <h2>Don't share it — write it twice</h2>
     <p>
@@ -70,7 +66,6 @@ export async function loadCheck(scriptSource: string): Promise&lt;(...args: unkn
       <code>file://</code> with no server) — there's no cross-file loading left to coordinate, so there's
       nothing left for a shared file to actually do.
     </p>
-
     <h2>runtime.js and runtime.d.ts are deleted, not deprecated</h2>
     <p>
       Both files are removed outright. <code>run.ts</code>/<code>validate.ts</code>/<code>utils.ts</code>
@@ -79,7 +74,6 @@ export async function loadCheck(scriptSource: string): Promise&lt;(...args: unkn
       declaration is needed once the Node side is a real, typed import — <code>runtime.d.ts</code>'s whole
       purpose disappears with the global it was describing.
     </p>
-
     <h2>fs-helpers.ts renamed to utils.ts</h2>
     <p>
       Follows from the move above, not a separate motivation: once the file holds
@@ -89,7 +83,6 @@ export async function loadCheck(scriptSource: string): Promise&lt;(...args: unkn
       at all. <code>git mv</code>, then update the two import sites (<code>run.ts</code>,
       <code>validate.ts</code>).
     </p>
-
     <h2>Documentation: keep the still-true part, drop the shared-file framing</h2>
     <p>
       <code>knowledge.template.html</code>'s live-demo prose and <code>README.md</code>'s "Opening the
@@ -99,14 +92,12 @@ export async function loadCheck(scriptSource: string): Promise&lt;(...args: unkn
       from "one file, loaded two ways" to "the same trick, written independently on each side." Every frozen
       spec and <code>knowledge/*.html</code> node that mentions <code>runtime.js</code> stays exactly as
       written — historical record of what was true when written, same convention this project has followed
-      for every prior rename (see <a data-rel="elaborates"
-      href="./2026-07-24-mycelium-validate-rename.spec.html">the validate-rename spec</a>, which drew the
+      for every prior rename (see <a data-rel="elaborates" href="./2026-07-24-mycelium-validate-rename.spec.html">the validate-rename spec</a>, which drew the
       identical living-vs-historical line).
     </p>
-
     <h2>Knowledge graph: a new decision, not an edit to the old one</h2>
     <p>
-      <a data-rel="elaborates" href="../knowledge/2026-07-23-reverse-runtime-to-globalthis.decision.html">reverse-runtime-to-globalthis.decision.html</a>
+      <a data-rel="elaborates" href="../notebook/reverse-runtime-to-globalthis.observation.html">reverse-runtime-to-globalthis.decision.html</a>
       recorded choosing <code>globalThis</code>-sharing over real ES imports, specifically to avoid
       <code>file://</code> CORS. This work doesn't reopen that question or reverse that decision — it
       answers a narrower one that decision never asked: given <em>something</em> needs sharing across
@@ -117,7 +108,6 @@ export async function loadCheck(scriptSource: string): Promise&lt;(...args: unkn
       than <code>contradicts</code>.
     </p>
   </spec-design>
-
   <spec-out-of-scope>
     <ul>
       <li><b>Not revisiting the file:// CORS constraint itself.</b> Raised during brainstorming as a real,
@@ -129,7 +119,4 @@ export async function loadCheck(scriptSource: string): Promise&lt;(...args: unkn
     </ul>
   </spec-out-of-scope>
 </spec-doc>
-
-
-</body>
-</html>
+</body></html>

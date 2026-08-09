@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Subtract a spanning tree from the graph and the remainder is the whole information content</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Subtract a spanning tree from the graph and the remainder is the whole information content</notebook-title>
+  <notebook-detail><p>A tree promises that each child has one parent and that siblings are disjoint.
+Code honours neither, and every place it breaks one is a fact you cannot get
+elsewhere.</p>
+<h3>Many intents, one implementation</h3>
+<p>A sanitise function someone wrote for cross-site scripting. Later a second
+person leans on it to fix log injection. Later a third relies on it for a database
+constraint.</p>
+<p>One body, three parents, and only the first has a record. Now cleaning it up is
+an incident.</p>
+<p>In-degree here is a number worth having: not lines, not churn, but how many
+independent reasons rest on this. That is criticality derived from meaning rather
+than from size.</p>
+<h3>One intent, many implementations</h3>
+<p>Tenancy, auth, retries. A tree wants one box; the honest picture is one node
+with forty children.</p>
+<p>It also exposes a bug class structurally, because thirty-eight children can
+honour the intent and two not. Inconsistent siblings under a shared parent shows up
+as a shape, without knowing what the rule says.</p>
+<h3>Diamonds</h3>
+<p>Two intents converge on one decision which then serves both. Fast reads and an
+audit trail both led to an append-only log.</p>
+<p>This is design carrying two loads on purpose. It breaks when one intent goes
+away and someone removes the log as the audit thing. A tree cannot hold it. You
+would copy the node under both parents and the copies would drift.</p>
+<h3>Lateral edges</h3>
+<p>Must not know about. Must happen before. Is the inverse of.</p>
+<p>Those hold between cousins, and a tree has no word for cousins. Most invariants
+live here.</p>
+<h3>Uneven depth</h3>
+<p>Some intents reach code in one hop and some in six. A layer diagram assumes one
+depth and is wrong at both ends.</p>
+<h3>Apparent cycles</h3>
+<p>An implementation teaches you something and the intent changes. That is a new
+version of the intent, not a cycle. So a cycle in the derived graph means history
+got flattened and a revision needs naming.</p>
+<h3>Why the non-tree part is the content</h3>
+<p>Trees are what we already have. The directory structure, the org chart, the
+layer diagram, the module nesting. Anything tree-shaped in the answer is something
+you could read off the file system.</p>
+<p>Take any spanning tree of the graph and subtract it, and what remains is every
+edge that surprised you.</p>
+<p>This also settles how to draw it. Tree layouts are readable and graph layouts
+are hairballs, so lay out the spanning tree as a skeleton and render the remaining
+edges on top, highlighted and filterable. The readable part is scaffolding for the
+part that is news.</p>
+<p>Dead alternatives belong on the edges rather than the nodes. Each step down a
+level is a place where someone chose one implementation over others, so the losers
+attach to the edge that records the choice.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./architecture-is-a-depth-slice-of-the-intent-graph.observation.html">why the slice is not a tree, and why that is where its content is</a>
+</notebook-observation>
+</body></html>

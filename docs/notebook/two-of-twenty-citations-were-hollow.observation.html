@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Two of twenty citations pointed at the wrong node, and one error propagated</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Two of twenty citations pointed at the wrong node, and one error propagated</notebook-title>
+  <notebook-detail><p>Computing the import closure meant reading every node in the earlier log that the v4 graph
+cites. Twenty distinct citations; <strong>two were wrong</strong>, both in
+<a href="./declare-belonging-derive-liveness.observation.html">declare
+belonging, derive liveness</a>:</p>
+<ul>
+  <li>"the missing retirement concept" pointed at an option about
+  <em>which language to implement in</em>. The retirement concept is
+  <a href="./pending-decisions-are-abandonment-not-rot.observation.html">the
+  note on permanently-pending decisions</a>.</li>
+  <li>"Composition makes decision status DERIVED, not declared" was attributed to
+  a note about <em>two abstraction ladders being the same structure</em>. The
+  quoted sentence is verbatim from
+  <a href="./status-derived-not-declared.observation.html">the note on
+  derived status</a>.</li>
+</ul>
+<p>Both claims were sound; only the pointers were wrong. That is
+what makes this the expensive kind.</p>
+<p>Any link checker catches a citation to a node that does not exist. A citation to a real node that does not support the
+claim reads as fine and survives every structural check —
+<a href="./mutation-testing-vs-blind-rederivation-for-hollow-citations.observation.html">exactly
+the case that node argues needs mutation testing or blind re-derivation</a>. Blind
+re-derivation found it: reading the target and asking whether it says
+what the citing node claims.</p>
+<p>The error propagated. Two later nodes inherited it without
+re-checking.</p>
+<p><a href="./option-retired-status-enum.observation.html">The
+retired-status-enum option</a> repeated the first one.
+<a href="./link-do-not-tag.observation.html">Link, do not tag</a>,
+written hours later, repeated the second — describing the wrong pointer rather
+than going to the source. A citation copied from a citing node rather than from
+the source carries the original error forward and adds a witness for it.</p>
+<p>Rate, with the caveat that it is one sample. 2 of 20 is 10%,
+and both sit in one node written in a single burst, so this is not evidence about
+citation accuracy in general — it is evidence that unverified citations in this
+graph are wrong at a rate above zero, which was previously unmeasured and assumed
+to be zero. The same discipline that produced
+<a href="./fifty-two-percent-figure-is-unreplicated.observation.html">the
+52% caveat</a> applies here: do not promote this number.</p>
+<p>What it argues for. The import is the first thing that ever
+forced every citation to be resolved, and it found these immediately. That is a
+reason to finish it rather than a reason to be careful about it: a citation
+pointing into a corpus the graph cannot reach is a claim nobody can check.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./mutation-testing-vs-blind-rederivation-for-hollow-citations.observation.html">the predicted failure mode, observed</a>
+  <a data-rel="contradicts" href="./declare-belonging-derive-liveness.observation.html">two of its citations pointed at the wrong nodes</a>
+  <a data-rel="supports" href="./tidy-stories-and-who-caught-them.observation.html">same failure four months later: plausible, confident, unverified</a>
+</notebook-observation>
+</body></html>

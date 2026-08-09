@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A boundary is real only if crossing it hurt</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>A boundary is real only if crossing it hurt</notebook-title>
+  <notebook-detail><p>Architecture is not the boxes. It is the set of constraints a system actually
+defends. And a constraint is only real if breaking it had a consequence.</p>
+<p>That is testable against history rather than against the code. Find the changes
+that crossed a claimed boundary, then look at what happened next. Reverted within
+a day, hotfixed, argued about for forty comments: the boundary is load-bearing.
+Crossed constantly with nothing following: it is decoration, drawn once and never
+enforced.</p>
+<p>What this gives that static analysis cannot is the gap between the architecture
+people say they have and the one the system defends. That gap is usually the most
+interesting fact about a codebase.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./retroactive-knowledge-graph-from-existing-project.observation.html">how to tell a defended constraint from a drawn one</a>
+</notebook-observation>
+</body></html>

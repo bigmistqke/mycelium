@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: A citation is an edge on a test case, not a tag in a comment</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>A citation is an edge on a test case, not a tag in a comment</notebook-title>
+  <notebook-detail><p>Two notations for the bottom rung. A comment carrying
+<code>@specification</code> above a leaf test, which is what another project
+running this methodology uses; or an ordinary <code>depends_on</code> edge on
+the <code>test-case</code> element itself.</p>
+<p>The comment lost on three counts. A test here is already a document with an
+id, so the tag reproduced an addressing scheme the corpus had. Only a leaf test
+counts, and a leaf test in that notation is an <code>it(...)</code> call, which
+this project does not use anywhere. And a tag in a comment sits in text other
+parts of the system may reformat, which is how it failed twice: once by never
+seeing a test with no comment above it, and once when the prose view began
+dropping tag lines.</p>
+<p>The edge costs nothing new. <code>every-link-resolves</code> already checks
+that a link reaches the anchor it names, <code>depends_on</code> is the relation
+every rung above already uses, and a case carrying an id means a violation names
+an address somebody can open rather than a slug made from wording.</p>
+</notebook-detail>
+  <a data-rel="leads_to" href="../specs/2026-08-08-citation-is-an-edge.spec.html">the design this settled</a>
+</notebook-observation>
+</body></html>

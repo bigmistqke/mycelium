@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Spec: knowledge-detail, a free-form elaboration field for knowledge-* nodes</title>
@@ -8,98 +7,93 @@
 <link rel="stylesheet" href="../templates/spec.template.css">
 </head>
 <body>
-
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
   <spec-title>knowledge-detail: a free-form elaboration field for knowledge-* nodes, and the shared CLI-input helper it needs</spec-title>
   <spec-status>approved</spec-status>
   <spec-date>2026-07-24</spec-date>
-
   <spec-problem>
     <p>
-      Every <code>knowledge-*</code> type has a <code>title</code> and nothing longer &mdash; no field for the
+      Every <code>knowledge-*</code> type has a <code>title</code> and nothing longer — no field for the
       reasoning, caveats, or supporting detail behind a claim. When that detail is genuinely worth keeping,
       it has nowhere to go except the title itself, which flattens it: a real example from this session's
       own graph is an observation node whose title grew into a multi-clause run-on sentence trying to carry
       an entire argument, useful for overview but lossy compared to what was actually said. <code>spec-doc</code>
-      already solved this shape for design documents &mdash; <code>spec-title</code> stays short and scannable,
-      <code>spec-problem</code>/<code>spec-design</code> hold as much real content as a design needs &mdash;
+      already solved this shape for design documents — <code>spec-title</code> stays short and scannable,
+      <code>spec-problem</code>/<code>spec-design</code> hold as much real content as a design needs —
       but <code>knowledge-*</code> nodes never got the equivalent.
     </p>
     <p>
       Adding the field alone doesn't fully solve it, though. <code>add</code>/<code>update</code> exist
       specifically so nodes get authored through the CLI instead of hand-edited (per <code>CLAUDE.md</code>'s
       "use the CLI to log, don't hand-author" rule), and every existing field is a single-line value passed as
-      <code>--flag "value"</code> &mdash; parsed by the shell before the command ever runs. That already causes
+      <code>--flag "value"</code> — parsed by the shell before the command ever runs. That already causes
       friction for a short title with an apostrophe in it; a multi-paragraph value with embedded quotes,
       angle brackets, and markup would be substantially worse. A field that can only practically be filled in
       by hand-editing the file defeats the reason <code>add</code>/<code>update</code> exist.
     </p>
   </spec-problem>
-
   <spec-design>
     <h2>The field: knowledge-detail, optional on all six types</h2>
     <p>
-      <code>knowledge-detail</code> joins the existing field list, optional on every type &mdash;
-      <code>knowledge-goal</code> through <code>knowledge-observation</code> &mdash; the same way
+      <code>knowledge-detail</code> joins the existing field list, optional on every type —
+      <code>knowledge-goal</code> through <code>knowledge-observation</code> — the same way
       <code>title</code>/<code>confidence</code> are universal but, unlike those two, never required. Field
       order in both the <code>&lt;template&gt;</code> entries and <code>add</code>'s field-writing sequence
       places it after the short header-like fields (<code>title</code>, <code>confidence</code>,
       <code>status</code>, <code>prompt</code>) and before the trailing provenance fields
-      (<code>commit</code>, <code>files</code>, <code>branch</code>) &mdash; header, then body, then metadata.
+      (<code>commit</code>, <code>files</code>, <code>branch</code>) — header, then body, then metadata.
     </p>
     <p>
       Content model: free-form, no tag or markup restriction, validated only for "present and non-empty if
-      present" &mdash; identical to how <code>spec-design</code>/<code>spec-problem</code> are already
+      present" — identical to how <code>spec-design</code>/<code>spec-problem</code> are already
       validated today (<code>spec.template.html</code>'s own check never inspects what's inside those
       sections, only that they're non-empty when the tag exists). This was a real design fork during
       brainstorming: an earlier draft proposed a validator-level allowlist of permitted tags, until checking
       revealed <code>spec-design</code> already has zero tag-level restriction and this project has never
-      needed one &mdash; matching that existing precedent is more consistent than inventing a stricter rule
+      needed one — matching that existing precedent is more consistent than inventing a stricter rule
       for a sixth family that the fifth family never got. See <code>&lt;spec-out-of-scope&gt;</code> for what
       the allowlist draft would have looked like and why it was dropped.
     </p>
     <p>
       Every one of the six <code>data-validates</code> scripts' closed-schema <code>allowed</code> arrays
-      gains <code>'knowledge-detail'</code> &mdash; six small, identical edits, not a new mechanism.
+      gains <code>'knowledge-detail'</code> — six small, identical edits, not a new mechanism.
     </p>
     <p>
       Insertion mechanism matters here and is easy to get wrong by default: every existing field's
       <code>field()</code> helper in <code>add</code>/<code>update</code> sets <code>el.textContent = text</code>,
       which is exactly right for a single-line value but would silently flatten real markup right back down
       to escaped text, defeating the whole point. <code>knowledge-detail</code> needs its own insertion path
-      &mdash; parse the resolved string as an HTML fragment (reusing <code>parseHTML</code>, already in this
+      — parse the resolved string as an HTML fragment (reusing <code>parseHTML</code>, already in this
       project's toolchain via <code>happy-dom</code>) and move the resulting child nodes into the
       <code>&lt;knowledge-detail&gt;</code> element, the same shape <code>spec-design</code>'s own content
       already takes. <code>field()</code> itself is untouched; this is a second, separate helper used only
       for this one field.
     </p>
-
     <h2>Script tags are a feature, not a hole to patch</h2>
     <p>
       <code>knowledge-detail</code> permits <code>&lt;script&gt;</code> content, deliberately. This isn't
-      "no allowlist" applied carelessly &mdash; it's the same pattern this project already uses for its own
+      "no allowlist" applied carelessly — it's the same pattern this project already uses for its own
       validators and audits: every <code>data-validates</code>/<code>data-audits</code> script ships next to
       a live-demo section that runs the check against a sample instance, right there in the browser, so that
       demo proves the claim "this validator catches X" instead of just asserting it. A <code>knowledge-observation</code>
-      making an empirical claim can now do the same thing for itself &mdash; embed a small script that
+      making an empirical claim can now do the same thing for itself — embed a small script that
       reproduces the behavior it's describing and prints the result, instead of asking a reader to trust
       prose. This is a direct application of this session's own observation that this project's documents
       already fuse data and presentation into one file
-      (<a data-rel="elaborates" href="../knowledge/2026-07-24-xml-html-data-presentation-fusion.observation.html">xml-html-data-presentation-fusion.observation.html</a>);
+      (<a data-rel="elaborates" href="../notebook/xml-html-data-presentation-fusion.observation.html">xml-html-data-presentation-fusion.observation.html</a>);
       letting an instance node carry a provable demo, not just a template, is that fusion reaching one level
       further down.
     </p>
     <p>
       One constraint carries over unchanged from existing precedent, not newly invented here: a demo script
       that should work when the file is opened via plain double-click over <code>file://</code> needs to
-      follow the same rule <code>runtime.js</code> already follows &mdash; a classic <code>&lt;script&gt;</code>
+      follow the same rule <code>runtime.js</code> already follows — a classic <code>&lt;script&gt;</code>
       using <code>globalThis</code>, or <code>type="module"</code> via the <code>data:</code> URL import
       trick <code>loadModule</code> already uses, never a real cross-file ES <code>import</code>, which is
       CORS-blocked with no origin over <code>file://</code>. See
-      <a data-rel="depends_on" href="../knowledge/2026-07-23-reverse-runtime-to-globalthis.decision.html">the decision
+      <a data-rel="depends_on" href="../notebook/reverse-runtime-to-globalthis.observation.html">the decision
       that established this</a> for the full reasoning.
     </p>
-
     <h2>CLI: one flag, an exact-match sentinel for stdin</h2>
     <p>
       <code>add</code>/<code>update</code> gain one new flag:
@@ -109,11 +103,11 @@
     <p>
       This went through two earlier drafts before landing here. The first (rejected) was a single flag
       disambiguated by a value prefix, the way <code>curl -d @file</code> uses <code>@</code> to mean "read
-      this from a file instead of treating it literally" &mdash; workable, but it makes <code>--detail</code>
+      this from a file instead of treating it literally" — workable, but it makes <code>--detail</code>
       the one flag in the CLI whose behavior depends on the first character of its value, discoverable only
       by reading source. The second (also rejected, and what this document originally specified) was two
       flags, <code>--detail</code> for literal text and <code>--detail-file &lt;path-or-dash&gt;</code> for
-      file- or stdin-sourced content &mdash; git's <code>-m</code>/<code>-F</code> split.
+      file- or stdin-sourced content — git's <code>-m</code>/<code>-F</code> split.
     </p>
     <p>
       Both were solving a problem that doesn't need a dedicated flag at all: file-sourced content is just
@@ -126,31 +120,29 @@ cat fragment.html | mycelium run knowledge add … --detail -   # or piped
 EOF</code></pre>
     <p>
       So one flag is enough: a literal value is used as-is, and the single-character value <code>-</code>
-      means "read stdin instead" &mdash; the same well-worn Unix convention <code>git commit -F -</code>,
+      means "read stdin instead" — the same well-worn Unix convention <code>git commit -F -</code>,
       <code>tar</code>, and <code>cp</code> already use, just applied directly to <code>--detail</code>
       instead of a second flag. This isn't the same kind of guess an earlier "quoted means text, unquoted
       means path" idea would have needed (rejected during brainstorming, before this document existed, for
-      being outright impossible &mdash; the shell strips quote characters before a program ever sees
+      being outright impossible — the shell strips quote characters before a program ever sees
       <code>argv</code>, so a quoted and unquoted value with the same text are indistinguishable). Checking
       whether a value is exactly <code>-</code> is a plain, unambiguous equality check; there's no third "is
       this a path" case left to guess at, because there's no path case at all anymore.
     </p>
-
     <h2>Shared input-resolution helper, not knowledge-specific code</h2>
     <p>
       The logic that turns <code>--detail</code>'s value into an actual markup string (the literal value, or
       stdin's content when the value is exactly <code>-</code>) is a new export in
       <code>src/fs-helpers.ts</code>, alongside <code>resolveTemplateRef</code>/<code>validateInstance</code>
-      &mdash; not written inline inside <code>knowledge.template.html</code>'s command script. This matters
+      — not written inline inside <code>knowledge.template.html</code>'s command script. This matters
       because <code>spec.template.html</code> doesn't have a <code>type="mycelium/command"</code> script yet
       (a known, already-tracked gap), but when it does, its own <code>add</code>/<code>update</code> will
       need the identical mechanism for <code>spec-problem</code>/<code>spec-design</code>. Building it as a
-      shared, generic helper now &mdash; one real call site today, a known second call site coming &mdash;
+      shared, generic helper now — one real call site today, a known second call site coming —
       follows the same reasoning <code>validateInstance</code> was already extracted under during the
       previous plan: write the shared piece once, where both consumers can reach it, rather than duplicating
       it when the second consumer arrives.
     </p>
-
     <h2>list nodes gets a marker</h2>
     <p>
       <code>list nodes</code>' one-line-per-node output gains a fifth tab-separated column, always present
@@ -160,21 +152,20 @@ EOF</code></pre>
     <pre><code>knowledge/some-node.observation.html	knowledge-observation		A short title	[+detail]
 knowledge/other-node.goal.html	knowledge-goal	completed	Another title	</code></pre>
   </spec-design>
-
   <spec-out-of-scope>
     <ul>
       <li><b>No validator-level tag allowlist.</b> An earlier draft of this design proposed rejecting any
         tag inside <code>knowledge-detail</code> outside a fixed set (<code>p</code>, <code>h2</code>,
         <code>pre</code>, <code>code</code>, <code>a</code>, etc.), enforced via a shared check all six
         validators would call. Dropped once it became clear <code>spec-design</code>/<code>spec-problem</code>
-        already accept arbitrary markup today with zero tag-level restriction &mdash; adding a stricter rule
+        already accept arbitrary markup today with zero tag-level restriction — adding a stricter rule
         for a sixth family the fifth family never needed would be inconsistent, not safer in any way this
         project has actually needed.</li>
       <li><b>No special guard against <code>data-conforms-to</code>/<code>data-validates</code>/<code>data-audits</code>/<code>data-touches</code>
         appearing inside <code>knowledge-detail</code> content.</b> <code>validate.ts</code>'s instance/audit
         discovery is unscoped (<code>document.querySelectorAll('[data-conforms-to]')</code> across the whole
         parsed document), so a stray one of these attributes buried in free-form content could in principle
-        confuse it. This isn't a new risk <code>knowledge-detail</code> introduces &mdash; the identical risk
+        confuse it. This isn't a new risk <code>knowledge-detail</code> introduces — the identical risk
         already exists, unaddressed, for <code>spec-design</code>'s content today. Documented here as an
         accepted, already-latent risk rather than engineered around.</li>
       <li><b>No <code>javascript:</code>-URI rejection on <code>&lt;a href&gt;</code>.</b> Considered as a
@@ -183,9 +174,9 @@ knowledge/other-node.goal.html	knowledge-goal	completed	Another title	</code></p
         than one URI scheme on one attribute would meaningfully close off.</li>
       <li><b>No change to <code>runtime.js</code>'s avoidance of real ES imports.</b> This design's demo-script
         guidance assumes that constraint as it exists today
-        (<a data-rel="depends_on" href="../knowledge/2026-07-23-reverse-runtime-to-globalthis.decision.html">reverse-runtime-to-globalthis.decision.html</a>).
+        (<a data-rel="depends_on" href="../notebook/reverse-runtime-to-globalthis.observation.html">reverse-runtime-to-globalthis.decision.html</a>).
         Revisiting that decision was raised during brainstorming as a real possibility, but explicitly as a
-        follow-up, not part of this scope &mdash; if it changes later, this spec's file://-safety guidance
+        follow-up, not part of this scope — if it changes later, this spec's file://-safety guidance
         would need revisiting, not the field design itself.</li>
       <li><b>No <code>type="mycelium/command"</code> script for <code>spec.template.html</code>.</b> Referenced
         here as the reason to build the input-resolution helper shared rather than inline, but actually
@@ -193,7 +184,4 @@ knowledge/other-node.goal.html	knowledge-goal	completed	Another title	</code></p
     </ul>
   </spec-out-of-scope>
 </spec-doc>
-
-
-</body>
-</html>
+</body></html>

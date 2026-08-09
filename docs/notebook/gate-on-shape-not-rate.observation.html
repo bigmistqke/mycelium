@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Gate on node shape, not on logging rate</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Gate on node shape, not on logging rate</notebook-title>
+  <notebook-detail><p>The 15-minute timer gates on quantity — <em>did you log?</em> — because quantity is what a timer can measure. Every measured failure is quality: <em>is what you logged shaped right?</em></p>
+<p>The good triggers (a rejected alternative, a contradicted prediction, a correction) are not machine-detectable; no hook can tell that something was learned. But the failure modes all are, and that is enough. Three <code>data-audits</code> scripts collocated in <code>knowledge.template.html</code>, run by the existing crawler, no new machinery: <code>title-length</code>, <code>hollow-action</code>, <code>decision-without-alternative</code>.</p>
+<p><code>require-action-node.sh</code> and <code>post-commit-reminder.sh</code> are deleted. v3's lesson survives — still a protocol rather than discipline, gating on shape instead of rate.</p></notebook-detail>
+  <a data-rel="depends_on" href="./unify-knowledge-graph-fix-harness.observation.html">part 1 of the goal</a>
+</notebook-observation>
+</body></html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: The rungs are an authoring order as much as an abstraction descent</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>The rungs are an authoring order as much as an abstraction descent</notebook-title>
+  <notebook-detail><p>The rungs descend through abstraction: an axiom, then a rule, then a
+behaviour, then a mechanism. They are also close to the order someone writes
+them in, which is what lets one structure carry two jobs. Read downward, the
+chain says what a system is, at whichever altitude you cut it. Read forward, it
+says what to do next.</p>
+<p>The two readings do not line up exactly, and the mismatch is the useful part.
+The order of work runs: state the rule, stub the implementation so the types
+check, write the tests against that stub and watch every one fail, then fill the
+implementation in until they pass. The bottom rung comes twice — its shape
+before the tests, its body after.</p>
+<p>So a gate cannot ask whether the rung above is finished. It has to ask a
+narrower question, about which part of a rung exists. A signature before a test
+is the method working. A body before a test is the method skipped.</p>
+<p>That is the
+<a href="./gate-on-shape-not-rate.observation.html">gate on shape</a>
+move again, and it answers what rg could not hold an agent to on trust alone.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./methodology-in-our-own-codebase.observation.html">the second reading, and the gate it asks for</a>
+</notebook-observation>
+</body></html>

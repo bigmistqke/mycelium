@@ -20,7 +20,6 @@
 </style>
 </head>
 <body>
-
 <h1>Architecture report: repl</h1>
 <div class="meta">
   <div><b>Subject</b> — <code>@bigmistqke/repl</code>, version 0.2.8, at commit <code>07b574e</code></div>
@@ -28,26 +27,21 @@
   <div><b>Method</b> — derived from artefacts only; no design records exist for this project</div>
   <div><b>Written</b> — 2026-08-05</div>
 </div>
-
 <p>This report answers three questions about a codebase, working from what the
 codebase and its history contain. What does it consist of now, what principles do
 those parts rest on, and how did those principles move over the two years the
 project ran.</p>
-
 <p>A fourth section lists what the artefacts could not settle. That section is the
 one worth arguing with, because the author of this project is alive and can
 correct it, which is the whole reason for choosing this subject.</p>
-
 <h2>1. The constituents</h2>
-
 <p>repl turns a set of files into object URLs a browser can execute. A caller hands
 it a <code>readFile</code> function and a map of file extensions to transforms. It
 hands back <code>get(path)</code>, which returns a URL, and keeps that URL current
 as the file changes. Everything else in the package supports that one move or sits
 beside it as a standalone utility.</p>
-
 <table>
-  <tr><th>Group</th><th class="n">Lines</th><th class="n">Share</th><th>What it does</th></tr>
+  <tbody><tr><th>Group</th><th class="n">Lines</th><th class="n">Share</th><th>What it does</th></tr>
   <tr><td>Editor tooling</td><td class="n">498</td><td class="n">28%</td><td>Downloading type declarations, resolving package entries, wiring Monaco</td></tr>
   <tr><td>Source transforms</td><td class="n">327</td><td class="n">19%</td><td>Rewriting module paths, HTML in the browser, HTML in a worker, Babel</td></tr>
   <tr><td>Reactive and path helpers</td><td class="n">284</td><td class="n">16%</td><td>Reference counting, async accessors, path resolution</td></tr>
@@ -56,70 +50,83 @@ beside it as a standalone utility.</p>
   <tr><td>Frame helpers</td><td class="n">93</td><td class="n">5%</td><td>Talking to an iframe</td></tr>
   <tr><td>Extension presets</td><td class="n">56</td><td class="n">3%</td><td>The JavaScript and HTML extensions built on the transforms</td></tr>
   <tr><td>Entry point</td><td class="n">16</td><td class="n">1%</td><td>Sixteen re-exports, no components</td></tr>
-</table>
-
+</tbody></table>
 <p>The core is the smallest part. Twelve percent of the source holds the idea the
 package is named for, and the largest group by far is machinery for an editor the
 package does not ship.</p>
-
 <p>The type surface is 19 lines. It declares five file types, an extension as
 <code>{ type, transform? }</code>, and a transform as a function from
 <code>{ path, source, fileUrls }</code> to a string. That is the entire protocol a
 caller has to implement against.</p>
-
 <h3>How the pieces fit</h3>
-
 <pre class="mermaid">
 graph TD
   Caller(["the caller's readFile(path)"])
 
-  subgraph pipeline["the URL pipeline &mdash; 12% of the source"]
+  subgraph pipeline["the URL pipeline — 12% of the source"]
     System["createFileUrlSystem"]
     TMP["transformModulePaths"]
-    TH["transformHtml<br/>transformHtmlWorker"]
-    Blob["createFileUrl &rarr; Blob"]
+    TH["transformHtml<br>transformHtmlWorker"]
+    Blob["createFileUrl → Blob"]
     Get["get(path)"]
-    System -->|"js &middot; ts &middot; tsx"| TMP
-    System -->|"html"| TH
-    System -->|"css &mdash; no transform"| Blob
-    TMP --> Blob
-    TH --> Blob
-    Blob --> Get
-    Get -.->|"each relative import re-enters"| System
+    System transformHtmlWorker"]
+    Blob["createFileUrl → Blob"]
+    Get["get(path)"]
+    System --&gt;|"js · ts · tsx"| TMP
+    System |"js · ts · tsx"| TMP
+    System --&gt;|"html"| TH
+    System |"html"| TH
+    System --&gt;|"css — no transform"| Blob
+    TMP |"css — no transform"| Blob
+    TMP --&gt; Blob
+    TH  Blob
+    TH --&gt; Blob
+    Blob  Blob
+    Blob --&gt; Get
+    Get -.-&gt;|"each relative import re-enters"| System
   end
 
-  subgraph editor["editor tooling &mdash; 28% of the source"]
+  subgraph editor["editor tooling — 28% of the source"]
     Bind["bindMonacoToFileSystem"]
     Loader["createMonacoTypeDownloader"]
     DL["downloadTypesFromUrl"]
     RPE["resolvePackageEntries"]
-    Loader --> DL
-    DL --> RPE
+    Loader |"each relative import re-enters"| System
   end
 
-  Caller --> System
-  Caller --> Bind
-  Get --> Frame(["blob: URL in an iframe"])
+  subgraph editor["editor tooling — 28% of the source"]
+    Bind["bindMonacoToFileSystem"]
+    Loader["createMonacoTypeDownloader"]
+    DL["downloadTypesFromUrl"]
+    RPE["resolvePackageEntries"]
+    Loader --&gt; DL
+    DL  DL
+    DL --&gt; RPE
+  end
+
+  Caller  RPE
+  end
+
+  Caller --&gt; System
+  Caller  System
+  Caller --&gt; Bind
+  Get  Bind
+  Get --&gt; Frame(["blob: URL in an iframe"])
 </pre>
-
 <h4 style="margin-top:2rem">The same graph as a figure-graph</h4>
-
 <figure-graph data-columns="edge node node node node">
   <figure-node id="caller" data-at="1,2">the caller's <code>readFile(path)</code></figure-node>
-
   <figure-node id="system" data-at="2,2" data-role="spine">createFileUrlSystem</figure-node>
   <figure-node id="tmp" data-at="3,1">transformModulePaths</figure-node>
   <figure-node id="th" data-at="3,2">transformHtml<br>transformHtmlWorker</figure-node>
-  <figure-node id="css" data-at="3,3" data-role="aside">css &mdash; no transform</figure-node>
-  <figure-node id="blob" data-at="4,2" data-role="spine">createFileUrl &rarr; Blob</figure-node>
+  <figure-node id="css" data-at="3,3" data-role="aside">css — no transform</figure-node>
+  <figure-node id="blob" data-at="4,2" data-role="spine">createFileUrl → Blob</figure-node>
   <figure-node id="get" data-at="5,2" data-role="out">get(path)</figure-node>
   <figure-node id="frame" data-at="6,2">blob: URL in an iframe</figure-node>
-
   <figure-node id="bind" data-at="2,4" data-role="aside">bindMonacoToFileSystem</figure-node>
   <figure-node id="loader" data-at="3,4" data-role="aside">createMonacoTypeDownloader</figure-node>
   <figure-node id="dl" data-at="4,4" data-role="aside">downloadTypesFromUrl</figure-node>
   <figure-node id="rpe" data-at="5,4" data-role="aside">resolvePackageEntries</figure-node>
-
   <figure-edge from="caller" to="system"></figure-edge>
   <figure-edge from="caller" to="bind"></figure-edge>
   <figure-edge from="system" to="tmp">js ts tsx</figure-edge>
@@ -130,130 +137,103 @@ graph TD
   <figure-edge from="css" to="blob"></figure-edge>
   <figure-edge from="blob" to="get"></figure-edge>
   <figure-edge from="get" to="frame"></figure-edge>
-  <figure-edge from="get" to="system" data-back>re-enters</figure-edge>
+  <figure-edge from="get" to="system" data-back="">re-enters</figure-edge>
   <figure-edge from="loader" to="dl"></figure-edge>
   <figure-edge from="dl" to="rpe"></figure-edge>
 </figure-graph>
-
 <p>Both forms say the same thing, so the comparison is about what each costs to
 keep true. The figure names twelve nodes and thirteen edges, and an audit checks
 that every edge finds both its ends.</p>
-
 <p>Two halves, and they never touch. Nothing outside <code>src/core/</code> imports
 the URL system, and the URL system imports nothing from the editor side. Both take
 a <code>readFile</code> from the caller, so the caller is the only thing joining
 them.</p>
-
 <p>They do share a floor. <code>PathUtils</code>, <code>createAsync</code>,
 <code>ReactiveRefCount</code> and <code>getModulePathRanges</code> sit under both,
 and the diagram leaves those edges out because every box would reach them. Sharing
 a floor is not the same as connecting.</p>
-
 <p>Three exports appear in neither half. <code>getModuleDependencies</code> walks
 an import tree and runs outside a browser, with a demo under <code>node/</code>.
 <code>babelTransform</code> and the frame helpers hang off nothing at all.</p>
-
 <p>The loop in the middle is the mechanism the file list hides. A JavaScript
 file's transform rewrites each relative import by calling
 <code>fileUrls.get()</code> for the resolved path, which enters the same system
 again for that file. An HTML file does the same for every <code>src</code> and
 <code>href</code>, and hands its inline module scripts to the JavaScript
 transform.</p>
-
 <p>So one call for an entry file pulls its whole import graph through the pipeline,
 and Solid's dependency tracking is what makes that a graph rather than a loop.
 Editing one file invalidates only the URLs that read it.</p>
-
 <h2>2. The principles</h2>
-
 <p>Six principles hold in the current code. Each one appears below with what
 enforces it and where it came from.</p>
-
 <h3>The caller supplies the compiler</h3>
-
 <p>TypeScript, Babel and Monaco are peer dependencies, and the library never
 imports them. A caller passes <code>ts</code> in as an argument to
 <code>createJSExtension</code>, to <code>transformModulePaths</code>, and to
 <code>getModuleDependencies</code>. The two runtime dependencies are a
 Solid signal helper and a reactive set.</p>
-
 <p>The reason survives in a commit message from 2024-07-24, which removed
 TypeScript and Babel from the dependencies. It says that making a chunk for them
 added about ten seconds to the build time of repl and of every project consuming
 repl. This is the oldest principle still standing, and the project reaffirmed it
 in its final substantive commit, <code>dcfdbbf</code>, which stripped the last
 TypeScript imports out of the core.</p>
-
 <h3>Behaviour arrives as data, keyed by file extension</h3>
-
 <p>An extension is a plain object with a type and an optional transform. No class,
 no registration call, no lifecycle. <code>createFileUrlSystem</code> looks the
 extension up by the string after the last dot and calls its transform, and
 <code>defaultFileUrlSystem</code> is nothing but a preset map of six such objects
 with a spread at the end so a caller can override any of them.</p>
-
 <h3>The library owns no file system</h3>
-
 <p>There is no file store in the package. Every entry point takes a
 <code>readFile</code> function, and <code>invalidate(path)</code> is how a caller
 tells the library that something changed. The library holds derived state and
 nothing else.</p>
-
 <p>This one arrived late and cost the most to reach, and section 3 traces it.</p>
-
 <h3>URL lifetime is derived, never managed</h3>
-
 <p>Nothing calls <code>URL.revokeObjectURL</code> from a cleanup path a human
 wrote. The revoke sits inside <code>onCleanup</code> within the memo that created
 the URL, so Solid's ownership tree decides when it runs. A
 <code>ReactiveRefCount</code> class tracks how many reactive readers hold a path,
 and a file's root disposes when the count reaches zero and the file no longer
 exists.</p>
-
 <p>The escape hatch is explicit rather than hidden. Calling
 <code>get(path, { cached: false })</code> returns a fresh URL and moves the
 revoking onto the caller, and the doc comment says so.</p>
-
 <h3>Every part works alone</h3>
-
 <p>Eleven of the sixteen exports run without the core. <code>PathUtils</code>,
 <code>getModulePathRanges</code>, <code>transformModulePaths</code>,
 <code>getModuleDependencies</code> and the download helpers all take their inputs
 directly. A demo under <code>node/</code> runs the dependency walker outside a
 browser entirely, and the three test files cover only these free-standing pieces.</p>
-
 <h3>Two environments, two implementations, one signature</h3>
-
 <p>HTML transformation exists twice. One version uses <code>DOMParser</code> and
 <code>XMLSerializer</code>, the other uses <code>htmlparser2</code> and
 <code>domutils</code> for workers with no DOM. Both expose the same
 <code>TransformHtmlWorkerConfig</code> shape and both return a function producing
 a string, so the extension that wraps them differs by one import.</p>
-
 <p>The browser version throws a message naming the worker version when the globals
 are missing, which is the seam documenting itself.</p>
-
 <h2>3. How the principles changed</h2>
-
 <p>The project grew for eighteen months and then removed most of itself in a
 single commit. File count peaked at 55 on 2024-09-24 and line count at 8,397 two
 days later. Four months on, one commit deleted 15,875 lines and left 17 files
 holding 1,174 lines. The code has grown slowly since, to 1,749 lines, and has
 never come close to its old size.</p>
-
 <div class="figure">
 <svg viewBox="0 0 720 452" width="100%" role="img" aria-label="Timeline of repl's guiding principles from March 2024 to March 2026">
   <!-- gridlines -->
   <g stroke="var(--border)" stroke-width="1">
-    <line x1="8" y1="32" x2="8" y2="440"/>
-    <line x1="96" y1="32" x2="96" y2="440"/>
-    <line x1="184" y1="32" x2="184" y2="440"/>
-    <line x1="272" y1="32" x2="272" y2="440"/>
-    <line x1="360" y1="32" x2="360" y2="440"/>
-    <line x1="448" y1="32" x2="448" y2="440"/>
-    <line x1="536" y1="32" x2="536" y2="440"/>
-    <line x1="624" y1="32" x2="624" y2="440"/>
-    <line x1="712" y1="32" x2="712" y2="440"/>
+    <line x1="8" y1="32" x2="8" y2="440"></line>
+    <line x1="96" y1="32" x2="96" y2="440"></line>
+    <line x1="184" y1="32" x2="184" y2="440"></line>
+    <line x1="272" y1="32" x2="272" y2="440"></line>
+    <line x1="360" y1="32" x2="360" y2="440"></line>
+    <line x1="448" y1="32" x2="448" y2="440"></line>
+    <line x1="536" y1="32" x2="536" y2="440"></line>
+    <line x1="624" y1="32" x2="624" y2="440"></line>
+    <line x1="712" y1="32" x2="712" y2="440"></line>
   </g>
   <!-- month labels -->
   <g class="axis-label" text-anchor="middle">
@@ -265,125 +245,96 @@ never come close to its old size.</p>
   </g>
   <!-- the two turning points -->
   <g stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3">
-    <line x1="301" y1="32" x2="301" y2="440"/>
-    <line x1="448" y1="32" x2="448" y2="440"/>
+    <line x1="301" y1="32" x2="301" y2="440"></line>
+    <line x1="448" y1="32" x2="448" y2="440"></line>
   </g>
   <text class="era-label" x="297" y="448" text-anchor="end">the big chop</text>
   <text class="era-label" x="452" y="448">the file system leaves</text>
-
   <!-- group: holds today -->
   <text class="group-label" x="8" y="52">HOLDS TODAY</text>
-
   <text class="lane-label" x="8" y="76">The caller supplies the compiler</text>
-  <rect class="held" x="125" y="84" width="587" height="13" rx="3"/>
+  <rect class="held" x="125" y="84" width="587" height="13" rx="3"></rect>
   <text class="axis-label" x="121" y="94" text-anchor="end">2024-07</text>
-
   <text class="lane-label" x="8" y="122">Behaviour arrives as data, keyed by file extension</text>
-  <rect class="held" x="155" y="130" width="557" height="13" rx="3"/>
+  <rect class="held" x="155" y="130" width="557" height="13" rx="3"></rect>
   <text class="axis-label" x="151" y="140" text-anchor="end">2024-08</text>
-
   <text class="lane-label" x="8" y="168">The library owns no file system</text>
-  <rect class="held" x="448" y="176" width="264" height="13" rx="3"/>
+  <rect class="held" x="448" y="176" width="264" height="13" rx="3"></rect>
   <text class="axis-label" x="444" y="186" text-anchor="end">2025-06</text>
-
   <text class="lane-label" x="8" y="214">URL lifetime is derived, never managed</text>
-  <rect class="held" x="448" y="222" width="264" height="13" rx="3"/>
+  <rect class="held" x="448" y="222" width="264" height="13" rx="3"></rect>
   <text class="axis-label" x="444" y="232" text-anchor="end">2025-06</text>
-
   <!-- group: abandoned -->
   <text class="group-label" x="8" y="252">ABANDONED</text>
-
   <text class="lane-label" x="8" y="276">Classes are the unit of structure</text>
-  <rect class="gone" x="8" y="284" width="293" height="13" rx="3"/>
+  <rect class="gone" x="8" y="284" width="293" height="13" rx="3"></rect>
   <text class="axis-label" x="305" y="294">functions replace them</text>
-
   <text class="lane-label" x="8" y="322">The library owns a file system</text>
-  <rect class="gone" x="37" y="330" width="411" height="13" rx="3"/>
-  <line x1="301" y1="330" x2="301" y2="343" stroke="var(--bg)" stroke-width="2"/>
+  <rect class="gone" x="37" y="330" width="411" height="13" rx="3"></rect>
+  <line x1="301" y1="330" x2="301" y2="343" stroke="var(--bg)" stroke-width="2"></line>
   <text class="axis-label" x="452" y="340">the caller keeps the files</text>
-
   <text class="lane-label" x="8" y="368">The library ships user interface components</text>
-  <rect class="gone" x="37" y="376" width="264" height="13" rx="3"/>
+  <rect class="gone" x="37" y="376" width="264" height="13" rx="3"></rect>
   <text class="axis-label" x="305" y="386">deleted whole</text>
-
   <text class="lane-label" x="8" y="414">Custom elements are the distribution form</text>
-  <rect class="gone" x="184" y="422" width="117" height="13" rx="3"/>
+  <rect class="gone" x="184" y="422" width="117" height="13" rx="3"></rect>
   <text class="axis-label" x="305" y="432">four months, then gone</text>
 </svg>
 </div>
-
 <h3>March to September 2024: repl was the REPL</h3>
-
 <p>The early package shipped the editor. It held <code>Repl.Frame</code>,
 <code>Repl.TabBar</code>, a <code>ReplContext</code> root class, a Monaco
 integration with bundled themes and TextMate grammars, a second editor built on
 Shiki, and devtools. Four classes carried the state: <code>TypeRegistry</code>,
 <code>FileSystem</code>, <code>FrameRegistry</code> and <code>Runtime</code>.</p>
-
 <p>A counter-current ran underneath from early on. Five commits on 2024-05-01
 refactored Monaco out of the core, and 2024-08-02 refactored Babel and TypeScript
 out of the runtime. The principle that the caller supplies the heavy tools formed
 here, while the surrounding library was still growing.</p>
-
 <h3>September 2024: all in on custom elements</h3>
-
 <p>One commit moved every Solid file into a <code>solid/</code> directory, the
 next added custom-element wrappers, and a third removed the Solid entry points
 with the message <q>let's go all in with custom elements</q>. The package was at
 its largest during this month.</p>
-
 <p>The same week retired the assumption the early design rested on. Removing
 <code>FrameRegistry</code>, the message says the registry <q>worked from the
 assumption that everything was nested inside a <code>&lt;Repl/&gt;</code>
 component</q>, and that the assumption <q>is not correct anymore</q>. That is the
 first clear statement that the library should not own the page.</p>
-
 <p>Then the repository went quiet for three and a half months.</p>
-
 <h3>January 2025: the big chop</h3>
-
 <p>Work resumed with a commit titled <q>big choppa</q>: 77 files changed, 1,399
 insertions, 15,875 deletions. Elements, editors, devtools, frames and the tab bar
 all left. Every remaining class became a function, so
 <code>FileSystem</code> became <code>createFileSystem</code> and the extension
 mechanism became <code>createExtension</code>.</p>
-
 <p>Nothing in the history explains this commit. Its message is two words, and the
 gap before it holds no commits at all.</p>
-
 <h3>January to June 2025: the file system leaves too</h3>
-
 <p>A commit on 2025-01-31 split <code>createExecutables</code> out of
 <code>createFileSystem</code>, and it carries the most detailed message in the
 project. An experiment in a different repository put a flat file system inside an
 Automerge document, and synchronising a second file system on top of that
 <q>turned out to be cumbersome</q>. The fix was to expose the URL machinery alone
 and demote the file system to a wrapper around it.</p>
-
 <p>Four months later, <code>457fe49</code> renamed
 <code>createExecutables</code> to <code>createFileUrlSystem</code> and deleted
 <code>createFileSystem</code> outright. The wrapper had turned out to be
 unnecessary once the primitive underneath it existed. The library has held no file
 state since.</p>
-
 <p>The following day added <code>ReactiveRefCount</code> and moved URL disposal
 into the reactive graph, which is where the fourth surviving principle starts.</p>
-
 <h3>September 2025 onward: hardening</h3>
-
 <p>The last stretch added no new ideas. It consolidated scattered helpers into two
 utility files, added a circular-import check to the lint script, wrote the first
 real tests, and added <code>getModuleDependencies</code>. The test suite is 1,176
 lines against 1,749 lines of source, and every test targets a free-standing
 utility rather than the core.</p>
-
 <h2>4. What the artefacts could not say</h2>
-
 <p>The history explains removals far better than it explains arrivals. Three of
 the four abandoned principles left without a stated reason, while the one detailed
 message in the project explains a design that a failure elsewhere forced. These
 questions are what a reader of the artefacts cannot close.</p>
-
 <div class="q">
 <h3>Why did custom elements fail?</h3>
 <p>The commit adopting them states an intent. Nothing states why they went away
@@ -391,7 +342,6 @@ four months later, and the big chop deleted them alongside everything else, so
 their removal carries no argument of its own. Were they abandoned on their own
 merits, or swept out with the rest?</p>
 </div>
-
 <div class="q">
 <h3>What happened during the three-month gap?</h3>
 <p>The repository stops on 2024-09-26 and restarts on 2025-01-08, and the first
@@ -399,7 +349,6 @@ substantial commit after it deletes 15,875 lines. A decision that large either
 formed during the silence or had been forming through the months before it. The
 commits cannot tell those apart.</p>
 </div>
-
 <div class="q">
 <h3>Was the file system removed twice for the same reason?</h3>
 <p>A <code>FileSystem</code> class died in the big chop with no explanation, and
@@ -407,21 +356,18 @@ commits cannot tell those apart.</p>
 records precisely. Reading backwards makes it tempting to call the first removal
 an early version of the second. Nothing supports that.</p>
 </div>
-
 <div class="q">
 <h3>Is the editor tooling still wanted?</h3>
 <p>Type downloading and Monaco wiring are 28% of the source and serve no part of
 the URL pipeline. The README says of one of them that you should probably use a
 different package instead. Kept deliberately, or simply never removed?</p>
 </div>
-
 <div class="q">
 <h3>Why did testing stop and restart?</h3>
 <p>A commit in June 2024 removed vitest. Tests reappear in October 2025, sixteen
 months later, and now nearly match the source in size. The gap covers the entire
 period when the library was largest and changing fastest.</p>
 </div>
-
 <div class="q">
 <h3>What was the target the whole time?</h3>
 <p>Every principle here is a constraint the code obeys. None of them is a goal.
@@ -429,16 +375,14 @@ The artefacts show a library shedding responsibility for two years without ever
 saying what it was trying to become, and the convergence only reads as
 convergence from the end.</p>
 </div>
-
 <footer>
 <p>Derived without design records, so every claim traces to a file or a commit in
 the subject and nothing traces to a stated intent. The
-<a href="../knowledge/2026-08-05-mechanism-comes-back-intent-does-not.observation.html">earlier finding that
+<a href="../notebook/mechanism-comes-back-intent-does-not.observation.html">earlier finding that
 this kind of reading recovers mechanism and misses intent</a> predicts exactly the
 shape above: six principles stated with confidence, six questions that only a
 person can answer.</p>
 </footer>
-
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
 <script>
   mermaid.initialize({
@@ -446,7 +390,5 @@ person can answer.</p>
     theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'
   })
 </script>
-
 <script src="../templates/figure.element.js"></script>
-
 </body></html>

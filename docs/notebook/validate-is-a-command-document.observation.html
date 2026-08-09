@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Validate is a command document, not a verb the engine names</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Validate is a command document, not a verb the engine names</notebook-title>
+  <notebook-detail><p>
+  Making <code>mycelium validate</code> real had two shapes. The first dispatched
+  <code>validate</code> inside <code>src/run.ts</code> before it looked for a host
+  file. That worked and cost something quiet: the word became reserved, so a family
+  named <code>validate</code> could never resolve again, and core named one command
+  it could not read off a document. The engine's whole claim is that it knows the
+  protocol and nothing else, and this was the first exception.
+</p>
+<p>
+  The second declares it as <code>docs/commands/validate.command.html</code>, the
+  suffix that already means <q>commands, no document type</q>, the same as
+  <a href="../commands/explore.command.html">explore.command.html</a>. Core goes back
+  to naming nothing. The roster picks the command up on its own, because
+  <code>printRoster</code> walks command hosts, so the audits header that has always
+  read <q>run by <code>mycelium validate</code></q> is finally true without anyone
+  writing a usage line by hand.
+</p>
+<p>
+  One rule in core made it possible. A host may export a default, which runs when no
+  subcommand follows the host name, so <code>mycelium validate</code> works rather
+  than <code>mycelium validate validate</code>. A flag in that slot belongs to the
+  default too, so <code>mycelium validate --dir x</code> parses as one invocation. A
+  host without a default still prints help, unchanged.
+</p>
+<p>
+  This trades a hardcoded command name for a general rule, which is the trade the
+  engine keeps making. What it does not buy is independence from <code>src/</code>:
+  the command imports <code>validate</code> from <code>src/validate.ts</code> and
+  calls it. The document declares the command, never the implementation, which is
+  true of every other family too.
+</p>
+</notebook-detail>
+</notebook-observation>
+</body></html>

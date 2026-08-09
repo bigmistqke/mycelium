@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Templates: knowledge-*</title>
@@ -8,22 +7,20 @@
 <link rel="stylesheet" href="./knowledge.template.css">
 </head>
 <body>
-
 <h1>Templates: knowledge-*</h1>
 <div class="meta">
   <div><b>Node types:</b> <code>knowledge-goal</code>, <code>knowledge-decision</code>,
     <code>knowledge-option</code>, <code>knowledge-action</code>, <code>knowledge-outcome</code>,
-    <code>knowledge-observation</code> &mdash; six templates, one file, per the family-file convention</div>
+    <code>knowledge-observation</code> — six templates, one file, per the family-file convention</div>
   <div><b>File naming:</b> this file is <code>knowledge.template.html</code>, named after the
     <code>knowledge-*</code> family it defines, the same way <code>spec.template.html</code> names the
     <code>spec-*</code> family</div>
   <div><b>Purpose:</b> deciduous's node schema, reimplemented as templates instead of one flat SQL table
-    &mdash; the proof case <a data-rel="elaborates" href="../DESIGN.html">DESIGN.html</a> proposed</div>
+    — the proof case <a data-rel="elaborates" href="../DESIGN.html">DESIGN.html</a> proposed</div>
   <div><b>Sibling of:</b> <code>spec.template.html</code>, the <code>spec-*</code> family</div>
   <div><b>Styling:</b> <code>./knowledge.template.css</code>, this family's own rendering rules, plus the
     shared <code>../theme.css</code> every document links</div>
 </div>
-
 <h2>Why six templates, not one flat schema</h2>
 <p>
   deciduous's git-native cousin <code>hive</code> discovered mid-build that <code>status</code> only makes
@@ -35,18 +32,16 @@
   one <code>knowledge-*</code>-named file, exactly as <a href="../DESIGN.html">DESIGN.html</a>'s own worked
   example already showed for this same schema.
 </p>
-
 <h2>Shared field vocabulary</h2>
 <p>
   Every type shares only the family prefix on its fields, not its own type name (<code>knowledge-title</code>,
-  not <code>knowledge-goal-title</code>) &mdash; see <a data-rel="elaborates"
-  href="../specs/2026-07-23-deciduous-template-series.spec.html">the design spec</a>'s naming section. Two
+  not <code>knowledge-goal-title</code>) — see <a data-rel="elaborates" href="../specs/2026-07-23-deciduous-template-series.spec.html">the design spec</a>'s naming section. Two
   fields need more than "present and non-empty":
 </p>
 <ul>
-  <li><code>knowledge-confidence</code> &mdash; an integer 0&ndash;100, matching deciduous's own
+  <li><code>knowledge-confidence</code> — an integer 0–100, matching deciduous's own
     <code>-c/--confidence</code> flag.</li>
-  <li><code>knowledge-status</code> &mdash; one of <code>pending</code>, <code>active</code>,
+  <li><code>knowledge-status</code> — one of <code>pending</code>, <code>active</code>,
     <code>completed</code>, <code>rejected</code>. This resolves the open question the design spec left:
     deciduous's own CLI (<code>deciduous status --help</code>) defines exactly these four, not the
     <code>draft</code>/<code>approved</code>/<code>implemented</code> enum <code>spec-doc</code> uses for an
@@ -64,40 +59,37 @@
   <a href="./template.template.html">template.template.html</a>'s validator, rather than as hand-written
   per-type JS.
 </p>
-
 <h2>The six types</h2>
-
 <h3><code>knowledge-goal</code></h3>
 <p>What the user asked for. Fields: <code>title</code>, <code>confidence</code>, <code>status</code>,
   optional <code>prompt</code> (the verbatim request, for root goals and major direction changes), optional
   <code>detail</code>.</p>
 <template id="knowledge-goal">
   <knowledge-goal>
-    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
-    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
-    <knowledge-status required enum="pending active completed rejected"></knowledge-status>
+    <knowledge-title required="" pattern="^.{1,140}$"></knowledge-title>
+    <knowledge-confidence required="" pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
+    <knowledge-status required="" enum="pending active completed rejected"></knowledge-status>
     <knowledge-prompt></knowledge-prompt>
-    <knowledge-detail markup></knowledge-detail>
-    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+    <knowledge-detail markup=""></knowledge-detail>
+    <a repeatable="" href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </knowledge-goal>
 </template>
 <pre><code>&lt;knowledge-goal data-conforms-to="./knowledge.template.html#knowledge-goal"&gt;
   &lt;knowledge-title&gt;Build v4: knowledge graph as hypermedia&lt;/knowledge-title&gt;
   &lt;knowledge-confidence&gt;85&lt;/knowledge-confidence&gt;
   &lt;knowledge-status&gt;active&lt;/knowledge-status&gt;
-  &lt;knowledge-prompt&gt;we are playing around with mycelium&hellip;&lt;/knowledge-prompt&gt;
+  &lt;knowledge-prompt&gt;we are playing around with mycelium…&lt;/knowledge-prompt&gt;
 &lt;/knowledge-goal&gt;</code></pre>
-
 <h3><code>knowledge-decision</code></h3>
 <p>A choice made between approaches. Fields: <code>title</code>, <code>confidence</code>,
   <code>status</code>, optional <code>detail</code>.</p>
 <template id="knowledge-decision">
   <knowledge-decision>
-    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
-    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
-    <knowledge-status required enum="pending active completed rejected"></knowledge-status>
-    <knowledge-detail markup></knowledge-detail>
-    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+    <knowledge-title required="" pattern="^.{1,140}$"></knowledge-title>
+    <knowledge-confidence required="" pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
+    <knowledge-status required="" enum="pending active completed rejected"></knowledge-status>
+    <knowledge-detail markup=""></knowledge-detail>
+    <a repeatable="" href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </knowledge-decision>
 </template>
 <pre><code>&lt;knowledge-decision data-conforms-to="./knowledge.template.html#knowledge-decision"&gt;
@@ -105,18 +97,17 @@
   &lt;knowledge-confidence&gt;80&lt;/knowledge-confidence&gt;
   &lt;knowledge-status&gt;active&lt;/knowledge-status&gt;
 &lt;/knowledge-decision&gt;</code></pre>
-
 <h3><code>knowledge-option</code></h3>
-<p>One alternative considered within a decision. No <code>status</code> &mdash; the option was or wasn't
+<p>One alternative considered within a decision. No <code>status</code> — the option was or wasn't
   chosen, that's what an edge to its parent decision says, not a lifecycle of its own. Linked to its parent
   with <code>&lt;a data-rel="depends_on"&gt;</code>, the closest of the six edge labels. Fields:
   <code>title</code>, <code>confidence</code>, optional <code>detail</code>.</p>
 <template id="knowledge-option">
   <knowledge-option>
-    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
-    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
-    <knowledge-detail markup></knowledge-detail>
-    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+    <knowledge-title required="" pattern="^.{1,140}$"></knowledge-title>
+    <knowledge-confidence required="" pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
+    <knowledge-detail markup=""></knowledge-detail>
+    <a repeatable="" href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </knowledge-option>
 </template>
 <pre><code>&lt;knowledge-option data-conforms-to="./knowledge.template.html#knowledge-option"&gt;
@@ -124,21 +115,20 @@
   &lt;knowledge-confidence&gt;40&lt;/knowledge-confidence&gt;
   &lt;a data-rel="depends_on" href="./knowledge.template.html"&gt;considered for this file, rejected in favor of one bundled file&lt;/a&gt;
 &lt;/knowledge-option&gt;</code></pre>
-
 <h3><code>knowledge-action</code></h3>
 <p>About to write or edit code. Fields: <code>title</code>, <code>confidence</code>, <code>status</code>,
   optional <code>detail</code>, optional <code>commit</code>/<code>files</code>/<code>branch</code> once
   it's tied to real work.</p>
 <template id="knowledge-action">
   <knowledge-action>
-    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
-    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
-    <knowledge-status required enum="pending active completed rejected"></knowledge-status>
-    <knowledge-detail markup></knowledge-detail>
+    <knowledge-title required="" pattern="^.{1,140}$"></knowledge-title>
+    <knowledge-confidence required="" pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
+    <knowledge-status required="" enum="pending active completed rejected"></knowledge-status>
+    <knowledge-detail markup=""></knowledge-detail>
     <knowledge-commit></knowledge-commit>
     <knowledge-files></knowledge-files>
     <knowledge-branch></knowledge-branch>
-    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+    <a repeatable="" href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </knowledge-action>
 </template>
 <pre><code>&lt;knowledge-action data-conforms-to="./knowledge.template.html#knowledge-action"&gt;
@@ -148,20 +138,19 @@
   &lt;knowledge-commit&gt;9794442&lt;/knowledge-commit&gt;
   &lt;knowledge-branch&gt;main&lt;/knowledge-branch&gt;
 &lt;/knowledge-action&gt;</code></pre>
-
 <h3><code>knowledge-outcome</code></h3>
-<p>Something worked or failed. No <code>status</code> &mdash; an outcome is the record of what happened, not
+<p>Something worked or failed. No <code>status</code> — an outcome is the record of what happened, not
   a thing that has a lifecycle itself. Fields: <code>title</code>, <code>confidence</code>, optional
   <code>detail</code>, optional <code>commit</code>/<code>files</code>/<code>branch</code>.</p>
 <template id="knowledge-outcome">
   <knowledge-outcome>
-    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
-    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
-    <knowledge-detail markup></knowledge-detail>
+    <knowledge-title required="" pattern="^.{1,140}$"></knowledge-title>
+    <knowledge-confidence required="" pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
+    <knowledge-detail markup=""></knowledge-detail>
     <knowledge-commit></knowledge-commit>
     <knowledge-files></knowledge-files>
     <knowledge-branch></knowledge-branch>
-    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+    <a repeatable="" href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </knowledge-outcome>
 </template>
 <pre><code>&lt;knowledge-outcome data-conforms-to="./knowledge.template.html#knowledge-outcome"&gt;
@@ -169,40 +158,37 @@
   &lt;knowledge-confidence&gt;92&lt;/knowledge-confidence&gt;
   &lt;knowledge-commit&gt;9794442&lt;/knowledge-commit&gt;
 &lt;/knowledge-outcome&gt;</code></pre>
-
 <h3><code>knowledge-observation</code></h3>
 <p>Something noticed along the way, not yet a decision. Fields: <code>title</code>,
   <code>confidence</code>, optional <code>detail</code>.</p>
 <template id="knowledge-observation">
   <knowledge-observation>
-    <knowledge-title required pattern="^.{1,140}$"></knowledge-title>
-    <knowledge-confidence required pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
-    <knowledge-detail markup></knowledge-detail>
-    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+    <knowledge-title required="" pattern="^.{1,140}$"></knowledge-title>
+    <knowledge-confidence required="" pattern="^(0|[1-9][0-9]?|100)$"></knowledge-confidence>
+    <knowledge-detail markup=""></knowledge-detail>
+    <a repeatable="" href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </knowledge-observation>
 </template>
 <pre><code>&lt;knowledge-observation data-conforms-to="./knowledge.template.html#knowledge-observation"&gt;
   &lt;knowledge-title&gt;Removing the &lt;style&gt; block made every document read like structured data&lt;/knowledge-title&gt;
   &lt;knowledge-confidence&gt;70&lt;/knowledge-confidence&gt;
 &lt;/knowledge-observation&gt;</code></pre>
-
 <h2>Edges</h2>
 <p>
   The six <code>data-rel</code> labels deciduous already uses: <code>depends_on</code>, <code>blocks</code>,
   <code>supports</code>, <code>contradicts</code>, <code>alternative_to</code>, <code>leads_to</code>, written
   the same way <a href="../DESIGN.html">DESIGN.html</a>'s own example shows:
-  <code>&lt;a data-rel="leads_to" href="./outcome-x.html"&gt;&hellip;&lt;/a&gt;</code>. This project's own
-  chain tonight used <code>leads_to</code> for its forward narrative (goal &rarr; decision &rarr; action
-  &rarr; outcome &rarr; action) and <code>depends_on</code> for <code>knowledge-option &rarr;</code> parent
+  <code>&lt;a data-rel="leads_to" href="./outcome-x.html"&gt;…&lt;/a&gt;</code>. This project's own
+  chain tonight used <code>leads_to</code> for its forward narrative (goal → decision → action
+  → outcome → action) and <code>depends_on</code> for <code>knowledge-option →</code> parent
   <code>knowledge-decision</code>, the closest existing label for that relationship.
 </p>
-
 <div class="worked-example">
   <h4>A worked example</h4>
   <p>
     One sample instance per type, checked by <code>template.template.html</code>'s generic validator, per
     the attributes on each type's own <code>&lt;template&gt;</code> above. Wired together with real
-    <code>data-rel</code> edges, not just sitting side by side &mdash; the graph-wide audits below read
+    <code>data-rel</code> edges, not just sitting side by side — the graph-wide audits below read
     <em>this exact markup</em>, nothing hand-typed.
   </p>
   <p>
@@ -210,63 +196,60 @@
     <code>data-conforms-to</code> the same way it finds every instance in the corpus, so this file fails
     if one stops conforming.
   </p>
-
   <div id="sample-instances" style="display:none">
     <knowledge-goal id="sample-goal" data-conforms-to="./knowledge.template.html#knowledge-goal">
-      <knowledge-title>Sample goal</knowledge-title>
-      <knowledge-confidence>85</knowledge-confidence>
-      <knowledge-status>active</knowledge-status>
-      <a data-rel="leads_to" href="#sample-decision">leads to the sample decision</a>
-    </knowledge-goal>
+  <knowledge-title>Sample goal</knowledge-title>
+  <knowledge-confidence>85</knowledge-confidence>
+  <knowledge-status>active</knowledge-status>
+  <a data-rel="leads_to" href="#sample-decision">leads to the sample decision</a>
+</knowledge-goal>
     <knowledge-decision id="sample-decision" data-conforms-to="./knowledge.template.html#knowledge-decision">
-      <knowledge-title>Sample decision</knowledge-title>
-      <knowledge-confidence>80</knowledge-confidence>
-      <knowledge-status>pending</knowledge-status>
-      <a data-rel="leads_to" href="#sample-action">leads to the sample action</a>
-    </knowledge-decision>
+  <knowledge-title>Sample decision</knowledge-title>
+  <knowledge-confidence>80</knowledge-confidence>
+  <knowledge-status>pending</knowledge-status>
+  <a data-rel="leads_to" href="#sample-action">leads to the sample action</a>
+</knowledge-decision>
     <knowledge-option id="sample-option" data-conforms-to="./knowledge.template.html#knowledge-option">
-      <knowledge-title>Sample option</knowledge-title>
-      <knowledge-confidence>40</knowledge-confidence>
-      <a data-rel="depends_on" href="#sample-decision">considered for the sample decision</a>
-    </knowledge-option>
+  <knowledge-title>Sample option</knowledge-title>
+  <knowledge-confidence>40</knowledge-confidence>
+  <a data-rel="depends_on" href="#sample-decision">considered for the sample decision</a>
+</knowledge-option>
     <knowledge-action id="sample-action" data-conforms-to="./knowledge.template.html#knowledge-action">
-      <knowledge-title>Sample action</knowledge-title>
-      <knowledge-confidence>90</knowledge-confidence>
-      <knowledge-status>completed</knowledge-status>
-      <knowledge-commit>abc1234</knowledge-commit>
-    </knowledge-action>
+  <knowledge-title>Sample action</knowledge-title>
+  <knowledge-confidence>90</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <knowledge-commit>abc1234</knowledge-commit>
+</knowledge-action>
     <knowledge-action id="sample-hollow-action" data-conforms-to="./knowledge.template.html#knowledge-action">
-      <knowledge-title>
+  <knowledge-title>
         Sample action with no detail and no commit, written across several source
         lines so it also shows a title being measured as collapsed text
       </knowledge-title>
-      <knowledge-confidence>60</knowledge-confidence>
-      <knowledge-status>completed</knowledge-status>
-      <a data-rel="depends_on" href="#sample-decision">edged on purpose, so it stays out of the orphan audit</a>
-    </knowledge-action>
+  <knowledge-confidence>60</knowledge-confidence>
+  <knowledge-status>completed</knowledge-status>
+  <a data-rel="depends_on" href="#sample-decision">edged on purpose, so it stays out of the orphan audit</a>
+</knowledge-action>
     <knowledge-outcome id="sample-outcome" data-conforms-to="./knowledge.template.html#knowledge-outcome">
-      <knowledge-title>Sample outcome</knowledge-title>
-      <knowledge-confidence>92</knowledge-confidence>
-      <a data-rel="leads_to" href="#sample-action">deliberately outgoing-only, see the audits below</a>
-    </knowledge-outcome>
+  <knowledge-title>Sample outcome</knowledge-title>
+  <knowledge-confidence>92</knowledge-confidence>
+  <a data-rel="leads_to" href="#sample-action">deliberately outgoing-only, see the audits below</a>
+</knowledge-outcome>
     <knowledge-observation id="sample-observation" data-conforms-to="./knowledge.template.html#knowledge-observation">
-      <knowledge-title>Sample observation</knowledge-title>
-      <knowledge-confidence>70</knowledge-confidence>
-    </knowledge-observation>
+  <knowledge-title>Sample observation</knowledge-title>
+  <knowledge-confidence>70</knowledge-confidence>
+</knowledge-observation>
   </div>
-
 </div>
-
 <h2>Graph-wide audits</h2>
 <p>
   <a href="../DESIGN.html">DESIGN.html</a> makes the case that a graph-wide audit isn't a separate
-  constraint language, it's a script &mdash; the same kind of script that validates one instance against
+  constraint language, it's a script — the same kind of script that validates one instance against
   one template, just pointed at the whole node/edge set instead of one element. These four live here, next
   to the six types, rather than in a file of their own: each only ever concerns <code>knowledge-*</code>
   types, a family already bundled in this one file, so there's nothing to link
-  across and nothing gained by separating them. A future audit that spans <em>two</em> families &mdash; say,
+  across and nothing gained by separating them. A future audit that spans <em>two</em> families — say,
   checking a <code>spec-doc</code>'s <code>specifies</code> edge actually resolves to a real
-  <code>knowledge-action</code> &mdash; would earn its own file, since neither family's template file could
+  <code>knowledge-action</code> — would earn its own file, since neither family's template file could
   host it without redeclaring the other's types. None of the audits below is that.
 </p>
 <p>
@@ -290,7 +273,6 @@
   <code>data-rel</code> makes an edge queryable, instead of leaving it as prose only a person reading
   this paragraph would know.
 </p>
-
 <h3>orphans-except-goal</h3>
 <p>
   CLAUDE.md: "Root goal nodes are the ONLY valid orphans." Every node whose type isn't
@@ -302,7 +284,7 @@
   an outcome with only an <em>outgoing</em> edge (it leads somewhere, but nothing resolved <em>into</em> it)
   would already pass <code>orphans-except-goal</code>, yet still be exactly the dangling case CLAUDE.md's
   checklist means. So this checks specifically for an <em>incoming</em> edge, the way this project's own
-  <code>action &rarr;leads_to&rarr; outcome</code> links have worked all night.
+  <code>action →leads_to→ outcome</code> links have worked all night.
 </p>
 <h3>Title length is declared, not audited</h3>
 <p>
@@ -320,14 +302,14 @@
   did not change; where it lives did. A maximum length is a property of one field on one node,
   and the schema vocabulary could already say it, so saying it in code was writing by hand what the
   template could declare. See
-  <a data-rel="elaborates" href="../knowledge/2026-07-31-schema-when-vocabulary-allows.decision.html">the
+  <a data-rel="elaborates" href="../notebook/schema-when-vocabulary-allows.observation.html">the
   decision</a>, which also explains why <code>hollow-action</code> below did not move: it needs a word
   the vocabulary does not have, and adding one to serve a single type is growing the engine rather
   than using it.
 </p>
 <p>
   140 is a judgment, not a boundary found in the data. Measured over the whole graph on
-  2026-07-30, the count fell smoothly &mdash; 61 nodes over 100 characters, 47 over 140, 17 over 300,
+  2026-07-30, the count fell smoothly — 61 nodes over 100 characters, 47 over 140, 17 over 300,
   median 84, p90 302. There is no knee to calibrate against, so no threshold here can be justified by the
   distribution; 140 is picked as "about two lines of a title" and should be argued with on those terms
   rather than defended as empirical. Those 47 have since been rewritten; the longest title in the corpus
@@ -344,16 +326,15 @@
   Two costs, since neither is visible from the attribute. The limit is now written once per type
   rather than once in total, so changing it is six edits and nothing checks that the six agree. And
   audits skip <code>templates/</code> while per-instance validation does not, so the sample instance
-  below can no longer carry a deliberately over-long title to demonstrate the rule &mdash; it would
+  below can no longer carry a deliberately over-long title to demonstrate the rule — it would
   fail its own template. It keeps the wrapping, which still shows collapsed measurement, and drops
   the length.
 </p>
-
 <h3>hollow-action</h3>
 <p>
   A <code>knowledge-action</code> with neither a non-empty <code>knowledge-detail</code> nor a
   <code>knowledge-commit</code> asserts that work happened without saying what it was or pointing at the
-  diff &mdash; it is either redundant with git or empty. Either field alone clears it: CLAUDE.md's own rule
+  diff — it is either redundant with git or empty. Either field alone clears it: CLAUDE.md's own rule
   says an action spanning several commits should omit the hash, so the detail carries it instead.
 </p>
 <p>
@@ -385,9 +366,7 @@
     the browser and the build check the same declaration. Two copies could disagree, and the one that
     would go on saying PASS is this one.
   </p>
-
 </div>
-
 <h2>Graph extraction, in a file</h2>
 <p>
   <code>extractGraph(documents)</code> lives in <code>extract-graph.ts</code>, beside this file, and all
@@ -405,20 +384,19 @@
   <code>data:</code> URL, and a <code>data:</code> URL module has no base to resolve an
   <code>import</code> against, so an audit that imported anything would have broken the demo — the same
   reasoning
-  <a data-rel="elaborates" href="../knowledge/2026-07-24-duplicate-not-share-loadcheck.decision.html">duplicate-not-share-loadcheck</a>
+  <a data-rel="elaborates" href="../notebook/duplicate-not-share-loadcheck.observation.html">duplicate-not-share-loadcheck</a>
   gave for a smaller case. With the demo gone the constraint goes, and the copies with it. See
   <a data-rel="elaborates" href="../specs/2026-08-01-script-type-decides-the-language.spec.html">the spec</a>
   for why this became a file rather than a script carrying an <code>id</code>.
 </p>
-
 <h2>Authoring commands</h2>
 <p>
-  <code>add</code> and <code>link</code>, declared once for the whole family &mdash; see
+  <code>add</code> and <code>link</code>, declared once for the whole family — see
   <a href="../specs/2026-07-23-mycelium-authoring-commands.spec.html">the design spec</a> for why this is
   one script per template file rather than one per command or per type, and why
   <code>type="mycelium/command"</code> instead of <code>type="module"</code>. Never run in a browser: no
   live demo below, unlike every <code>data-audits</code> script above. Each
-  command's own <code>/** &hellip; */</code> comment is its only documentation &mdash;
+  command's own <code>/** … */</code> comment is its only documentation —
   <code>mycelium knowledge --help</code> (or an unrecognized command) prints every exported command's
   name and doc comment straight from this file, so the usage shown here and the usage the CLI reports can
   never drift apart.
@@ -1079,11 +1057,8 @@
     console.log(`open: file://${resolvePath('./docs', outPath)}`)
   }
 </script>
-
 <h2>Conformance</h2>
 <pre><code>&lt;knowledge-goal data-conforms-to="../templates/knowledge.template.html#knowledge-goal"&gt;
-  &hellip;
+  …
 &lt;/knowledge-goal&gt;</code></pre>
-
-</body>
-</html>
+</body></html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Mycelium's HTML-as-substrate traces to rg's motion-engine specs, not independent convergence</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Mycelium's HTML-as-substrate traces to rg's motion-engine specs, not independent convergence</notebook-title>
+  <notebook-detail><p>The idea for mycelium came directly from working on rg's gesture/camera motion
+engine: while writing the .html specs for that engine, they turned out to be
+expressive enough — self-contained, addressable, diagram-capable, dark/light
+themed, viewable with no build step — that the format itself suggested the
+project. This was not abstract reasoning about hypertext's qualities arrived
+at separately; the motion-engine specs were the concrete thing that prompted
+it.</p>
+<p>That reframes
+<a href="./v4-rg-convergent-backlink-design.observation.html">v4 and rg's proposed ADR-0018 independently converged on the same two link-protocol moves</a>.
+The shared moves (typed self-declaration, backlinks computed rather than
+stored) aren't parallel discovery — v4's html-as-substrate choice descends
+from encountering rg's specs in the first place.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./html-as-store.observation.html">names why HTML became the canonical store, not just what followed from it</a>
+  <a data-rel="contradicts" href="./v4-rg-convergent-backlink-design.observation.html">descent from rg's specs, not independent convergence</a>
+</notebook-observation>
+</body></html>

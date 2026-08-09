@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Generic schema check runs first; hand-written validator functions become optional</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Generic schema check runs first; hand-written validator functions become optional</notebook-title>
+  <notebook-detail><p>The generic schema check runs first — required/pattern/enum/allowed-fields read off the template. A hand-written validator-function becomes optional, additive validation only, for logic the schema vocabulary can't express.</p>
+<p>I reviewed all seven current <code>check()</code> functions, the six <code>knowledge-*</code> types plus spec-doc. Every rule in every one of them is already expressible via required/pattern/enum plus the field list itself: required fields, confidence's 0-100 range, status's enum, the "optional field present but empty" rule, the unexpected-extra-tag check. So in practice this resolves to full replace, and all seven hand-written functions go once their templates carry the equivalent attributes.</p>
+<p>Construction loses nothing here, rather than policy losing it. A future type that genuinely needs logic beyond the schema vocabulary can still add a <code>data-validates</code> script, which the crawler would then run in addition to the generic check rather than instead of it.</p>
+</notebook-detail>
+</notebook-observation>
+</body></html>

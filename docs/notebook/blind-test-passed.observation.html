@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outcome: Blind test passed: a cold call beat a careful hand pass and retired the top design risk</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Blind test passed: a cold call beat a careful hand pass and retired the top design risk</notebook-title>
+  <notebook-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23.</em></p>
+<p>A cold <code>claude -p</code> — one prompt, one file
+(<code>event-store.ts</code>), no session context — produced <strong>29
+propositions, 14 gaps and 8 contradictions</strong>.</p>
+<p>It beat a careful hand pass: it found 7 of the 8 findings from that pass, plus
+several it missed, often sharper. One was <strong>confirmed by test</strong> — a
+confidence transition is re-materialized as a status on rebuild, so a node's
+status literally becomes <code>'95'</code>.</p>
+<p>The design's top open risk — can an LLM produce propositions with
+teeth — is retired. The answer is yes.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./evidence-for-the-harness-reframe.observation.html">the decisive third piece of evidence: a cold bounded call</a>
+</notebook-observation>
+</body></html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outcome: The canon family checks its own worked examples, and nothing else yet</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>The canon family checks its own worked examples, and nothing else yet</notebook-title>
+  <notebook-detail><p>The plan's four tasks all finished, and every step passes its own check. The
+template declares three types, the authoring commands write them, and
+<code>grounded</code>, <code>exhaustive</code> and <code>cited</code> run under
+<code>mycelium validate</code> with no engine change: the crawler found them
+because they carry the same attributes every other audit does.</p>
+<p>Those three checks currently reach the template's own worked examples and
+nothing else. <code>docs/canon/</code> does not exist. The corpus holds no
+axiom, no specification and no behaviour outside the samples, and this
+repository ships no tests and no test runner, so the citation reader finds zero
+citations in real source.</p>
+<p>So each check demonstrably fires and demonstrably passes, which is the most a
+worked example can establish, and none of them has yet met a claim somebody
+meant. Each sample fails its own check on purpose and each check declares that
+failure in <code>data-expects</code>, so a check that stops working fails the
+build rather than going quiet.</p>
+<p>What remains is the reading, not more tooling: writing the axioms this
+project actually holds, the specifications for the subsystems it has, and the
+tests that cite them. The design already names that as the cost, and says a
+broad axiom nobody has read down into a subsystem looks exactly like one that
+does not apply.</p>
+</notebook-detail>
+</notebook-observation>
+</body></html>

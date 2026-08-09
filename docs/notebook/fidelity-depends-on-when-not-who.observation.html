@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A record's fidelity depends on when it appeared, not on who typed it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>A record's fidelity depends on when it appeared, not on who typed it</notebook-title>
+  <notebook-detail><p>An agent writing a commit message at the moment of the change has the
+conversation, the reasoning and the diff in view. That is capture, not forensics.
+A terse human message someone dashed off in a hurry is the lossy one.</p>
+<p>This corpus shows the break plainly. Repositories starting between 2023 and 2025
+average 48 to 66 characters a message. Those starting in 2026 average 96 to 242.
+Authorship changed, and discipline did not.</p>
+<p>So a machine-authored history is primary evidence rather than a later summary,
+and deriving from it is not circular.</p>
+<p>One failure mode survives. A contemporaneous message that was confidently wrong
+misleads every later reader, and they all agree, so the region reads as well
+documented. Thin evidence announces itself as disagreement. This does not.</p>
+<p>That bounds
+<a href="./thin-record-has-more-than-one-reading.observation.html">the claim that spread
+measures loss</a>. Spread measures loss only when the readings look at primary
+evidence. Several readings of one confident summary agree for the wrong reason.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./thin-record-has-more-than-one-reading.observation.html">the condition spread needs to measure anything: primary evidence, not one shared summary</a>
+  <a data-rel="depends_on" href="./several-readings-kept-apart.observation.html">lenses are not independent if they all read the same contemporaneous summary</a>
+</notebook-observation>
+</body></html>

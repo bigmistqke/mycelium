@@ -20,7 +20,7 @@
 </p>
 <p>
   That is not a gap waiting to be filled by the obvious next commit. It is the same shape as
-  <a href="../knowledge/2026-07-30-validate-never-gated.observation.html">validate reported
+  <a href="../notebook/validate-never-gated.observation.html">validate reported
   failures and exited zero</a>: a mechanism that reads as enforcement while enforcing nothing.
   The field states an intention in the grammar of a capability.
 </p>
@@ -37,7 +37,7 @@
   Limited, and ours. An external style guide has more rules than this project will ever write by
   hand, but importing three hundred of them produces a hand-maintained copy of somebody else's
   list, which is precisely the failure
-  <a href="../knowledge/2026-07-31-hand-copied-command-list-reads-as-absence.observation.html">a
+  <a href="../notebook/hand-copied-command-list-reads-as-absence.observation.html">a
   readers treat a hand-copied command list as the whole tool</a> records. A small ruleset authored here
   has no upstream and therefore cannot drift from one.
 </p>
@@ -59,7 +59,7 @@
 <h3>A check takes text, not documents</h3>
 <p>
   A rule and an audit ask different kinds of question, and
-  <a href="../knowledge/2026-07-31-language-rules-check-strings.observation.html">the distinction</a>
+  <a href="../notebook/language-rules-check-strings.observation.html">the distinction</a>
   decides the whole shape. An audit asks something about a set of documents: is every outcome linked
   to, is anything an orphan. A rule about writing asks something about a string.
 </p>
@@ -86,14 +86,14 @@
 <p>
   Nothing calls it from inside another family. Wiring it into
   <code>knowledge add</code> would be the first cross-family import in the system;
-  <a href="../knowledge/2026-07-31-lint-stays-out-of-other-families.decision.html">the decision
+  <a href="../notebook/lint-stays-out-of-other-families.observation.html">the decision
   against it</a> has the test that settles it and the reason the cost is only immediacy. The
   coupling belongs in a skill or a hook, which already compose commands.
 </p>
 <p>
   A general <code>mycelium lint</code> with a script type the engine recognises would let any family
   contribute rules.
-  <a href="../knowledge/2026-07-31-option-mycelium-lint-script-type.option.html">Deferred with a
+  <a href="../notebook/option-mycelium-lint-script-type.observation.html">Deferred with a
   condition</a>: a second family wanting to contribute, because a protocol with one participant
   coordinates nothing.
 </p>
@@ -143,7 +143,7 @@
 </tbody></table>
 <p>
   Title length is absent because it is no longer a candidate. It is
-  <a href="../knowledge/2026-07-31-move-title-limit-into-schema.action.html">a
+  <a href="../notebook/move-title-limit-into-schema.observation.html">a
   <code>pattern</code> on the field</a>, which is where a check goes when the schema can already
   express it.
 </p>
@@ -203,7 +203,7 @@
   <li>
     <strong>Whether corpus linting joins <code>validate</code> immediately.</strong> Gating across
     277 existing documents fails on the first run.
-    <a href="../knowledge/2026-07-30-gate-on-shape-not-rate.decision.html">Gate on node shape, not
+    <a href="../notebook/gate-on-shape-not-rate.observation.html">Gate on node shape, not
     on logging rate</a> is the nearest precedent and suggests gating only what we write after now, but
     "newly written" needs a definition that does not depend on git, which a reader of the graph
     cannot follow.

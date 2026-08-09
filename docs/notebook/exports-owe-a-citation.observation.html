@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option: An exported declaration owes a citation, and an internal one may carry one</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>An exported declaration owes a citation, and an internal one may carry one</notebook-title>
+  <notebook-detail><p>Rejected. It borrowed a boundary from another project, where in-scope suites
+are listed explicitly and the unit that owes a citation is a test.</p>
+<p>Exports are the wrong boundary here. <code>figure.element.js</code> exports
+nothing and answers twelve behaviours; <code>comments.command.html</code> exports
+two functions whose real claims sit in <code>cutRange</code>,
+<code>verdictPrompt</code> and <code>isRosterDoc</code>. The rule would have put
+five citations on one entry point and none on the code answering them.</p>
+<p>It also pointed the obligation the wrong way. Coverage measured from the code
+asks which functions somebody remembered to tag; measured from the claim it asks
+whether anything implements what the canon promises.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./citation-binds-to-a-declaration.observation.html">the decision that rejected it</a>
+</notebook-observation>
+</body></html>

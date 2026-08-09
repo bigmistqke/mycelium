@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Axiom and specification share one family file</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Axiom and specification share one family file</notebook-title>
+  <notebook-detail><p>The axiom and the specification go in one <code>canon.template.html</code>,
+holding a template per type, rather than in a file each.</p>
+<p>This is the convention already in place. <code>knowledge.template.html</code>
+holds six types and <code>plan.template.html</code> holds four, in both cases
+because the types only mean anything together. An axiom that adjudicates nothing
+and a specification with nothing above it are each half an idea; the chain is
+the object, and a family file is how this project writes an object with parts.</p>
+<p>The family answered to <code>derivation</code> while this decision got made,
+a name <a href="./tests-cite-not-modeled-as-nodes.observation.html">tests
+cite, they are not nodes</a> had already used in July. It became
+<code>canon</code> once the tags went on a page and read badly:
+<q>derivation</q> names the relation between one rung and the next, so the
+compound put two abstractions together with no picture behind either.</p>
+<p>What this gives up: a file called <code>specification.template.html</code>
+announces the weight of the thing it defines, and <code>canon-specification</code>
+does not. The word carries that weight instead, spelled out and never shortened,
+which the <a href="../language/terms/specification.term.html">term entry</a> now
+records.</p>
+<p>A subdirectory grouping the two was the third option. The engine would resolve
+it — <code>findTemplateFile</code> matches a suffix anywhere under the tree — but
+nothing else would read it, and a folder that groups for a reader alone is the
+split by subject that
+<a href="../templates/language.template.html">language.template.html</a> avoided
+when it separated terms from rules by type.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./methodology-in-our-own-codebase.observation.html">where the chain's types live</a>
+</notebook-observation>
+</body></html>

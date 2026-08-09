@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Reject a dated slug in the create commands, and name the argument undated everywhere it appears</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Reject a dated slug in the create commands, and name the argument undated everywhere it appears</notebook-title>
+  <notebook-detail><p>Both <code>add</code> commands build their filename as <code>&lt;date&gt;-&lt;slug&gt;</code>, so a slug that already carried a date got a second one prepended — <code>2026-07-31-2026-07-31-how-and-why</code>. Hit for real while logging the controlled-natural-language entry.</p>
+<p>Nothing caught it, and nothing could have. The node's contents are correct; only its name is wrong, so every validator passes and <code>validate</code> stays green. The doubled prefix survives until somebody reads a directory listing. This is the failure shape worth noting: a check that inspects contents cannot see a mistake that lives entirely in the filename.</p>
+<p>Both commands now reject a slug matching <code>^\d{4}-\d{2}-\d{2}-</code> and name the slug to pass instead; the knowledge one also names <code>--date</code>, since writing a date into the slug usually means backdating was intended. Neither writes anything before rejecting — verified by running both rejection paths and confirming no file appeared.</p>
+<p>The documentation change alongside it is the part that should prevent recurrence. The signature now reads <code>--file &lt;undated-slug&gt;</code> rather than <code>--file &lt;slug&gt;</code>, in the two command docstrings and in CLAUDE.md, and states a distinction that was never written down. The command <code>add</code> takes a slug you invent, while <code>link</code> and <code>update</code> take a whole existing filename with its date and <code>.&lt;type&gt;.html</code> suffix. The convention's own ubiquity is what makes the error easy — a dated slug looks like it is obeying the rule everything else here follows.</p>
+<p>This is the same argument CLAUDE.md already makes about <code>--detail</code>: an agent copies the signature, not the prose. The prose describing <code>--file</code> was accurate before this change, and it did not prevent the mistake.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./unify-knowledge-graph-fix-harness.observation.html">fixes one piece of the harness: a create command that silently accepted a malformed filename</a>
+</notebook-observation>
+</body></html>

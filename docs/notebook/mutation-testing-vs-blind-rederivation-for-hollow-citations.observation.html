@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Structural citation drift closes deterministically; hollow citations need mutation testing or blind re-derivation</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Structural citation drift closes deterministically; hollow citations need mutation testing or blind re-derivation</notebook-title>
+  <notebook-detail><p>Structural derivation drift — missing, broken, or dangling citations — is closable <strong>deterministically</strong>. A <em>hollow</em> citation is not: it needs one of two further checks.</p>
+<ul>
+  <li><strong>Mutation testing scoped to the cited rule</strong> — deterministic, catches decorative or vacuous citations.</li>
+  <li><strong>An independent blind re-derivation check by a second agent</strong> — probabilistic, catches drift within genuinely-coupled tests.</li>
+</ul>
+</notebook-detail>
+  <a data-rel="leads_to" href="./formal-claims-relocate-not-remove-trust-gap.observation.html">pushes toward what full semantic verification would actually require</a>
+</notebook-observation>
+</body></html>

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Template: language-term and language-rule</title>
@@ -8,14 +7,13 @@
 <link rel="stylesheet" href="./language.template.css">
 </head>
 <body>
-
 <h1>Template: language-term, language-rule</h1>
 <div class="meta">
   <div><b>Node types:</b> <code>language-term</code>, <code>language-rule</code></div>
   <div><b>File naming:</b> this file is <code>language.template.html</code>, named after the
     <code>language-*</code> family rather than either type in it. Instances are
     <code>../language/terms/&lt;slug&gt;.term.html</code> and
-    <code>../language/rules/&lt;slug&gt;.rule.html</code>, with <b>no date prefix</b> &mdash; see
+    <code>../language/rules/&lt;slug&gt;.rule.html</code>, with <b>no date prefix</b> — see
     below, this is the one place this family departs from its siblings</div>
   <div><b>Purpose:</b> hold this project's writing rules and its terms of art as documents, so that
     the language every other family writes in is itself part of the corpus</div>
@@ -26,13 +24,12 @@
   <div><b>Styling:</b> <code>./language.template.css</code>, plus the shared
     <code>../theme.css</code> every document links</div>
 </div>
-
 <h2>Why this template exists</h2>
 <p>
   Every family here fixes the shape of a document and checks it. Nothing fixes the sentences. The
-  rules for those exist, but they live where the repository cannot see them &mdash; a
+  rules for those exist, but they live where the repository cannot see them — a
   commit-message skill, a personal memory note, prose scattered through <code>CLAUDE.md</code>, and
-  the corpus itself by example &mdash; and rules in that state are not followed. The
+  the corpus itself by example — and rules in that state are not followed. The
   <a data-rel="specifies" href="../specs/2026-07-31-language-template-html.spec.html">spec</a>
   has the evidence and the measurements; this file is the shape that follows from it.
 </p>
@@ -41,7 +38,6 @@
   meaning each. Technical vocabulary is explicitly left for each project to supply. Those two parts
   are the two types below.
 </p>
-
 <h2>Two types, because a rule and a word are not the same object</h2>
 <p>
   A <code>language-rule</code> is a rule about writing, and its load-bearing content is a pair of
@@ -54,16 +50,15 @@
   <code>language-status</code>: a dictionary that only defines the words you should use documents
   the vocabulary without preventing anything. What stops drift is recording that
   <code>scaffolding</code> is <em>rejected</em> and points at <code>harness</code>. That is
-  ASD-STE100's actual mechanism &mdash; its dictionary is approved and not-approved pairs, not a
-  list of entries &mdash; and it is the half a glossary usually leaves out and then fails to
+  ASD-STE100's actual mechanism — its dictionary is approved and not-approved pairs, not a
+  list of entries — and it is the half a glossary usually leaves out and then fails to
   prevent anything.
 </p>
-
 <h2>No date prefix, unlike every other family here</h2>
 <p>
   <code>knowledge/</code> and <code>specs/</code> both prefix a filename with its date, and that
   prefix carries real meaning: it records which exploration a node belongs to, which is the argument
-  <a data-rel="depends_on" href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do not
+  <a data-rel="depends_on" href="../notebook/link-do-not-tag.observation.html">link, do not
   tag</a> leans on to show a separate topic vocabulary is unnecessary.
 </p>
 <p>
@@ -78,7 +73,7 @@
   rules interleave alphabetically otherwise, and nobody could read either list. This is a split by
   type, not by subject: a term goes with terms and a rule with rules, so there is no judgment to
   make on each entry. A split by subject would be one, which is the cost
-  <a data-rel="depends_on" href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do
+  <a data-rel="depends_on" href="../notebook/link-do-not-tag.observation.html">link, do
   not tag</a> refused for topic tags.
 </p>
 <p>
@@ -86,88 +81,83 @@
   place: every command that takes an existing entry derives the directory from the suffix, so a
   caller writes <code>harness.term.html</code> and never a path.
 </p>
-
 <h2>Shape</h2>
 <p>
   Both types share <code>language-title</code> and an optional free-form
   <code>language-detail</code>, the way every <code>knowledge-*</code> type shares
   <code>knowledge-title</code> and <code>knowledge-detail</code>. Fields carry the family prefix
   and not the type name, so <code>language-title</code> rather than
-  <code>language-term-title</code> &mdash; fields belong to the family.
+  <code>language-term-title</code> — fields belong to the family.
 </p>
 <p>
   For a term, the title is the word itself. For a rule, the title is the rule stated in one line.
 </p>
-
 <template id="language-term">
   <language-term>
-    <language-title required></language-title>
-    <language-part-of-speech required enum="noun verb adjective adverb phrase"></language-part-of-speech>
-    <language-meaning required>
-      <a repeatable href=".+"></a>
+    <language-title required=""></language-title>
+    <language-part-of-speech required="" enum="noun verb adjective adverb phrase"></language-part-of-speech>
+    <language-meaning required="">
+      <a repeatable="" href=".+"></a>
     </language-meaning>
     <language-avoid></language-avoid>
     <language-detail>
-      <p repeatable markup></p>
+      <p repeatable="" markup=""></p>
     </language-detail>
-    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+    <a repeatable="" href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </language-term>
 </template>
 <pre><code>&lt;language-term&gt;
   &lt;language-title&gt;harness&lt;/language-title&gt;
   &lt;language-part-of-speech&gt;noun&lt;/language-part-of-speech&gt;
-  &lt;language-meaning&gt;&hellip; one sentence &hellip;&lt;/language-meaning&gt;
+  &lt;language-meaning&gt;… one sentence …&lt;/language-meaning&gt;
   &lt;language-avoid&gt;utilize, leverage&lt;/language-avoid&gt;
-  &lt;language-detail&gt;&hellip; optional, free-form &hellip;&lt;/language-detail&gt;
+  &lt;language-detail&gt;… optional, free-form …&lt;/language-detail&gt;
   &lt;a data-rel="alternative_to" href="./harness.term.html"&gt;use this instead&lt;/a&gt;
 &lt;/language-term&gt;</code></pre>
-
 <template id="language-rule">
   <language-rule data-validates="^(all|html|markdown|javascript(/(comment|jsdoc))?)( +(all|html|markdown|javascript(/(comment|jsdoc))?))*$">
-    <language-title required></language-title>
-    <language-pass required>
-      <p repeatable markup></p>
+    <language-title required=""></language-title>
+    <language-pass required="">
+      <p repeatable="" markup=""></p>
     </language-pass>
-    <language-fail required>
-      <p repeatable markup></p>
+    <language-fail required="">
+      <p repeatable="" markup=""></p>
     </language-fail>
     <language-detail>
-      <p repeatable markup></p>
+      <p repeatable="" markup=""></p>
     </language-detail>
-    <script required></script>
-    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+    <script required=""></script>
+    <a repeatable="" href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </language-rule>
 </template>
-
 <template id="language-guide">
   <language-guide>
-    <language-title required></language-title>
-    <language-pass required>
-      <p repeatable markup></p>
+    <language-title required=""></language-title>
+    <language-pass required="">
+      <p repeatable="" markup=""></p>
     </language-pass>
-    <language-fail required>
-      <p repeatable markup></p>
+    <language-fail required="">
+      <p repeatable="" markup=""></p>
     </language-fail>
     <language-detail>
-      <p repeatable markup></p>
+      <p repeatable="" markup=""></p>
     </language-detail>
-    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+    <a repeatable="" href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </language-guide>
 </template>
 <pre><code>&lt;language-rule data-validates="html markdown"&gt;
-  &lt;language-title&gt;&hellip; the rule, in one line &hellip;&lt;/language-title&gt;
-  &lt;language-pass&gt;&hellip; an example that passes &hellip;&lt;/language-pass&gt;
-  &lt;language-fail&gt;&hellip; an example that fails &hellip;&lt;/language-fail&gt;
-  &lt;language-detail&gt;&hellip; optional, free-form &hellip;&lt;/language-detail&gt;
-  &lt;script type="mycelium/rule"&gt;export function check(text) { &hellip; }&lt;/script&gt;
+  &lt;language-title&gt;… the rule, in one line …&lt;/language-title&gt;
+  &lt;language-pass&gt;… an example that passes …&lt;/language-pass&gt;
+  &lt;language-fail&gt;… an example that fails …&lt;/language-fail&gt;
+  &lt;language-detail&gt;… optional, free-form …&lt;/language-detail&gt;
+  &lt;script type="mycelium/rule"&gt;export function check(text) { … }&lt;/script&gt;
 &lt;/language-rule&gt;
 
 &lt;language-guide&gt;   &lt;!-- same fields, no script --&gt;
-  &lt;language-title&gt;&hellip; the guidance, in one line &hellip;&lt;/language-title&gt;
-  &lt;language-pass&gt;&hellip;&lt;/language-pass&gt;
-  &lt;language-fail&gt;&hellip;&lt;/language-fail&gt;
+  &lt;language-title&gt;… the guidance, in one line …&lt;/language-title&gt;
+  &lt;language-pass&gt;…&lt;/language-pass&gt;
+  &lt;language-fail&gt;…&lt;/language-fail&gt;
 &lt;/language-guide&gt;</code></pre>
-
 <h2>What each field is for</h2>
 <p>
   <code>language-meaning</code> is one sentence, and <code>language-detail</code> is free-form.
@@ -175,7 +165,7 @@
   make, applied here for the same reason: a term needs a line you can scan in a list of forty, and
   separately it often needs its boundary drawn against a neighbouring term, which does not fit on
   that line. Putting both in one field produces what
-  <a data-rel="depends_on" href="../knowledge/2026-07-30-container-per-fact.observation.html">a node
+  <a data-rel="depends_on" href="../notebook/container-per-fact.observation.html">a node
   should carry a claim, not an incident</a> warns against, and what actually happened on
   2026-07-27, when eight nodes averaged 415 characters of title because the field for the rest of
   the thought went unused.
@@ -191,7 +181,7 @@
   <code>language-checkable</code>, and within two hours it was wrong on one entry: a rule marked
   as undecidable when the truth was that a machine cannot settle it but can flag every candidate.
   Eight entries declared themselves checkable while no check existed anywhere. See
-  <a data-rel="depends_on" href="../knowledge/2026-07-31-derive-enforceability-from-check.decision.html">derive
+  <a data-rel="depends_on" href="../notebook/derive-enforceability-from-check.observation.html">derive
   enforceability from the check</a>.
 </p>
 <p>
@@ -209,10 +199,9 @@
   A rejected term points at its replacement with an ordinary
   <code>&lt;a data-rel="alternative_to"&gt;</code>. That is not enforced here. The schema can require
   a field, but "a rejected term must link to an approved one" is a property of a pair of documents,
-  which makes it an audit rather than a validator &mdash; and audits are the next pass, not this
+  which makes it an audit rather than a validator — and audits are the next pass, not this
   one.
 </p>
-
 <h2>Validator</h2>
 <p>
   Validation is handled by the generic validator in <code>template.template.html</code>, using the
@@ -220,10 +209,9 @@
   <code>data-validates</code> script: every rule either type needs (required fields, two enums, and
   the closed field list that rejects a rule's field appearing on a term) is already expressible in
   that vocabulary, which is the arrangement
-  <a data-rel="depends_on" href="../knowledge/2026-07-25-schema-first-then-optional-validator-function.decision.html">schema
+  <a data-rel="depends_on" href="../notebook/schema-first-then-optional-validator-function.observation.html">schema
   first, validator function optional</a> settled.
 </p>
-
 <div class="worked-example">
   <h4>A worked example</h4>
   <p>
@@ -235,24 +223,22 @@
     <code>data-conforms-to</code> the same way it finds every instance in the corpus, so they are checked
     on every run and this file fails if one stops conforming.
   </p>
-
   <div id="sample-instance">
     <language-term data-conforms-to="../templates/language.template.html#language-term">
-      <language-title>scaffolding</language-title>
-      <language-part-of-speech>noun</language-part-of-speech>
-      <language-meaning>Not used here; the word for what shapes an agent's behaviour is harness.</language-meaning>
-      <a data-rel="alternative_to" href="../language/terms/harness.term.html">harness</a>
-    </language-term>
-
+  <language-title>scaffolding</language-title>
+  <language-part-of-speech>noun</language-part-of-speech>
+  <language-meaning>Not used here; the word for what shapes an agent's behaviour is harness.</language-meaning>
+  <a data-rel="alternative_to" href="../language/terms/harness.term.html">harness</a>
+</language-term>
     <language-rule data-validates="all" data-conforms-to="../templates/language.template.html#language-rule">
-      <language-title>Spell every term out; do not abbreviate.</language-title>
-      <language-pass>The generic validator reads the schema attributes on the template.</language-pass>
-      <language-fail>The generic validator reads the schema attrs on the tmpl.</language-fail>
-      <language-detail>
+  <language-title>Spell every term out; do not abbreviate.</language-title>
+  <language-pass>The generic validator reads the schema attributes on the template.</language-pass>
+  <language-fail>The generic validator reads the schema attrs on the tmpl.</language-fail>
+  <language-detail>
         <p>Taken from the commit-message rules, where it exists because a commit has to be
           readable by someone who was not present when the author wrote it.</p>
       </language-detail>
-      <script>
+  <script>
         const SHORT = ['attrs', 'tmpl', 'repo', 'info']
         export function check(text) {
           return SHORT
@@ -260,29 +246,26 @@
             .map((word) => ({ excerpt: word, message: `write ${word} out in full` }))
         }
       </script>
-    </language-rule>
-
+</language-rule>
     <language-guide data-conforms-to="../templates/language.template.html#language-guide">
-      <language-title>Lead with the fact, not the setup for the fact.</language-title>
-      <language-pass>Thirteen of fourteen terms appear in all three families.</language-pass>
-      <language-fail>Before getting to the numbers, it is worth setting out how the
+  <language-title>Lead with the fact, not the setup for the fact.</language-title>
+  <language-pass>Thirteen of fourteen terms appear in all three families.</language-pass>
+  <language-fail>Before getting to the numbers, it is worth setting out how the
         measurement was done and why it matters.</language-fail>
-      <language-detail>
+  <language-detail>
         <p>A guide carries no check, which is the whole difference between the two types.
           Whether a person has led with the fact is a question about what they were trying
           to do, and no pattern decides it.</p>
       </language-detail>
-    </language-guide>
+</language-guide>
   </div>
-
 </div>
-
 <h2>Authoring commands</h2>
 <p>
   The same <code>type="mycelium/command"</code> convention
   <a href="./knowledge.template.html">knowledge.template.html</a> and
   <a href="./spec.template.html">spec.template.html</a> already use, and each command's own
-  <code>/** &hellip; */</code> comment is its only documentation, so
+  <code>/** … */</code> comment is its only documentation, so
   <code>mycelium language --help</code> and the usage shown here can never drift apart.
 </p>
 <p>
@@ -290,7 +273,7 @@
   <code>spec.template.html</code>, because this family has a real edge to draw: a rejected term
   points at its replacement. A family that can create an edge and not remove one leaves a wrong
   edge standing until someone hand-edits a file, which
-  <a data-rel="depends_on" href="../knowledge/2026-07-31-hand-copied-command-list-reads-as-absence.observation.html">the
+  <a data-rel="depends_on" href="../notebook/hand-copied-command-list-reads-as-absence.observation.html">the
   session that added the command roster</a> ran into directly.
 </p>
 <script type="mycelium/command">
@@ -1399,7 +1382,6 @@
     }
   }
 </script>
-
 <h2>The audit that runs the rules</h2>
 <p>
   The audit runs every rule carrying a <code>&lt;script&gt;</code> against the prose of every document.
@@ -1633,16 +1615,14 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
-
 <h2>Conformance</h2>
 <p>
   Conformance is declared as a <code>data-conforms-to</code> attribute on the element making the
   claim, the same as every other family here, and it names one of the two fragments above:
 </p>
 <pre><code>&lt;language-term data-conforms-to="../templates/language.template.html#language-term"&gt;
-  &hellip;
+  …
 &lt;/language-term&gt;</code></pre>
-
 <h2>What this pass does not do</h2>
 <p>
   There is no audit yet. Nothing reads these entries and checks a document against them, nothing
@@ -1652,6 +1632,4 @@
   text it reads, and whether the six <code>data-rel</code> labels move into this family. This file
   is the shape entries take, so that there are entries to answer those questions with.
 </p>
-
-</body>
-</html>
+</body></html>

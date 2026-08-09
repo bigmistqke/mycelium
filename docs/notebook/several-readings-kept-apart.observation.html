@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Read it several times through different lenses, and do not merge the results</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Read it several times through different lenses, and do not merge the results</notebook-title>
+  <notebook-detail><p>One reading of a history gives one answer, with no way to tell how much of it
+the evidence carried. Several independent readings give that, because agreement and
+disagreement both become visible.</p>
+<p>Repeating the same reading is close to useless. It samples the same bias
+several times and returns the same answer, which looks like agreement and is not.
+The readings have to differ in what they look at.</p>
+<p>Four lenses that genuinely differ: what changed in the code, who changed it and
+when, what broke afterwards, and what the surrounding issue or pull request said.
+Each one is blind to what the others see.</p>
+<p>Do not merge the results. Union gives noise and intersection gives the obvious.
+The disagreement has to survive as disagreement, because it carries the
+information.</p>
+<p>Judgement belongs only where the readings diverge. So the primary output is a
+list of the places the machine could not settle, and the graph is what falls out of
+settling them.</p>
+<p>Not all disagreement means thin evidence. Some of it is one reading being
+careless. The test is whether it survives more effort, since disagreement that
+resolves when a reader looks harder was sloppiness, and disagreement that persists
+is the artefacts staying silent.</p>
+<p>This multiplies the expensive step. Reading a diff and judging what it meant is
+already the part that does not scale over a large repository, and this asks for it
+several times over. So several readings is something to spend where the answer
+matters, not a default for every commit.</p>
+<p>How many readings before disagreement means anything stays open. Two that
+disagree tell you almost nothing. How many genuinely different lenses point at the
+same artefact probably decides the number, rather than picking a count up front.</p>
+<p>Agreement across independent readings is a quantity. That is something the
+confidence field could hold and currently does not, since today it is a number one
+model picks and nothing reads.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./thin-record-has-more-than-one-reading.observation.html">a way to work with a reconstruction the evidence does not settle</a>
+  <a data-rel="supports" href="./the-deliverable-is-the-question-set.observation.html">where the readings disagree is where the questions come from</a>
+</notebook-observation>
+</body></html>

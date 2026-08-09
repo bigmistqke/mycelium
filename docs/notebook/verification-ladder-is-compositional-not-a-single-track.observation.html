@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: The verification ladder is compositional: real systems layer it across slices, not pick one rung</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>The verification ladder is compositional: real systems layer it across slices, not pick one rung</notebook-title>
+  <notebook-detail><p>Example-based tests, property-based tests, model checking, and theorem proving trade a <em>widening guarantee</em> for a <em>narrowing scope</em> of property they can even attempt:</p>
+<ul>
+  <li><strong>example-based tests</strong> — one input;</li>
+  <li><strong>property-based tests</strong> — a large random sample;</li>
+  <li><strong>model checking</strong> — an exhaustive-but-abstracted model;</li>
+  <li><strong>theorem proving</strong> — total certainty over the real code.</li>
+</ul>
+<p>A real system layers them across different slices rather than picking one.</p>
+<p>Mutation testing sits on a different axis entirely: it checks that existing tests are sensitive to injected bugs, rather than proving any property true.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./formal-claims-relocate-not-remove-trust-gap.observation.html">elaborates the escalating property-based/model-checking/theorem-proving ladder this observation names briefly</a>
+</notebook-observation>
+</body></html>

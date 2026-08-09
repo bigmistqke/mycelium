@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Every "the agent must remember to X" in the design is now a defect</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Every "the agent must remember to X" in the design is now a defect</notebook-title>
+  <notebook-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23, the consequence of the harness reframe.</em></p>
+<p>Each instance of "the agent must remember to X" gets inverted:</p>
+<ul>
+  <li>Claude must log decisions → <strong>the harness logs</strong>, extracting
+  from <code>claude -p</code> output.</li>
+  <li>Claude must cite the commit → <strong>the harness writes the commit</strong>.
+  The hook becomes a backstop rather than the mechanism.</li>
+  <li>Claude must maintain the graph → <strong>the graph is a side effect</strong>
+  of the protocol running.</li>
+</ul>
+<p>The gates stop being checks on Claude's homework and become steps in a pipeline
+that produces the artifact as it goes.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./mycelium-is-an-agentic-harness.observation.html">the consequence: each remember-to becomes a defect</a>
+</notebook-observation>
+</body></html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Derive progress from steps; keep rejected declared, because abandonment is an act</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Derive progress from steps; keep rejected declared, because abandonment is an act</notebook-title>
+  <notebook-detail><p>The four status values on <code>plan-task</code> and <code>plan-doc</code> are
+not the same kind of thing, and that is why storing all four rots.</p>
+<p>Three are progress, and progress is a fold over the steps:</p>
+<ul>
+  <li>every step completed → <code>completed</code></li>
+  <li>some completed → <code>active</code></li>
+  <li>none → <code>pending</code></li>
+</ul>
+<p>Nothing about those requires a human. Storing them creates a second source of
+truth that can disagree with the first, and the disagreement is silent.</p>
+<p>One is not derivable. <code>rejected</code> means somebody
+decided to abandon the work. No arrangement of steps implies it — a task with
+zero completed steps is <em>pending</em> if you still intend to do it and
+<em>rejected</em> if you don't, and the difference lives only in someone's head
+until they write it down.</p>
+<p>So the field survives, narrowed to the part that cannot be
+computed. <code>plan-status</code> becomes optional on doc and task,
+and its only legal value is <code>rejected</code>. Present means abandoned;
+absent means read the steps. A field that can only say the one thing the layer
+below cannot is the residue after derivation, not metadata.</p>
+<p>The same shape as the belonging/liveness split
+(<a href="./declare-belonging-derive-liveness.observation.html">that
+decision</a>), and it survives the objection that sank the tag half of it: this
+declaration is not recoverable from anywhere else, where belonging was already
+recoverable from the filename and the edges.</p>
+<p><code>plan-step</code> is untouched. Its two values are already the layer
+everything else folds from, and <code>check</code> sets them from real command
+exit codes rather than from anyone's memory.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./derive-plan-status.observation.html">the design the goal resolves to</a>
+  <a data-rel="supports" href="./status-derived-not-declared.observation.html">the same fold, one family over</a>
+</notebook-observation>
+</body></html>

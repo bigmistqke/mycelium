@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: The expectations attribute built today was rejected by name a week ago, and one objection still stands</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>The expectations attribute built today was rejected by name a week ago, and one objection still stands</notebook-title>
+  <notebook-detail><p>
+  <a href="../specs/2026-07-24-mycelium-validate-rename.spec.html">The validate rename spec</a> puts
+  <q>No data-audits-expect attribute</q> in its out-of-scope section and rejects it on two grounds.
+  Today we built that attribute as <code>data-expects</code>, and neither the decision nor the
+  commit knew the rejection existed.
+</p>
+<p>
+  The second objection is answered. It held that declaring expectations
+  <q>treats a structural problem (mixing fixture and real data in one check) as a bookkeeping
+  problem (reconciling two lists)</q>. It does the opposite in practice: the declaration turned each
+  fixture into an assertion, and the first thing it caught was a fixture that had stopped violating
+  the audit it existed to demonstrate. A filter cannot catch that, because a filter looks away.
+</p>
+<p>
+  The first objection stands. It held that
+  <q>a serialized array in an attribute string doesn't match this project's own convention that real
+  data lives as element content, not stringified into attributes</q>. That is exactly what
+  <code>data-expects="sample-observation"</code> is. The convention it names is real: fields are
+  elements everywhere else here, and this is a whitespace-separated list in an attribute.
+</p>
+<p>
+  Two things follow. The convention has a real exception now, and we should write it down as one
+  rather than leave it as an inconsistency nobody mentions. And the decision that rejected the filter
+  should say so against the spec that rejected the attribute, because a graph where two documents
+  disagree silently is worse than one where they contradict each other in the open.
+</p>
+</notebook-detail>
+  <a data-rel="contradicts" href="./audits-declare-expected-violations.observation.html">that decision built what this spec had rejected by name</a>
+</notebook-observation>
+</body></html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Use parse5 alone for HTML source positions, not jsdom or a domutils/css-select facade</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Use parse5 alone for HTML source positions, not jsdom or a domutils/css-select facade</notebook-title>
+  <notebook-detail><p>Autofix's HTML leaf-finding needed exact source offsets that <code>happy-dom</code> (the project's existing parser, via <code>cli.parseHTML</code>) does not track at all, so it fell back to searching for each element's serialized <code>outerHTML</code> with an advancing cursor and slicing tag boundaries by hand. Three ways to close that gap were weighed.</p>
+<p><code>jsdom</code> gives real source locations (<code>dom.nodeLocation(element)</code>) on a genuine, spec-compliant DOM, confirmed working in a spike, but pulls in around twenty dependencies for browser features (fetch, cookies, CSS color and layout, XML serialization) this project, a static-document tool, never touches. Swapping the shared <code>cli.parseHTML</code> to it would mean re-verifying every template and audit against a different DOM implementation for a capability nothing but autofix currently needs.</p>
+<p>A <code>parse5</code> + <code>parse5-htmlparser2-tree-adapter</code> + <code>domutils</code>/<code>css-select</code> stack (what <code>cheerio</code> itself uses internally) would give a real, tested selector engine at a fraction of that weight. Its functions are called as <code>domutils.querySelectorAll(selector, [node])</code>, not as methods on the node. Adopting it directly would require rewriting roughly 260 existing DOM call sites across every template, or building a facade class to preserve the current method-call shape. Either way it is still a second parsing and querying stack living alongside <code>happy-dom</code>, for a query capability <code>happy-dom</code>'s existing schema-validation machinery already provides correctly today.</p>
+<p>What autofix actually lacks is narrower than a new DOM: given an element <code>happy-dom</code> already found and validated, where is it, in bytes, in the specific source file. <code>parse5</code> alone, parsed with <code>sourceCodeLocationInfo: true</code> and read as a plain tree, answers exactly that. A plain tree means no DOM, no selector matching, since the leaf walk only tests tag membership against <code>BLOCK_TAGS</code>/<code>PROTECTED_TAGS</code>. A spike confirms exact <code>startTag</code>/<code>endTag</code> offsets. Since nothing is ever re-serialized, entities and unusual markup survive untouched with no round-trip risk. <code>happy-dom</code> keeps doing everything it already does, unchanged, everywhere in the project.</p>
+<p>This is exported as a small reusable utility rather than inlined into autofix alone. A second real consumer exists: a live editor diagnostic flagging a schema violation (a missing required child, for instance) in an open document. It would reuse the same existing <code>happy-dom</code>-based validation to find the problem, and would need exactly this same capability: position for an already-identified element to place the diagnostic.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./live-schema-diagnostics-for-template-elements.observation.html">the reusable position utility this goal will need</a>
+  <a data-rel="supports" href="./extend-autofix-corpus-html-leaf-paragraphs.observation.html">replaces that action's outerHTML-search implementation</a>
+</notebook-observation>
+</body></html>

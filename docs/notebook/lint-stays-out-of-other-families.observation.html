@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Linting is not protocol, so no family calls another family's lint</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Linting is not protocol, so no family calls another family's lint</notebook-title>
+  <notebook-detail><p>
+  Wiring <code>lint</code> into <code>knowledge add</code> and <code>spec add</code> would be the
+  first time a family imports another. Nothing here does that. Each family imports
+  <code>./shared.ts</code> and, in one case, a script in its own file. The only cross-file
+  dependency in the system is the engine reaching for
+  <code>template.template.html#validate-from-template</code>, and that is engine to protocol.
+</p>
+<p>
+  The test that settles it: <code>cli.validate</code> is handed to every command because conformance
+  is protocol and the engine owns it. Language rules are a project's choice of house style. Not
+  protocol. So the engine should not supply lint either, which also closes the workaround where the
+  engine wires it and the families stay ignorant.
+</p>
+<p>
+  What that costs is immediacy, not coverage. An audit extracting corpus prose catches every
+  violation that lands, at validate time, which is before a commit. Wiring it into
+  <code>add</code> would move the error earlier and catch nothing extra.
+</p>
+<p>
+  The coupling belongs in the harness. A skill or a hook already composes commands, so running
+  <code>language lint</code> on a draft before running <code>knowledge add</code> is that job,
+  and it keeps the dependency out of the corpus. Same layering as
+  <a href="./fix-incentives-before-guardrails.observation.html">fixing the read path before
+  the guardrail</a>: context first, blocking second.
+</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./language-rules-check-strings.observation.html">the reframe that made a standalone lint possible</a>
+</notebook-observation>
+</body></html>

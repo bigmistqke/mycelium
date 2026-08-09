@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Keep loadModule over the newly-written importRule when rebasing onto main</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Keep loadModule over the newly-written importRule when rebasing onto main</notebook-title>
+  <notebook-detail><p>Rebasing this branch onto main surfaced a real duplicate: main had
+independently fixed "a rule cannot import a library from a data: URL" the
+same day, by reusing <code>loadModule</code>, already present in
+<code>src/utils.ts</code>. This branch had fixed the identical problem by
+writing a new, near-identical helper, <code>importRule</code>, into a new
+file, <code>docs/templates/load-rule.ts</code> — same resolution shape,
+same locator logic, duplicated rather than reused.</p>
+<p>Kept main's <code>loadModule</code> and dropped <code>load-rule.ts</code>
+entirely, carrying forward only what <code>importRule</code> actually added
+beyond it: marking a rule's script <code>type="mycelium/rule"</code>, which
+is what makes the language server recognize it as TypeScript-eligible.
+Along the way, found and fixed a real bug in main's version: one of its two
+call sites resolved a rule's path against the literal string
+<code>'docs'</code> instead of the filesystem's own <code>root</code>,
+which only worked by coincidence of the process's working directory.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./rules-onto-the-module-hook.observation.html">the action this decision revises</a>
+</notebook-observation>
+</body></html>

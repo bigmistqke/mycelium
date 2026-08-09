@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Prior art for moving enforcement into the harness: Flue builds agents from hooks</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-research data-conforms-to="../templates/notebook.template.html#notebook-research">
+  <notebook-title>Prior art for moving enforcement into the harness: Flue builds agents from hooks</notebook-title>
+  <notebook-detail><p>
+  <a href="https://flueframework.com/">Flue</a> is an open TypeScript framework for
+  durable agents, by the author of Astro, running on a harness called Pi. Its
+  second version builds an agent out of hooks: the function returns its own
+  instructions, and <code>useAgentStart</code>, <code>useModel</code> and
+  <code>usePersistentState</code> compose what it does.
+</p>
+<p>
+  That first hook is the interesting one here. Every rule this project enforces
+  lives either in a shell hook configured outside the repository, or in a
+  <code>validate</code> run that fires once the work is finished. A hook a project
+  writes for itself, and versions with its own documents, is where a rule such as
+  "a family gets a spec before it gets a template" stops depending on somebody
+  remembering it.
+</p>
+<p>
+  Skills answer a second thing. Flue loads a skill from a markdown file when a task
+  calls for it, where this project's instructions load two hundred and fifty lines
+  every session whatever the work is. The rules that fire in practice are the ones
+  with a hook behind them, and the rest share a file too long to read closely.
+</p>
+<p>
+  Two parts do not carry across. Flue records a session as a durable stream that
+  survives a crash, and a transcript is not this graph: a node here is a decision
+  somebody chose to keep and link, not everything that happened. Reading the two as
+  the same thing would retire the graph in favour of a log.
+</p>
+<p>
+  And Flue builds with Vite and deploys to a cloud runtime, against a project whose
+  documents open from disk with no build step at all. That constraint is what made
+  <code>figure.element.js</code> a classic script. The documents would not change,
+  but the harness would bring a build this project has refused so far, which is a
+  choice to make rather than to drift into.
+</p>
+</notebook-detail>
+  <a data-rel="supports" href="./specs-and-plans-lapsed.observation.html">a harness that could carry the rule the lapse needs</a>
+</notebook-research>
+</body></html>

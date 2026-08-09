@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Template: figure-graph</title>
@@ -8,7 +7,6 @@
 <link rel="stylesheet" href="./figure.template.css">
 </head>
 <body>
-
 <h1>Template: figure-graph</h1>
 <div class="meta">
   <div><b>Types:</b> <code>figure-graph</code>, <code>figure-node</code>, <code>figure-edge</code></div>
@@ -20,7 +18,6 @@
   <div><b>Design:</b> <a href="../specs/2026-08-06-figure-template-html.spec.html">the spec</a>, which
     carries the two forms this replaced and what it still cannot do</div>
 </div>
-
 <h2>Why this template exists</h2>
 <p>
   Two forms of diagram went into <a href="../reports/2026-08-05-repl.report.html">the repl report</a> and
@@ -32,7 +29,6 @@
   The split between them is not really styling. It is whether the picture is still a document once you
   have it.
 </p>
-
 <h2>What this form buys that mermaid cannot</h2>
 <p>
   A node is a real element, so it can hold anything markup can hold. A box in a diagram can link to the
@@ -43,7 +39,6 @@
   invents a node, rendering a diagram that looks right and lies. That failure mode is the one this
   project cares about most, and closing it is most of the reason to build anything here.
 </p>
-
 <h2>A cell is structure, a pixel is not</h2>
 <p>
   A node declares which row and column it occupies and CSS grid places it. That is a coordinate, and it is
@@ -64,7 +59,6 @@
   padding box while <code>getBoundingClientRect</code> answers for the border box. Measuring against the
   wrong one drew every wire one border-width away from the box it had just measured.
 </p>
-
 <h2>Why a classic script, with no mycelium type</h2>
 <p>
   Every script type this project invented keeps the browser from running the script.
@@ -83,42 +77,35 @@
   registering an element is a global side effect whichever way the script arrives. There is no
   module-scoped version of this to give up.
 </p>
-
 <h2>Shape</h2>
-
 <template id="figure-graph">
   <figure-graph data-columns="^([0-9]+|(node|edge)( +(node|edge))*)$">
-    <figure-node repeatable conforms-to="#figure-node"></figure-node>
-    <figure-edge repeatable conforms-to="#figure-edge"></figure-edge>
+    <figure-node repeatable="" conforms-to="#figure-node"></figure-node>
+    <figure-edge repeatable="" conforms-to="#figure-edge"></figure-edge>
   </figure-graph>
 </template>
-
 <template id="figure-node">
-  <figure-node id=".+" data-at="^[0-9]+,[0-9]+$" markup>
+  <figure-node id=".+" data-at="^[0-9]+,[0-9]+$" markup="">
   </figure-node>
 </template>
-
 <template id="figure-edge">
-  <figure-edge from=".+" to=".+" data-back="?" markup>
+  <figure-edge from=".+" to=".+" data-back="?" markup="">
   </figure-edge>
 </template>
-
 <pre><code>&lt;figure-graph data-columns="3"&gt;
   &lt;figure-node id="system" data-at="1,1"&gt;
     &lt;a href="../../src/core.ts"&gt;createFileUrlSystem&lt;/a&gt;
   &lt;/figure-node&gt;
   &lt;figure-node id="blob" data-at="2,1"&gt;createFileUrl&lt;/figure-node&gt;
-  &lt;figure-edge from="system" to="blob"&gt;js &middot; ts&lt;/figure-edge&gt;
+  &lt;figure-edge from="system" to="blob"&gt;js · ts&lt;/figure-edge&gt;
 &lt;/figure-graph&gt;</code></pre>
-
 <p>
   <code>data-at</code> is <code>row,column</code>, both counting from one. The attribute constraints on
   those placeholders are the reserved-word form
-  <a href="../knowledge/2026-08-05-rule-declares-what-it-validates.decision.html">the schema grew
+  <a href="../notebook/rule-declares-what-it-validates.observation.html">the schema grew
   today</a>: a value is a pattern the instance must match, so a figure declaring
   <code>data-at="middle"</code> fails validation rather than rendering somewhere surprising.
 </p>
-
 <h2>What the schema checks, and what still escapes it</h2>
 <p>
   <code>repeatable</code> says a child may appear many times, and every occurrence meets the same checks.
@@ -130,18 +117,17 @@
   None of it reaches a real figure yet, because no <code>figure-graph</code> in this repository declares
   <code>data-conforms-to</code> at all. A figure lives inside a report or a design document rather than
   being one, and
-  <a href="../knowledge/2026-08-05-instance-inside-a-host-document.observation.html">an instance inside a
+  <a href="../notebook/instance-inside-a-host-document.observation.html">an instance inside a
   host</a> is a question this family opened and has not closed. Until it does, the three audits below are
   the only thing reading a figure.
 </p>
 <p>
   Two claims this section used to make were wrong, and
-  <a href="../knowledge/2026-08-06-schema-has-no-cardinality.observation.html">measuring the corpus</a>
+  <a href="../notebook/schema-has-no-cardinality.observation.html">measuring the corpus</a>
   corrected both. Plan documents never lost anything this way, because every task, step and check carries
   its own conformance and meets the validator on its own. And the first child of a kind was not the one
   that got checked here: no figure was checked at all.
 </p>
-
 <h2>Two kinds of column</h2>
 <p>
   <code>data-columns</code> names each column in order, and a column is either a <code>node</code> column
@@ -161,7 +147,6 @@
   <code>data-at</code> counts node columns only, so reserving an edge column never renumbers what a figure
   already declared.
 </p>
-
 <h2>A back edge says so, rather than being noticed</h2>
 <p>
   An edge that runs against the flow carries <code>data-back</code>. It is the only edge that carries
@@ -177,7 +162,6 @@
   Declaring it in the shape needed the optional marker, since every other attribute a placeholder names is
   one an instance must carry. <code>data-back="?"</code> is the whole use of that marker so far.
 </p>
-
 <h2>Edges into one box land at points of their own</h2>
 <p>
   Several edges reaching the same box share a lane, and that stays: giving each its own lane made three
@@ -195,7 +179,6 @@
   stops in mid-air. A chip is centred on its own landing, so half of it is what reaches towards the next
   one, and the landings sit at least that far apart. A box too narrow for that caps the spread instead.
 </p>
-
 <h2>An edge inside one row</h2>
 <p>
   Two boxes in the same row are peers, and an edge between them travels sideways rather than down. It runs
@@ -221,7 +204,6 @@
   column gap to run in, around twenty pixels, and a chip is wider than that. Sitting on the line, the label
   covered the whole edge including the arrowhead, so the picture stopped saying which way the relation ran.
 </p>
-
 <h2>Where a label may go</h2>
 <p>
   Every label lives in the gap its own edge crosses, and never over a box. A gap between two rows holds no
@@ -244,13 +226,11 @@
   the boxes. Covering a box is the failure worth preventing; crowding is a figure asking for more labels
   than it has room for.
 </p>
-
 <h2>The audits</h2>
 <p>
   Three checks. Every edge points at a node that exists in the same figure, every edge runs the direction it
   claims, and a peer edge reaches its neighbour without crossing a box.
 </p>
-
 <script type="mycelium/audit" data-audits="figure-edges-resolve" data-touches="figure-edge">
   import type { AuditFs } from "../../src/api.ts"
 
@@ -279,7 +259,6 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
-
 <script type="mycelium/audit" data-audits="figure-edges-run-the-way-they-claim" data-touches="figure-edge">
   import type { AuditFs } from "../../src/api.ts"
 
@@ -331,7 +310,6 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
-
 <script type="mycelium/audit" data-audits="figure-peer-edges-span-no-box" data-touches="figure-edge">
   import type { AuditFs } from "../../src/api.ts"
 
@@ -378,7 +356,6 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
-
 <h2>What this pass does not do</h2>
 <p>
   No layout engine. A node says which cell it sits in, and a figure whose shape does not suit a grid has
@@ -393,6 +370,4 @@
   No authoring command. Writing a figure means writing the markup, which is the state
   <code>knowledge</code> and <code>language</code> both started in.
 </p>
-
-</body>
-</html>
+</body></html>

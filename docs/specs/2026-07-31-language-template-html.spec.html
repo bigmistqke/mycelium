@@ -28,7 +28,7 @@
   Earlier, someone wrote eight nodes in one day that averaged 415 characters of title against 117 for
   the rest of the graph and used the detail field zero times — a shape failure no validator
   caught, because no validator was looking at prose. The pattern is the one
-  <a href="../knowledge/2026-07-31-hand-copied-command-list-reads-as-absence.observation.html">a
+  <a href="../notebook/hand-copied-command-list-reads-as-absence.observation.html">a
   readers treat a hand-copied command list as the whole tool</a> describes from a different angle:
   what the harness puts in front of the writer is what gets done, and a rule living
   somewhere the harness does not reach is a rule that is not in effect.
@@ -114,7 +114,7 @@
 </p>
 <p>
   One deliberate divergence, decided separately in
-  <a href="../knowledge/2026-07-31-open-world-dictionary-with-rejections.decision.html">reject
+  <a href="../notebook/open-world-dictionary-with-rejections.observation.html">reject
   closed-world approval</a>: the standard forbids any word not on its approved list, and
   this does not. Rejected words are listed with their replacements and everything else stays
   open. Closed-world buys determinism, determinism was for resolving prose to logic, and
@@ -132,12 +132,12 @@
 <p>
   The audit scans prose and derives the edges from document to term. Hand-annotating each
   occurrence of <code>validator</code> across 42 documents is exactly the capture cost that
-  <a href="../knowledge/2026-07-30-capture-cost-killed-rationale-systems.observation.html">killed
+  <a href="../notebook/capture-cost-killed-rationale-systems.research.html">killed
   prior rationale systems</a>, and it would buy nothing that a scan does not.
 </p>
 <p>
   Deriving also makes the layer un-rottable, which is the argument
-  <a href="../knowledge/2026-07-13-status-derived-not-declared.observation.html">composition
+  <a href="../notebook/status-derived-not-declared.observation.html">composition
   makes decision status derived rather than declared</a> already makes for status: a derived
   value can be recomputed, so it cannot go stale. A hand-authored use-edge would go stale
   the first time a sentence was rewritten.
@@ -146,7 +146,7 @@
 <p>
   A term that derives no uses is an orphan, and orphans are deleted. This is
   <code>orphans-except-goal</code> applied to a new family, and the same rule
-  <a href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do not tag</a> set
+  <a href="../notebook/link-do-not-tag.observation.html">link, do not tag</a> set
   for importing: a node comes in only if it connects to material already here. Usage earns
   a term its file, so the dictionary self-limits to words the corpus actually uses, and no
   policy about how many terms are too many is needed.
@@ -179,7 +179,7 @@
   <spec-out-of-scope>
 <p>
   Resolving prose to logic or to code.
-  <a href="../knowledge/2026-07-31-prior-art-controlled-natural-languages.observation.html">The
+  <a href="../notebook/prior-art-controlled-natural-languages.research.html">The
   controlled-English survey</a> found that only the logic end of that spectrum resolves, that
   every working deployment is narrow-domain, and that the dictionary is the whole mechanism.
   This work keeps the dictionary and abandons the resolver. Nothing here parses a sentence
@@ -225,7 +225,7 @@
   <li>
     Does the audit gate or report? Gating across 277 existing documents fails on the first
     run.
-    <a href="../knowledge/2026-07-30-gate-on-shape-not-rate.decision.html">Gate on node shape,
+    <a href="../notebook/gate-on-shape-not-rate.observation.html">Gate on node shape,
     not on logging rate</a> is the nearest precedent and suggests gating only what we write after now, but "newly written" needs a definition that does not depend on git, which a
     reader of the graph cannot follow.
   </li>

@@ -14,7 +14,7 @@ import { parseHTMLWithLocations, findFirstByTag } from "../../src/utils.ts"
 export const PROTECTED_TAGS = new Set([
   "pre", "code", "script", "style",
   "q", "blockquote", "language-avoid",
-  "knowledge-prompt", "plan-global-constraints", "language-fail",
+  "notebook-prompt", "plan-global-constraints", "language-fail",
 ])
 
 // A block element ends with a newline, so two paragraphs do not run together

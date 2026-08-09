@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: adopt mycelium logging project-wide</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Adopt knowledge/*.html nodes as the project-wide decision log, replacing deciduous for
+    all new work, not just v4</notebook-title>
+  <notebook-detail><p>
+  this decision freezes deciduous's existing ~400 nodes (v0 through tonight) instead of migrating them: still real history, still
+  queryable read-only via the <code>deciduous</code> CLI, just no longer where new work gets logged. There
+  is still no crawler or <code>mycelium run</code> — this is a hand-authoring workflow, same as every
+  node written tonight, now made the actual project mechanism instead of an experiment's proof case.
+</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./knowledge-nodes-written.observation.html">the template series and its
+    dogfood nodes proved out first</a>
+</notebook-observation>
+</body></html>

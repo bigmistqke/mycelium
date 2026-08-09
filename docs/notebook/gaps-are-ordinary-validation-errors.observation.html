@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: A gap in the chain is an ordinary validation error, not a state to suppress</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>A gap in the chain is an ordinary validation error, not a state to suppress</notebook-title>
+  <notebook-detail><p>An unfinished chain reports the same way everything else does. A behaviour with
+no test, an axiom with nothing under it, a test citing nothing: each is a
+violation, each fails <code>validate</code>, each contributes to a non-zero
+exit.</p>
+<p>The argument for treating them differently was that non-zero is their normal
+state. You write the chain in order — behaviour, then a stub, then failing
+tests, then an implementation — so every intermediate moment has a gap in it, and
+an axiom read out of an existing codebase can wait a long time before anything
+sits under it. Checks whose expected value is never zero look unlike
+<code>dangling-outcome</code> or <code>orphans-except-goal</code>, where zero is
+the answer and anything else means someone slipped.</p>
+<p>That difference is real and it is not the checker's business. Everything in
+this corpus is a declaration, and every audit reports where reality does not
+match one. <q>You declared an outcome and nothing causes it</q> and <q>you
+declared a required behaviour and nothing tests it</q> are the same sentence.
+They are type errors: they say the thing does not match what was declared, and
+they can be ignored, the way a type error does not stop code from running. A
+non-zero exit is communication, not permission.</p>
+<p>So this design takes none of these: no status field marking a behaviour as
+not-yet-tested, no separate command or separate report for the chain, no
+softening of any check into something advisory, and no distinction drawn on how
+long a given gap tends to stay open. The error message is where the work goes
+instead — naming what is missing precisely enough to be the next thing someone
+writes.</p>
+<p>This is also the stronger reading of the design's own claim that the engine
+learns the chain by reading the family's declarations. A second instrument for
+one family's checks would have been the hardcoded ontology that claim rules
+out.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./methodology-in-our-own-codebase.observation.html">how an unfinished chain reports, which the checks need settled first</a>
+</notebook-observation>
+</body></html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Write the comments command's canon top-down, before it has any tests</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Write the comments command's canon top-down, before it has any tests</notebook-title>
+  <notebook-detail><p>Every earlier canon document followed a suite that already existed, so its
+behaviours only had to paraphrase the test names. That is the weak version of the
+experiment: it cannot show whether the behaviour layer says anything a test name
+does not.</p>
+<p><code>comments</code> is the last command with no coverage at all, and 375 lines
+of it. Writing its axioms and behaviours first, then the cases, puts the question
+properly: if the case count lands at one per behaviour again, the layer is
+ceremony.</p>
+<p>The judge shells out to <code>claude -p</code>, which nothing deterministic can
+call. Two seams avoid it. A comment tagged WIP and a doc comment on an export each
+get a verdict without a model, and for the rest a case can put a stub
+<code>claude</code> on PATH, since the sandbox spawns the real command line and
+inherits the environment.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./methodology-in-our-own-codebase.observation.html">the methodology this exercises</a>
+</notebook-observation>
+</body></html>

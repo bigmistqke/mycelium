@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A protocol of a few attributes, not a bespoke serialization, keeps the runtime minimal</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>A protocol of a few attributes, not a bespoke serialization, keeps the runtime minimal</notebook-title>
+  <notebook-detail><p>The data side of that fusion is just a handful of attributes and one script-type convention — <code>data-conforms-to</code>, <code>data-validates</code>, <code>type="mycelium/command"</code> — not a bespoke serialization.</p>
+<p>Because of that, the runtime needed to interpret it stays minimal and easily reimplementable: <code>run.ts</code>/<code>validate.ts</code> only ever need to know the protocol, never what any template family means.</p>
+</notebook-detail>
+  <a data-rel="elaborates" href="./xml-html-data-presentation-fusion.observation.html">the data-side consequence of the fusion: a thin protocol keeps the engine that reads it thin too</a>
+</notebook-observation>
+</body></html>

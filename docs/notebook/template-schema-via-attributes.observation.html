@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Schema lives as attributes on existing template field placeholders, not new wrapper elements</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Schema lives as attributes on existing template field placeholders, not new wrapper elements</notebook-title>
+  <notebook-detail><p>Schema lives as <code>required</code>/<code>pattern</code>/<code>enum</code> attributes directly on each type's existing <code>&lt;template id&gt;</code> field placeholders, not new <code>&lt;template-type&gt;</code>/<code>&lt;template-field&gt;</code> wrapper elements — e.g. <code>&lt;knowledge-title required&gt;</code>, <code>&lt;knowledge-confidence required pattern="^\d+$"&gt;</code>, <code>&lt;knowledge-status required enum="pending active completed rejected"&gt;</code>. No field name appears twice.</p>
+<p>Two things checked against happy-dom, the DOM engine this project already runs on. A <code>&lt;template&gt;</code>'s children live in <code>.content</code>, a separate <code>DocumentFragment</code>, so the generic validator in <code>template.template.html</code> must read via <code>tpl.content.querySelector(...)</code>. And <code>required</code> is a boolean attribute, so it needs <code>hasAttribute</code> rather than a truthy <code>getAttribute</code> check.</p>
+<p>No <code>data-conforms-to</code> is needed on the <code>&lt;template&gt;</code> definitions themselves — unlike the <code>docs/knowledge/*.html</code> instance corpus, there are only ever a handful of <code>*.template.html</code> files, so the filename convention alone is enough signal; nothing needs to be crawler-enforced there.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./llm-context-overview-doc.observation.html">the same required/pattern/enum attributes the generic validator reads can be surfaced in the overview command's field-level detail, not locked inside validator-function internals</a>
+  <a data-rel="leads_to" href="./schema-first-then-optional-validator-function.observation.html">resolves full-replace-vs-fallback: all seven current validators turn out to be fully expressible in the schema, so they're deleted</a>
+</notebook-observation>
+</body></html>

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Template: canon-axiom and canon-specification</title>
@@ -8,7 +7,6 @@
 <link rel="stylesheet" href="./canon.template.css">
 </head>
 <body>
-
 <h1>Template: canon-axiom, canon-specification</h1>
 <div class="meta">
   <div><b>Node types:</b> <code>canon-axiom</code>, <code>canon-specification</code>,
@@ -20,7 +18,6 @@
     <a href="../specs/2026-08-06-canon-template-html.spec.html">canon.template.html:
     axioms, specifications, and a chain a checker can walk</a></div>
 </div>
-
 <h2>Why this template exists</h2>
 <p>
   This project could say what shape a document takes and whether its prose obeys the rules. It could
@@ -42,14 +39,12 @@
   problem the chain did not predict means either that no behaviour speaks to the case or that two
   behaviours want different things, so a fix has an altitude.
 </p>
-
 <h2>Two types in one file</h2>
 <p>
   The types only mean anything together, which is the same reason six knowledge types and four plan
   types each share a file. An axiom no behaviour refines settles nothing, and a behaviour naming no
   axiom is an assertion nobody can argue with.
 </p>
-
 <h2>No date prefix, like the language family</h2>
 <p>
   Both types describe what holds now. An axiom that stops being true gets revised or retired, and a
@@ -60,7 +55,6 @@
   <code>add</code> takes no <code>--date</code> flag. Knowledge nodes and spec docs date their
   instances because each one records a moment; these record a standing claim.
 </p>
-
 <h2>Shape</h2>
 <p>
   All three types share <code>canon-title</code>, the way every <code>knowledge-*</code> type
@@ -71,38 +65,35 @@
   For an axiom the title is the principle itself. For a behaviour it is the claim, in one falsifiable
   sentence. For a specification it names the subsystem.
 </p>
-
 <template id="canon-axiom">
   <canon-axiom id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
-    <canon-title required></canon-title>
-    <canon-detail markup required></canon-detail>
-    <a repeatable href=".+" data-rel="^(depends_on)$"></a>
+    <canon-title required=""></canon-title>
+    <canon-detail markup="" required=""></canon-detail>
+    <a repeatable="" href=".+" data-rel="^(depends_on)$"></a>
   </canon-axiom>
 </template>
 <pre><code>&lt;canon-axiom&gt;
-  &lt;canon-title&gt;&hellip; the principle, in one line &hellip;&lt;/canon-title&gt;
-    &lt;canon-detail&gt;&hellip; required, free-form: the reasoning &hellip;&lt;/canon-detail&gt;
+  &lt;canon-title&gt;… the principle, in one line …&lt;/canon-title&gt;
+    &lt;canon-detail&gt;… required, free-form: the reasoning …&lt;/canon-detail&gt;
   &lt;a data-rel="depends_on" href="./documents-are-the-source.axiom.html"&gt;narrows&lt;/a&gt;
 &lt;/canon-axiom&gt;</code></pre>
-
 <template id="canon-specification">
   <canon-specification id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
-    <canon-title required></canon-title>
-    <a repeatable href=".+" data-rel="^(specifies)$"></a>
-    <canon-behaviour repeatable conforms-to="#canon-behaviour"></canon-behaviour>
+    <canon-title required=""></canon-title>
+    <a repeatable="" href=".+" data-rel="^(specifies)$"></a>
+    <canon-behaviour repeatable="" conforms-to="#canon-behaviour"></canon-behaviour>
   </canon-specification>
 </template>
-
 <template id="canon-behaviour">
   <canon-behaviour id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
-    <canon-title required></canon-title>
-    <canon-detail markup></canon-detail>
-    <a repeatable href=".+" data-rel="^(depends_on)$"></a>
+    <canon-title required=""></canon-title>
+    <canon-detail markup=""></canon-detail>
+    <a repeatable="" href=".+" data-rel="^(depends_on)$"></a>
     <canon-verdict enum="PENDING"></canon-verdict>
     <canon-message></canon-message>
-    <canon-fixture markup></canon-fixture>
+    <canon-fixture markup=""></canon-fixture>
     <script></script>
-    <canon-behaviour repeatable conforms-to="#canon-behaviour"></canon-behaviour>
+    <canon-behaviour repeatable="" conforms-to="#canon-behaviour"></canon-behaviour>
   </canon-behaviour>
 </template>
 <script type="mycelium/validate" data-validates="#canon-behaviour">
@@ -153,7 +144,6 @@
     &lt;a data-rel="depends_on" href="../axioms/a-gate-people-ignore.axiom.html"&gt;the principle this refines&lt;/a&gt;
   &lt;/canon-behaviour&gt;
 &lt;/canon-specification&gt;</code></pre>
-
 <h2>What each field is for</h2>
 <p>
   An axiom once carried a confidence, meant to tell a principle somebody committed to from one an
@@ -178,7 +168,6 @@
   rather than warning because a gate people ignore is not a gate</q> glues a behaviour to its
   criterion, and the halves separate into a behaviour and an axiom.
 </p>
-
 <h3>Every behaviour owes a test</h3>
 <p>
   Nothing marks a behaviour as exempt. No keyword vocabulary sorts them and no attribute grades them,
@@ -195,7 +184,6 @@
   So the question of what counts as a behaviour is not a question about sorting content inside a
   specification. It asks which family a sentence belongs to, and the corpus answers that already.
 </p>
-
 <h3>An id is an address, not a summary</h3>
 <p>
   The id attribute is what a test cites, so it is required and its pattern rejects any segment made
@@ -212,7 +200,6 @@
   citation resolving, so nothing tells the citing tests they now check something the document no
   longer claims.
 </p>
-
 <h3>A behaviour is one sentence</h3>
 <p>
   A test citing a paragraph cites several claims at once, and then <q>does a test exist for this</q>
@@ -224,7 +211,6 @@
   markup, and a rule counting sentence terminators would reject a behaviour naming
   <code>src/api.ts</code>. This one stays prose until an audit can carry it.
 </p>
-
 <h2>Edges</h2>
 <p>
   A behaviour links up to the axiom it refines with <code>depends_on</code>, and an axiom links up to
@@ -251,7 +237,7 @@
 <p>
   A specification also points at the code it answers for, with <code>specifies</code>. It does not
   name its subsystem, it points at one: the subsystem is whatever that link set covers. This follows
-  <a href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do not tag</a>, which refused
+  <a href="../notebook/link-do-not-tag.observation.html">link, do not tag</a>, which refused
   a hand-maintained vocabulary once already.
 </p>
 <p>
@@ -261,7 +247,6 @@
   lower. The corpus retired its last two unlisted relations rather than widen the list, and a
   <code>describes</code> here would have reopened exactly that.
 </p>
-
 <h2>A test cites a behaviour</h2>
 <p>
   A test is a document here, so the bottom rung is a link like every rung above it. A
@@ -272,7 +257,7 @@
   &lt;test-name&gt;validate exits non-zero when an audit fails&lt;/test-name&gt;
   &lt;test-status&gt;PENDING&lt;/test-status&gt;
   &lt;a data-rel="depends_on" href="../canon/specifications/validate.specification.html#exits-non-zero-on-failure"&gt;the behaviour this checks&lt;/a&gt;
-  &lt;script type="mycelium/test"&gt;&hellip;&lt;/script&gt;
+  &lt;script type="mycelium/test"&gt;…&lt;/script&gt;
 &lt;/test-case&gt;</code></pre>
 <p>
   A case carries an <code>id</code>, so a citation has an address at both ends and
@@ -290,7 +275,6 @@
   <a href="../specs/2026-08-08-citation-is-an-edge.spec.html">a test cites a behaviour with an
   edge</a>.
 </p>
-
 <h2>Sample instances</h2>
 <p>
   One sample per type, found by <code>data-conforms-to</code> the same way every instance in the
@@ -301,37 +285,34 @@
   <code>data-expects</code>. A check that has never fired is not known to work, and nothing else in
   the corpus exercises these yet.
 </p>
-
 <div id="sample-instances" class="samples">
   <canon-axiom id="sample-axiom" data-conforms-to="./canon.template.html#canon-axiom">
-    <canon-title>A principle the sample behaviours refine, so the chain has one rung that holds.</canon-title>
-    <canon-detail><p>The detail carries the reasoning a title has no room for: what the principle
+  <canon-title>A principle the sample behaviours refine, so the chain has one rung that holds.</canon-title>
+  <canon-detail><p>The detail carries the reasoning a title has no room for: what the principle
     rules out, what it cost to learn, and which cheaper rule it beat. This one exists so the
     grounded check has an axiom a behaviour reaches.</p></canon-detail>
-  </canon-axiom>
-
+</canon-axiom>
   <canon-axiom id="sample-ungrounded-axiom" data-conforms-to="./canon.template.html#canon-axiom">
-    <canon-title>A principle nobody has read down into any subsystem yet.</canon-title>
-    <canon-detail><p>Nothing reaches this one, which is what grounded reports as dead. An axiom
+  <canon-title>A principle nobody has read down into any subsystem yet.</canon-title>
+  <canon-detail><p>Nothing reaches this one, which is what grounded reports as dead. An axiom
     with no behaviour beneath it has nothing that could push back on it.</p></canon-detail>
-  </canon-axiom>
-
+</canon-axiom>
   <canon-specification id="sample-specification" data-conforms-to="./canon.template.html#canon-specification">
-    <canon-title>a sample subsystem</canon-title>
-    <a data-rel="specifies" href="./canon.template.css">the file it specifies</a>
-    <canon-behaviour id="sample-tested-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
-      <canon-title>A claim naming a principle, so the whole chain has one rung that holds.</canon-title>
-      <a data-rel="depends_on" href="#sample-axiom">the principle this refines</a>
-      <canon-verdict>PENDING</canon-verdict>
-      <script type="text/mycelium-test">assert(true)</script>
-    </canon-behaviour>
-    <canon-behaviour id="sample-freelancing-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
-      <canon-title>A claim naming no principle, kept here so the grounded check has something to find.</canon-title>
-      <a data-rel="depends_on" href="./canon.template.css">a target that is not an axiom, so this claim still names none</a>
-      <canon-verdict>PENDING</canon-verdict>
-      <script type="text/mycelium-test">assert(true)</script>
-    </canon-behaviour>
-  </canon-specification>
+  <canon-title>a sample subsystem</canon-title>
+  <a data-rel="specifies" href="./canon.template.css">the file it specifies</a>
+  <canon-behaviour id="sample-tested-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
+    <canon-title>A claim naming a principle, so the whole chain has one rung that holds.</canon-title>
+    <a data-rel="depends_on" href="#sample-axiom">the principle this refines</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="text/mycelium-test">assert(true)</script>
+  </canon-behaviour>
+  <canon-behaviour id="sample-freelancing-behaviour" data-conforms-to="./canon.template.html#canon-behaviour">
+    <canon-title>A claim naming no principle, kept here so the grounded check has something to find.</canon-title>
+    <a data-rel="depends_on" href="./canon.template.css">a target that is not an axiom, so this claim still names none</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="text/mycelium-test">assert(true)</script>
+  </canon-behaviour>
+</canon-specification>
 </div>
 <p>
   Both samples carry a browser script, which keeps them out of the node runner and out of
@@ -339,7 +320,6 @@
   open, and the audits about scripts skip a document declaring a template anyway. The citation
   reader does not skip it, which is what makes <code>grounded</code> fire on the second one.
 </p>
-
 <h2>Validator</h2>
 <p>
   The generic validator in <a href="./template.template.html">template.template.html</a> handles
@@ -351,7 +331,6 @@
   <code>canon-detail</code> fails, because that field is absent from its template and the
   allowed set is exactly what the template declares.
 </p>
-
 <h2>The chain checks</h2>
 <p>
   Three audits, declared here beside the types they check, the way
@@ -365,7 +344,6 @@
   ends of the joint: which behaviours the corpus states, and which behaviour each test says it
   checks. Three copies of that reading is how two checks come to disagree about what a citation is.
 </p>
-
 <h3>grounded</h3>
 <p>
   Every axiom reaches a behaviour beneath it, and every specification reaches an axiom above it. An
@@ -475,14 +453,12 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
-
 <p>
   Two more checks used to sit here, and the shape retired both. One asked whether every behaviour
   had a case citing it, and one asked whether every case cited a behaviour. A behaviour now carries
   its own check, so a claim with nothing beneath it fails against its own template and a check has
   nowhere to live except the claim it answers.
 </p>
-
 <script type="mycelium/audit" data-audits="test-documents-load-the-runner" data-touches="canon-behaviour">
   import type { AuditFs } from "../../src/api.ts"
 
@@ -516,7 +492,6 @@
     return { ok: violations.length === 0, violations }
   }
 </script>
-
 <h2>Authoring commands</h2>
 <p>
   The same <code>type="mycelium/command"</code> convention every other family uses. Nothing here
@@ -527,7 +502,6 @@
   it, and each citation from source pointing at one stays behind in a file this command does not
   own, which turns a delete into a broken chain nothing warned about.
 </p>
-
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
   import { readCanon, collectCodeCitations } from "./canon-citations.ts"
@@ -1742,5 +1716,4 @@
       }
     }
   }</script>
-
 </body></html>

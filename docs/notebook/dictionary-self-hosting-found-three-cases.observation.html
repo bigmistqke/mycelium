@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Seeding the language family against itself found a real violation and two false ones</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Seeding the language family against itself found a real violation and two false ones</notebook-title>
+  <notebook-detail><p>
+  Forty-eight entries seeded: thirteen rules from the commit-message skill and the
+  plain-language note, and thirty-five terms from the vocabulary measured for the spec. The
+  template commits the family to a self-hosting test, so the banned words were then grepped
+  back over the entries that define them. Three hits, resolving three different ways, which
+  is the finding.
+</p>
+<p>
+  A real violation. The definition of <code>harness</code> used
+  "the tooling, instructions and hooks that shape what an agent does" — using
+  <code>tooling</code>, the word <code>harness</code> exists to replace, inside the entry that
+  replaces it. Nothing but running the check against the family itself would have caught
+  that, and the check caught it within a minute of the entries existing.
+</p>
+<p>
+  A violation by construction. <code>language-fail</code> holds the example
+  that breaks the rule. Every one of them contains what the rule forbids; that is the point of
+  the field. The audit must not read it.
+</p>
+<p>
+  Mention rather than use. <code>make-sure</code>'s meaning says it is the
+  replacement for <code>ensure</code>. A dictionary that could not name a word would not be
+  able to do its job.
+</p>
+<p>
+  The two false hits together are an argument for a narrow exclusion rather than a broad one.
+  Excluding the whole family would silence all three, including the only one worth having, so
+  the audit needs per-field rules. This is spec open question 4 answered by evidence instead of
+  by argument, and it took forty-eight entries to produce, not four hundred — which is the case
+  for building a small family before designing the check that reads it.
+</p>
+</notebook-detail>
+</notebook-observation>
+</body></html>

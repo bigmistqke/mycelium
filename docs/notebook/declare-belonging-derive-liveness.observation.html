@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Declare belonging, derive liveness</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Declare belonging, derive liveness</notebook-title>
+  <notebook-detail><p>A status enum assumes linear history with a single endpoint. What
+<a href="./pending-decisions-are-abandonment-not-rot.observation.html">the
+note on permanently-pending decisions</a> calls the missing retirement concept is
+not a property of each node: v0's decisions are dormant because the v0
+exploration was abandoned — one fact denormalized across 200 nodes, and the next
+abandonment costs another 200 stamps.</p>
+<p>Split what status conflates. <strong>Belonging</strong> (which exploration a
+node is part of) never changes and can be multi-valued.
+<strong>Liveness</strong> (whether it still holds) changes because of events
+outside the node, so it is derived from topology: one <code>v0-abandoned</code>
+node with edges to what it supersedes, and an audit computes reachability.</p>
+<p>Grounded in the project's own record —
+<a href="./status-derived-not-declared.observation.html">composition
+makes decision status derived, not declared</a>: <em>don't store it, derive it
+from the layer below. Solves metadata maintenance by eliminating the
+metadata.</em> And
+<a href="./derive-the-graph-do-not-curate-it.observation.html">derive the
+graph, do not curate it</a>: <em>because it is derived it can be RECOMPUTED,
+which means IT CANNOT ROT.</em></p>
+<p>Citations corrected 2026-07-30. Both of the sources above
+were originally cited by the wrong node — one pointing at an option about
+implementation language, the other at a note on two abstraction ladders. The
+claims were sound and the pointers were not. See
+<a href="./two-of-twenty-citations-were-hollow.observation.html">two of
+twenty citations were hollow</a>.</p>
+<p>The belonging half of this decision was later dropped — see
+<a href="./link-do-not-tag.observation.html">link, do not tag</a>. The
+liveness half stands.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./unify-knowledge-graph-fix-harness.observation.html">part 3 of the goal</a>
+  <a data-rel="depends_on" href="./status-derived-not-declared.observation.html">the source of the derive-do-not-declare argument</a>
+  <a data-rel="depends_on" href="./pending-decisions-are-abandonment-not-rot.observation.html">the retirement concept this decision names</a>
+  <a data-rel="depends_on" href="./the-fractal-append-only-derived-view.observation.html">liveness derived from topology is the same shape, one layer up</a>
+</notebook-observation>
+</body></html>

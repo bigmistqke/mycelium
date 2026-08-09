@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: A check receives a tagged context, because a rule scoped to everything cannot know what it is holding</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>A check receives a tagged context, because a rule scoped to everything cannot know what it is holding</notebook-title>
+  <notebook-detail><p>The second argument to a check meant a DOM element for document prose and
+nothing for a comment. Reading it as <q>whatever this prose is attached to</q>
+would have let a rule about code receive a declaration in the same slot, at no
+migration cost.</p>
+<p>That fails on the rules scoped to everything, which is four of the six. Such a
+rule would receive an element from one source and a declaration from another with
+no way to tell them apart, and
+<a href="./rule-declares-what-it-validates.observation.html">the scope it
+declares</a> says <code>all</code>, so the declaration cannot disambiguate it
+either.</p>
+<p>So the value carries its own tag: <code>{ kind, node, language }</code>, where
+<code>kind</code> is the same vocabulary a rule declares. A rule reads the tag
+rather than guessing from where it was called.</p>
+<p>Three of six rules changed, and each by one line. The three that read only text
+ignore the argument entirely, which is the property worth keeping — a rule about
+sentence length should never learn what a declaration is.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./rule-declares-what-it-validates.observation.html">what scoping alone could not settle</a>
+  <a data-rel="leads_to" href="./attach-rule-finds-131.observation.html">the first rule the tagged context made possible</a>
+</notebook-observation>
+</body></html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Rename the graph-* tag family to knowledge-*</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Rename the graph-* tag family to knowledge-*</notebook-title>
+  <notebook-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23.</em></p>
+<p>"graph" only names the <em>shape</em> of the six node types, and most of this
+project is graph-shaped already — every document links to others — so it does not
+distinguish these six types from anything else.</p>
+<p>"knowledge" names what they actually are: <strong>captured reasoning, not
+structure for its own sake</strong>. It also matches the word the project's own
+title already uses, <em>"v4: A Knowledge Graph as Hypermedia"</em>.</p>
+<p>Renamed consistently across the tag prefix, the not-yet-built template file
+(<code>knowledge.template.html</code> and <code>knowledge.template.css</code>),
+the instance directory (<code>knowledge/</code>), and the audit script — keeping
+prefix and directory in sync the same way <code>graph-*</code> had originally
+been justified by mirroring a <code>graph/</code> directory.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./hyphenate-tags-prefix-by-family.observation.html">the family prefix had to name what the types are, not their shape</a>
+</notebook-observation>
+</body></html>

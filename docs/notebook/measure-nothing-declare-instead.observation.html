@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Reaching for a measurement invents a failure that declaring the same thing cannot have</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Reaching for a measurement invents a failure that declaring the same thing cannot have</notebook-title>
+  <notebook-detail><p>A label chip in
+<a href="../templates/figure.template.html">the figure family</a> came from an SVG
+rectangle sized by <code>getBBox</code>. That call ran while the overlay was still
+detached, where it answers zero, so every chip was twelve pixels by six in a
+corner.</p>
+<p>Nothing threw and nothing failed a check. Two commits reasoned about paint order
+over a rectangle that had never had a size, and a reader looking at the page saw no
+change from either.</p>
+<p>Replacing it with an ordinary element removed the measurement rather than fixing
+it. The graph is a positioned ancestor, a half-size translate centres a chip
+whatever its width, and the browser sizes the box it already knows how to size.</p>
+<p>The general shape: code that asks for a number has a state where the number is
+wrong, and code that declares a relationship does not. This is the same argument
+<a href="./diagram-as-document-not-picture.observation.html">the diagram
+itself makes about coordinates</a>, one layer further in.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./figure-spike-result.observation.html">a bug the spike found in its own drawing code</a>
+</notebook-observation>
+</body></html>

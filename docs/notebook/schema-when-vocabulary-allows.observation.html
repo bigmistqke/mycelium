@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Move a check into the schema when the vocabulary already says it; otherwise leave it an audit</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Move a check into the schema when the vocabulary already says it; otherwise leave it an audit</notebook-title>
+  <notebook-detail><p>
+  Four audits exist. Two check one document at a time and two compare documents to each other.
+  Only the second kind needs to walk the corpus.
+</p>
+<p>
+  <code>title-length</code> is a maximum length. The schema already has <code>pattern</code>, so
+  it can be declared rather than coded. It moves.
+</p>
+<p>
+  <code>hollow-action</code> needs "at least one of detail or commit". The schema has no word for
+  that, and adding one would grow the engine to serve a single type. The
+  <a href="./schema-first-then-optional-validator-function.observation.html">schema-first
+  decision</a> already provides for this: a type needing logic beyond the vocabulary keeps a
+  script. It stays.
+</p>
+<p>
+  The rule is the vocabulary, not the kind of check. A check moves into the schema when the
+  schema can already express it. Nothing is added to the engine to make a check movable.
+</p>
+<p>
+  Cost, stated rather than hidden: the audit holds the limit once and the schema holds it on each
+  type's own title line, six times. Changing the number becomes six edits, and nothing checks that
+  the six agree.
+</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./audits-in-the-roster.observation.html">came out of making audits visible</a>
+</notebook-observation>
+</body></html>

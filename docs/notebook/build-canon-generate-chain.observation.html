@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Build canon generate chain</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Build canon generate chain</notebook-title>
+  <notebook-detail><p>Reading the corpus through <code>canon-citations.ts</code>, which already
+holds both readings the drawing needs, and emitting one self-contained page with
+ranks as columns.</p>
+<p>One reader change falls out: <code>readCanon</code> keeps only
+<code>depends_on</code> edges today, so a specification's <code>specifies</code>
+links never reach a caller. The implementation rank needs them.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./visualize-the-canon-chain.observation.html">the goal this carries out</a>
+  <a data-rel="leads_to" href="../specs/2026-08-08-canon-generate-chain.spec.html">the design it follows</a>
+</notebook-observation>
+</body></html>

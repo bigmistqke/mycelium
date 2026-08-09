@@ -28,7 +28,7 @@ hand: a chain running from an axiom, to a specification of behaviour, to a test,
 to an implementation. That project also found that an agent does not hold to
 such a discipline on trust, and made the citations structured text so a checker
 could answer whether the protocol held. The
-<a href="../knowledge/2026-08-02-rg-structured-links-made-protocol-accountable.observation.html">observation
+<a href="../notebook/rg-structured-links-made-protocol-accountable.observation.html">observation
 recording that</a> is what this design responds to.</p>
 <p>The chain runs in both directions, and that is the methodology rather than a
 property of it. Implementation flows down: an axiom settles what a specification
@@ -38,7 +38,7 @@ implementation should do.</p>
 default, because it means either that no behaviour speaks to the case, or that
 two behaviours want different things and someone had to pick one. So a fix has an
 altitude, and patching the code alone leaves the hole that produced it. The
-<a href="../knowledge/2026-08-07-findings-travel-upward.observation.html">observation
+<a href="../notebook/findings-travel-upward.observation.html">observation
 recording that</a> carries the argument.</p>
 <p>The upward direction is also how this reaches a project already running. A
 codebase carries principles nobody wrote down, sitting in its maintainers' habits
@@ -52,9 +52,9 @@ the code is the same operation, run the other way.</p>
 <code>canon-behaviour</code> nested inside the second. One file, because the
 types only mean anything together, which is the same reason six knowledge types
 and four plan types each share a file. The
-<a href="../knowledge/2026-08-06-one-derivation-family-file.decision.html">decision
+<a href="../notebook/one-derivation-family-file.observation.html">decision
 recording this</a> carries the alternatives it beat.</p>
-<p>The name arrived late. <a href="../knowledge/2026-07-25-tests-cite-not-modeled-as-nodes.decision.html">Tests
+<p>The name arrived late. <a href="../notebook/tests-cite-not-modeled-as-nodes.observation.html">Tests
 cite, they are not nodes</a> called this family <code>derivation-*</code> back in
 July, and this design carried that word until the template existed and the tags
 went on the page.</p>
@@ -92,7 +92,7 @@ it narrows, and that edge is the whole mechanism, with no region names, no scope
 attribute and no cascade. Asking which axioms govern a subsystem is a walk upward
 from its own.</p>
 <p>What this gives up, and the
-<a href="../knowledge/2026-08-06-how-subsystem-axioms-inherit.decision.html">decision</a>
+<a href="../notebook/how-subsystem-axioms-inherit.observation.html">decision</a>
 says so: a broad axiom nobody has read down into a given subsystem reaches
 nothing in it, and no check separates that from an axiom that does not apply
 there. Writing that reading is the work, and a mechanism that asks for it is a
@@ -121,7 +121,7 @@ inside a specification and inherits that.</p>
 <p>A specification does not name its subsystem, it points at one. It links to the
 documents and source files it describes, and the subsystem is whatever that link
 set covers. This follows
-<a href="../knowledge/2026-07-30-link-do-not-tag.decision.html">link, do not
+<a href="../notebook/link-do-not-tag.observation.html">link, do not
 tag</a>, which refused a hand-maintained vocabulary once already, and it answers
 which specification covers a given file by walking edges. One specification per
 subsystem then needs no rule of its own, since a file reached by two
@@ -142,7 +142,7 @@ absorbs.</p>
 optionality for independent implementers of one standard, where several parties
 build to a single document and some features stay negotiable. A specification
 here describes one system, this one. The
-<a href="../knowledge/2026-08-07-every-specification-item-has-a-test.decision.html">decision</a>
+<a href="../notebook/every-specification-item-has-a-test.observation.html">decision</a>
 records both arguments.</p>
 <p>So the document carries no prose, and no detail field either, though every
 other type in this corpus has one. Each kind of content that is not a behaviour
@@ -156,7 +156,7 @@ people ignore is not a gate</q> glues a behaviour to its criterion, and the
 halves separate into a behaviour and an axiom.</p>
 <p>A detail field is the hole both of those go through, which is why this type
 has none. The
-<a href="../knowledge/2026-08-07-specification-carries-no-prose.decision.html">decision</a>
+<a href="../notebook/specification-carries-no-prose.observation.html">decision</a>
 carries the cost: a specification reads as a list rather than an explanation, and
 a reader who wants to know why the subsystem took this shape reads the axioms
 above it and the design document beside it.</p>
@@ -168,7 +168,7 @@ belongs to another family.</p>
 <h2>Where the rungs live</h2>
 <p>The chain runs axiom, then specification behaviour, then test, then
 implementation, and the last two get no document.
-<a href="../knowledge/2026-07-25-tests-cite-not-modeled-as-nodes.decision.html">Tests
+<a href="../notebook/tests-cite-not-modeled-as-nodes.observation.html">Tests
 cite, they are not nodes</a> settled that in July: a test is a citation target
 read out of real source, the way a commit is a field rather than a re-hosted
 node.</p>
@@ -257,12 +257,12 @@ earlier form of Grounded also asked that every behaviour reach a test, which
 duplicated Exhaustive from the other side. Grounded now covers the joint between
 an axiom and a specification, and the other two cover the joint between a
 specification and a test. The
-<a href="../knowledge/2026-08-07-audits-only-run-downward.observation.html">observation
+<a href="../notebook/audits-only-run-downward.observation.html">observation
 that the checks all ran one way</a> is where Cited comes from.</p>
 <p>None of the four names a rung inside <code>src/</code>. The engine learns the
 chain by reading this family's own declarations, because a checker that hardcodes
 its ontology is the
-<a href="../knowledge/2026-07-27-rg-derivation-checker-hardcodes-ontology.observation.html">divergence
+<a href="../notebook/rg-derivation-checker-hardcodes-ontology.observation.html">divergence
 already recorded</a> from the way this project works.</p>
 <h2>An unfinished chain is an ordinary error</h2>
 <p>A behaviour with no test, an axiom with nothing under it, a test citing
@@ -283,7 +283,7 @@ declared a required behaviour and nothing tests it</q> are the same sentence.</p
 <p>These are type errors: they say the thing does not match what someone
 declared, and a person can ignore them the way a type error does not stop code
 from running. A non-zero exit is communication, not permission. The
-<a href="../knowledge/2026-08-07-gaps-are-ordinary-validation-errors.decision.html">decision</a>
+<a href="../notebook/gaps-are-ordinary-validation-errors.observation.html">decision</a>
 records what this rules out.</p>
 <p>What follows is that the message carries the weight. <q>Behaviour 3 has no
 test</q> only scolds. Naming the specification, the axiom that behaviour serves,
@@ -305,7 +305,7 @@ question.</p>
 <h3>Folding the design document into the plan family</h3>
 <p>A spec and its plan state the same design twice, carry two notions of status,
 and pair only by filename. That migration would free the shorter word, and it is
-<a href="../knowledge/2026-08-06-spec-and-plan-duplicate-each-other.observation.html">recorded</a>
+<a href="../notebook/spec-and-plan-duplicate-each-other.observation.html">recorded</a>
 rather than done. Until then this design writes the long word everywhere.</p>
 <h3>Writing this repository's own axioms</h3>
 <p>Mycelium's own axioms and specifications are the point of the exercise, and

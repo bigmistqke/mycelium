@@ -28,9 +28,9 @@
   Nothing machine-readable ties these together. A tool wanting to answer "what fields does
   <code>knowledge-goal</code> require, and what values does <code>knowledge-status</code> allow?" has no
   structured place to read that from today — it would have to scrape prose or parse validator JS. This is
-  what blocks <a data-rel="elaborates" href="../knowledge/2026-07-25-llm-context-overview-doc.goal.html">the
+  what blocks <a data-rel="elaborates" href="../notebook/llm-context-overview-doc.observation.html">the
   LLM-context overview command</a> from showing field-level detail. It's also why
-  <a data-rel="elaborates" href="../knowledge/2026-07-25-template-template-html-now-prerequisite.decision.html">this
+  <a data-rel="elaborates" href="../notebook/template-template-html-now-prerequisite.observation.html">this
   work was promoted from a deferred idea to a prerequisite</a> — it had already been named as explicitly out
   of scope in <a href="./2026-07-25-virtual-module-script-imports.spec.html">the virtual-module-imports spec</a>.
 </p>
@@ -62,7 +62,7 @@
     "unexpected &lt;tag&gt;" check.</li>
 </ul>
 <p>
-  <a data-rel="elaborates" href="../knowledge/2026-07-25-template-schema-via-attributes.decision.html">Full
+  <a data-rel="elaborates" href="../notebook/template-schema-via-attributes.observation.html">Full
   rationale and the happy-dom verification behind this shape</a>: a <code>&lt;template&gt;</code>'s children live
   in <code>.content</code>, a separate inert <code>DocumentFragment</code> — reading a field's attributes
   means <code>tpl.content.querySelector(…)</code>, not <code>tpl.querySelector(…)</code> directly,
@@ -88,7 +88,7 @@
 </p>
 <h3>Full replace: the seven hand-written validators are deleted</h3>
 <p>
-  <a data-rel="elaborates" href="../knowledge/2026-07-25-schema-first-then-optional-validator-function.decision.html">Checked
+  <a data-rel="elaborates" href="../notebook/schema-first-then-optional-validator-function.observation.html">Checked
   against all seven existing <code>check()</code> functions</a> (the six <code>knowledge-*</code> types plus
   <code>spec-doc</code>): every rule any of them encode — required fields, confidence's 0–100 range,
   status's enum, the empty-optional-field rule, the unexpected-tag check — is already expressible in the
@@ -110,13 +110,13 @@
   <spec-out-of-scope>
 <ul>
   <li>The LLM-context overview command itself — depends on this work
-    (<a data-rel="elaborates" href="../knowledge/2026-07-25-llm-context-overview-doc.goal.html">tracked as its own
+    (<a data-rel="elaborates" href="../notebook/llm-context-overview-doc.observation.html">tracked as its own
     goal</a>), but isn't built here.</li>
   <li>Reverse-DNS-style filename inference for <code>docs/knowledge/*.html</code> instance files (inferring
     <code>data-conforms-to</code> from a <code>slug.type.family.html</code> naming convention instead of declaring
     it) — a separate, bigger change to the crawler's "protocol-only, doesn't know about filenames" contract,
     touching the whole existing instance corpus.
-    <a data-rel="elaborates" href="../knowledge/2026-07-25-reverse-dns-filename-inference.observation.html">Logged
+    <a data-rel="elaborates" href="../notebook/reverse-dns-filename-inference.observation.html">Logged
     as its own deferred observation.</a></li>
   <li><code>template.template.html</code> being self-conforming (a "template of templates") — it isn't a
     node type with real instances, so there's nothing for self-conformance to actually check.</li>

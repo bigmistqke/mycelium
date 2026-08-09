@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Curry-Howard is the mechanism behind 'axiom as type': the type-checker is the proof-checker</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-research data-conforms-to="../templates/notebook.template.html#notebook-research">
+  <notebook-title>Curry-Howard is the mechanism behind 'axiom as type': the type-checker is the proof-checker</notebook-title>
+  <notebook-detail><p>The Curry-Howard correspondence is the mechanism behind “axiom as type”:</p>
+<ul>
+  <li>a <strong>proposition</strong> corresponds to a <strong>type</strong>;</li>
+  <li>a <strong>proof</strong> of that proposition corresponds to a <strong>program inhabiting that type</strong>.</li>
+</ul>
+<p>So a dependently-typed language's ordinary type-checker — already checking that code compiles — is simultaneously checking that a proof is valid. <strong>No separate proof-checking step is required.</strong></p>
+</notebook-detail>
+  <a data-rel="supports" href="./v4-is-ontology-plural-not-ontology-free.observation.html">explains the mechanism behind the Curry-Howard-style proof-term family this observation proposes</a>
+  <a data-rel="leads_to" href="./formal-verification-boundary-crisp-truth-condition.observation.html">raises the question of where this mechanism stops applying</a>
+</notebook-research>
+</body></html>

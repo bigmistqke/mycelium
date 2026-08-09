@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Discipline fails and protocols work: 52% compliance against a hook that never missed</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>Discipline fails and protocols work: 52% compliance against a hook that never missed</notebook-title>
+  <notebook-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23. This is the project's founding empirical
+result.</em></p>
+<p>Three pieces of evidence, all from one session:</p>
+<ul>
+  <li><strong>Discipline fails.</strong> CLAUDE.md mandates <code>--commit
+  HEAD</code> in bold; an agent complied <strong>52%</strong> of the time.
+  Instructions held in context decay.</li>
+  <li><strong>Protocols work.</strong> The post-commit hook fired and was complied
+  with instantly. The commit-msg hook rejected two commits and both were fixed.
+  The machine holding the protocol works; the model holding it does not.</li>
+  <li><strong>The decisive one</strong> was a cold bounded call — see <a href="./blind-test-passed.observation.html">the blind test</a>'s blind
+  test, where a fresh <code>claude -p</code> with one file and no session context
+  produced 29 propositions, 14 gaps and 8 contradictions, beating a careful
+  hand pass.</li>
+</ul>
+<p>Contested since 2026-07-30. The 52% figure was measured once,
+on 105 commits, in a single session, and promoted to a general law. See
+<a href="./fifty-two-percent-figure-is-unreplicated.observation.html">the
+52% figure is unreplicated</a>.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./mycelium-is-an-agentic-harness.observation.html">the measured evidence the reframe rests on</a>
+</notebook-observation>
+</body></html>

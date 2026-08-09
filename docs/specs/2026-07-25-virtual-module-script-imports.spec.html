@@ -14,9 +14,9 @@
   <spec-problem>
 <p>
   Two <code>knowledge-decision</code> nodes from this session settled the shape of a mechanism —
-  <a data-rel="specifies" href="../knowledge/2026-07-25-virtual-module-extraction-not-concatenation.decision.html">extract
+  <a data-rel="specifies" href="../notebook/virtual-module-extraction-not-concatenation.observation.html">extract
   embedded scripts into virtual ES modules rather than concatenate</a> and
-  <a data-rel="specifies" href="../knowledge/2026-07-25-id-based-cross-script-imports.decision.html">address them via
+  <a data-rel="specifies" href="../notebook/id-based-cross-script-imports.observation.html">address them via
   <code>#id</code> fragments</a> — without specifying it fully enough to build. This doc is that specification.
 </p>
 <p>
@@ -25,7 +25,7 @@
   per <code>spec.template.html</code>'s own comment on the subject). A <code>data:</code> URL has no hierarchical base,
   so a relative <code>import</code> inside one has nothing to resolve against — which is why every family's script
   duplicates whatever logic it needs instead of sharing it. That's a deliberate, already-made choice at small scale:
-  <a data-rel="alternative_to" href="../knowledge/2026-07-24-duplicate-not-share-loadcheck.decision.html">duplicate-not-share-loadcheck</a>
+  <a data-rel="alternative_to" href="../notebook/duplicate-not-share-loadcheck.observation.html">duplicate-not-share-loadcheck</a>
   chose to duplicate a five-line function across two call sites rather than build sharing machinery for it. But once
   more than a function or two needs sharing — a <code>slugify</code> helper, a Markdown parser, another family's own
   validator delegated to for a nested foreign type — duplication stops being viable, and nothing about the
