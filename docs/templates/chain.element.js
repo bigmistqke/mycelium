@@ -104,28 +104,41 @@ for (const [child, parents] of Object.entries(parentsOf))
  * axiom rank is the one whose order nothing else constrains. Every rank after
  * it then follows the order its own edges already pull it towards.
  *
- * Root sits first and belongs to nothing. Its axioms serve every subsystem, so
- * the edges leaving them fan across the whole page whatever this does, and
- * putting them at one end keeps that fan out of everything else.
+ * Root goes in the middle and belongs to nothing. Its axioms serve every
+ * subsystem, so the edges leaving them fan across the whole page whatever this
+ * does; from the middle the furthest of them reaches half as far as it would
+ * from either end.
  */
-const bands = ['root', ...new Set(data.axioms.map(a => subsystemOf(a.address)).filter(s => s && s !== 'root'))]
+const bands = [...new Set(data.axioms.map(a => subsystemOf(a.address)).filter(s => s && s !== 'root'))]
 for (const s of data.specifications) {
   const name = subsystemOf(s.address)
   if (name && !bands.includes(name)) bands.push(name)
 }
+bands.splice(Math.floor(bands.length / 2), 0, 'root')
 const bandOf = (item) => {
   const at = bands.indexOf(item.subsystem)
   return at === -1 ? bands.length : at
 }
 
-// Fewer crossings, by keeping a subsystem together and then putting each item
-// near whatever it points at. The band decides which stretch of the column a
-// group sits in, and the mean position of its parents orders it inside that.
 const row = {}
-for (const rank of ranks) {
+
+/**
+ * Order one rank, keeping each subsystem in its own band.
+ *
+ * `neighbours` decides which way the sweep looks. Ordering a rank by where its
+ * parents sit pulls it towards the rank on its left; ordering it by its
+ * children pulls it towards the rank on its right. Alternating the two is what
+ * lets a middle rank answer to both, instead of only to whichever side the
+ * first pass came from.
+ *
+ * The band always wins. A subsystem holds one stretch of every column whatever
+ * the means say, so the sweep decides the order inside a band and never across
+ * bands.
+ */
+function orderRank(rank, neighbours) {
   const mean = (item) => {
-    const ps = (parentsOf[item.address] || []).map(p => row[p]).filter(n => n !== undefined)
-    return ps.length ? ps.reduce((a, b) => a + b, 0) / ps.length : Number.MAX_SAFE_INTEGER
+    const ns = (neighbours[item.address] || []).map(a => row[a]).filter(n => n !== undefined)
+    return ns.length ? ns.reduce((a, b) => a + b, 0) / ns.length : Number.MAX_SAFE_INTEGER
   }
   const groups = new Map()
   for (const item of rank.items) {
@@ -137,9 +150,18 @@ for (const rank of ranks) {
     .map(([name, items]) => ({ name, items, groupOf: items[0].groupOf, band: bandOf(items[0]),
       at: items.reduce((n, i) => n + (mean(i) === Number.MAX_SAFE_INTEGER ? 0 : mean(i)), 0) / items.length }))
     .sort((a, b) => a.band - b.band || a.at - b.at)
-  let n = 0
-  for (const group of rank.groups) for (const item of group.items) row[item.address] = n++
 }
+
+// Every item's position in its own column, which is what a mean averages.
+function numberRows() {
+  for (const rank of ranks) {
+    let n = 0
+    for (const group of rank.groups) for (const item of group.items) row[item.address] = n++
+  }
+}
+
+for (const rank of ranks) orderRank(rank, parentsOf)
+numberRows()
 
 /**
  * A cited declaration's whole implementation, behind a disclosure.
@@ -192,31 +214,70 @@ async function paint(holder, source) {
 let shikiOnce = null
 const shiki = () => (shikiOnce ??= import('https://esm.sh/shiki@1.24.0'))
 
-for (const rank of ranks) {
-  const column = document.createElement('div')
-  column.className = 'rank'
-  column.innerHTML = rank.name ? '<h2>' + rank.name + '</h2>' : '<h2>&nbsp;</h2>'
-  for (const group of rank.groups) {
-    const g = document.createElement('div')
-    g.className = 'group'
-    const h = document.createElement('h3')
-    h.textContent = group.name
-    // A specification is selectable too, so a whole subsystem lights at once.
-    if (group.groupOf) { h.dataset.address = group.groupOf; h.className = 'selectable' }
-    g.appendChild(h)
-    for (const item of group.items) {
-      const el = document.createElement('div')
-      el.className = 'node' + (item.file ? ' file' : '')
-      el.dataset.address = item.address
-      el.innerHTML = (item.reach === undefined ? '' : '<span class="reach">' + item.reach + '</span>')
-        + '<span class="title"></span>'
-      el.querySelector('.title').textContent = item.title
-      g.appendChild(el)
-    }
-    column.appendChild(g)
-  }
-  grid.appendChild(column)
+function boxFor(item) {
+  const el = document.createElement('div')
+  el.className = 'node' + (item.file ? ' file' : '')
+  el.dataset.address = item.address
+  el.innerHTML = (item.reach === undefined ? '' : '<span class="reach">' + item.reach + '</span>')
+    + '<span class="title"></span>'
+  el.querySelector('.title').textContent = item.title
+  return el
 }
+
+function groupBox(group) {
+  const g = document.createElement('div')
+  g.className = 'group'
+  const h = document.createElement('h3')
+  h.textContent = group.name
+  // A specification is selectable too, so a whole subsystem lights at once.
+  if (group.groupOf) { h.dataset.address = group.groupOf; h.className = 'selectable' }
+  g.appendChild(h)
+  for (const item of group.items) g.appendChild(boxFor(item))
+  return g
+}
+
+/**
+ * The whole grid: a column per rank, and a row per subsystem.
+ *
+ * A band gets the same row in every column, so a subsystem occupies one stripe
+ * across the page and the edges inside it stay in that stripe. Packing each
+ * column top to bottom instead put a band at the top of one column and halfway
+ * down the next, which is why its edges ran diagonally over everything between
+ * them.
+ *
+ * A band with nothing in a column leaves its cell empty. That whitespace is the
+ * point: it is what holds the rest in line, and a page that fills it has gone
+ * back to the arrangement this replaces.
+ *
+ * Called again whenever a sweep reorders anything, so what is on screen is
+ * always the arrangement being measured.
+ */
+function render() {
+  for (const cell of Array.from(grid.querySelectorAll('.rank, .cell'))) cell.remove()
+  const used = bands.filter(band => ranks.some(rank => rank.groups.some(g => g.band === bands.indexOf(band))))
+  const loose = ranks.some(rank => rank.groups.some(g => g.band >= bands.length))
+
+  ranks.forEach((rank, column) => {
+    const head = document.createElement('div')
+    head.className = 'rank'
+    head.innerHTML = rank.name ? '<h2>' + rank.name + '</h2>' : '<h2>&nbsp;</h2>'
+    head.style.gridColumn = column + 1
+    head.style.gridRow = 1
+    grid.appendChild(head)
+
+    const rows = [...used.map(band => bands.indexOf(band)), ...(loose ? [bands.length] : [])]
+    rows.forEach((band, index) => {
+      const cell = document.createElement('div')
+      cell.className = 'cell'
+      cell.style.gridColumn = column + 1
+      cell.style.gridRow = index + 2
+      for (const group of rank.groups.filter(g => g.band === band)) cell.appendChild(groupBox(group))
+      grid.appendChild(cell)
+    })
+  })
+}
+
+render()
 grid.style.gridTemplateColumns = 'repeat(' + ranks.length + ', minmax(160px, 1fr))'
 
 const links = []
@@ -261,6 +322,128 @@ function draw() {
     path.dataset.to = to
     wires.appendChild(path)
   }
+}
+
+/**
+ * How many boxes the wires currently run across.
+ *
+ * A wire from one column to the next has a gap to itself and crosses nothing.
+ * The overlaps come from the long ones: a root axiom reaching a behaviour four
+ * columns right passes over every column between, and whatever sits in those
+ * columns at that height. Ordering is the only lever, since nothing here
+ * reserves space the way the figure engine does.
+ *
+ * Measured off the drawn paths rather than recomputed, so this counts what a
+ * reader sees. Sampling the curve rather than solving it: a wire crossing a box
+ * spends many points inside it, and a sample fine enough to matter is cheaper
+ * than the arithmetic that would be exact.
+ */
+function overlaps() {
+  const boxes = Array.from(grid.querySelectorAll('.node')).map(el => ({
+    address: el.dataset.address,
+    rect: pointIn(el.getBoundingClientRect()),
+    top: el.getBoundingClientRect().top,
+    bottom: el.getBoundingClientRect().bottom,
+  }))
+  let count = 0
+  for (const path of wires.querySelectorAll('path')) {
+    const length = path.getTotalLength()
+    const hit = new Set()
+    for (let at = 0; at <= length; at += 6) {
+      const point = path.getPointAtLength(at)
+      for (const box of boxes) {
+        if (box.address === path.dataset.from || box.address === path.dataset.to) continue
+        if (hit.has(box.address)) continue
+        const r = box.rect
+        const top = r.middle - (box.bottom - box.top) / 2
+        const bottom = r.middle + (box.bottom - box.top) / 2
+        if (point.x >= r.left && point.x <= r.right && point.y >= top && point.y <= bottom) {
+          hit.add(box.address)
+          count++
+        }
+      }
+    }
+  }
+  return count
+}
+
+/**
+ * Pairs of boxes sitting on top of each other.
+ *
+ * Always zero when the placement is sound, which is why it earns a number. Rows
+ * that stop growing to fit their content let one band's boxes fall through into
+ * the next band's, and the only symptom is that every wire suddenly crosses far
+ * more than before. Counting wires said the layout got worse; it never said the
+ * boxes had landed on each other.
+ */
+function collisions() {
+  const boxes = Array.from(grid.querySelectorAll('.node')).map(el => el.getBoundingClientRect())
+  let count = 0
+  for (let i = 0; i < boxes.length; i++)
+    for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i], b = boxes[j]
+      if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) count++
+    }
+  return count
+}
+
+// The same count, split by how far a wire travels. Ordering and placement only
+// reach the short ones; a wire spanning several columns passes over whatever
+// fills those columns whatever the layout does.
+function overlapsBySpan() {
+  const column = {}
+  Array.from(grid.querySelectorAll('.rank, .cell')).forEach(cell => {
+    for (const el of cell.querySelectorAll('[data-address]')) column[el.dataset.address] = Number(cell.style.gridColumn)
+  })
+  const boxes = Array.from(grid.querySelectorAll('.node')).map(el => ({
+    address: el.dataset.address, rect: pointIn(el.getBoundingClientRect()),
+    height: el.getBoundingClientRect().height,
+  }))
+  const bySpan = {}
+  for (const path of wires.querySelectorAll('path')) {
+    const span = Math.abs((column[path.dataset.from] ?? 0) - (column[path.dataset.to] ?? 0))
+    const length = path.getTotalLength()
+    const hit = new Set()
+    for (let at = 0; at <= length; at += 6) {
+      const point = path.getPointAtLength(at)
+      for (const box of boxes) {
+        if (box.address === path.dataset.from || box.address === path.dataset.to || hit.has(box.address)) continue
+        const r = box.rect
+        if (point.x >= r.left && point.x <= r.right &&
+            point.y >= r.middle - box.height / 2 && point.y <= r.middle + box.height / 2) hit.add(box.address)
+      }
+    }
+    bySpan[span] = (bySpan[span] ?? 0) + hit.size
+  }
+  return bySpan
+}
+
+/**
+ * Sweep the ranks until the wires stop finding fewer boxes to cross.
+ *
+ * One pass down the ranks and one back up. Ordering by parents pulls a rank
+ * towards its left neighbour and ordering by children pulls it right, so a rank
+ * in the middle answers to both only if both get a turn.
+ *
+ * The measurement decides, not the sweep. Each round gets rendered and counted,
+ * and a round that makes the page worse gets thrown away — a barycentre pass
+ * usually helps and is not guaranteed to.
+ */
+function settle(rounds = 6) {
+  let best = overlaps()
+  let bestOrder = ranks.map(rank => rank.groups)
+  for (let round = 0; round < rounds; round++) {
+    const forward = round % 2 === 0
+    const order = forward ? ranks : [...ranks].reverse()
+    for (const rank of order) orderRank(rank, forward ? parentsOf : childrenOf)
+    numberRows()
+    render()
+    draw()
+    const found = overlaps()
+    if (found < best) { best = found; bestOrder = ranks.map(rank => rank.groups) }
+    else { ranks.forEach((rank, i) => { rank.groups = bestOrder[i] }); render(); draw() }
+  }
+  return best
 }
 
 // Selecting anything lights the whole chain it belongs to, above and below.
@@ -407,4 +590,12 @@ grid.addEventListener('click', (event) => {
 document.getElementById('pane-close').addEventListener('click', () => show(null))
 
 draw()
+// Written into the page rather than logged, so a person reading the drawing and
+// a script measuring it see the same number.
+const before = overlaps()
+const after = settle()
+document.getElementById('crossings').textContent = after
+document.getElementById('crossings').dataset.before = before
+document.getElementById('crossings').dataset.bySpan = JSON.stringify(overlapsBySpan())
+document.getElementById('crossings').dataset.collisions = collisions()
 addEventListener('resize', draw)
