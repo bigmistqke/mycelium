@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template: notebook-*</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="./notebook.template.css">
+</head>
+<body>
+
+<h1>Template: notebook-observation, notebook-research, notebook-experiment</h1>
+<div class="meta">
+  <div><b>Node types:</b> <code>notebook-observation</code>, <code>notebook-research</code>,
+    <code>notebook-experiment</code></div>
+  <div><b>File naming:</b> <code>docs/notebook/&lt;slug&gt;.&lt;type&gt;.html</code>, with no date on it</div>
+  <div><b>Purpose:</b> the thinking that underpins the code, before any of it hardens into a canon claim</div>
+  <div><b>Design:</b> <a href="../specs/2026-08-09-notebook-replaces-the-knowledge-graph.spec.html">the spec
+    for this family</a></div>
+  <div><b>Styling:</b> <code>./notebook.template.css</code>, plus the shared <code>../theme.css</code></div>
+</div>
+
+<h2>Why this template exists</h2>
+<p>
+  The canon is where thinking crystallises. This is where it stays fluid, and it holds the reasoning that
+  underpins the code before any of it hardens. Prior art somebody read, a rule noticed before a check could
+  hold it, a direction the work bends toward, a remark about how the work itself goes.
+</p>
+<p>
+  Neither the code nor git carries that. A task leaves artefacts everywhere, so writing one down a second
+  time protects nothing, while the reasoning underneath leaves nothing at all. An axiom that cannot say where
+  it came from is the symptom this family answers.
+</p>
+
+<h2>Three types, by where the knowledge came from</h2>
+<p>
+  A <code>notebook-observation</code> comes from thinking. A <code>notebook-research</code> comes from
+  someone else, so it holds prior art and external work. A <code>notebook-experiment</code> comes from
+  running something, and it carries the code that ran.
+</p>
+<p>
+  Provenance is the axis because it does not move. What an entry is about drifts as a project's vocabulary
+  shifts, and that drift is what left one earlier type doing five jobs across 231 nodes. Where a thought came
+  from stays fixed.
+</p>
+<p>
+  The first two types share one shape, since nothing about their fields differs. The third adds the three
+  fields an instrument needs.
+</p>
+
+<h2>Shape</h2>
+<template id="notebook-observation">
+  <notebook-observation>
+    <notebook-title required></notebook-title>
+    <notebook-tag repeatable></notebook-tag>
+    <notebook-prompt repeatable></notebook-prompt>
+    <notebook-detail markup></notebook-detail>
+    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+  </notebook-observation>
+</template>
+<template id="notebook-research">
+  <notebook-research>
+    <notebook-title required></notebook-title>
+    <notebook-tag repeatable></notebook-tag>
+    <notebook-prompt repeatable></notebook-prompt>
+    <notebook-detail markup></notebook-detail>
+    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+  </notebook-research>
+</template>
+<template id="notebook-experiment">
+  <notebook-experiment>
+    <notebook-title required></notebook-title>
+    <notebook-tag repeatable></notebook-tag>
+    <notebook-prompt repeatable></notebook-prompt>
+    <notebook-question required></notebook-question>
+    <script></script>
+    <notebook-reading></notebook-reading>
+    <notebook-detail markup></notebook-detail>
+    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+  </notebook-experiment>
+</template>
+<pre><code>&lt;notebook-observation&gt;
+  &lt;notebook-title&gt;&hellip;&lt;/notebook-title&gt;
+  &lt;notebook-tag&gt;&hellip;&lt;/notebook-tag&gt;
+  &lt;notebook-prompt&gt;&hellip; somebody's exact words &hellip;&lt;/notebook-prompt&gt;
+  &lt;notebook-detail&gt;&hellip; any markup &hellip;&lt;/notebook-detail&gt;
+  &lt;a data-rel="supports" href="&hellip;"&gt;&hellip;&lt;/a&gt;
+&lt;/notebook-observation&gt;</code></pre>
+
+<h2>What an entry no longer carries</h2>
+<p>
+  Confidence left. 570 earlier nodes carried it, 60% of them sat on three values, and nothing ever read
+  the field. The canon dropped it from an axiom for the same reason.
+</p>
+<p>
+  Status left with the goals it belonged to. Nothing fluid is pending, and an entry that accretes never
+  reaches a state worth declaring. An intention that does want one belongs in
+  <a href="./followup.template.html">the followup family</a>, which drains rather than accumulates.
+</p>
+<p>
+  Dates leave the filename. An entry accretes, so <code>add</code> has nothing true to prepend, and git
+  already knows when a file first appeared. Deriving that beats maintaining it, which is the same rule the
+  rest of this project follows.
+</p>
+
+<h2>A tag is a name, and sometimes a page</h2>
+<p>
+  126 earlier entries named a template or a family in their prose and 15 linked to it. So a scheme demanding
+  a path before capture asks for something three weeks of writing never produced, and a tag stays a plain
+  name.
+</p>
+<p>
+  A tag matching an entry of the same name is a link to it, and one matching nothing stays a word until
+  somebody writes that page. Nothing stores the difference, because the name computes it.
+  <code>mycelium notebook tags</code> prints the vocabulary with counts, so a near-duplicate reads as drift
+  and a singleton reads as a typo.
+</p>
+<p>
+  Soft matching costs the check. Renaming a page leaves every tag naming it pointing at nothing, where a path
+  would fail the build. That is the price of a capture costing one word.
+</p>
+
+<h2>An experiment carries its instrument</h2>
+<p>
+  The old detail field permitted a script from the day it arrived, with no tag restriction, and 574 nodes
+  used it zero times. Every number in that corpus was prose. One entry read <q>The 52% discipline figure was
+  generalised from one night and never re-measured</q>, and the figure stood as fact because nothing could
+  re-run it.
+</p>
+<p>
+  So an experiment holds a question, a script and the reading that script last produced. A behaviour in the
+  canon keeps the check that falsifies it, and this is the same move one rung down. The difference is what
+  disagreement means: a red check says the code broke, and a different reading says the corpus moved.
+</p>
+<p>
+  Writing the document therefore comes before knowing the answer, because running the script is how the
+  answer arrives. Logging after the work competes with the work and loses, which is the shape of every
+  capture failure this project has recorded. Here nothing remains to do afterward.
+</p>
+<p>
+  The script type is <code>mycelium/experiment</code>. The prefix already means Node-only and possibly
+  TypeScript, and the second word keeps a runner from confusing a probe with a check.
+  <code>mycelium notebook run</code> runs one on request, and <code>validate</code> never does. A probe that
+  fails the build is a check with worse manners.
+</p>
+
+<div class="worked-example">
+  <h4>A worked example</h4>
+  <p>
+    Three sample instances, checked by <code>template.template.html</code>'s generic validator against the
+    attributes on the <code>&lt;template&gt;</code> elements above. <code>mycelium validate</code> finds them
+    by their <code>data-conforms-to</code> the same way it finds every instance, so this file fails if any of
+    them stops conforming.
+  </p>
+
+  <div id="sample-instance">
+    <notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+      <notebook-title>A gate known to fail teaches people to ignore it</notebook-title>
+      <notebook-tag>gates</notebook-tag>
+      <notebook-detail>
+        <p>Field evidence against letting a chain carry a known gap.</p>
+      </notebook-detail>
+    </notebook-observation>
+
+    <notebook-research data-conforms-to="../templates/notebook.template.html#notebook-research">
+      <notebook-title>Unison identifies code by the hash of its AST, not by name</notebook-title>
+      <notebook-tag>naming</notebook-tag>
+    </notebook-research>
+
+    <notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+      <notebook-title>How many entries does the notebook hold?</notebook-title>
+      <notebook-question>How many entries does the notebook hold?</notebook-question>
+      <script type="mycelium/experiment">
+        export default function ({ fs }) {
+          return `${Array.from(fs.list('notebook')).length} entries`
+        }
+      </script>
+      <notebook-reading>0 entries</notebook-reading>
+    </notebook-experiment>
+  </div>
+</div>
+
+<h2>Authoring commands</h2>
+<p>
+  Each command's own <code>/** &hellip; */</code> comment is its only documentation, so
+  <code>mycelium notebook --help</code> and this page can never drift apart.
+</p>
+<script type="mycelium/command">
+  import type { CommandContext } from "../../src/api.ts"
+  import { declaredOrder, placeField } from "./shared.ts"
+  import { loadModule } from "../../src/utils.ts"
+  import { resolve } from "node:path"
+
+  function requireArgs(...checks) {
+    for (const [value, label] of checks) {
+      if (value === undefined) throw new Error(`missing required argument: ${label}`)
+    }
+  }
+
+  const DIR = "notebook"
+  const TYPES = ["observation", "research", "experiment"]
+
+  /** Every value a flag carries, since a tag and a prompt both repeat. */
+  const many = (value) => (value === undefined ? [] : Array.isArray(value) ? value : [value])
+
+  function rootOf(doc) {
+    return doc.querySelector("[data-conforms-to]")
+  }
+
+  /**
+   * Create a notebook entry.
+   *
+   *   mycelium notebook add <observation|research|experiment> --title "…"
+   *     [--tag NAME]… [--prompt "…" | --prompt -] [--detail "…" | --detail -]
+   *     [--question "…"] [--file <slug>]
+   *
+   * The type says where the knowledge came from: observation from thinking,
+   * research from someone else, experiment from running something. Nothing
+   * else distinguishes them, and an entry never changes type — a thought that
+   * arrived one way did not arrive the other.
+   *
+   * --file is a slug with no date on it, because an entry accretes and git
+   * holds when it first appeared. A slug carrying a date is rejected rather
+   * than silently kept, the way every family here rejects one. Omit it and
+   * the slug comes from the title.
+   *
+   * --tag repeats. A tag matching an entry of the same name reads as a link
+   * to it, and one matching nothing is a word until somebody writes the page.
+   *
+   * --prompt repeats too, and holds somebody's exact words rather than a
+   * summary. Pass --prompt - to read one from stdin.
+   *
+   * --question is required for an experiment and meaningless on the other
+   * two. The script itself is markup, so add leaves a placeholder and the
+   * script goes in by hand — a probe is code, and code does not fit on a flag.
+   */
+  export async function add({ fs, args, cli }: CommandContext) {
+    const type = args._[0]
+    requireArgs([type, "<type>"], [args.title, "--title"])
+    if (!TYPES.includes(type)) throw new Error(`unknown type "${type}"; expected one of ${TYPES.join(", ")}`)
+    if (type === "experiment" && !args.question) {
+      throw new Error("an experiment needs --question: the thing its script answers")
+    }
+
+    const slug = args.file ?? args.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    if (/^\d{4}-\d{2}-\d{2}-/.test(slug)) {
+      throw new Error(
+        `--file takes a slug with no date on it; an entry carries no date. Pass --file ${slug.slice(11)}.`
+      )
+    }
+
+    const tag = `notebook-${type}`
+    const path = `${DIR}/${slug}.${type}.html`
+    const doc = fs.create(path, `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title></title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+
+<${tag} data-conforms-to="../templates/notebook.template.html#${tag}">
+</${tag}>
+
+</body>
+</html>
+`)
+
+    doc.querySelector("title").textContent = args.title
+
+    const root = doc.querySelector(tag)
+    const order = declaredOrder(fs.get("templates/notebook.template.html"), tag)
+    const add1 = (name, text, html = false) => {
+      const el = doc.createElement(name)
+      if (html) el.innerHTML = text
+      else el.textContent = text
+      placeField(root, el, order)
+    }
+
+    add1("notebook-title", args.title)
+    for (const value of many(args.tag)) add1("notebook-tag", value)
+    for (const value of many(args.prompt)) {
+      add1("notebook-prompt", value === "-" ? await cli.readStdin() : value)
+    }
+    if (type === "experiment") {
+      add1("notebook-question", args.question)
+      const script = doc.createElement("script")
+      script.setAttribute("type", "mycelium/experiment")
+      script.textContent = "\n  export default function ({ fs }) {\n    throw new Error('this experiment has no code yet')\n  }\n"
+      placeField(root, script, order)
+    }
+    if (args.detail !== undefined) {
+      add1("notebook-detail", args.detail === "-" ? await cli.readStdin() : args.detail, true)
+    }
+
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join("\n"))
+  }
+
+  /**
+   * Update fields on an existing entry.
+   *
+   *   mycelium notebook update <file> [--title "…"] [--question "…"]
+   *     [--detail "…" | --detail - | --detail ""] [--reading "…"]
+   *     [--tag NAME]… [--prompt "…"]…
+   *
+   * An omitted flag leaves its field untouched and an empty value clears it,
+   * which is the rule every family here follows. --tag and --prompt repeat,
+   * and each one appends rather than replacing, since an entry gathers both
+   * over months.
+   *
+   * --reading records what a run last produced. Prefer `run --record`, which
+   * gets the value from the script rather than from whoever is typing.
+   */
+  export async function update({ fs, args, cli }: CommandContext) {
+    requireArgs([args._[0], "<file>"])
+    const path = `${DIR}/${args._[0]}`
+    const doc = fs.get(path)
+    const root = rootOf(doc)
+    const order = declaredOrder(fs.get("templates/notebook.template.html"), root.tagName.toLowerCase())
+
+    const single = (name, text, html = false) => {
+      if (text === undefined) return
+      const existing = root.querySelector(name)
+      if (text === "") return void existing?.remove()
+      if (existing) {
+        if (html) existing.innerHTML = text
+        else existing.textContent = text
+        return
+      }
+      const el = doc.createElement(name)
+      if (html) el.innerHTML = text
+      else el.textContent = text
+      placeField(root, el, order)
+    }
+
+    single("notebook-title", args.title)
+    single("notebook-question", args.question)
+    single("notebook-reading", args.reading)
+    if (args.detail !== undefined) {
+      single("notebook-detail", args.detail === "-" ? await cli.readStdin() : args.detail, true)
+    }
+    for (const name of ["tag", "prompt"]) {
+      for (const value of many(args[name])) {
+        const el = doc.createElement(`notebook-${name}`)
+        el.textContent = value === "-" ? await cli.readStdin() : value
+        placeField(root, el, order)
+      }
+    }
+
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join("\n"))
+  }
+
+  /**
+   * Add a data-rel edge from one entry to another file.
+   *
+   *   mycelium notebook link <from-file> <to-file> --rel <rel> --label "…"
+   *
+   * The edge lands inside <from-file>, so argument order decides direction.
+   * Upserts on (rel, href): a second run with the same pair corrects the
+   * label and never adds a duplicate. It cannot correct a direction or a
+   * wrong --rel, which is what unlink is for.
+   */
+  export function link({ fs, args }: CommandContext) {
+    requireArgs([args._[0], "<from-file>"], [args._[1], "<to-file>"], [args.rel, "--rel"])
+    const doc = fs.get(`${DIR}/${args._[0]}`)
+    const root = rootOf(doc)
+    const href = `./${args._[1]}`
+    const existing = Array.from(root.querySelectorAll(":scope > a[data-rel]"))
+      .find((a) => a.getAttribute("data-rel") === args.rel && a.getAttribute("href") === href)
+    if (existing) {
+      existing.textContent = args.label ?? existing.textContent
+      return
+    }
+    const a = doc.createElement("a")
+    a.setAttribute("data-rel", args.rel)
+    a.setAttribute("href", href)
+    a.textContent = args.label ?? args._[1]
+    root.appendChild(a)
+  }
+
+  /**
+   * Remove a data-rel edge from one entry to another file.
+   *
+   *   mycelium notebook unlink <from-file> <to-file> --rel <rel>
+   *
+   * What a mis-aimed edge needs, since link upserts on (rel, href) and so
+   * can never correct a direction or a wrong relation on its own.
+   */
+  export function unlink({ fs, args }: CommandContext) {
+    requireArgs([args._[0], "<from-file>"], [args._[1], "<to-file>"], [args.rel, "--rel"])
+    const doc = fs.get(`${DIR}/${args._[0]}`)
+    const root = rootOf(doc)
+    for (const a of Array.from(root.querySelectorAll(":scope > a[data-rel]"))) {
+      if (a.getAttribute("data-rel") === args.rel && a.getAttribute("href") === `./${args._[1]}`) a.remove()
+    }
+  }
+
+  /**
+   * Delete an entry, and every edge pointing at it.
+   *
+   *   mycelium notebook del <file>
+   *
+   * Prints each edge it drops, because an incoming edge is something
+   * upstream resting on the entry being removed. Unlike a followup, deleting
+   * here throws away a record rather than finishing a job. Git has the file.
+   */
+  export function del({ fs, args }: CommandContext) {
+    requireArgs([args._[0], "<file>"])
+    const target = args._[0]
+    let removed = 0
+    for (const { path, doc } of fs.list(DIR)) {
+      if (path === `${DIR}/${target}`) continue
+      for (const a of Array.from(doc.querySelectorAll("a[data-rel]"))) {
+        if (!(a.getAttribute("href") ?? "").endsWith(`/${target}`)) continue
+        console.log(`unlinked ${path}  --${a.getAttribute("data-rel")}-->  ${(a.textContent ?? "").trim()}`)
+        a.remove()
+        removed++
+      }
+    }
+    fs.delete(`${DIR}/${target}`)
+    console.log(`deleted  ${DIR}/${target}  (${removed} incoming edge(s) removed)`)
+  }
+
+  /**
+   * List every entry, or every edge between them.
+   *
+   *   mycelium notebook list [entries|edges]
+   */
+  export function list({ fs, args }: CommandContext) {
+    const what = args._[0] ?? "entries"
+    for (const { path, doc } of fs.list(DIR)) {
+      const root = rootOf(doc)
+      if (!root) continue
+      const name = path.slice(DIR.length + 1)
+      const title = root.querySelector("notebook-title")?.textContent?.trim() ?? ""
+      if (what === "entries") {
+        console.log(`${root.tagName.toLowerCase().slice(9).padEnd(11)} ${title}`)
+        console.log(`${" ".repeat(12)}${name}`)
+      } else {
+        for (const a of Array.from(root.querySelectorAll(":scope > a[data-rel]"))) {
+          console.log(`${name}  --${a.getAttribute("data-rel")}-->  ${a.getAttribute("href")}`)
+        }
+      }
+    }
+  }
+
+  /**
+   * Print the tag vocabulary, with a count for each.
+   *
+   *   mycelium notebook tags
+   *
+   * The vocabulary is a finding rather than a fixed list: which themes recur,
+   * and how often, says what the project has been thinking about. Reading it
+   * is also how drift shows up, since a near-duplicate sits beside the tag it
+   * duplicates and a typo sits alone with a count of one.
+   *
+   * A tag matching an entry of the same name prints the file it resolves to.
+   * One matching nothing prints as a word, which marks a page worth writing
+   * rather than an error.
+   */
+  export function tags({ fs }: CommandContext) {
+    const counts = new Map()
+    const pages = new Set()
+    for (const { path, doc } of fs.list(DIR)) {
+      pages.add(path.slice(DIR.length + 1).replace(/\.(observation|research|experiment)\.html$/, ""))
+      for (const el of Array.from(doc.querySelectorAll("notebook-tag"))) {
+        const name = (el.textContent ?? "").trim()
+        if (name) counts.set(name, (counts.get(name) ?? 0) + 1)
+      }
+    }
+    const rows = Array.from(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    for (const [name, count] of rows) {
+      console.log(`${String(count).padStart(4)}  ${name}${pages.has(name) ? "  →  page" : ""}`)
+    }
+    if (!rows.length) console.log("no tags yet")
+  }
+
+  /**
+   * Run an experiment's script and print what it returns.
+   *
+   *   mycelium notebook run <file> [--record]
+   *
+   * This never runs during validate, and nothing here can fail a build. A
+   * probe is allowed to be inconclusive, which is what separates it from the
+   * check a canon behaviour carries.
+   *
+   * --record writes the result into notebook-reading, so the next run has
+   * something to disagree with. That disagreement is the finding: a red check
+   * means the code broke, and a changed reading means the corpus moved.
+   */
+  export async function run({ fs, args }: CommandContext) {
+    requireArgs([args._[0], "<file>"])
+    const path = `${DIR}/${args._[0]}`
+    const doc = fs.get(path)
+    const root = rootOf(doc)
+    const script = root.querySelector('script[type="mycelium/experiment"]')
+    if (!script) throw new Error(`${args._[0]} carries no mycelium/experiment script`)
+
+    const mod = await loadModule(resolve(fs.root, path), script)
+    if (typeof mod.default !== "function") throw new Error("this experiment exports no default function")
+    const reading = String(await mod.default({ fs }))
+
+    const before = root.querySelector("notebook-reading")?.textContent?.trim()
+    console.log(reading)
+    if (before !== undefined && before !== reading) {
+      console.log(`\nwas   ${before}\nnow   ${reading}\n\nthe corpus moved; --record accepts the new reading`)
+    }
+    if (args.record) {
+      const order = declaredOrder(fs.get("templates/notebook.template.html"), root.tagName.toLowerCase())
+      const existing = root.querySelector("notebook-reading")
+      if (existing) existing.textContent = reading
+      else {
+        const el = doc.createElement("notebook-reading")
+        el.textContent = reading
+        placeField(root, el, order)
+      }
+    }
+  }
+</script>
+
+<h2>Conformance</h2>
+<p>
+  Conformance is a <code>data-conforms-to</code> attribute on the element making the claim, the same as every
+  other family here.
+</p>
+<pre><code>&lt;notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation"&gt;
+  &hellip;
+&lt;/notebook-observation&gt;</code></pre>
+
+</body>
+</html>

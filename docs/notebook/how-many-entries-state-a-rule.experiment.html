@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How many knowledge nodes state a general rule?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>How many knowledge nodes state a general rule?</notebook-title>
+  <notebook-tag>measurement</notebook-tag>
+  <notebook-question>How many entries state a rule rather than record an event?</notebook-question>
+  <script type="mycelium/experiment">
+export default function ({ fs }) {
+  const RULE = /^(A|An|Every|Nothing|Only|Derive|Link|Information|Reach)\b/
+  let rules = 0, total = 0
+  for (const { doc } of fs.list("knowledge")) {
+    const title = doc.querySelector("knowledge-title")?.textContent?.trim() ?? ""
+    if (!title) continue
+    total++
+    if (RULE.test(title)) rules++
+  }
+  return `${rules} of ${total} titles open like a rule`
+}
+</script>
+  <notebook-reading>86 of 579 titles open like a rule</notebook-reading>
+</notebook-experiment>
+</body></html>

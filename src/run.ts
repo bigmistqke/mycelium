@@ -48,12 +48,13 @@ function parseArgs(argv: string[]): ParsedArgs {
       // takes no value — --diff, say, rather than --diff <something>. Every
       // flag this project had until now took a value, so this only ever
       // widens what already parsed the same way.
-      if (next === undefined || next.startsWith("--")) {
-        args[key] = "true"
-      } else {
-        args[key] = next
-        i++
-      }
+      const value = next === undefined || next.startsWith("--") ? "true" : (i++, next)
+      // A flag given twice collects rather than overwrites, so `--tag a --tag b`
+      // means both. One use still yields a plain string, so every command
+      // reading a flag as one is untouched; only repeating a flag changes, and
+      // repeating one used to silently discard everything but the last value.
+      const seen = args[key]
+      args[key] = seen === undefined ? value : Array.isArray(seen) ? [...seen, value] : [seen, value]
     } else {
       args._.push(token)
     }

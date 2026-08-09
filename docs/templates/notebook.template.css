@@ -1,0 +1,92 @@
+/* The notebook-* field vocabulary. Every tag is hyphenated so it can never
+   collide with a current or future standard HTML element, and selectors stay
+   scoped under each type so this file's rules can never leak onto another
+   template's same-named field tags.
+
+   Three types share one shape, because they differ by where the knowledge came
+   from rather than by what they hold. So the rules below list all three
+   selectors rather than styling a common ancestor that does not exist. */
+notebook-observation,
+notebook-research,
+notebook-experiment {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  background: var(--code-bg);
+  margin: 1.25rem 0;
+}
+notebook-observation::before,
+notebook-research::before,
+notebook-experiment::before {
+  display: block;
+  color: var(--accent);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+notebook-observation::before { content: "observation — from thinking"; }
+notebook-research::before { content: "research — from someone else"; }
+notebook-experiment::before { content: "experiment — from running something"; }
+
+notebook-title { display: block; font-weight: 700; font-size: 1.4rem; margin-bottom: 0.5rem; }
+
+/* A tag reads as a chip rather than a line, since an entry carries several and
+   they are names rather than sentences. */
+notebook-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.05rem 0.5rem;
+  margin: 0 0.3rem 0.3rem 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+/* Somebody else's exact words, so they read as a quotation and not as the
+   entry's own prose. */
+notebook-prompt {
+  display: block;
+  border-left: 3px solid var(--border);
+  padding-left: 0.9rem;
+  margin: 0.75rem 0;
+  font-style: italic;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+notebook-detail { display: block; margin-top: 1rem; }
+
+notebook-question { display: block; margin-top: 1rem; font-weight: 600; }
+notebook-question::before {
+  content: "question";
+  display: block;
+  color: var(--accent);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 400;
+  margin-bottom: 0.25rem;
+}
+
+/* The reading a run last produced. Prominent on purpose: it is the claim the
+   entry makes, and the thing a rerun disagrees with. */
+notebook-reading {
+  display: block;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  border-left: 3px solid var(--accent);
+  background: var(--bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+}
+notebook-reading::before {
+  content: "reading";
+  display: block;
+  color: var(--accent);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
