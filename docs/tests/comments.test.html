@@ -562,6 +562,78 @@
     </script>
   </test-case>
 
+  <test-case id="a-comment-arrives-with-the-code-beneath-it" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>a comment reaches the model with twelve lines beneath it, and no more</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/comments.canon.html#a-comment-arrives-with-the-code-beneath-it">the behaviour this checks</a>
+    <script type="mycelium/test">
+      /**
+       * The thirteenth line carries a marker nothing else does, so a window that
+       * runs one line long names itself here.
+       */
+      import { readFileSync } from "node:fs"
+      import type { TestContext } from "../../src/api.ts"
+      import { GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        sandbox.write(GUIDE, guideDoc())
+        const body = Array.from({ length: 12 }, (_, i) => `const inside${i} = ${i}`)
+        sandbox.write("sample.ts", ["// the format another tool demands here", ...body, "const beyondTheWindow = 13", ""].join("\n"))
+
+        const stub = stubClaude()
+        try {
+          sandbox.mycelium("comments", "check", "docs/sample.ts")
+          const prompt = readFileSync(stub.promptFile, "utf8")
+          assert(prompt.includes("const inside11"), "the twelfth line never reached the model")
+          assert(!prompt.includes("beyondTheWindow"), "the window runs past the twelve lines it claims")
+        } finally {
+          stub.restore()
+        }
+      }
+    </script>
+  </test-case>
+
+  <test-case id="the-file-goes-in-one-call" data-conforms-to="../templates/test.template.html#test-case">
+    <test-name>every comment a model judges in one file reaches it in a single call</test-name>
+    <test-status>PENDING</test-status>
+    <a data-rel="depends_on" href="../canon/comments.canon.html#the-file-goes-in-one-call">the behaviour this checks</a>
+    <script type="mycelium/test">
+      /**
+       * Three comments that each look defensible alone can be one point made
+       * three times, and only a reader holding all of them at once can say so.
+       * The stub appends every prompt it is handed, so a second call shows up
+       * here as a second copy of the standard.
+       */
+      import { readFileSync } from "node:fs"
+      import type { TestContext } from "../../src/api.ts"
+      import { FIELDS, GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
+      export default async function ({ assert, sandbox }: TestContext) {
+        sandbox.write(GUIDE, guideDoc())
+        sandbox.write("sample.ts", [
+          "// the first of three saying one thing",
+          "const a = 1",
+          "// the second of three saying one thing",
+          "const b = 2",
+          "// the third of three saying one thing",
+          "const c = 3",
+          "",
+        ].join("\n"))
+
+        const stub = stubClaude()
+        try {
+          sandbox.mycelium("comments", "check", "docs/sample.ts")
+          const log = readFileSync(stub.callLog, "utf8")
+          const calls = log.split(FIELDS.title).length - 1
+          assert(calls === 1, `the file went to the model in ${calls} calls`)
+          for (const nth of ["first", "second", "third"]) {
+            assert(log.includes(`the ${nth} of three`), `the ${nth} comment never reached the model`)
+          }
+        } finally {
+          stub.restore()
+        }
+      }
+    </script>
+  </test-case>
+
 </test-doc>
 
 </body>

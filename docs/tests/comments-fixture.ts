@@ -65,7 +65,7 @@ export function stubClaude(mode: "decide" | "refuse" = "decide") {
   const script =
     mode === "refuse"
       ? `#!/bin/sh\ncat > "${promptFile}"\necho "the stub was asked, and this case says nothing should have asked it" >&2\nexit 3\n`
-      : `#!/bin/sh\ncat > "${promptFile}"\nexec node "${join(dir, "decide.cjs")}" "${promptFile}"\n`
+      : `#!/bin/sh\ncat > "${promptFile}"\ncat "${promptFile}" >> "${join(dir, "calls.txt")}"\necho >> "${join(dir, "calls.txt")}"\nexec node "${join(dir, "decide.cjs")}" "${promptFile}"\n`
 
   writeFileSync(join(dir, "decide.cjs"), DECIDER)
   writeFileSync(join(dir, "claude"), script)
@@ -75,6 +75,7 @@ export function stubClaude(mode: "decide" | "refuse" = "decide") {
   process.env.PATH = `${dir}:${before}`
   return {
     promptFile,
+    callLog: join(dir, "calls.txt"),
     restore() {
       process.env.PATH = before
     },

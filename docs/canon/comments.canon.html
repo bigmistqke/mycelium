@@ -63,7 +63,21 @@ because this axiom says the fix touches nothing it did not report.</p>
 </canon-detail>
   <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a fix people cannot trust is one they run once</a>
 </canon-axiom>
-<canon-specification id="comments" data-conforms-to="../templates/canon.template.html#canon-specification">
+<canon-axiom id="judged-against-its-context" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>A comment answers to the code it introduces and to every other comment in the file.</canon-title>
+  <canon-detail><p>Whether a comment earns its place is not a property of the comment. It depends
+on what the code beneath already says, which is why no regular expression can
+decide it and why a model reads the two together.</p>
+<p>The file is the second half of the context, and the easier half to lose. Three
+comments that each look defensible alone can be one point made three times, and
+only a reader holding all of them at once can say so. Splitting a file across
+calls hides exactly that.</p>
+<p>Both halves are bounded on purpose. Twelve lines covers a signature and the
+start of a body, and the whole file goes in one call rather than one per comment,
+so the judgment stays affordable while keeping what it needs.</p>
+</canon-detail>
+  <a data-rel="depends_on" href="./root.canon.html#documents-are-the-source">the code beneath is what the comment answers to</a>
+</canon-axiom><canon-specification id="comments" data-conforms-to="../templates/canon.template.html#canon-specification">
   <canon-title>the comments command</canon-title>
   <a data-rel="specifies" href="../commands/comments.command.html">the command that judges and cuts comments</a>
   <canon-behaviour id="every-comment-in-the-file-gets-a-verdict" data-conforms-to="../templates/canon.template.html#canon-behaviour">
@@ -141,6 +155,14 @@ because this axiom says the fix touches nothing it did not report.</p>
   <canon-behaviour id="nothing-else-describes-what-earns-a-place" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>Nothing in the prompt says what earns a comment its place except the guide's own fields.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">a paraphrase in the prompt is the copy that drifts</a>
+  </canon-behaviour>
+  <canon-behaviour id="a-comment-arrives-with-the-code-beneath-it" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A comment reaches the model with the twelve lines of code beneath it, and no more.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#judged-against-its-context">what the comment introduces, bounded</a>
+  </canon-behaviour>
+  <canon-behaviour id="the-file-goes-in-one-call" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>Every comment a model judges in one file reaches it in a single call.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#judged-against-its-context">the comments that argue with each other, read together</a>
   </canon-behaviour>
 </canon-specification>
 </body></html>

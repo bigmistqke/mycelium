@@ -74,13 +74,27 @@
   // code under it is the same size of judgment as a one-shot rewrite.
   const MODEL = "claude-haiku-4-5-20251001"
 
-  // Lines of code shown after each comment. A comment justifies itself against
-  // what it introduces, and twelve lines covers a function signature and the
-  // start of a body without turning one file into one enormous prompt.
+  /**
+   * Lines of code shown after each comment. A comment justifies itself against
+   * what it introduces, and twelve lines covers a function signature and the
+   * start of a body without turning one file into one enormous prompt.
+   *
+   * @behaviour canon/comments.canon.html#a-comment-arrives-with-the-code-beneath-it
+   */
   const CONTEXT_LINES = 12
 
+  /**
+   * The kinds this command reads directly, as opposed to through a script.
+   *
+   * @behaviour canon/comments.canon.html#an-unreadable-kind-fails
+   */
   const SOURCE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"]
 
+  /**
+   * Where the standard lives, as a path from the documents root.
+   *
+   * @behaviour canon/comments.canon.html#a-missing-guide-fails
+   */
   const GUIDE = "language/guides/comment-earns-its-place.guide.html"
 
   interface Candidate {
@@ -197,6 +211,11 @@
     ].join("\n")
   }
 
+  /**
+   * Puts the file to the model, and reads the verdicts back out of its reply.
+   *
+   * @behaviour canon/comments.canon.html#the-file-goes-in-one-call
+   */
   function judge(guide: string, items: Candidate[]): Map<number, Verdict> {
     // Runs from the OS temp dir with no MCP servers, the same as language
     // autofix. This project's own CLAUDE.md would otherwise load into a call
@@ -245,10 +264,14 @@
     return c.raw.trimStart().startsWith("/**") && /^\s*export\b/.test(c.context)
   }
 
-  // One call for the whole file, not one per comment and not one per batch.
-  // Comments in a file argue with each other: three that each look defensible
-  // alone can be one point made three times, and only a reader holding all of
-  // them at once can say so. Splitting the file hides exactly that.
+  /**
+   * One call for the whole file, not one per comment and not one per batch.
+   * Comments in a file argue with each other: three that each look defensible
+   * alone can be one point made three times, and only a reader holding all of
+   * them at once can say so. Splitting the file hides exactly that.
+   *
+   * @behaviour canon/comments.canon.html#the-file-goes-in-one-call
+   */
   function judgeAll(guide: string, items: Candidate[]): { verdicts: Map<number, Verdict>; protectedCount: number } {
     const verdicts = new Map<number, Verdict>()
     const toJudge: Candidate[] = []
@@ -292,6 +315,11 @@
     return { pos, end }
   }
 
+  /**
+   * The file named on the command line, and every comment inside it.
+   *
+   * @behaviour canon/comments.canon.html#every-comment-in-the-file-gets-a-verdict
+   */
   function loadCandidates({ fs, args, cli }: CommandContext) {
     const target = args._[0]
     if (!target) throw new Error("usage: mycelium comments check|autofix <file> [--diff]")
@@ -300,6 +328,11 @@
     return { target, absPath, source, items: candidates(source, target, cli) }
   }
 
+  /**
+   * The line that moves a comment's rationale into the graph.
+   *
+   * @behaviour canon/comments.canon.html#a-promotion-prints-the-line-that-moves-it
+   */
   function promoteHint(c: Candidate): string {
     return `      pnpm mycelium knowledge add decision --title "…" --confidence NN --status completed --detail - --file <slug>   # from the comment at line ${c.line}`
   }
