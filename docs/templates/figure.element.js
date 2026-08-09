@@ -85,6 +85,10 @@
    * @param {Element} node
    * @returns {Cell | null}
    */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#data-at-decides-the-cell
+   */
   function cellOf(node) {
     var at = node.getAttribute("data-at")
     if (!at) return null
@@ -123,6 +127,10 @@
   /**
    * @param {Measured} e
    * @returns {{ lo: number, hi: number }}
+   */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#no-label-covers-another-edge
    */
   function runOf(e) {
     var arrive = e.arriveX === undefined ? e.b.midX : e.arriveX
@@ -164,6 +172,10 @@
    * @param {Measured} q
    * @returns {boolean}
    */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#merge-shares-one-lane
+   */
   function canShareLane(p, q) {
     if (p.fromId === q.fromId || p.toId === q.toId) return true
     var a = runOf(p)
@@ -178,6 +190,10 @@
    * @param {Element} to
    * @returns {boolean}
    */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#peer-runs-level-between-facing-sides
+   */
   function sameRow(from, to) {
     var a = cellOf(from)
     var b = cellOf(to)
@@ -185,6 +201,11 @@
   }
 
   /** @param {Measured[]} edges */
+  /**
+   * Puts every edge crossing a gap into a lane, sharing one wherever two may.
+   *
+   * @behaviour canon/figure.canon.html#merge-shares-one-lane
+   */
   function assignLanes(edges) {
     /** @type {Record<string, Measured[]>} */
     var channels = {}
@@ -235,6 +256,10 @@
    * @param {Element} graph
    * @returns {string[]}
    */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#back-edge-keeps-to-its-column
+   */
   function columnKinds(graph) {
     var raw = (graph.getAttribute("data-columns") || "").trim()
     if (!raw) return []
@@ -252,6 +277,10 @@
    * @param {string[]} kinds
    * @returns {number[]}
    */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#back-edge-keeps-to-its-column
+   */
   function nodeColumnMap(kinds) {
     /** @type {number[]} */
     var map = []
@@ -267,6 +296,10 @@
    * @param {Element} from
    * @param {Element} to
    * @returns {string}
+   */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#a-lone-label-keeps-its-anchor
    */
   function rowSpan(from, to) {
     var rows = [cellOf(from), cellOf(to)]
@@ -296,6 +329,11 @@
    * @param {Measured[]} edges
    * @returns {Measured[][]}
    */
+  /**
+   * The edges landing on each box, which are the ones whose labels meet.
+   *
+   * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
+   */
   function arrivalGroups(edges) {
     /** @type {Record<string, Measured[]>} */
     var byTarget = {}
@@ -311,6 +349,11 @@
   /**
    * @param {Measured[]} edges
    * @param {number} spacing
+   */
+  /**
+   * Spreads the landings on one box apart, so two labels have room to sit side by side.
+   *
+   * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
    */
   function spreadArrivals(edges, spacing) {
     arrivalGroups(edges).forEach(function (group) {
@@ -347,6 +390,13 @@
   // including the arrowhead, so the figure stopped saying which way the
   // relation ran. The band decides how far above it lands.
   /** @param {Measured} e */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#peer-runs-level-between-facing-sides
+   * @behaviour canon/figure.canon.html#peer-running-leftwards
+   * @behaviour canon/figure.canon.html#peer-across-an-empty-column
+   * @behaviour canon/figure.canon.html#peer-label-clears-its-own-line
+   */
   function routePeer(e) {
     var rightwards = e.b.midX > e.a.midX
     var start = rightwards ? e.a.right : e.a.left
@@ -361,6 +411,11 @@
   // label chasing the wire. The grid sizes the column to whatever the label
   // needs, which is why no length of text can push one outside the figure.
   /** @param {Measured} e */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#back-edge-keeps-to-its-column
+   * @behaviour canon/figure.canon.html#no-label-leaves-the-figure
+   */
   function routeBack(e) {
     var x = must(e.marker, "gutter label").midX
     e.d = "M" + e.a.left + "," + e.a.midY + " L" + x + "," + e.a.midY +
@@ -668,6 +723,10 @@
    * @param {Measured[]} edges
    * @returns {number}
    */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
+   */
   function neededArrivalSpacing(chips, edges) {
     /** @type {Record<string, number>} */
     var widthByTarget = {}
@@ -698,6 +757,10 @@
    * @param {Chip[]} chips
    * @param {number} present
    * @returns {number}
+   */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
    */
   function neededRowGap(chips, present) {
     var shortfall = 0
@@ -738,6 +801,12 @@
    * @param {Chip[]} chips
    * @param {{ width: number, height: number }} inner
    */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#no-label-leaves-the-figure
+   * @behaviour canon/figure.canon.html#no-label-covers-a-node
+   * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
+   */
   function placeLabels(chips, inner) {
     chips.forEach(function (entry) {
       // Inside the figure. A long label near either side hung out past the
@@ -765,6 +834,10 @@
   // at either end. So a run starts at the top of what it may use and comes down
   // from there.
   /** @param {Chip[]} run */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#a-lone-label-keeps-its-anchor
+   */
   function pack(run) {
     var ordered = run.slice().sort(function (p, q) { return p.y - q.y })
     /** @type {number | null} */
@@ -791,6 +864,11 @@
    * @param {Chip[]} chips
    * @returns {Chip[][]}
    */
+  /**
+   * Groups labels by the gap their edge crosses, since that is the space they share.
+   *
+   * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
+   */
   function byGap(chips) {
     /** @type {Record<string, Chip[]>} */
     var groups = {}
@@ -807,6 +885,10 @@
   /**
    * @param {Chip[]} group
    * @returns {Chip[][]}
+   */
+  /**
+   *
+   * @behaviour canon/figure.canon.html#labels-into-one-box-do-not-overlap
    */
   function cluster(group) {
     var sorted = group.slice().sort(function (p, q) { return (p.cx - p.w / 2) - (q.cx - q.w / 2) })
@@ -836,6 +918,11 @@
   Object.setPrototypeOf(FigureGraph, HTMLElement)
 
   /** @param {HTMLElement} graph */
+  /**
+   * Lays every node into the cell it declares, and sizes the columns around them.
+   *
+   * @behaviour canon/figure.canon.html#data-at-decides-the-cell
+   */
   function place(graph) {
     // A node column shares the width evenly, with minmax(0, …) for the reason
     // the stylesheet gives on grid-auto-columns. An edge column takes only what
