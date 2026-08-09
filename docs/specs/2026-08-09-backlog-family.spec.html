@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A backlog that drains: an intention names where it applies, and nothing marks it done</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A backlog that drains: an intention names where it applies, and nothing marks it done</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-09</spec-date>
+  <spec-problem>
+<p>Work interrupts itself. You are inside one thing when you notice another,
+and starting a parallel session costs more than the notice is worth. The thought
+needs somewhere to go in one line, and it needs to come back at the moment it
+matters.</p>
+<p>The knowledge graph absorbed this for three weeks and it went badly. Eleven
+of 578 titles read as a deferral, and two of those have been dead since January:
+one defers parsing to a v2 that never came, and one defers an implementation
+this project does not descend from. Nothing said so, because nothing was
+watching.</p>
+<p>Seven of the eleven name no condition at all. <q>Settle the asymmetry in a
+follow-up</q> is a wish rather than a deferral, and a reader cannot tell whether
+its moment arrived. The four that do name one point at something checkable:
+until a second caller wants them, once the count reaches zero, when a check
+needs it.</p>
+<p>The <code>plan</code> family answers a different question. It carries a goal,
+an architecture, a tech stack and tasks with files and interfaces, which is a
+design somebody already settled. Twelve documents hold 286 statuses and every
+one of them says completed, so the family shows what happens when a store meant
+to drain keeps a declared record of its own progress.</p>
+</spec-problem>
+  <spec-design>
+<p>A backlog item is one intention with somewhere to land. It carries a title, a
+required link to what it concerns, and an optional condition that would end it.
+Nothing else.</p>
+<h3>The place is what makes it survive</h3>
+<p>The link is required because it does two jobs no list can do. It puts the
+item in front of a reader at the moment they open the thing it is about, so
+nobody has to read a backlog to find it. And it dates the item against the
+repository rather than against a calendar.</p>
+<p><code>every-link-resolves</code> already fails a build on an href pointing at
+something that no longer exists, across the whole corpus and out to source
+files. So an item about a deleted file or a retired claim breaks validation.
+Staleness gets loud instead of accumulating quietly, which is the failure the
+January deferrals demonstrate.</p>
+<h3>Nothing marks it done</h3>
+<p>There is no status field, and no command closes an item. Deletion is the
+only edit, and two forces cause it: the condition fires, or the place stops
+existing. Both come from outside the document, so nothing here declares
+progress.</p>
+<p>This is the line against becoming a task tracker. A backlog needs somebody
+to close items, and closing is the act that rots — 286 statuses reading
+completed is what a store looks like once everyone stopped. An item that only
+ever disappears cannot go stale in that direction.</p>
+<h3>A condition may be a script</h3>
+<p>A condition in prose reads to a person. A condition as a script answers on
+request, and <code>mycelium backlog due</code> reports which items have come
+due. That turns remembering into asking, which is the whole point of writing
+one down mid-work.</p>
+<p>The script type is <code>mycelium/experiment</code>, shared with the
+notebook, because the machinery is identical: a question, code, and a reading.
+The question differs — a notebook experiment asks what is true and a condition
+asks whether the moment arrived.</p>
+<p>Nothing here runs during <code>validate</code>. A condition that fails a
+build is a gate, and a backlog holding a gate would stop work on the strength
+of something somebody jotted down while thinking about something else.</p>
+<h3>What an item becomes</h3>
+<p>A spec, or a plan, or nothing. That is why an item carries no steps of its
+own: the thing it turns into holds those, and an item that has grown steps
+stopped being an item some time ago.</p>
+<p>Capture has to be one line, without leaving the work. <code>mycelium backlog
+add --at &lt;place&gt; --title "…" [--when "…"]</code> is the whole surface. If
+it costs more than that, a person opens the parallel session instead and the
+family means nothing.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Priority, size, assignment, and ordering. Every one of them is a field that
+somebody maintains, and this project has 286 statuses showing what maintained
+fields become.</p>
+<p>Retiring <code>plan</code>. The family's twelve documents and single-valued
+status field raise the question, and answering it needs a look at what would
+miss it.</p>
+<p>Moving the eleven existing deferrals. They belong here rather than in the
+notebook, and they arrive with the migration that renames everything else.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>The family's name. Backlog carries freight from agile practice — grooming,
+sprints, points — and this project holds that a tag prefix has to name a thing.</p>
+<p>Which relation the required link uses. None of the eight quite says
+concerns, and minting a ninth is a deliberate act rather than a convenience.</p>
+<p>Whether an item with a script condition differs from a notebook experiment
+in anything but intent. If it does not, one of the two is a wrapper.</p>
+<p>What happens when a place moves rather than disappears. A rename breaks the
+link exactly as a deletion does, and a reader cannot tell which happened from
+the failure.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
