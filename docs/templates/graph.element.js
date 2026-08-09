@@ -27,14 +27,16 @@ let childrenOf = {}
 let bands = []
 let nodeAt = () => null
 let litFrom = (address) => new Set([address])
-let impactOf = () => 0
+let impactFor = () => ''
 /** The colour standing for each kind of node, and the kind each address is. */
 const kindColour = {}
 const kindOf = {}
+/** The colour standing for each relation, for the groups the pane lists. */
+const relColour = {}
 
 let sidesFor = (address) => [
-  { title: 'answers to', addresses: parentsOf[address] },
-  { title: 'answered by', addresses: childrenOf[address] },
+  { title: 'answers to', upstream: true, addresses: parentsOf[address] },
+  { title: 'answered by', upstream: false, addresses: childrenOf[address] },
 ]
 
 const bandOf = (item) => {
@@ -240,21 +242,6 @@ function pointIn(rect) {
 }
 
 /**
- * An arrowhead every wire borrows, taking the colour of whatever it ends.
- *
- * One marker rather than one per relation: `context-stroke` fills it from the
- * path it sits on, so a wire's colour reaches its head without a second
- * definition to keep in step.
- */
-function arrowhead() {
-  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs')
-  defs.innerHTML = '<marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5"'
-    + ' markerHeight="5" orient="auto-start-reverse">'
-    + '<path d="M0,0 L8,4 L0,8 z" fill="context-stroke" /></marker>'
-  return defs
-}
-
-/**
  * Which side of a box a wire leaves and arrives on.
  *
  * Read off where the two boxes actually sit rather than which end of the edge
@@ -277,7 +264,6 @@ function draw() {
     layer.style.width = grid.scrollWidth + 'px'
     layer.style.height = grid.scrollHeight + 'px'
     layer.innerHTML = ''
-    layer.appendChild(arrowhead())
   }
   for (const { from, to, rel } of links) {
     const a = boxOf(from), b = boxOf(to)
@@ -288,7 +274,6 @@ function draw() {
     const mid = (x1 + x2) / 2
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
     path.setAttribute('d', 'M' + x1 + ',' + y1 + ' C' + mid + ',' + y1 + ' ' + mid + ',' + y2 + ' ' + x2 + ',' + y2)
-    path.setAttribute('marker-end', 'url(#arrow)')
     path.dataset.from = from
     path.dataset.to = to
     if (rel) path.dataset.rel = rel
@@ -443,17 +428,17 @@ function fillWhere(node) {
 /**
  * The blast radius, up top where a reader meets it before the reasoning.
  *
- * This is what the badge on the box counts, and it is not the list further
- * down: that list is one step, and this is everything the node reaches at any
- * depth. Saying so is what stops 39 looking like it disagrees with eight.
+ * The caller writes the sentence, because the thing being counted is its own
+ * vocabulary. Saying it here put behaviours into a drawing that also draws
+ * goals and observations, and a reader met a word for something the graph in
+ * front of them does not contain.
  *
- * Silent when the two agree, since a line repeating the list beneath it earns
- * nothing.
+ * A caller with nothing worth saying says nothing, which is why an empty string
+ * hides the line rather than needing a second flag.
  */
 function fillReach(node) {
-  const reached = impactOf(node.address)
   const reach = document.getElementById('pane-reach')
-  reach.textContent = reached > (childrenOf[node.address] || []).length ? 'impacts ' + reached + ' behaviours' : ''
+  reach.textContent = impactFor(node.address)
   reach.hidden = !reach.textContent
 }
 
@@ -490,16 +475,36 @@ function fillDetail(node) {
  * selector, because any sibling added later would quietly break a rule that
  * asks whether a group is on its own.
  */
+/**
+ * A node's neighbours in two columns: what it comes from on the left, what it
+ * goes towards on the right.
+ *
+ * The same direction the graph itself runs, so a reader turning from the
+ * drawing to the pane finds upstream where upstream already was. Relations
+ * stack inside their column rather than each taking one, since which way a step
+ * runs is the coarser question and the relation is the finer one.
+ *
+ * Upstream is not the same as incoming. A claim depending on another and a goal
+ * leading to an outcome both point away from the node, and they put the target
+ * on opposite sides, which is the same reading the ranking already takes.
+ *
+ * A node with steps in only one direction gives that column the whole width,
+ * rather than leaving half the pane holding a rule and nothing else.
+ */
 function fillSides(node) {
   const box = document.getElementById('pane-links')
   box.textContent = ''
   const sides = sidesFor(node.address)
-    .map((side) => neighbours(side.title, side.addresses))
-    .filter(Boolean)
-  for (const side of sides) {
-    side.classList.toggle('alone', sides.length === 1)
-    box.appendChild(side)
-  }
+  const columns = [true, false]
+    .map((upstream) => sides.filter((side) => !!side.upstream === upstream).map(neighbours).filter(Boolean))
+    .filter((group) => group.length)
+  box.style.gridTemplateColumns = `repeat(${columns.length}, minmax(0, 1fr))`
+  columns.forEach((group, at) => {
+    const column = document.createElement('div')
+    column.className = at === 0 ? 'column' : 'column follows'
+    for (const side of group) column.appendChild(side)
+    box.appendChild(column)
+  })
 }
 
 /**
@@ -531,18 +536,33 @@ function fillPane(address) {
  * An empty side renders nothing at all, since a heading over no items tells a
  * reader the same thing its absence does.
  */
-function neighbours(title, addresses) {
-  const found = (addresses || []).map(nodeAt).filter(Boolean)
+function neighbours(side) {
+  const found = (side.addresses || []).map(nodeAt).filter(Boolean)
   if (!found.length) return null
   const box = document.createElement('div')
   box.className = 'side'
   const h = document.createElement('h3')
-  h.textContent = title
+  // A dot in the relation's own colour, so a group heading and the kind of step
+  // it names are one thing rather than a word a reader has to hold.
+  if (side.rel && relColour[side.rel]) {
+    const dot = document.createElement('span')
+    dot.className = side.upstream ? 'dot hollow' : 'dot'
+    dot.style.setProperty('--wire', relColour[side.rel])
+    h.appendChild(dot)
+  }
+  h.appendChild(document.createTextNode(side.title))
   box.appendChild(h)
   for (const node of found) {
     const button = document.createElement('button')
     button.type = 'button'
     button.textContent = node.title || node.name
+    // The same colour the box carries in the graph, so a step through the pane
+    // and the box it lands on are recognisably the same thing.
+    const kind = kindOf[node.address]
+    if (kind) {
+      button.dataset.kind = kind
+      button.style.setProperty('--wire', kindColour[kind])
+    }
     button.addEventListener('click', () => show(node.address))
     box.appendChild(button)
   }
@@ -647,7 +667,7 @@ function mount(model) {
   bands = model.bands
   nodeAt = model.nodeAt
   litFrom = model.litFrom
-  impactOf = model.impactOf ?? (() => 0)
+  impactFor = model.impactFor ?? (() => '')
   if (model.sidesFor) sidesFor = model.sidesFor
 
   /**
@@ -660,7 +680,7 @@ function mount(model) {
    */
   const kinds = [...new Set(ranks.flatMap((rank) => rank.items.map((item) => item.kind)).filter(Boolean))]
   kinds.forEach((kind, at) => {
-    kindColour[kind] = `oklch(64% 0.125 ${Math.round((360 * at) / kinds.length)})`
+    kindColour[kind] = `oklch(66% 0.19 ${Math.round((360 * at) / kinds.length)})`
   })
   for (const rank of ranks) for (const item of rank.items) kindOf[item.address] = item.kind
 
@@ -672,11 +692,18 @@ function mount(model) {
     for (const parent of parents) (childrenOf[parent] ??= []).push(child)
 
   // What gets drawn, which is not what gets ranked. Ranking asks which node
-  // sits upstream; drawing asks which way the edge somebody wrote actually
-  // points, so an arrowhead lands where the corpus says it should.
+  // sits upstream; drawing asks which pair the corpus actually joined, and a
+  // wire carries the colour of the node its edge leaves.
   links = model.edges ?? Object.entries(parentsOf)
     .flatMap(([child, parents]) => parents.map((parent) => ({ from: child, to: parent })))
 
+  // The same spread for relations, which the pane groups by. A relation and a
+  // kind answer different questions in different places, so they take their
+  // colours from separate wheels rather than sharing one and colliding.
+  const rels = [...new Set(links.map((link) => link.rel).filter(Boolean))]
+  rels.forEach((rel, at) => {
+    relColour[rel] = `oklch(68% 0.21 ${Math.round((360 * at) / rels.length + 20)})`
+  })
   for (const rank of ranks) orderRank(rank, parentsOf)
   numberRows()
   render()

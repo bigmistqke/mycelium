@@ -42,16 +42,34 @@
      middle. */
   #pane-links { margin-top: .9rem; display: grid; align-items: start;
                 grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 0; }
-  #pane-links .side { padding-right: 1.25rem; }
-  #pane-links .side.alone { grid-column: 1 / -1; padding-right: 0; }
-  #pane-links .side + .side { border-left: 1px solid var(--line);
-                              padding-left: 1.25rem; padding-right: 0; }
+  /* One divider, between the two columns and never at an edge. The relations
+     stack inside a column, so nothing separates them but the space they sit
+     in. */
+  #pane-links .column { padding-right: 1.25rem; }
+  #pane-links .column.follows { border-left: 1px solid var(--line);
+                                padding-left: 1.25rem; padding-right: 0; }
+  #pane-links .column > .side:first-child > h3 { margin-top: 0; }
+  #pane-links button { border-left: 2px solid var(--wire); padding-left: .45rem; }
+  #pane-links button:not([data-kind]) { border-left-color: var(--line); }
+  /* Faded by colour rather than opacity, so the dot beside it keeps its own
+     strength. Opacity on the heading took the dot down with it and every
+     relation came out looking like the same washed pastel. */
   #pane-links h3 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
-                   opacity: .5; margin: .6rem 0 .25rem; font-weight: 500; }
+                   color: color-mix(in oklab, currentColor 55%, Canvas);
+                   margin: .6rem 0 .25rem; font-weight: 500;
+                   display: flex; align-items: center; gap: .4rem; }
+  /* Hollow coming from, solid going towards: a step not yet taken against one
+     already made. The marker follows the column rather than the stored edge,
+     which is what it did at first — that direction agrees with the column for
+     seven relations and inverts for leads_to, the one the ranking reverses, so
+     the same marker turned up on both sides. */
+  #pane-links h3 .dot { width: .6rem; height: .6rem; border-radius: 50%;
+                        background: var(--wire); flex: 0 0 auto; }
+  #pane-links h3 .dot.hollow { background: none; box-shadow: inset 0 0 0 2px var(--wire); }
   #pane-links button { display: block; background: none; border: 0; padding: .1rem 0;
                        color: inherit; font: inherit; text-align: left; cursor: pointer;
-                       text-decoration: underline; text-decoration-color: var(--line); }
-  #pane-links button:hover { text-decoration-color: currentColor; }
+                       text-decoration: none; }
+  #pane-links button:hover { border-left-width: 4px; }
   #pane-close { position: absolute; top: .6rem; right: .8rem; background: none;
                 border: 0; color: inherit; font-size: 1.1rem; cursor: pointer; opacity: .6; }
   #pane-close:hover { opacity: 1; }
@@ -149,7 +167,12 @@
      costs contrast on the one thing every box exists to say, and the border
      carries the same signal at the edge of the box where it competes with
      nothing. */
-  .node[data-kind], .node[data-kind]:hover, .node[data-kind].lit { border-color: var(--wire); }
+  /* Mixed towards the page rather than faded, so the border sits back without
+     letting anything through it. A box at rest says which kind it is quietly;
+     the wire leaving it and the pane beside it carry the same colour at full
+     strength. */
+  .node[data-kind] { border-color: color-mix(in oklab, var(--wire) 55%, Canvas); }
+  .node[data-kind]:hover, .node[data-kind].lit { border-color: var(--wire); }
   .node[data-kind].chosen { border-color: var(--wire);
                             box-shadow: inset 0 0 0 1px var(--wire), 0 0 12px var(--wire); }
   .node .reach { float: right; opacity: .5; font-variant-numeric: tabular-nums; }

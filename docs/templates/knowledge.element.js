@@ -139,21 +139,24 @@ const RELATIONS = {
  */
 function sidesFor(address) {
   const groups = new Map()
-  const add = (title, target) => {
-    if (!groups.has(title)) groups.set(title, [])
-    groups.get(title).push(target)
+  const add = (title, side, target) => {
+    if (!groups.has(title)) groups.set(title, { ...side, addresses: [] })
+    groups.get(title).addresses.push(target)
   }
   for (const edge of knowledge.edges) {
     const names = RELATIONS[edge.rel] ?? [edge.rel, edge.rel]
-    if (edge.from === address) add(names[0], edge.to)
-    if (edge.to === address) add(names[1], edge.from)
+    // Which side of the node a neighbour belongs on, read the same way the
+    // ranking reads it: leads_to runs from the node outward, and every other
+    // relation points at what the node answers to.
+    const outIsUpstream = edge.rel !== 'leads_to'
+    if (edge.from === address) add(names[0], { rel: edge.rel, upstream: outIsUpstream }, edge.to)
+    if (edge.to === address) add(names[1], { rel: edge.rel, upstream: !outIsUpstream }, edge.from)
   }
-  return [...groups].map(([title, addresses]) => ({ title, addresses }))
+  return [...groups].map(([title, side]) => ({ title, ...side }))
 }
 
 const nodeAt = (address) => nodeById.get(address)
 const litFrom = (address) => new Set([address, ...walk(address, parentsOf), ...walk(address, childrenOf)])
-const impactOf = (address) => walk(address, childrenOf).size
 
 // Drawn as the corpus stores them, so an arrowhead lands where somebody wrote
 // it. Ranking reverses leads_to and drawing must not: a goal leads to its
@@ -162,4 +165,4 @@ const drawnEdges = knowledge.edges
   .filter(e => nodeById.has(e.from) && nodeById.has(e.to))
   .map(e => ({ from: e.from, to: e.to, rel: e.rel }))
 
-mountGraph({ ranks, parentsOf, edges: drawnEdges, bands: [], nodeAt, litFrom, impactOf, sidesFor })
+mountGraph({ ranks, parentsOf, edges: drawnEdges, bands: [], nodeAt, litFrom, sidesFor })

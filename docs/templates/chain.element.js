@@ -169,8 +169,15 @@ function litFrom(address) {
 /**
  * How far a claim reaches downward, counting only behaviours, which is what the
  * badge on an axiom shows.
+ *
+ * Silent when it agrees with the one step the pane lists beneath it, since a
+ * line repeating the list under it earns nothing.
  */
-const impactOf = (address) => (data.reach[address] || []).filter(a => behaviourAt.has(a)).length
+function impactFor(address) {
+  const reached = (data.reach[address] || []).filter(a => behaviourAt.has(a)).length
+  const steps = Object.entries(parentsOf).filter(([, ps]) => (ps || []).includes(address)).length
+  return reached > steps ? `impacts ${reached} behaviours` : ''
+}
 
 /**
  * The edges as drawn, each carrying what kind of step it is.
@@ -187,4 +194,4 @@ const kindOfEdge = (from) =>
 const drawnEdges = Object.entries(parentsOf)
   .flatMap(([child, parents]) => (parents || []).map(parent => ({ from: child, to: parent, rel: kindOfEdge(child) })))
 
-mountGraph({ ranks, parentsOf, edges: drawnEdges, bands, nodeAt, litFrom, impactOf })
+mountGraph({ ranks, parentsOf, edges: drawnEdges, bands, nodeAt, litFrom, impactFor })
