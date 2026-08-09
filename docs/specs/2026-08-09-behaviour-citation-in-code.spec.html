@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A behaviour citation in code, so canon reaches past the file</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A behaviour citation in code, so canon reaches past the file</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-09</spec-date>
+  <spec-problem>
+<p>Canon reaches code through one edge. A specification carries
+<code>specifies</code>, and all eight in the corpus name a whole file with no
+fragment. The drawing renders that as one box per file, which is where this
+started.</p>
+<p>A behaviour reaches nothing. Its template allows <code>depends_on</code> and no
+other relation, so a behaviour points up at an axiom and nowhere else. Nothing in
+the corpus answers <q>which code answers this claim</q>.</p>
+<p>The cost arrives when a claim moves. Rewording a behaviour keeps every citation
+resolving, and the graph already admits nothing tells the citing cases they now
+check something the document no longer claims. The code has that same problem and
+no citation at all.</p>
+</spec-problem>
+  <spec-design>
+<h3>The tag</h3>
+<p>A doc comment on a declaration names the behaviour that declaration answers:</p>
+<pre><code>/**
+ * Delete the comments that earn no place, and leave every other one alone.
+ *
+ * @behaviour canon/comments.canon.html#autofix-removes-only-a-cut
+ * @behaviour canon/comments.canon.html#a-promotion-stays-where-it-sits
+ */
+export function autofix(ctx: CommandContext) {</code></pre>
+<p>The tag repeats, since one function usually answers several claims. Its value
+is an address in the form every citation here already takes: a path from the
+documents root, then a fragment.</p>
+<h3>A tag rather than an anchor</h3>
+<p>A document cites by writing an <code>&lt;a data-rel&gt;</code>, which the schema
+constrains and <code>every-link-resolves</code> checks. Code has no anchors and no
+element to hang an attribute on, so its citation lives in a comment.</p>
+<p>Of the two forms a comment allows, the tag costs less.
+<code>formatCodeComment</code> already drops a line opening with an at-sign before
+handing prose to the language rules, because a type is not a sentence. A citation
+written as prose instead would face <code>prose-follows-the-language</code>, where
+a long address trips sentence length and reads as noise to a passive-voice
+check.</p>
+<p>A tag is also findable. Matching a prose citation needs a pattern loose enough
+to match a sentence, and then every parenthesis in the corpus becomes a
+candidate.</p>
+<h3>The citation points up</h3>
+<p>An earlier sketch had the behaviour carry <code>specifies</code>, aimed at an
+anchor inside the implementation. That points down, and
+<a href="../canon/root.canon.html#edges-point-up-only">a stored edge points up</a>,
+because a hand-maintained reverse index rots invisibly.</p>
+<p>Pointing up costs no new relation and no schema change on the canon side. A
+behaviour keeps the one relation it has. The code cites the behaviour the way a
+test case does, and which code answers a behaviour gets computed from the tags,
+like every other downward reach here.</p>
+<h3>What carries a tag, and what owes one</h3>
+<p>A declaration carries it: a function, a class, a type, a constant.
+<code>commentRanges</code> already reports the declaration a comment sits above,
+naming its kind and its identifier, so nothing new parses the code.</p>
+<p>An exported declaration owes a citation, and an internal one may carry one. An
+export is the unit a behaviour describes and the unit somebody could later
+contradict. An internal helper often carries part of a claim, and demanding a tag
+on each turns the check into noise.</p>
+<p>Granularity stops at the declaration. A tag on a file repeats what the
+<code>specifies</code> edge says, and a tag on one statement names something no
+reader could contradict on its own.</p>
+<h3>Scope comes from the corpus</h3>
+<p>A file participates when a specification names it. The eight
+<code>specifies</code> edges already declare which files belong to a subsystem, so
+scope gets read rather than configured. It grows when somebody writes a
+specification, not when somebody remembers a list.</p>
+<p>A file no specification names is not ambiguous. It is not participating, and
+nothing about it is a finding.</p>
+<p>The boundary has to sit somewhere a check can read, because partial coverage
+makes silence ambiguous. An empty result must mean <q>nothing cites this</q>
+rather than <q>nobody got round to tagging</q>.</p>
+<h3>What the check reports</h3>
+<p>Three findings, each with a name this project already uses. An address
+resolving to nothing is rot, which <code>every-link-resolves</code> reports for a
+document and cannot see inside a comment. An exported declaration in a
+participating file with no tag is freelancing, which <code>grounded</code> reports
+for a behaviour naming no axiom. A behaviour no code cites is dead, which
+<code>grounded</code> reports for an axiom nothing reaches.</p>
+<p>A citation gets judged on where it lands, never on what carries it. A tag
+landing on an axiom is a finding for the reason a test case doing it is one: the
+code knows something no behaviour states. Judging the resolved address rather than
+the tag name is what makes a separate <code>@axiom</code> spelling unnecessary.</p>
+<h3>What the drawing gains</h3>
+<p>The implementation rank stops being one box per file. It becomes one box per
+tagged declaration, sitting under the behaviours naming it, so an export answering
+six claims looks different from one answering none.</p>
+<p>Selecting a behaviour then lights the code, which is the blast radius the chain
+draws for every other layer already.</p>
+<h3>Order of arrival</h3>
+<p>The tags land before the audit. A gate arriving red teaches people to skip it,
+and this project watched that happen to a gate that reported failures and exited
+zero for weeks.</p>
+<p>Eight files bound the retrofit. The audit joins <code>validate</code> once
+every count reads zero.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Nothing here detects a wrong citation. A tag naming a behaviour the code does
+not implement resolves fine, and reading the two together stays a person's job.
+The graph records that same limit for a reworded behaviour.</p>
+<p>Internal helpers owe nothing. They may carry a tag where it helps, and no
+finding follows from leaving one bare.</p>
+<p>The <code>specifies</code> edge stays as it is. This adds a layer beneath it
+rather than replacing it, since naming the files a subsystem answers for is still
+worth saying in one place.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Whether a behaviour owes an implementation citation the way it owes a test
+citation. <code>exhaustive</code> demands a case per behaviour and exempts
+nothing, and the same rule for code would be stronger than anything here has
+earned.</p>
+<p>Whether rewording a behaviour should fail its citers until somebody
+re-confirms them. A stamp recording that a citation got read against the current
+wording is stronger and more annoying; reporting the reach alone leans on the
+discipline that failed in the first place.</p>
+<p>Whether a tag belongs on a test case as well, replacing the
+<code>&lt;a data-rel&gt;</code> a case carries today. Two spellings for one idea
+is the cost, and a test document is HTML where the anchor already works.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
