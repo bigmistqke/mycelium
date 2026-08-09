@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Behaviours and cases are a bijection today: eighty of each, one citation apiece</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/knowledge.template.css">
+</head>
+<body>
+<knowledge-observation data-conforms-to="../templates/knowledge.template.html#knowledge-observation">
+  <knowledge-title>Behaviours and cases are a bijection today: eighty of each, one citation apiece</knowledge-title>
+  <knowledge-confidence>95</knowledge-confidence>
+  <knowledge-detail><p>Counted against the corpus rather than assumed. The canon documents declare
+80 behaviours and the test documents declare 80 cases, and every case carries
+exactly one <code>depends_on</code> edge.</p>
+<p>Three further measurements decide whether containment can replace the
+edge:</p>
+<ul>
+<li>Runner kind is uniform per canon. All four figure documents are browser
+cases and cite <code>figure.canon.html</code>; every other document is node.
+So the rule that a document's cases share one runner survives as a per-canon
+property.</li>
+<li><code>test-subject</code> repeats what the specification above it already
+declares with <code>specifies</code>. Every test document names the file it
+exercises, and the specification names the same file.</li>
+<li>Two audits exist only to police the joint. One checks that every behaviour
+has a case, the other that every case cites a behaviour. A declared child makes
+both unbreakable rather than checked.</li>
+</ul>
+<p>The bijection is partly an artifact of retrofitting, so it is evidence that
+containment fits rather than a rule to freeze. Containment as a repeatable child
+still allows several cases per behaviour; what it forbids is one case covering
+two behaviours, which nothing in the corpus does.</p>
+</knowledge-detail>
+  <a data-rel="supports" href="./2026-08-09-fold-test-family-into-canon.goal.html">the measurement the fold rests on</a>
+</knowledge-observation>
+</body></html>
