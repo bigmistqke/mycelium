@@ -1366,7 +1366,9 @@
 
     const root = resolvePath(fs.root, '..')
     await withBrowser({ root, show: args.show !== undefined, port: Number(args.port ?? 9515) }, async (call) => {
-      await call('POST', '/url', { url: pathToFileURL(out).href })
+      // The page only measures itself when asked, since sweeping and counting
+      // cost more than drawing does and a reader opening it wants the drawing.
+      await call('POST', '/url', { url: `${pathToFileURL(out).href}?measure` })
       await call('POST', '/timeouts', { script: 30000 })
       const found = await call('POST', '/execute/async', {
         script: `const done = arguments[arguments.length - 1]
@@ -1516,8 +1518,8 @@ ${base}
     <b>${data.axioms.length}</b> axioms &middot;
     <b>${data.behaviours.length}</b> behaviours &middot;
     <b>${data.behaviours.filter(b => b.checks).length}</b> checks &middot;
-    <b>${data.specifications.length}</b> subsystems &middot;
-    <b id="crossings">—</b> wires over boxes
+    <b>${data.specifications.length}</b> subsystems<span class="stat"> &middot;
+    <b id="crossings">—</b> wires over boxes</span>
   </div>
 </header>
 <div id="grid"><svg id="wires"></svg></div>

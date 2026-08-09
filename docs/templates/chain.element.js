@@ -590,12 +590,34 @@ grid.addEventListener('click', (event) => {
 document.getElementById('pane-close').addEventListener('click', () => show(null))
 
 draw()
-// Written into the page rather than logged, so a person reading the drawing and
-// a script measuring it see the same number.
-const before = overlaps()
-const after = settle()
-document.getElementById('crossings').textContent = after
-document.getElementById('crossings').dataset.before = before
-document.getElementById('crossings').dataset.bySpan = JSON.stringify(overlapsBySpan())
-document.getElementById('crossings').dataset.collisions = collisions()
+
+/**
+ * Measuring the drawing, only when somebody asks for it.
+ *
+ * All of it costs real time: the sweep renders and redraws the whole page once
+ * per round, and counting walks every wire at six-pixel steps against every
+ * box. A reader opening the page waited through all of it and saw a number they
+ * had not asked for.
+ *
+ * The sweep goes in here with the counting rather than staying on by default,
+ * because it is only worth its cost while somebody is comparing arrangements.
+ * It moved the last measurement by four out of a hundred and thirty-one; the
+ * bands did the work.
+ *
+ * Written into the page rather than logged, so a person who does ask and a
+ * script that asks see the same number.
+ */
+function measure() {
+  const before = overlaps()
+  const after = settle()
+  const el = document.getElementById('crossings')
+  el.textContent = after
+  el.dataset.before = before
+  el.dataset.bySpan = JSON.stringify(overlapsBySpan())
+  el.dataset.collisions = collisions()
+}
+
+if (location.search.includes('measure')) measure()
+else document.getElementById('crossings').closest('.stat').remove()
+
 addEventListener('resize', draw)
