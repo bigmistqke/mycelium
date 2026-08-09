@@ -126,6 +126,28 @@ prompts over months.</p>
 <p>The eight relations stay exactly as they are. They carry the semantics the
 drawing reads, every one of them is checked, and nothing in this design needs a
 ninth.</p>
+<h3>A tag is a name, and sometimes a page</h3>
+
+<p>An entry carries any number of tags, each a plain name. 126 entries name a
+template or a family in their prose and 15 link to it, so a scheme demanding a
+path before capture asks for something three weeks of writing never
+produced.</p>
+
+<p>A tag matching a notebook entry of the same name is a link to it, and one
+matching nothing stays a word until somebody writes that page. Nothing stores
+the difference, because the name computes it. <code>mycelium notebook
+tags</code> prints the vocabulary with counts, so a near-duplicate reads as
+drift and a singleton reads as a typo.</p>
+
+<p>The vocabulary is a finding in its own right. Which themes recur, and how
+often, says what the project has been thinking about. This design reaches that
+by letting the set emerge, where a fixed list decides the answer in
+advance.</p>
+
+<p>Soft matching costs the check. Renaming a page leaves every tag naming it
+pointing at nothing, where a path would fail the build. That is the price of a
+capture costing one word.</p>
+
 <h3>The rename, and the date</h3>
 <p>Every tag moves from <code>knowledge-</code> to <code>notebook-</code>, the
 command family becomes <code>mycelium notebook</code>, and the directory
@@ -199,6 +221,10 @@ caught.</p>
 <p>Whether a <code>canon-references</code> child holds a label per link. A bare
 anchor says which entry, and a label says what the claim took from it, which is
 the part a reader cannot reconstruct.</p>
+<p>Whether a tag may name something outside the notebook. <code>--tag
+canon</code> and a tag naming <code>docs/templates/canon.template.html</code>
+would mean different things, and a reader would have to know which one a given
+tag is. Deferred rather than settled.</p>
 </spec-open-questions>
 </spec-doc>
 </body></html>
