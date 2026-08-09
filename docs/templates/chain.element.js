@@ -64,32 +64,55 @@ for (const rank of ranks) {
 }
 
 /**
- * A cited declaration's doc comment and the first lines beneath it, in a
- * collapsible closed by default.
+ * A cited declaration's whole implementation, behind a disclosure.
  *
- * A reader following a claim down to the code came for the code. The comment
- * carrying the citation is the part worth showing, since it holds the
- * reasoning and addresses a person rather than a compiler, so it opens first
- * with the lines it introduces under it.
+ * Only the code sits here. The comment carrying the citation reads immediately
+ * beside the claim, because that is the reasoning a reader came for, and the
+ * code is what they open when the reasoning is not enough.
+ *
+ * Whole rather than sampled. A doc comment sits on a declaration and the parser
+ * knows where that declaration ends, so nothing counts lines or guesses at a
+ * closing brace.
  *
  * @behaviour canon/chain.canon.html#the-drawing-carries-the-comment-and-the-code
  */
 function codeFor(code) {
   const d = document.createElement('details')
   const summary = document.createElement('summary')
-  summary.textContent = code.kind || 'declaration'
+  summary.textContent = 'implementation'
   d.appendChild(summary)
-  if (code.doc) {
-    const doc = document.createElement('p')
-    doc.className = 'doc'
-    doc.textContent = code.doc
-    d.appendChild(doc)
-  }
+  const holder = document.createElement('div')
+  holder.className = 'code'
   const pre = document.createElement('pre')
   pre.textContent = code.snippet
-  d.appendChild(pre)
+  holder.appendChild(pre)
+  d.appendChild(holder)
+  paint(holder, code.snippet)
   return d
 }
+
+/**
+ * Colour a block of code once a highlighter has loaded.
+ *
+ * The page shows the code first and colours it afterwards, so a reader who
+ * opens the pane offline still reads the code. Nothing waits on the network to
+ * render.
+ */
+async function paint(holder, source) {
+  try {
+    const { codeToHtml } = await shiki()
+    holder.innerHTML = await codeToHtml(source, {
+      lang: 'typescript',
+      themes: { light: 'github-light', dark: 'github-dark' },
+      defaultColor: false,
+    })
+  } catch {
+    // A page opened with no network keeps the plain text it already has.
+  }
+}
+
+let shikiOnce = null
+const shiki = () => (shikiOnce ??= import('https://esm.sh/shiki@1.24.0'))
 
 for (const rank of ranks) {
   const column = document.createElement('div')
@@ -206,8 +229,17 @@ function fillPane(address) {
   document.getElementById('pane-where').textContent = (node.kind || node.code_kind || 'declaration') + ' in ' + file
   const detail = document.getElementById('pane-detail')
   detail.textContent = ''
+  // A claim's reasoning is markup it wrote; a declaration's is the prose of its
+  // own comment. Both read immediately, and only the code waits behind a
+  // disclosure, since the reasoning is what a reader came for.
   if (node.detail) detail.innerHTML = node.detail
-  if (node.doc !== undefined || node.snippet !== undefined) detail.appendChild(codeFor(node))
+  if (node.doc) {
+    const doc = document.createElement('p')
+    doc.className = 'doc'
+    doc.textContent = node.doc
+    detail.appendChild(doc)
+  }
+  if (node.snippet) detail.appendChild(codeFor(node))
   const anchor = document.getElementById('pane-anchor')
   anchor.href = node.address.replace(/^docs\//, '')
   anchor.textContent = 'open ' + file

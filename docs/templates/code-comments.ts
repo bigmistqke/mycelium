@@ -144,15 +144,26 @@ export interface CommentRange {
 export interface CommentSubject {
   declares: string | null
   name: string | null
+  // The declaration's own span, so a caller wanting the whole thing can take
+  // it rather than counting lines and hoping. Null when a comment leads
+  // nothing the parser names.
+  start: number | null
+  end: number | null
 }
 
 // Which node kinds count as a declaration a comment can document. A comment
 // above an `if` or a `return` describes a step, and one above a function or a
 // constant describes a named thing — the distinction the whole doc-block
 // question rests on.
-function describe(node: ts.Node | undefined): CommentSubject {
-  if (!node) return { declares: null, name: null }
-  const named = (kind: string, id?: ts.Node) => ({ declares: kind, name: id && ts.isIdentifier(id as any) ? (id as ts.Identifier).text : null })
+function describe(node: ts.Node | undefined, sourceFile: ts.SourceFile): CommentSubject {
+  const nowhere = { declares: null, name: null, start: null, end: null }
+  if (!node) return nowhere
+  const named = (kind: string, id?: ts.Node) => ({
+    declares: kind,
+    name: id && ts.isIdentifier(id as any) ? (id as ts.Identifier).text : null,
+    start: node.getStart(sourceFile),
+    end: node.end,
+  })
   if (ts.isFunctionDeclaration(node)) return named("function", node.name)
   if (ts.isClassDeclaration(node)) return named("class", node.name)
   if (ts.isInterfaceDeclaration(node)) return named("interface", node.name)
@@ -160,7 +171,7 @@ function describe(node: ts.Node | undefined): CommentSubject {
   if (ts.isEnumDeclaration(node)) return named("enum", node.name)
   if (ts.isMethodDeclaration(node) || ts.isPropertyDeclaration(node)) return named("member", node.name as ts.Node)
   if (ts.isVariableStatement(node)) return named("variable", node.declarationList.declarations[0]?.name)
-  return { declares: null, name: null }
+  return nowhere
 }
 
 // Every logical comment in a JS/TS/JSX/TSX source, with the source range it
@@ -226,7 +237,7 @@ export function commentRanges(source: string): CommentRange[] {
   if (block) merged.push({ pos: block.pos, end: block.end, raw: block.parts.join("\n"), leads: block.leads })
 
   return merged
-    .map(({ leads, ...m }) => ({ ...m, text: formatCodeComment(m.raw), subject: describe(leads) }))
+    .map(({ leads, ...m }) => ({ ...m, text: formatCodeComment(m.raw), subject: describe(leads, sourceFile) }))
     .filter((m) => m.text)
 }
 

@@ -1163,15 +1163,15 @@
    * whether a principle is load-bearing or merely broad.
    *
    * Ranks become columns, because this graph is ranked. An axiom narrows an
-   * axiom, a behaviour refines an axiom, a case checks a behaviour, and a
-   * specification names the files it answers for. Every edge crosses one rank
-   * or stays inside the axiom rank, so nothing has to compute a layout and the
-   * page carries no dependency on anything a network serves. That is the one
-   * place this diverges from knowledge generate, which draws a mesh and needs a
-   * force layout to do it.
+   * axiom, a behaviour narrows a behaviour, and a specification names the files
+   * it answers for. Every edge crosses one rank or stays inside its own, so
+   * nothing has to compute a layout — unlike knowledge generate, which draws a
+   * mesh and needs a force layout to do it.
    *
-   * Selecting a node lights everything beneath it and dims the rest, which is
-   * the blast radius as a gesture rather than a list assembled by hand.
+   * Selecting a node lights everything beneath it, dims the rest, and opens a
+   * pane carrying what that node claims: an axiom's reasoning, a declaration's
+   * comment and its whole implementation, and the anchor into the corpus. The
+   * blast radius as a gesture rather than a list assembled by hand.
    *
    * --out writes to that path, relative to docs/ or absolute, for committing a
    * snapshot. Omitted, it writes to a temp file and prints a file:// URL.
@@ -1397,8 +1397,17 @@ ${base}
   #pane h2 { font-size: .95rem; margin: 0 0 .3rem; padding-right: 2rem; }
   #pane-where { opacity: .6; margin: 0 0 .75rem; }
   #pane-detail p { margin: 0 0 .6rem; max-width: 68ch; }
-  #pane-detail pre { overflow-x: auto; border: 1px solid var(--line); padding: .5rem; }
   #pane-detail .doc { white-space: pre-wrap; max-width: 68ch; }
+  #pane-detail details { margin-top: .5rem; }
+  #pane-detail summary { cursor: pointer; opacity: .6; }
+  #pane-detail pre { overflow-x: auto; border: 1px solid var(--line);
+                     border-radius: 4px; padding: .6rem .75rem; margin: .5rem 0 0; }
+  /* Shiki writes both themes into one tree and picks with a variable, so the
+     page follows the reader's own setting rather than choosing for them. */
+  .shiki, .shiki span { color: var(--shiki-light); background-color: var(--shiki-light-bg); }
+  @media (prefers-color-scheme: dark) {
+    .shiki, .shiki span { color: var(--shiki-dark); background-color: var(--shiki-dark-bg); }
+  }
   #pane-close { position: absolute; top: .6rem; right: .8rem; background: none;
                 border: 0; color: inherit; font-size: 1.1rem; cursor: pointer; opacity: .6; }
   #pane-close:hover { opacity: 1; }

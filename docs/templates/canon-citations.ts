@@ -188,9 +188,33 @@ export interface CodeCitation {
 
 const TAG = /@behaviour\s+(\S+)/g
 
-// Lines of the declaration kept beside its comment. Enough for a signature and
-// the start of a body, which is what a reader following a claim down came for.
+// How much of a declaration to keep when the parser cannot say where it ends.
+// A run of line comments binds to whatever follows it, which may be a step
+// rather than a named thing, so there is no node to take and a few lines is the
+// honest guess.
 const SNIPPET_LINES = 8
+
+/**
+ * The code a comment introduces.
+ *
+ * A doc comment sits on a declaration, and the parser hands back that
+ * declaration's whole span, so a reader following a claim down to the code gets
+ * the code rather than its first few lines. Nothing here counts lines or guesses
+ * where a body closes.
+ *
+ * A line comment may lead anything, including a step inside a function that no
+ * span describes. There the count stands in.
+ */
+function bodyOf(text: string, comment: { end: number; subject: { start: number | null; end: number | null } }): string {
+  const { start, end } = comment.subject
+  if (start !== null && end !== null) return text.slice(start, end)
+  return text
+    .slice(comment.end)
+    .replace(/^\s*\n/, "")
+    .split("\n")
+    .slice(0, SNIPPET_LINES)
+    .join("\n")
+}
 
 /**
  * Every behaviour citation the code carries, read out of its doc comments.
@@ -246,12 +270,7 @@ export function collectCodeCitations(fs: AuditFs, specifies: string[]): CodeCita
           name,
           kind: comment.subject.declares ?? "",
           doc: comment.text,
-          snippet: block.text
-            .slice(comment.end)
-            .replace(/^\s*\n/, "")
-            .split("\n")
-            .slice(0, SNIPPET_LINES)
-            .join("\n"),
+          snippet: bodyOf(block.text, comment),
           cites,
         })
       }

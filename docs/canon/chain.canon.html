@@ -161,14 +161,19 @@
     </script>
   </canon-behaviour>
   <canon-behaviour id="the-drawing-carries-the-comment-and-the-code" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>The drawing carries each cited declaration's doc comment and the lines beneath it.</canon-title>
+    <canon-title>Selecting a cited declaration shows its comment, and its whole implementation behind a disclosure.</canon-title>
     <a data-rel="depends_on" href="./root.canon.html#a-document-is-read-by-a-person">a reader following a claim down wants the code</a>
     <canon-verdict>PENDING</canon-verdict>
     <script type="mycelium/test">
       /**
        * A reader following a claim down to the code came for the code. The
-       * comment is the half worth showing, since it holds the reasoning, and
-       * the tag lines come out of it because a citation is not prose.
+       * comment reads immediately, since it holds the reasoning, and the tag
+       * lines come out of it because a citation is not prose.
+       *
+       * The code arrives whole. A doc comment sits on a declaration and the
+       * parser knows where that declaration ends, so the last line is the check
+       * that matters — a count of lines gets the first ones right and stops
+       * somewhere arbitrary.
        */
       import type { TestContext } from "../../src/api.ts"
       import { chainOf, tinySubsystem } from "./canon-chain-fixture.ts"
@@ -183,8 +188,12 @@
         )
         assert(!cited.doc.includes("@behaviour"), `the citation was left in the prose: ${JSON.stringify(cited.doc)}`)
         assert(
-          cited.snippet.includes("function widen"),
-          `the lines beneath it never arrived: ${JSON.stringify(cited.snippet)}`,
+          cited.snippet.startsWith("function widen"),
+          `the code never arrived: ${JSON.stringify(cited.snippet)}`,
+        )
+        assert(
+          cited.snippet.trimEnd().endsWith("}"),
+          `the code arrived cut short: ${JSON.stringify(cited.snippet)}`,
         )
       }
     </script>
