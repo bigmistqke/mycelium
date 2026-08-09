@@ -96,6 +96,7 @@
 <template id="canon-behaviour">
   <canon-behaviour id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
     <canon-title required></canon-title>
+    <canon-detail markup></canon-detail>
     <a repeatable href=".+" data-rel="^(depends_on)$"></a>
     <canon-verdict enum="PENDING"></canon-verdict>
     <canon-message></canon-message>
@@ -407,8 +408,28 @@
     const isAxiom = new Set(axioms.map((axiom) => axiom.address))
     const violations = []
 
+    // Upward, until an axiom or nothing. A claim reaches a principle through
+    // whatever holds it, the same way an axiom reaches one through the axiom it
+    // narrows, so a child inside a broader claim needs no edge of its own.
+    const behaviourAt = new Map(behaviours.map((behaviour) => [behaviour.address, behaviour]))
+    function reachesAxiom(start) {
+      const seen = new Set([start])
+      const queue = [start]
+      while (queue.length > 0) {
+        const here = behaviourAt.get(queue.pop())
+        if (!here) continue
+        for (const next of [...here.dependsOn, ...(here.parent ? [here.parent] : [])]) {
+          if (isAxiom.has(next)) return true
+          if (seen.has(next)) continue
+          seen.add(next)
+          queue.push(next)
+        }
+      }
+      return false
+    }
+
     for (const behaviour of behaviours) {
-      if (!behaviour.dependsOn.some((target) => isAxiom.has(target))) violations.push(behaviour.address)
+      if (!reachesAxiom(behaviour.address)) violations.push(behaviour.address)
     }
 
     // The reverse of the stored edges, built here and thrown away, which is the
@@ -833,11 +854,20 @@
     const title = doc.createElement('canon-title')
     title.textContent = args.title
     el.appendChild(title)
+    if (args.detail) {
+      const detail = doc.createElement('canon-detail')
+      detail.innerHTML = args.detail
+      el.appendChild(detail)
+    }
     const verdict = doc.createElement('canon-verdict')
     verdict.textContent = 'PENDING'
     el.appendChild(verdict)
     const script = doc.createElement('script')
     script.setAttribute('type', args.browser ? 'text/mycelium-test' : 'mycelium/test')
+    // A check building an HTML fixture writes a script inside a string, and
+    // that would end this element early. Nothing here handles it: the engine
+    // escapes raw text for every element it writes, so one rule covers every
+    // command rather than each one remembering.
     script.textContent = check
     el.appendChild(script)
     root.appendChild(el)
@@ -935,6 +965,65 @@
    * Moving a specification carries its behaviours with it, since a behaviour
    * addresses through the document holding it.
    */
+  /**
+   * Gather existing behaviours under a new one that generalises them.
+   *
+   *   mycelium canon group --canon <name> --id <slug> --title "…"
+   *     <child-id> [<child-id>…]
+   *
+   * A grouping is a move rather than an addition, which is why add cannot make
+   * one. add builds a leaf and insists on the check that falsifies it. A claim
+   * proved by the claims beneath it has no check of its own to give.
+   *
+   * The new claim lands where the first child sat, and each child moves inside
+   * it in the order named. Every id survives, so a citation from a comment or
+   * from another claim still resolves — the tree changed and no address did.
+   *
+   * A child keeps the axiom it already names. The parent needs its own, which
+   * is a separate link, the same way a specification names what it describes
+   * after add has built it.
+   *
+   * The title has to be a claim. A heading naming a topic passes every check
+   * here and states nothing, which is what fifteen test-document titles were
+   * doing before this existed.
+   */
+  export async function group({ fs, args, cli }: CommandContext) {
+    requireArgs([args.canon, '--canon'], [args.id, '--id'], [args.title, '--title'])
+    primeFieldOrder(fs)
+    const children = args._
+    if (!children.length) throw new Error('name at least one behaviour to gather')
+
+    const path = canonPathFor(args.canon)
+    const doc = fs.get(path)
+    if (doc.querySelector(`[id="${args.id}"]`)) {
+      throw new Error(`${args.canon} already carries an entry with id "${args.id}"`)
+    }
+
+    const found = children.map((id) => {
+      const el = doc.querySelector(`canon-behaviour[id="${id}"]`)
+      if (!el) throw new Error(`${args.canon} carries no behaviour with id "${id}"`)
+      return el
+    })
+
+    const parent = doc.createElement('canon-behaviour')
+    parent.setAttribute('id', args.id)
+    parent.setAttribute('data-conforms-to', '../templates/canon.template.html#canon-behaviour')
+    const title = doc.createElement('canon-title')
+    title.textContent = args.title
+    parent.appendChild(title)
+    const detail = args.detail === '-' ? await cli.readStdin() : args.detail
+    if (detail) {
+      const el = doc.createElement('canon-detail')
+      el.innerHTML = detail
+      parent.appendChild(el)
+    }
+    found[0].parentNode.insertBefore(parent, found[0])
+    for (const child of found) parent.appendChild(child)
+
+    const result = await cli.validate(parent, path)
+    if (!result.ok) throw new Error(result.errors.join('\n'))
+  }
+
   export async function move({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], '<canon>#<id>'], [args._[1], '<to-canon>'])
     const fromPath = canonPathFor(fileOf(args._[0]))
@@ -1027,7 +1116,10 @@
     const href = `${cli.href(path, target.path)}${target.fragment ? `#${target.fragment}` : ''}`
     const label = args.label ?? ''
 
-    const existing = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
+    // Direct children only. A behaviour holds behaviours, so a descendant
+    // search reaches a child's edges and an upsert would relabel one of those
+    // instead of adding this claim's own.
+    const existing = root.querySelector(`:scope > a[data-rel="${args.rel}"][href="${href}"]`)
     if (existing) {
       existing.textContent = label
       return
@@ -1055,7 +1147,7 @@
     const root = entryOf(doc, args._[0])
     const target = targetOf(args._[1])
     const href = `${cli.href(path, target.path)}${target.fragment ? `#${target.fragment}` : ''}`
-    const a = root.querySelector(`a[data-rel="${args.rel}"][href="${href}"]`)
+    const a = root.querySelector(`:scope > a[data-rel="${args.rel}"][href="${href}"]`)
     if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
     a.remove()
   }
@@ -1514,12 +1606,19 @@ addEventListener('resize', draw)
   // loads under Node and may be TypeScript. Anything else has to stay valid in
   // a browser. So nothing extra has to be declared: the type a case already
   // carries is the whole answer to which runner opens it.
-  const NODE_CASE = 'script[type="mycelium/test"]'
-  const BROWSER_CASE = 'script[type="text/mycelium-test"]'
+  const NODE_CASE = ':scope > script[type="mycelium/test"]'
+  const BROWSER_CASE = ':scope > script[type="text/mycelium-test"]'
+
+  // The claims a runner opens: the ones carrying a check of their own. A claim
+  // proved by the claims beneath it holds no script. A descendant search hands
+  // it the first child's instead, so that check runs twice: once under its own
+  // name, once under a name promising something broader.
+  const checked = (root, kind) =>
+    Array.from(root.querySelectorAll("canon-behaviour")).filter((el) => el.querySelector(kind))
 
   function kindOf(doc) {
-    if (doc.querySelector(NODE_CASE)) return "node"
-    if (doc.querySelector(BROWSER_CASE)) return "browser"
+    if (checked(doc, NODE_CASE).length) return "node"
+    if (checked(doc, BROWSER_CASE).length) return "browser"
     return "empty"
   }
 
@@ -1585,7 +1684,7 @@ addEventListener('resize', draw)
   async function runNodeDocument(entry, root, fsRoot) {
     const full = resolvePath(fsRoot, entry.path)
     const results = []
-    for (const testCase of Array.from(entry.doc.querySelectorAll("canon-behaviour"))) {
+    for (const testCase of checked(entry.doc, NODE_CASE)) {
       const id = testCase.getAttribute("id")
       const name = testCase.querySelector("canon-title")?.textContent?.trim() ?? ""
       const script = testCase.querySelector(NODE_CASE)
@@ -1719,12 +1818,14 @@ addEventListener('resize', draw)
   // which is also how a person reading the page knows the run has finished.
   const WAIT = `
     const done = arguments[arguments.length - 1]
-    const read = () => Array.from(document.querySelectorAll("canon-behaviour")).map((el) => ({
-      id: el.getAttribute("id"),
-      name: (el.querySelector("canon-title") || {}).textContent?.trim() ?? "",
-      status: ((el.querySelector("canon-verdict") || {}).textContent || "").trim(),
-      message: ((el.querySelector("canon-message") || {}).textContent || "").trim(),
-    }))
+    const read = () => Array.from(document.querySelectorAll("canon-behaviour > script[type='text/mycelium-test']"))
+      .map((script) => script.parentNode)
+      .map((el) => ({
+        id: el.getAttribute("id"),
+        name: (el.querySelector(":scope > canon-title") || {}).textContent?.trim() ?? "",
+        status: ((el.querySelector(":scope > canon-verdict") || {}).textContent || "").trim(),
+        message: ((el.querySelector(":scope > canon-message") || {}).textContent || "").trim(),
+      }))
     const tick = () => {
       const cases = read()
       if (!cases.length || cases.every((one) => one.status !== "PENDING")) return done(cases)
@@ -1869,7 +1970,7 @@ addEventListener('resize', draw)
           // A page that answers with fewer cases than the file declares has not
           // run them, it has lost them, and reporting nothing wrong would be a
           // pass nobody earned.
-          const declared = entry.doc.querySelectorAll("canon-behaviour").length
+          const declared = checked(entry.doc, BROWSER_CASE).length
           if (cases.length !== declared) {
             failures++
             console.log(`  FAILURE  the document declares ${declared} cases and the page answered with ${cases.length}`)
@@ -1922,7 +2023,7 @@ addEventListener('resize', draw)
       if (!path.endsWith(".canon.html")) continue
       const title = doc.querySelector("canon-title")?.textContent?.trim() ?? ""
       console.log(`${path}\t${title}`)
-      for (const one of Array.from(doc.querySelectorAll("canon-behaviour"))) {
+      for (const one of [...checked(doc, NODE_CASE), ...checked(doc, BROWSER_CASE)]) {
         const name = one.querySelector("canon-title")?.textContent?.trim() ?? ""
         console.log(`  ${one.getAttribute("id")}\t${name}`)
       }

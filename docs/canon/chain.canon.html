@@ -223,5 +223,131 @@ export default async function ({ assert, sandbox }: TestContext) {
 }
 </script>
   </canon-behaviour>
+  <canon-behaviour id="a-parent-claim-runs-no-check" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A claim proved by the claims beneath it runs no check of its own.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a count nobody earned is not a verdict</a>
+    <canon-behaviour id="the-sandbox-opens-only-checked-claims" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>The sandbox runner opens only the claims carrying a check of their own.</canon-title>
+      <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a count nobody earned is not a verdict</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="mycelium/test">// A parent takes its proof from its children and carries no script. The runner
+// looked for one with a descendant search, found the first child's, and ran it
+// a second time under the parent's name. Nothing failed: the count went up and
+// a check that had already passed passed again.
+import type { TestContext } from "../../src/api.ts"
+
+export default async function ({ assert, sandbox }: TestContext) {
+  const run = (...argv: string[]) => {
+    const done = sandbox.mycelium("canon", ...argv)
+    assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
+  }
+  run("add", "axiom", "--canon", "sample", "--id", "a-principle",
+    "--title", "A principle with something under it.",
+    "--detail", "<p>Reasoning, so the axiom validates.</p>")
+  run("add", "specification", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
+  run("add", "behaviour", "--canon", "sample", "--id", "a-narrow-claim",
+    "--title", "A narrow claim.", "--check", "export default function () {}")
+  run("link", "sample#a-narrow-claim", "sample#a-principle", "--rel", "depends_on", "--label", "the axiom it refines")
+  run("group", "--canon", "sample", "--id", "a-broad-claim",
+    "--title", "A claim the narrow one makes up.", "a-narrow-claim")
+
+  const done = sandbox.mycelium("canon", "test", "sample")
+  assert(
+    done.stdout.includes("1 cases, 0 failed"),
+    `one claim carries a check and the run counted otherwise: ${done.stdout.trim()}`,
+  )
+}
+</script>
+    </canon-behaviour>
+    <canon-behaviour id="the-page-answers-with-only-checked-claims" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>A page answers with the claims carrying a browser check, and no others.</canon-title>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="mycelium/test">// The same claim on the other runner. The command asks a page how many claims
+// it settled and compares that against what the document declares, and both
+// halves counted every behaviour rather than every check. A parent inflated
+// both, so the two wrong numbers agreed until parents existed.
+//
+// This runs a real page, because the reader under test lives in one. It is the
+// slowest check here and the only one that starts a browser from inside a
+// check.
+import type { TestContext } from "../../src/api.ts"
+
+export default async function ({ assert, sandbox }: TestContext) {
+  const run = (...argv: string[]) => {
+    const done = sandbox.mycelium("canon", ...argv)
+    assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
+  }
+  run("add", "axiom", "--canon", "sample", "--id", "a-principle",
+    "--title", "A principle with something under it.",
+    "--detail", "<p>Reasoning, so the axiom validates.</p>")
+  run("add", "specification", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
+  run("add", "behaviour", "--canon", "sample", "--id", "a-narrow-claim",
+    "--title", "A narrow claim.", "--browser", "--check", "assert(true)")
+  run("link", "sample#a-narrow-claim", "sample#a-principle", "--rel", "depends_on", "--label", "the axiom it refines")
+  run("group", "--canon", "sample", "--id", "a-broad-claim",
+    "--title", "A claim the narrow one makes up.", "a-narrow-claim")
+
+  const page = sandbox.read("canon/sample.canon.html")
+    .replace("</head>", '<script src="../templates/test.element.js"><\/script></head>')
+  sandbox.write("canon/sample.canon.html", page)
+
+  const done = sandbox.mycelium("canon", "test", "sample")
+  assert(
+    done.stdout.includes("1 cases, 0 failed"),
+    `one claim carries a browser check and the run counted otherwise: ${done.stdout.trim()}`,
+  )
+}
+</script>
+    </canon-behaviour>
+  </canon-behaviour>
+  <canon-behaviour id="reach-through-the-claim-holding-it-counts" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A claim reaching an axiom through the claim holding it counts as grounded.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#edges-point-up-only">the reach computed rather than authored</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">// The sibling of reaching an axiom through a narrower axiom, one rung down. A
+// claim inside a broader claim narrows that one, and the broader one names the
+// principle, so an edge on the child would be a second copy of what the markup
+// already carries.
+//
+// `unreached` is the control. This case decides on an absence, and a check that
+// has stopped working also reports an absence.
+import type { TestContext } from "../../src/api.ts"
+import { canonDoc, violationsFrom } from "./audit-corpus.ts"
+
+export default async function ({ assert }: TestContext) {
+  const held = canonDoc({
+    axioms: [
+      { id: "a-principle", title: "The principle a claim reaches." },
+      { id: "unreached", title: "A principle nothing serves." },
+    ],
+  }).replace("</body>", `<canon-specification id="held" data-conforms-to="../templates/canon.template.html#canon-specification">
+  <canon-title>a subsystem</canon-title>
+  <a data-rel="specifies" href="../templates/canon.template.html">the files it answers for</a>
+  <canon-behaviour id="broad" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>The broader claim.</canon-title>
+    <a data-rel="depends_on" href="./held.canon.html#a-principle">the principle this narrows</a>
+    <canon-behaviour id="narrow" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>The narrower claim.</canon-title>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="text/mycelium-test">assert(true)<\/script>
+    </canon-behaviour>
+  </canon-behaviour>
+</canon-specification>
+</body>`)
+
+  const found = await violationsFrom("canon.template.html", "grounded", {
+    "docs/canon/held.canon.html": held,
+  })
+  assert(
+    found.includes("docs/canon/held.canon.html#unreached"),
+    `the control is missing, so this case cannot read an absence; grounded reported: ${found.join(", ") || "nothing"}`,
+  )
+  assert(
+    !found.includes("docs/canon/held.canon.html#narrow"),
+    "grounded reported the nested claim, so it read its own edges and never looked at the claim holding it",
+  )
+}
+</script>
+  </canon-behaviour>
 </canon-specification>
 </body></html>

@@ -28,11 +28,14 @@ path before asking for the href.</p>
   <a data-rel="specifies" href="../templates/knowledge.template.html">the knowledge authoring commands</a>
   <a data-rel="specifies" href="../templates/language.template.html">the language authoring commands</a>
   <a data-rel="specifies" href="../templates/canon.template.html">the canon authoring commands</a>
-  <canon-behaviour id="add-dates-the-filename" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>knowledge add prepends today's date to a bare slug.</canon-title>
-    <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">the date is computed, never typed</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <script type="mycelium/test">
+  <canon-behaviour id="add-computes-the-date" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>knowledge add computes the filename's date rather than accepting one.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">the principle this narrows</a>
+    <canon-behaviour id="add-dates-the-filename" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>knowledge add prepends today's date to a bare slug.</canon-title>
+      <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">the principle this narrows</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="mycelium/test">
       // The slug a caller passes carries no date, and the command supplies one.
       // That split is the reason add takes an undated slug while every other
       // command takes a whole filename.
@@ -62,12 +65,12 @@ path before asking for the href.</p>
         )
       }
     </script>
-  </canon-behaviour>
-  <canon-behaviour id="add-refuses-a-dated-slug" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>knowledge add refuses a slug that already carries a date.</canon-title>
-    <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">refusing the hand-typed copy of a computed fact</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <script type="mycelium/test">
+    </canon-behaviour>
+    <canon-behaviour id="add-refuses-a-dated-slug" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>knowledge add refuses a slug that already carries a date.</canon-title>
+      <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">refusing the hand-typed copy of a computed fact</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="mycelium/test">
       // This used to write a filename carrying the date twice. Such a node
       // validates, so the only symptom was the name, and the surrounding prose
       // talks about dated filenames constantly enough that the mistake looks
@@ -87,6 +90,7 @@ path before asking for the href.</p>
         assert(!sandbox.exists("knowledge/2026-08-06-2026-08-06-already-dated.observation.html"), "it wrote the doubled name anyway")
       }
     </script>
+    </canon-behaviour>
   </canon-behaviour>
   <canon-behaviour id="link-writes-into-the-from-file" data-conforms-to="../templates/canon.template.html#canon-behaviour">
     <canon-title>link writes the edge into the first file, not the second.</canon-title>
@@ -128,11 +132,14 @@ path before asking for the href.</p>
       }
     </script>
   </canon-behaviour>
-  <canon-behaviour id="language-link-crosses-directories" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>An edge from a term to a guide climbs out of the directory holding the term.</canon-title>
-    <a data-rel="depends_on" href="./authoring.canon.html#a-family-owns-its-paths">the family knows where its terms and guides sit</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <script type="mycelium/test">
+  <canon-behaviour id="the-family-resolves-its-own-href" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>An edge's href comes from the family that owns both paths.</canon-title>
+    <a data-rel="depends_on" href="./authoring.canon.html#a-family-owns-its-paths">the principle this narrows</a>
+    <canon-behaviour id="language-link-crosses-directories" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>An edge from a term to a guide climbs out of the directory holding the term.</canon-title>
+      <a data-rel="depends_on" href="./authoring.canon.html#a-family-owns-its-paths">the principle this narrows</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="mycelium/test">
       // The engine used to resolve both filenames against docs/ while the
       // command resolved them against language/terms/ or language/guides/. Two
       // bases, so the href came out right only for two files sharing a
@@ -177,12 +184,12 @@ path before asking for the href.</p>
         assert(!sandbox.read("language/terms/drift.term.html").includes("data-rel"), "unlink left the edge behind")
       }
     </script>
-  </canon-behaviour>
-  <canon-behaviour id="knowledge-link-reaches-a-template" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>An edge to a template keeps the leading dot-dot that reaches it.</canon-title>
-    <a data-rel="depends_on" href="./authoring.canon.html#a-family-owns-its-paths">the family resolves its own path before asking for the href</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <script type="mycelium/test">
+    </canon-behaviour>
+    <canon-behaviour id="knowledge-link-reaches-a-template" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>An edge to a template keeps the leading dot-dot that reaches it.</canon-title>
+      <a data-rel="depends_on" href="./authoring.canon.html#a-family-owns-its-paths">the family resolves its own path before asking for the href</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="mycelium/test">
       // One node in the real graph points at a template, and a person wrote
       // that edge by hand. The command has to produce the same string, or the
       // upsert appends a second edge beside it and unlink never finds either.
@@ -212,12 +219,16 @@ path before asking for the href.</p>
         assert(!sandbox.read(`knowledge/${node}`).includes("data-rel"), "unlink left the edge behind")
       }
     </script>
+    </canon-behaviour>
   </canon-behaviour>
-  <canon-behaviour id="an-axiom-needs-its-reasoning" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>canon add refuses an axiom carrying no detail, and writes nothing.</canon-title>
-    <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">a required field is part of what the template declares</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <script type="mycelium/test">
+  <canon-behaviour id="a-command-places-a-field-where-the-template-ranks-it" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>Every authoring command writes a field where its template ranks it, and refuses what the template requires and nobody gave.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the principle this narrows</a>
+    <canon-behaviour id="an-axiom-needs-its-reasoning" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>canon add refuses an axiom carrying no detail, and writes nothing.</canon-title>
+      <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the principle this narrows</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="mycelium/test">
       // The failure names --detail rather than the tag it would have become,
       // because the person typed a flag and never saw a tag.
       import type { TestContext } from "../../src/api.ts"
@@ -234,12 +245,12 @@ path before asking for the href.</p>
         assert(!sandbox.exists("canon/sample.canon.html"), "the document appeared anyway")
       }
     </script>
-  </canon-behaviour>
-  <canon-behaviour id="update-places-a-field-where-the-template-ranks-it" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>update puts a new field where its template ranks it, ahead of the entry's own edges.</canon-title>
-    <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the declared order binds the command too</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <script type="mycelium/test">
+    </canon-behaviour>
+    <canon-behaviour id="update-places-a-field-where-the-template-ranks-it" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>update puts a new field where its template ranks it, ahead of the entry's own edges.</canon-title>
+      <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the declared order binds the command too</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="mycelium/test">
       // The axiom here carries an edge and no detail, which is a shape the
       // commands no longer produce and a hand-edit still can. Appending the
       // field put it below the edge, and the closed-schema check then rejected
@@ -271,12 +282,12 @@ path before asking for the href.</p>
         )
       }
     </script>
-  </canon-behaviour>
-  <canon-behaviour id="link-places-an-edge-where-the-template-ranks-it" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>link puts a new edge where its template ranks it, ahead of a specification's behaviours.</canon-title>
-    <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the declared order binds the command too</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <script type="mycelium/test">
+    </canon-behaviour>
+    <canon-behaviour id="link-places-an-edge-where-the-template-ranks-it" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>link puts a new edge where its template ranks it, ahead of a specification's behaviours.</canon-title>
+      <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the declared order binds the command too</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <script type="mycelium/test">
       // A specification ranks its edges above the behaviours it holds, so an
       // edge added after the first behaviour has somewhere wrong to land. An
       // axiom has nothing ranked below its edges, which is why appending went
@@ -307,6 +318,42 @@ path before asking for the href.</p>
         assert(!checked.stdout.includes("comes after"), `the document it wrote does not validate: ${checked.stdout.trim()}`)
       }
     </script>
+    </canon-behaviour>
+  </canon-behaviour>
+  <canon-behaviour id="link-edits-only-this-claims-edge" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>link and unlink touch the named claim's own edge, never one belonging to a claim inside it.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#edges-point-up-only">which claim an edge belongs to</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">// A behaviour holds behaviours, so a descendant search reaches a child's
+// edges. The upsert used one, found a child already naming the same axiom,
+// and relabelled that instead of adding an edge to the parent. Every one of
+// eleven groupings came out ungrounded and the command reported success.
+import type { TestContext } from "../../src/api.ts"
+
+export default async function ({ assert, sandbox }: TestContext) {
+  const run = (...argv: string[]) => {
+    const done = sandbox.mycelium("canon", ...argv)
+    assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
+  }
+  run("add", "axiom", "--canon", "sample", "--id", "a-principle",
+    "--title", "A principle with something under it.",
+    "--detail", "<p>Reasoning, so the axiom validates.</p>")
+  run("add", "specification", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
+  run("add", "behaviour", "--canon", "sample", "--id", "a-narrow-claim",
+    "--title", "A narrow claim.", "--check", "export default function () {}")
+  run("link", "sample#a-narrow-claim", "sample#a-principle", "--rel", "depends_on", "--label", "the axiom it refines")
+  run("group", "--canon", "sample", "--id", "a-broad-claim",
+    "--title", "A claim the narrow one makes up.", "a-narrow-claim")
+  run("link", "sample#a-broad-claim", "sample#a-principle", "--rel", "depends_on", "--label", "the axiom it refines")
+
+  const after = sandbox.read("canon/sample.canon.html")
+  const parent = after.slice(after.indexOf('id="a-broad-claim"'), after.indexOf('id="a-narrow-claim"'))
+  assert(
+    parent.includes('data-rel="depends_on"'),
+    "the parent carries no edge, so link wrote into a claim inside it instead",
+  )
+}
+</script>
   </canon-behaviour>
 </canon-specification>
 </body></html>

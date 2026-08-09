@@ -98,8 +98,32 @@ function collapseFormattingWhitespace(node: Node, inPre = false): void {
   }
 }
 
+// A script element holds raw text, and a parser ends one at the first closing
+// tag inside that text. So a script whose content mentions its own closing tag
+// serializes into a document that no longer parses back: the content truncates
+// there and the rest becomes stray markup beside the element.
+//
+// A check building an HTML fixture writes exactly that content, and the fault
+// arrives at write time with nothing to see. This project produced it twice in
+// one afternoon — once from a fixture and once from a comment describing the
+// problem.
+//
+// Which nodes to fix comes from the tree rather than from a search over the
+// text. The document says which elements hold raw text, and only their own
+// content changes; the escape is valid wherever it lands, since a backslash
+// before the slash reads as itself in a string, a regular expression and a
+// comment alike.
+function escapeRawText(doc: Document): void {
+  for (const element of Array.from(doc.querySelectorAll("script, style"))) {
+    const text = element.textContent ?? ""
+    const closing = `</${element.tagName.toLowerCase()}`
+    if (text.includes(closing)) element.textContent = text.split(closing).join(`<\\/${element.tagName.toLowerCase()}`)
+  }
+}
+
 function serialize(doc: Document): string {
   collapseFormattingWhitespace(doc.documentElement!)
+  escapeRawText(doc)
   return doc.documentElement!.outerHTML
 }
 

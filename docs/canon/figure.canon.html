@@ -37,20 +37,6 @@ browser.</p>
 </canon-detail>
   <a data-rel="depends_on" href="./root.canon.html#a-document-is-read-by-a-person">a picture that covers itself has stopped being readable</a>
 </canon-axiom>
-<canon-axiom id="an-edge-runs-in-space-reserved-for-it" data-conforms-to="../templates/canon.template.html#canon-axiom">
-  <canon-title>An edge runs through space reserved for it rather than over whatever lies in the way.</canon-title>
-  <canon-detail><p>An edge gets its own room: a lane the arrivals at one box share, a column kept
-clear for a back edge, the gap between two facing sides for a peer. It never
-simply takes the shortest path and crosses whatever lies there.</p>
-<p>Routing over the top is how a drawing hides something without any single step
-looking wrong. Reserving the space first makes the collision impossible rather
-than unlikely.</p>
-<p>Three audits check the geometry, and they check the claim rather than the
-intent: an edge runs the direction it says it runs, and a peer edge reaches its
-neighbour without crossing a box between them.</p>
-</canon-detail>
-  <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">how an edge avoids covering what it crosses</a>
-</canon-axiom>
 <canon-specification id="figure-layout" data-conforms-to="../templates/canon.template.html#canon-specification">
   <canon-title>the figure layout engine</canon-title>
   <a data-rel="specifies" href="../templates/figure.element.js">the layout engine</a>
@@ -91,96 +77,36 @@ neighbour without crossing a box between them.</p>
         `the node declaring column two spans ${three.left.toFixed(0)}–${three.right.toFixed(0)}, outside the middle column`)
     </script>
   </canon-behaviour>
-  <canon-behaviour id="merge-shares-one-lane" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>Edges arriving at one box share a single lane.</canon-title>
-    <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">one lane serves the arrivals it holds</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <canon-fixture>
-      <figure-graph data-columns="3">
-        <figure-node id="a" data-at="1,1">a</figure-node>
-        <figure-node id="b" data-at="1,2">b</figure-node>
-        <figure-node id="c" data-at="1,3">c</figure-node>
-        <figure-node id="sink" data-at="2,2">sink</figure-node>
-        <figure-edge from="a" to="sink"></figure-edge>
-        <figure-edge from="b" to="sink"></figure-edge>
-        <figure-edge from="c" to="sink"></figure-edge>
-      </figure-graph>
-    </canon-fixture>
-    <script type="text/mycelium-test">
-      // Three sources, one target. Grouping edges by their source gives this
-      // three lanes and draws three near-parallel lines into one box, which is
-      // what grouping by connected component exists to fix. A fork would pass
-      // either way, so a merge is the case worth pinning down.
-      await settle(fixture)
-
-      const wires = Array.from(fixture.querySelectorAll("svg.figure-wires path.wire"))
-      assert(wires.length === 3, `expected three wires, drew ${wires.length}`)
-
-      // "M x,y L x,lane L x2,lane L x2,y2" — the second point's y is the lane
-      // the edge crosses its gap in.
-      const laneOf = (wire) => Number(wire.getAttribute("d").trim().split(/\s+/)[1].replace(/^L/, "").split(",")[1])
-      const lanes = wires.map(laneOf)
-
-      assert.near(lanes[0], lanes[1], 0.5, "the first two edges took different lanes")
-      assert.near(lanes[1], lanes[2], 0.5, "the last two edges took different lanes")
-    </script>
-  </canon-behaviour>
-  <canon-behaviour id="back-edge-keeps-to-its-column" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>A back edge runs inside the column reserved for it.</canon-title>
-    <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">the reserved column</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <canon-fixture>
-      <figure-graph data-columns="edge node">
-        <figure-node id="top" data-at="1,1">top</figure-node>
-        <figure-node id="bottom" data-at="2,1">bottom</figure-node>
-        <figure-edge from="top" to="bottom"></figure-edge>
-        <figure-edge from="bottom" to="top" data-back>re-enters</figure-edge>
-      </figure-graph>
-    </canon-fixture>
-    <script type="text/mycelium-test">
-      // The gutter is a grid column, so the grid sizes it to the label and no
-      // length of text can push the wire out of the figure. Both halves of that
-      // claim are measurable: the wire runs left of every box, and the label
-      // sits in the column as an ordinary grid item.
-      await settle(fixture)
-
-      const graph = fixture.querySelector("figure-graph")
-      const back = graph.querySelector('svg.figure-wires path.wire[data-kind="back"]')
-      assert(back, "no back edge was drawn")
-
-      // Every coordinate the element writes is relative to the padding box,
-      // because the overlay it draws into sits inset:0 inside the border.
-      const frame = graph.getBoundingClientRect()
-      const inset = getComputedStyle(graph)
-      const origin = {
-        left: frame.left + parseFloat(inset.borderLeftWidth),
-        top: frame.top + parseFloat(inset.borderTopWidth),
-      }
-      const leftmostBox = Math.min(...Array.from(graph.querySelectorAll("figure-node"))
-        .map((node) => node.getBoundingClientRect().left - origin.left))
-
-      const gutterX = Number(back.getAttribute("d").trim().split(/\s+/)[1].replace(/^L/, "").split(",")[0])
-      assert(gutterX < leftmostBox,
-        `the back edge runs at x=${gutterX.toFixed(1)}, which is not left of the boxes at x=${leftmostBox.toFixed(1)}`)
-
-      const label = graph.querySelector('.figure-label[data-kind="back"][data-in-column]')
-      assert(label, "the back edge's label never became a grid item")
-      assert(label.getBoundingClientRect().right - origin.left <= leftmostBox,
-        "the label overlaps the boxes instead of keeping to its column")
-    </script>
-  </canon-behaviour>
-  <canon-behaviour id="peer-runs-level-between-facing-sides" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>A peer edge is one level line joining the two facing sides.</canon-title>
-    <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">the space between two facing sides</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <canon-fixture>
+  <canon-behaviour id="an-edge-runs-in-space-reserved-for-it" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>An edge runs through space reserved for it rather than over whatever lies in the way.</canon-title>
+    <canon-detail><p>An edge gets its own room: a lane the arrivals at one box share, a column kept
+clear for a back edge, the gap between two facing sides for a peer. It never
+simply takes the shortest path and crosses whatever lies there.</p>
+<p>Routing over the top is how a drawing hides something without any single step
+looking wrong. Reserving the space first makes the collision impossible rather
+than unlikely.</p>
+<p>This sat in the axiom rank until somebody asked what kind of statement it is.
+An axiom is a criterion a person appeals to when two designs both work, and this
+names a mechanism instead: one strategy for keeping a drawing from covering
+itself, where another engine could break strokes or shrink boxes and satisfy the
+same principle.</p>
+</canon-detail>
+    <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">how an edge avoids covering what it crosses</a>
+    <canon-behaviour id="peer-edges-run-level" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>A peer edge runs level between the facing sides of two boxes in one row.</canon-title>
+      <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">the principle this narrows</a>
+      <canon-behaviour id="peer-runs-level-between-facing-sides" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+        <canon-title>A peer edge is one level line joining the two facing sides.</canon-title>
+        <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">the principle this narrows</a>
+        <canon-verdict>PENDING</canon-verdict>
+        <canon-fixture>
       <figure-graph data-columns="2">
         <figure-node id="left" data-at="1,1">left</figure-node>
         <figure-node id="right" data-at="1,2">right</figure-node>
         <figure-edge from="left" to="right">peers</figure-edge>
       </figure-graph>
     </canon-fixture>
-    <script type="text/mycelium-test">
+        <script type="text/mycelium-test">
       // Both boxes share a row, and a row is as tall as its tallest box, so the
       // line between their middles is already level. No elbow is needed and
       // none should appear.
@@ -212,19 +138,19 @@ neighbour without crossing a box between them.</p>
       assert.near(points[1].x, right.left - origin.left, 0.5, "it does not end at the right box's left side")
       assert.near(points[0].y, left.top + left.height / 2 - origin.top, 0.5, "it does not run through the boxes' middle")
     </script>
-  </canon-behaviour>
-  <canon-behaviour id="peer-running-leftwards" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>A peer edge pointing left leaves the left side and arrives at the right one.</canon-title>
-    <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">the same space, entered from the other end</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <canon-fixture>
+      </canon-behaviour>
+      <canon-behaviour id="peer-running-leftwards" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+        <canon-title>A peer edge pointing left leaves the left side and arrives at the right one.</canon-title>
+        <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">the same space, entered from the other end</a>
+        <canon-verdict>PENDING</canon-verdict>
+        <canon-fixture>
       <figure-graph data-columns="2">
         <figure-node id="near" data-at="1,1">near</figure-node>
         <figure-node id="far" data-at="1,2">far</figure-node>
         <figure-edge from="far" to="near">back along the row</figure-edge>
       </figure-graph>
     </canon-fixture>
-    <script type="text/mycelium-test">
+        <script type="text/mycelium-test">
       // The other case runs rightwards. This one takes the other branch, where
       // the line leaves the source's left side and arrives at the target's
       // right, so the arrowhead lands on the box it points at rather than
@@ -253,12 +179,12 @@ neighbour without crossing a box between them.</p>
       assert.near(xs[0], far.left - origin.left, 0.5, "it does not start at the source's left side")
       assert.near(xs[1], near.right - origin.left, 0.5, "it does not end at the target's right side")
     </script>
-  </canon-behaviour>
-  <canon-behaviour id="peer-across-an-empty-column" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>A peer edge may span a column that holds nothing in its row.</canon-title>
-    <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">a column holding nothing still holds the edge</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <canon-fixture>
+      </canon-behaviour>
+      <canon-behaviour id="peer-across-an-empty-column" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+        <canon-title>A peer edge may span a column that holds nothing in its row.</canon-title>
+        <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">a column holding nothing still holds the edge</a>
+        <canon-verdict>PENDING</canon-verdict>
+        <canon-fixture>
       <figure-graph data-columns="3">
         <figure-node id="one" data-at="1,1">one</figure-node>
         <figure-node id="three" data-at="1,3">three</figure-node>
@@ -266,7 +192,7 @@ neighbour without crossing a box between them.</p>
         <figure-edge from="one" to="three">across the gap</figure-edge>
       </figure-graph>
     </canon-fixture>
-    <script type="text/mycelium-test">
+        <script type="text/mycelium-test">
       // The audit asks whether a column is empty in this row, not whether the
       // two boxes are neighbours. Column two holds a box one row down, which
       // the line never comes near, so this figure is allowed and the wire has
@@ -301,12 +227,140 @@ neighbour without crossing a box between them.</p>
       assert(points[1].x - points[0].x > one.width, "the line does not span the middle column")
       assert(points[0].y < below.top - origin.top, "the line runs into the row below")
     </script>
+      </canon-behaviour>
+      <canon-behaviour id="peer-label-clears-its-own-line" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+        <canon-title>A peer edge's label sits above its line rather than over it.</canon-title>
+        <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">a label may not hide its own line</a>
+        <canon-verdict>PENDING</canon-verdict>
+        <canon-fixture>
+      <figure-graph data-columns="2">
+        <figure-node id="from" data-at="1,1">from</figure-node>
+        <figure-node id="to" data-at="1,2">to</figure-node>
+        <figure-edge from="from" to="to">a label wider than the gap</figure-edge>
+      </figure-graph>
+    </canon-fixture>
+        <script type="text/mycelium-test">
+      // Every other label sits on its wire and masks the line behind it, which
+      // is fine over a long run. A peer edge between neighbours has only the
+      // column gap, around twenty pixels, and a chip is wider than that.
+      // Centred, the label hid the line and the arrowhead with it, so the edge
+      // no longer showed which way it pointed.
+      await settle(fixture)
+
+      const graph = fixture.querySelector("figure-graph")
+      const wire = graph.querySelector('svg.figure-wires path.wire[data-kind="peer"]')
+      const chip = graph.querySelector('.figure-label[data-kind="peer"]')
+      assert(wire, "no peer edge was drawn")
+      assert(chip, "the peer edge's label was not drawn")
+
+      // Every coordinate the element writes is relative to the padding box,
+      // because the overlay it draws into sits inset:0 inside the border.
+      const frame = graph.getBoundingClientRect()
+      const inset = getComputedStyle(graph)
+      const origin = {
+        left: frame.left + parseFloat(inset.borderLeftWidth),
+        top: frame.top + parseFloat(inset.borderTopWidth),
+      }
+      const lineY = Number(wire.getAttribute("d").trim().split(/\s+/)[0].replace(/^M/, "").split(",")[1])
+      const box = chip.getBoundingClientRect()
+
+      assert(box.width > 20, `this case needs a label wider than the gap, and got ${box.width.toFixed(0)}px`)
+      assert(box.bottom - origin.top < lineY,
+        `the label reaches to ${(box.bottom - origin.top).toFixed(1)}, which is not clear of the line at ${lineY.toFixed(1)}`)
+    </script>
+      </canon-behaviour>
+    </canon-behaviour>
+    <canon-behaviour id="an-edge-crosses-in-its-own-lane" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>An edge crossing a gap runs in a lane reserved for it.</canon-title>
+      <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">the principle this narrows</a>
+      <canon-behaviour id="merge-shares-one-lane" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+        <canon-title>Edges arriving at one box share a single lane.</canon-title>
+        <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">the principle this narrows</a>
+        <canon-verdict>PENDING</canon-verdict>
+        <canon-fixture>
+      <figure-graph data-columns="3">
+        <figure-node id="a" data-at="1,1">a</figure-node>
+        <figure-node id="b" data-at="1,2">b</figure-node>
+        <figure-node id="c" data-at="1,3">c</figure-node>
+        <figure-node id="sink" data-at="2,2">sink</figure-node>
+        <figure-edge from="a" to="sink"></figure-edge>
+        <figure-edge from="b" to="sink"></figure-edge>
+        <figure-edge from="c" to="sink"></figure-edge>
+      </figure-graph>
+    </canon-fixture>
+        <script type="text/mycelium-test">
+      // Three sources, one target. Grouping edges by their source gives this
+      // three lanes and draws three near-parallel lines into one box, which is
+      // what grouping by connected component exists to fix. A fork would pass
+      // either way, so a merge is the case worth pinning down.
+      await settle(fixture)
+
+      const wires = Array.from(fixture.querySelectorAll("svg.figure-wires path.wire"))
+      assert(wires.length === 3, `expected three wires, drew ${wires.length}`)
+
+      // "M x,y L x,lane L x2,lane L x2,y2" — the second point's y is the lane
+      // the edge crosses its gap in.
+      const laneOf = (wire) => Number(wire.getAttribute("d").trim().split(/\s+/)[1].replace(/^L/, "").split(",")[1])
+      const lanes = wires.map(laneOf)
+
+      assert.near(lanes[0], lanes[1], 0.5, "the first two edges took different lanes")
+      assert.near(lanes[1], lanes[2], 0.5, "the last two edges took different lanes")
+    </script>
+      </canon-behaviour>
+      <canon-behaviour id="back-edge-keeps-to-its-column" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+        <canon-title>A back edge runs inside the column reserved for it.</canon-title>
+        <a data-rel="depends_on" href="./figure.canon.html#an-edge-runs-in-space-reserved-for-it">the reserved column</a>
+        <canon-verdict>PENDING</canon-verdict>
+        <canon-fixture>
+      <figure-graph data-columns="edge node">
+        <figure-node id="top" data-at="1,1">top</figure-node>
+        <figure-node id="bottom" data-at="2,1">bottom</figure-node>
+        <figure-edge from="top" to="bottom"></figure-edge>
+        <figure-edge from="bottom" to="top" data-back="">re-enters</figure-edge>
+      </figure-graph>
+    </canon-fixture>
+        <script type="text/mycelium-test">
+      // The gutter is a grid column, so the grid sizes it to the label and no
+      // length of text can push the wire out of the figure. Both halves of that
+      // claim are measurable: the wire runs left of every box, and the label
+      // sits in the column as an ordinary grid item.
+      await settle(fixture)
+
+      const graph = fixture.querySelector("figure-graph")
+      const back = graph.querySelector('svg.figure-wires path.wire[data-kind="back"]')
+      assert(back, "no back edge was drawn")
+
+      // Every coordinate the element writes is relative to the padding box,
+      // because the overlay it draws into sits inset:0 inside the border.
+      const frame = graph.getBoundingClientRect()
+      const inset = getComputedStyle(graph)
+      const origin = {
+        left: frame.left + parseFloat(inset.borderLeftWidth),
+        top: frame.top + parseFloat(inset.borderTopWidth),
+      }
+      const leftmostBox = Math.min(...Array.from(graph.querySelectorAll("figure-node"))
+        .map((node) => node.getBoundingClientRect().left - origin.left))
+
+      const gutterX = Number(back.getAttribute("d").trim().split(/\s+/)[1].replace(/^L/, "").split(",")[0])
+      assert(gutterX < leftmostBox,
+        `the back edge runs at x=${gutterX.toFixed(1)}, which is not left of the boxes at x=${leftmostBox.toFixed(1)}`)
+
+      const label = graph.querySelector('.figure-label[data-kind="back"][data-in-column]')
+      assert(label, "the back edge's label never became a grid item")
+      assert(label.getBoundingClientRect().right - origin.left <= leftmostBox,
+        "the label overlaps the boxes instead of keeping to its column")
+    </script>
+      </canon-behaviour>
+    </canon-behaviour>
   </canon-behaviour>
-  <canon-behaviour id="labels-into-one-box-do-not-overlap" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>Two labelled edges into one box show both labels.</canon-title>
-    <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">neither label hides the other</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <canon-fixture>
+  <canon-behaviour id="labels-stay-readable" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>Every figure label stays readable beside the others.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-document-is-read-by-a-person">the principle this narrows</a>
+    <canon-behaviour id="labels-into-one-box-do-not-overlap" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>Two labelled edges into one box show both labels.</canon-title>
+      <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">neither label hides the other</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <canon-fixture>
       <figure-graph data-columns="2">
         <figure-node id="source" data-at="1,1">source</figure-node>
         <figure-node id="other" data-at="1,2">other</figure-node>
@@ -315,7 +369,7 @@ neighbour without crossing a box between them.</p>
         <figure-edge from="other" to="target">links to</figure-edge>
       </figure-graph>
     </canon-fixture>
-    <script type="text/mycelium-test">
+      <script type="text/mycelium-test">
       // Both edges reach the same box, so they share a lane and share the drop
       // into it, and both labels want the middle of that drop. A chip is
       // opaque, so the one drawn second covered the first completely and the
@@ -333,12 +387,12 @@ neighbour without crossing a box between them.</p>
       const apart = a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top
       assert(apart, "the two labels overlap, so one of them is hidden behind the other")
     </script>
-  </canon-behaviour>
-  <canon-behaviour id="no-label-covers-another-edge" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>A label does not cover the drop belonging to another edge.</canon-title>
-    <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">a label may not hide a drop</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <canon-fixture>
+    </canon-behaviour>
+    <canon-behaviour id="no-label-covers-another-edge" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>A label does not cover the drop belonging to another edge.</canon-title>
+      <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">a label may not hide a drop</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <canon-fixture>
       <figure-graph data-columns="2">
         <figure-node id="left" data-at="1,1">left</figure-node>
         <figure-node id="right" data-at="1,2">right</figure-node>
@@ -347,7 +401,7 @@ neighbour without crossing a box between them.</p>
         <figure-edge from="right" to="shared">and a wide one here</figure-edge>
       </figure-graph>
     </canon-fixture>
-    <script type="text/mycelium-test">
+      <script type="text/mycelium-test">
       // A chip masks the line behind it, and masking its own is the point: it
       // knocks a hole in that line rather than printing over it. Masking
       // somebody else's is not, and a covered drop reads as an edge that stops
@@ -395,12 +449,12 @@ neighbour without crossing a box between them.</p>
         })
       })
     </script>
-  </canon-behaviour>
-  <canon-behaviour id="no-label-covers-a-node" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>No label lands on top of a box, even where the gap is full.</canon-title>
-    <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">a label may not hide a box</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <canon-fixture>
+    </canon-behaviour>
+    <canon-behaviour id="no-label-covers-a-node" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>No label lands on top of a box, even where the gap is full.</canon-title>
+      <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">a label may not hide a box</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <canon-fixture>
       <figure-graph data-columns="3">
         <figure-node id="first" data-at="1,1">first</figure-node>
         <figure-node id="second" data-at="1,2">second</figure-node>
@@ -412,7 +466,7 @@ neighbour without crossing a box between them.</p>
         <figure-edge from="third" to="sink">validated by</figure-edge>
       </figure-graph>
     </canon-fixture>
-    <script type="text/mycelium-test">
+      <script type="text/mycelium-test">
       // Three labels want one gap, which holds about two, so they end up
       // sharing the height and overlapping each other. What must not happen is
       // any of them wandering onto a box: a label over a node hides the name
@@ -437,12 +491,12 @@ neighbour without crossing a box between them.</p>
         }
       }
     </script>
-  </canon-behaviour>
-  <canon-behaviour id="no-label-leaves-the-figure" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>A label longer than its column stays inside the figure.</canon-title>
-    <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">a label outside the frame hides itself</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <canon-fixture>
+    </canon-behaviour>
+    <canon-behaviour id="no-label-leaves-the-figure" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>A label longer than its column stays inside the figure.</canon-title>
+      <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">a label outside the frame hides itself</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <canon-fixture>
       <figure-graph data-columns="3">
         <figure-node id="corner" data-at="1,1">corner</figure-node>
         <figure-node id="under" data-at="2,1">under</figure-node>
@@ -452,7 +506,7 @@ neighbour without crossing a box between them.</p>
         <figure-edge from="right" to="under-right">another very long label pinned to the far side</figure-edge>
       </figure-graph>
     </canon-fixture>
-    <script type="text/mycelium-test">
+      <script type="text/mycelium-test">
       // A chip is centred on its anchor, so half of it reaches further out than
       // the anchor does. Anchored in the first or last column, a long one hung
       // out through the figure's border.
@@ -480,19 +534,19 @@ neighbour without crossing a box between them.</p>
         assert(box.bottom <= bounds.bottom + 0.5, `"${chip.textContent.trim()}" reaches below the bottom border`)
       }
     </script>
-  </canon-behaviour>
-  <canon-behaviour id="a-lone-label-keeps-its-anchor" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>A label with nothing to clash with keeps its own anchor.</canon-title>
-    <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">with nothing to hide, nothing moves</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <canon-fixture>
+    </canon-behaviour>
+    <canon-behaviour id="a-lone-label-keeps-its-anchor" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+      <canon-title>A label with nothing to clash with keeps its own anchor.</canon-title>
+      <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">with nothing to hide, nothing moves</a>
+      <canon-verdict>PENDING</canon-verdict>
+      <canon-fixture>
       <figure-graph data-columns="1">
         <figure-node id="up" data-at="1,1">up</figure-node>
         <figure-node id="down" data-at="2,1">down</figure-node>
         <figure-edge from="up" to="down">the only label</figure-edge>
       </figure-graph>
     </canon-fixture>
-    <script type="text/mycelium-test">
+      <script type="text/mycelium-test">
       // Pushing labels apart must not move one that has no reason to move. This
       // pins the anchor rule for a single edge: centred on the drop into its
       // target, between the lane it leaves and the box it enters.
@@ -523,47 +577,7 @@ neighbour without crossing a box between them.</p>
       assert.near(middle, (lane + arrival) / 2, 0.5,
         `the label sits at ${middle.toFixed(1)} rather than midway down the drop from ${lane.toFixed(1)} to ${arrival.toFixed(1)}`)
     </script>
-  </canon-behaviour>
-  <canon-behaviour id="peer-label-clears-its-own-line" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-    <canon-title>A peer edge's label sits above its line rather than over it.</canon-title>
-    <a data-rel="depends_on" href="./figure.canon.html#nothing-drawn-may-hide-anything">a label may not hide its own line</a>
-    <canon-verdict>PENDING</canon-verdict>
-    <canon-fixture>
-      <figure-graph data-columns="2">
-        <figure-node id="from" data-at="1,1">from</figure-node>
-        <figure-node id="to" data-at="1,2">to</figure-node>
-        <figure-edge from="from" to="to">a label wider than the gap</figure-edge>
-      </figure-graph>
-    </canon-fixture>
-    <script type="text/mycelium-test">
-      // Every other label sits on its wire and masks the line behind it, which
-      // is fine over a long run. A peer edge between neighbours has only the
-      // column gap, around twenty pixels, and a chip is wider than that.
-      // Centred, the label hid the line and the arrowhead with it, so the edge
-      // no longer showed which way it pointed.
-      await settle(fixture)
-
-      const graph = fixture.querySelector("figure-graph")
-      const wire = graph.querySelector('svg.figure-wires path.wire[data-kind="peer"]')
-      const chip = graph.querySelector('.figure-label[data-kind="peer"]')
-      assert(wire, "no peer edge was drawn")
-      assert(chip, "the peer edge's label was not drawn")
-
-      // Every coordinate the element writes is relative to the padding box,
-      // because the overlay it draws into sits inset:0 inside the border.
-      const frame = graph.getBoundingClientRect()
-      const inset = getComputedStyle(graph)
-      const origin = {
-        left: frame.left + parseFloat(inset.borderLeftWidth),
-        top: frame.top + parseFloat(inset.borderTopWidth),
-      }
-      const lineY = Number(wire.getAttribute("d").trim().split(/\s+/)[0].replace(/^M/, "").split(",")[1])
-      const box = chip.getBoundingClientRect()
-
-      assert(box.width > 20, `this case needs a label wider than the gap, and got ${box.width.toFixed(0)}px`)
-      assert(box.bottom - origin.top < lineY,
-        `the label reaches to ${(box.bottom - origin.top).toFixed(1)}, which is not clear of the line at ${lineY.toFixed(1)}`)
-    </script>
+    </canon-behaviour>
   </canon-behaviour>
 </canon-specification>
 </body></html>
