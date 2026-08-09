@@ -34,8 +34,8 @@ for (let d = 0; d <= axiomDepth; d++)
   // axioms too, narrower ones, and naming that again says nothing a reader
   // cannot see from the edges arriving into them.
   ranks.push({ name: d === 0 ? 'axioms' : '', items: data.axioms.filter(a => a.depth === d)
-    .map(a => ({ address: a.address, title: a.title, group: a.canon,
-                 subsystem: subsystemOf(a.address), reach: a.behaviours })) })
+    .map(a => ({ address: a.address, title: a.title, group: a.canon, subsystem: subsystemOf(a.address),
+                 reach: a.behaviours, counts: 'behaviours beneath this, at any depth' })) })
 
 const specTitle = Object.fromEntries(data.specifications.map(s => [s.address, s.title]))
 const behaviourAt = new Map(data.behaviours.map(b => [b.address, b]))
@@ -71,8 +71,25 @@ for (let d = 0; d <= behaviourDepthMax; d++)
  * @behaviour canon/chain.canon.html#the-rank-shows-a-cited-declaration
  */
 const shortFile = (f) => f.replace(/^docs\//, '')
+
+/**
+ * How many claims a declaration answers, shown only when it answers more than
+ * one.
+ *
+ * One citation per declaration is the target: a function carrying five is doing
+ * five things, and the count names the decomposition worth doing. Nothing
+ * surfaced it, so the smell sat in the data where no reader met it.
+ *
+ * Silent at one, because a number every box carries is a number nobody reads
+ * and the only interesting value is the one above the target.
+ *
+ * @behaviour canon/chain.canon.html#a-declaration-carrying-several-claims-says-how-many
+ */
+const claimsOf = (d) => d.cites.length > 1 ? d.cites.length : undefined
+
 const declarations = data.code.map(d =>
-  ({ address: d.address, title: d.name, group: shortFile(d.file),
+  ({ address: d.address, title: d.name, group: shortFile(d.file), reach: claimsOf(d),
+     counts: 'claims this one declaration answers',
      subsystem: subsystemOfFile[d.file] ?? '', code: d }))
 const cited = new Set(data.code.map(d => d.file))
 for (const s of data.specifications)
@@ -218,7 +235,12 @@ function boxFor(item) {
   const el = document.createElement('div')
   el.className = 'node' + (item.file ? ' file' : '')
   el.dataset.address = item.address
-  el.innerHTML = (item.reach === undefined ? '' : '<span class="reach">' + item.reach + '</span>')
+  // The badge says something different on each rank, so it carries what it
+  // counts rather than leaving a bare number to guess at. An axiom's is every
+  // behaviour beneath it at any depth, which is not the same as the one step
+  // the pane lists, and reading it as that step is what makes it look wrong.
+  el.innerHTML = (item.reach === undefined ? ''
+      : '<span class="reach" title="' + item.counts + '">' + item.reach + '</span>')
     + '<span class="title"></span>'
   el.querySelector('.title').textContent = item.title
   return el
@@ -506,6 +528,15 @@ function fillPane(address) {
   anchor.href = node.address.replace(/^docs\//, '')
   anchor.textContent = file
   where.appendChild(anchor)
+
+  // The blast radius, up top where a reader meets it before the reasoning. This
+  // is what the badge on the box counts, and it is not the list further down:
+  // that list is one step, and this is every behaviour the claim reaches at any
+  // depth. Saying so is what stops 39 looking like it disagrees with eight.
+  const reached = (data.reach[node.address] || []).filter(a => behaviourAt.has(a)).length
+  const reach = document.getElementById('pane-reach')
+  reach.textContent = reached > (childrenOf[node.address] || []).length ? 'impacts ' + reached + ' behaviours' : ''
+  reach.hidden = !reach.textContent
   const detail = document.getElementById('pane-detail')
   detail.textContent = ''
   // A claim's reasoning is markup it wrote; a declaration's is the prose of its
@@ -524,10 +555,18 @@ function fillPane(address) {
   // Side by side, since the two read as a pair: what a claim answers to, and
   // what answers to it. A side with nothing in it stays out entirely rather
   // than leaving a heading over an empty column.
-  for (const side of [
+  //
+  // A lone side takes the whole width. Counted here rather than left to a
+  // selector, because the note above is a sibling too and any other addition
+  // would quietly break a rule that asks whether a side is on its own.
+  const sides = [
     neighbours('derives from', parentsOf[node.address]),
     neighbours('derived from it', childrenOf[node.address]),
-  ]) if (side) links.appendChild(side)
+  ].filter(Boolean)
+  for (const side of sides) {
+    side.classList.toggle('alone', sides.length === 1)
+    links.appendChild(side)
+  }
   pane.hidden = false
 }
 

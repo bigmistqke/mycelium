@@ -359,5 +359,42 @@ export default async function ({ assert }: TestContext) {
 }
 </script>
   </canon-behaviour>
+  <canon-behaviour id="a-declaration-carrying-several-claims-says-how-many" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A declaration answering more than one claim shows how many, and one answering a single claim shows nothing.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-document-is-read-by-a-person">a smell nobody sees is a smell nobody fixes</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">// One citation per declaration is the target the citation design names: a
+// function carrying five is doing five things, and the count is what names the
+// decomposition worth doing. Nothing surfaced it, so the smell sat in the data
+// and never reached a reader.
+//
+// Silent at one on purpose. A number every box carries is a number nobody
+// reads, and the only interesting value is the one above the target.
+import type { TestContext } from "../../src/api.ts"
+import { chainOf, tinySubsystem } from "./canon-chain-fixture.ts"
+
+export default async function ({ assert, sandbox }: TestContext) {
+  const files = tinySubsystem()
+  files["canon/sample.canon.html"] = files["canon/sample.canon.html"].replace(
+    "</canon-specification>",
+    `  <canon-behaviour id="a-second-claim" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A cut leaves the code beside it alone.</canon-title>
+    <a data-rel="depends_on" href="./sample.canon.html#a-principle">the axiom it refines</a>
+  </canon-behaviour>
+</canon-specification>`)
+  files["sample/widen.ts"] = files["sample/widen.ts"].replace(
+    " * @behaviour canon/sample.canon.html#a-claim",
+    " * @behaviour canon/sample.canon.html#a-claim\n * @behaviour canon/sample.canon.html#a-second-claim")
+  for (const [path, text] of Object.entries(files)) sandbox.write(path, text)
+
+  const cited = chainOf(sandbox, assert).code.find((d) => d.name === "widen")
+  assert(cited, "no declaration reached the drawing")
+  assert(
+    cited.cites.length === 2,
+    `the declaration answers two claims and the drawing was handed ${cited.cites.length}`,
+  )
+}
+</script>
+  </canon-behaviour>
 </canon-specification>
 </body></html>

@@ -1447,7 +1447,13 @@ ${base}
           background: Canvas; }
   #pane[hidden] { display: none; }
   #pane h2 { font-size: .95rem; margin: 0 0 .3rem; padding-right: 2rem; }
-  #pane-where { opacity: .6; margin: 0 0 .75rem; }
+  /* Where the claim lives and how far it reaches, on one line and on the same
+     halves the neighbour lists below use, so the two rows read as one column
+     each rather than as two unrelated splits. */
+  #pane-meta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+               column-gap: 0; margin: 0 0 .75rem; }
+  #pane-where { opacity: .6; margin: 0; padding-right: 1.25rem; }
+  #pane-reach { opacity: .6; margin: 0; padding-left: 1.25rem; }
   #pane-detail p { margin: 0 0 .6rem; max-width: 68ch; }
   #pane-detail .doc { white-space: pre-wrap; max-width: 68ch; }
   #pane-detail details { margin-top: .5rem; }
@@ -1471,7 +1477,7 @@ ${base}
   #pane-links { margin-top: .9rem; display: grid; align-items: start;
                 grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 0; }
   #pane-links .side { padding-right: 1.25rem; }
-  #pane-links .side:only-child { grid-column: 1 / -1; padding-right: 0; }
+  #pane-links .side.alone { grid-column: 1 / -1; padding-right: 0; }
   #pane-links .side + .side { border-left: 1px solid var(--line);
                               padding-left: 1.25rem; padding-right: 0; }
   #pane-links h3 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
@@ -1512,6 +1518,9 @@ ${base}
      gaps uncovered, and boxes scroll up through them. */
   .headband { position: sticky; top: 0; z-index: 1; align-self: stretch; background: Canvas; }
   .rank { position: sticky; top: 0; z-index: 2; background: Canvas; }
+  /* Scrolling something into view has to clear the headings, which cover the
+     top of the graph and would otherwise hide whatever just got selected. */
+  [data-address] { scroll-margin-top: 3.4rem; }
   .rank > h2 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
                opacity: .55; margin: 0; padding: 1rem 0 .6rem; }
   .group { margin-bottom: 1rem; }
@@ -1544,7 +1553,8 @@ ${base}
     <b>${data.axioms.length}</b> axioms &middot;
     <b>${data.behaviours.length}</b> behaviours &middot;
     <b>${data.behaviours.filter(b => b.checks).length}</b> checks &middot;
-    <b>${data.specifications.length}</b> subsystems<span class="stat"> &middot;
+    <b>${data.specifications.length}</b> subsystems &middot;
+    <b>${data.code.filter(d => d.cites.length > 1).length}</b> declarations answering more than one claim<span class="stat"> &middot;
     <b id="crossings">—</b> wires over boxes</span>
   </div>
 </header>
@@ -1552,7 +1562,10 @@ ${base}
 <aside id="pane" hidden>
   <button id="pane-close" type="button" aria-label="close">&times;</button>
   <h2 id="pane-title"></h2>
-  <p id="pane-where"></p>
+  <div id="pane-meta">
+    <p id="pane-where"></p>
+    <p id="pane-reach"></p>
+  </div>
   <div id="pane-detail"></div>
   <div id="pane-links"></div>
 </aside>
