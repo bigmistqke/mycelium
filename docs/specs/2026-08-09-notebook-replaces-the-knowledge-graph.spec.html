@@ -42,13 +42,14 @@ called a knowledge graph produced 120 entries phrased as general truths.
 A word that asks for knowledge gets prose that performs knowing.</p>
 </spec-problem>
   <spec-design>
-<p>The store becomes a notebook. It holds the thinking a session cannot act on
-yet: prior art somebody read, a direction nobody can build toward this month, a
-rule noticed but not yet checkable, a remark about how the work itself goes.
-None of it closes and none of it wants a status.</p>
-<p>That is the loss this project exists to answer. A task leaves artefacts in
-git, in the code and in the passing checks, so writing it down twice protects
-nothing. The half-thought that guides next month leaves nothing at all.</p>
+<p>The canon is where thinking crystallises. The notebook is where it stays
+fluid, and it holds the reasoning that underpins the code before any of it
+hardens. Prior art somebody read, a rule noticed before a check could hold it,
+a direction the work bends toward, a remark about how the work itself goes.</p>
+<p>Neither the code nor git carries that. A task leaves artefacts everywhere,
+so writing one down a second time protects nothing, while the reasoning
+underneath leaves nothing at all. An axiom that cannot say where it came from
+is the symptom this design answers.</p>
 <h3>Three types, by where the knowledge came from</h3>
 <p>A <code>notebook-observation</code> comes from thinking. A
 <code>notebook-research</code> comes from someone else, so it holds prior art
@@ -62,21 +63,32 @@ principle, practice and direction, and sorted them by what each could become.
 That test is a promotion in disguise, and the section below removes promotion,
 so the split goes with it.</p>
 <h3>Grounding, not promotion</h3>
-<p>An axiom names what it came from, with an ordinary <code>data-rel</code>
-anchor into the notebook. Nothing marks an entry as promoted, nothing tracks a
-backlog, and nothing about an entry changes when an axiom cites it.</p>
+<p>An axiom names what it came from. Nothing marks an entry as promoted,
+nothing tracks a queue, and nothing about an entry changes when an axiom cites
+it.</p>
 <p>Promotion would need somewhere to keep the state, something to update it and
 a notion of entries waiting their turn. All of that is machinery for a fact one
-edge already carries, which
+link already carries, which
 <a href="../canon/root.canon.html#derive-do-not-maintain">derive, do not
 maintain</a> rules out.</p>
-<p>The mechanism costs almost nothing.
-<code>every-link-resolves</code> already checks every href and fragment across
-the corpus, and <code>grounded</code> builds its downward map from axioms and
-behaviours alone, so an entry citing an axiom cannot make it look reached. One
-change is needed: <code>canon-axiom</code> restricts its edges to
-<code>depends_on</code>, and grounding wants its own relation.</p>
-<p>Seventeen axioms carry no grounding today. That number is a reading and not
+<p>The same idea then sits in both stores without either one repeating the
+other. Fluid, it carries the reading behind it, the doubt, and the turns that
+led nowhere. Once it hardens, it is one line a check can hold. A reference
+names that relation rather than a resemblance between two texts.</p>
+<h3>A reference is a container, not a relation</h3>
+<p>The links live inside a <code>canon-references</code> child rather than
+loose among a claim's own edges. Any claim may carry one, so a behaviour
+grounds the same way an axiom does. The prefix follows the family rather than
+the element, which is this project's naming rule everywhere else.</p>
+<p>That one move answers three things at once. No ninth relation joins the
+vocabulary, because containment already says what the link is.
+<code>canon-axiom</code> keeps its <code>depends_on</code> pattern untouched.
+And <code>grounded</code> reads direct children only, so a reference stays
+invisible to the audit deciding whether a claim is load-bearing.</p>
+<p>Checking comes free. <code>every-link-resolves</code> queries every anchor
+in the corpus rather than the ones a family declares, so a reference to a
+missing entry fails validation the day somebody writes it.</p>
+<p>Seventeen axioms carry no reference today. That number is a reading and not
 a gate. Much of the canon came top-down from the implementation, so demanding
 grounding now would manufacture entries to satisfy the check, which is how a
 commit hook put 134 actions in the graph.</p>
@@ -106,7 +118,7 @@ build is a check with worse manners.</p>
 <p>A title, an optional repeatable <code>notebook-prompt</code>, an optional
 <code>notebook-detail</code>, and its edges. Confidence goes: 570 nodes carry
 it, 60% sit on three values, and nothing reads it. Status goes with the goals
-it belonged to, since nothing in a notebook is pending.</p>
+it belonged to, since nothing fluid is pending.</p>
 <p>The prompt stays a field rather than a quotation, because exact words are
 data and a reader wants to find them without reading the page. It moves off the
 goal type and onto any entry, and repeats, since one entry can gather several
@@ -184,9 +196,9 @@ something noticed. If that keeps feeling wrong, a fourth type goes there.</p>
 <p>43 mechanism notes need a reading each. Some state a rule about one
 subsystem and belong in the notebook, and some are build records that a keyword
 caught.</p>
-<p>Which relation grounds an axiom in an entry, and whether
-<code>canon-axiom</code> widens its pattern or reuses
-<code>depends_on</code>.</p>
+<p>Whether a <code>canon-references</code> child holds a label per link. A bare
+anchor says which entry, and a label says what the claim took from it, which is
+the part a reader cannot reconstruct.</p>
 </spec-open-questions>
 </spec-doc>
 </body></html>
