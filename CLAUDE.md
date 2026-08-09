@@ -1,147 +1,149 @@
 # Project Instructions
 
-## Knowledge Graph Workflow
+## The notebook
 
-This logging is mandatory. Log decisions in real time, not retroactively.
+Log in real time, not retroactively.
 
-As of 2026-07-23 this project writes its decision graph as HTML nodes under
-`docs/knowledge/`, conforming to the templates in
-`docs/templates/knowledge.template.html`. It replaces `deciduous`
-(the SQLite-backed CLI) for all new logging, project-wide — this was `experiments/v4`
-inside a monorepo until 2026-08-01, when that content became the repository
-root; there's nowhere better for this to live. The earlier log held ~400 nodes
-(v0 through 2026-07-23).
+This project keeps the thinking that underpins its code as HTML entries under
+`docs/notebook/`, conforming to `docs/templates/notebook.template.html`. The
+canon is where thinking crystallises, and the notebook is where it stays fluid:
+prior art somebody read, a rule noticed before a check could hold it, a
+direction the work bends toward, a remark about how the work itself goes.
 
-It stopped growing on that date, and the project **deleted** it on
-2026-07-30, along with its database and its JSON export. 60 nodes came in
-here as imports first; nothing else survived. Nothing in this repository
-can query it, so nothing here may refer to it as though it were still
-available.
+Neither the code nor git carries that. A task leaves artefacts everywhere, so
+writing one down a second time protects nothing, while the reasoning underneath
+leaves nothing at all.
 
-Full reasoning:
-`docs/specs/2026-07-23-deciduous-template-series.spec.html`.
+An intention — something to come back to — is not this. That belongs in the
+followup family below, which drains where the notebook accumulates. Design:
+`docs/specs/2026-08-09-notebook-replaces-the-knowledge-graph.spec.html`.
 
-60 of those 400 were imported on 2026-07-30, by one rule: a node comes in
-only if it can be linked to material already here. See
-`docs/knowledge/2026-07-30-link-do-not-tag.decision.html`.
-Imported nodes keep their original date in the filename — that prefix is what
-records which exploration a node belongs to, which is why `add` grew a
-`--date` flag and why you should leave it alone when authoring.
+### Three types, by where the knowledge came from
 
-### CRITICAL: referring to the earlier decision log
+| Type | Comes from | Holds |
+|------|------------|-------|
+| `notebook-observation` | thinking | something you noticed, at any altitude |
+| `notebook-research` | someone else | prior art, external work, things read |
+| `notebook-experiment` | running something | a question, a script, and its reading |
 
-The earlier log was a SQLite database that the project froze on 2026-07-23
-and later deleted. Its
-node numbers (`#349`, `#20`) meant something only inside it, and **nothing in
-this graph may refer to them**. There are zero such references left; keep it
-that way.
+Provenance is the axis because it does not move. What an entry is *about*
+drifts as the project's vocabulary shifts, and that drift is what left one
+earlier type doing five jobs across 231 nodes. An entry never changes type: a
+thought that arrived one way did not arrive the other.
 
-- The 60 nodes that were **imported** are ordinary nodes here. Link them by
-  path, and label the link with what it says: `<a href="./2026-07-13-status-derived-not-declared.observation.html">derived status, not declared</a>`.
-  Writing the href forces you to open the target, which is the step that catches
-  a wrong reference — two of twenty citations pointed at the wrong node before
-  anyone checked
-  (`2026-07-30-two-of-twenty-citations-were-hollow.observation.html`).
-- Everything else in that log no longer exists, so describe it rather than cite it:
-  "an option about which language to implement in". The description is what a
-  reader needed anyway.
-
-More generally: **a node may only refer to what a reader can open.** Not a
-number in a deleted database, and not something recoverable only from git
-history — git is not a place a reader of the graph can follow a link to.
-
-An external source is fine, and wanted, so long as the link is live. Prior art
-is cited that way already: nodes on IBIS, on truth-maintenance systems, and on
-the capture cost that killed earlier rationale systems all link straight out to
-the work they name. `no-outside-references.rule.html` has said this all along —
-"Refer only to things a reader of this repository can open" — and its check
-matches a bare `#349` and nothing else. This paragraph used to say "not an
-external tool" instead, which is the same rule copied by hand and
-[drifted](docs/language/terms/drift.term.html).
-
-Use the CLI to log, don't hand-author. The commands below exist and are
-tested working:
+### The commands
 
 ```bash
-pnpm mycelium knowledge add <type> --title "…" --confidence NN [--status S] [--prompt "…"] [--detail "…" | --detail -] [--commit HASH] [--date YYYY-MM-DD] --file <undated-slug>
-pnpm mycelium knowledge link <from-file> <to-file> --rel <rel> --label "…"
-pnpm mycelium knowledge unlink <from-file> <to-file> --rel <rel>
-pnpm mycelium knowledge update <file> [--title "…"] [--confidence NN] [--status S] [--prompt "…"] [--detail "…" | --detail - | --detail ""] [--commit HASH] [--files "…"] [--branch NAME]
-pnpm mycelium knowledge del <file>
+pnpm mycelium notebook add <type> --title "…" [--tag NAME]… [--prompt "…" | --prompt -] [--detail "…" | --detail -] [--question "…"] [--file <slug>]
+pnpm mycelium notebook update <file> [--title "…"] [--tag NAME]… [--prompt "…"] [--detail "…" | --detail - | --detail ""] [--question "…"] [--reading "…"]
+pnpm mycelium notebook link <from-file> <to-file> --rel <rel> --label "…"
+pnpm mycelium notebook unlink <from-file> <to-file> --rel <rel>
+pnpm mycelium notebook del <file>
+pnpm mycelium notebook list [entries|edges]
+pnpm mycelium notebook tags
+pnpm mycelium notebook run <file> [--record]
+pnpm mycelium notebook generate graph [--out <path>] [--base [<href>]]
 ```
 (Run from the repository root — pnpm resolves `mycelium` from the root
-`package.json` regardless of which subdirectory the shell is currently in.)
+`package.json` regardless of which subdirectory the shell is in.)
 
-This block is a convenience, not the roster. The command `mycelium --help`
-prints every family and every command it exports, read off the
-command scripts themselves. A SessionStart hook runs it already, so scroll
-up rather than trusting this file to be current.
+This block is a convenience, not the roster. `mycelium --help` prints every
+family and every command it exports, read off the command scripts themselves,
+and `mycelium <family> --help` prints one family's full flags straight from
+each command's own doc comment. Prefer both over what this file says: a person
+maintains this by hand, and it has been wrong before. If you find a command in
+`--help` that is missing here, add it.
 
-The command `mycelium <family> --help` then prints one family's full
-flags and caveats, straight from each command's own doc comment. Prefer
-both over what this block says: a person maintains it by hand, and it has
-been wrong before. It listed three commands the day
-`unlink` and `del` already existed, and an agent reading it concluded an
-`unlink` was the next gap to build and reported that as a finding. If you
-find a command in `--help` that is missing here, add it.
+Use the CLI, never a hand edit. No file content passes through the model doing
+the logging, which is the point.
 
-`unlink` is what a mis-aimed edge needs. The `link` command upserts on
-(rel, href), so it can correct a label but never a direction or a wrong
-`--rel` — those leave a second, wrong edge alongside the right one.
-Running `unlink` then `link` redirects in two commands; do not delete and
-rebuild the node.
+### What an entry carries, and what it does not
 
-`--file` takes a bare slug with no date on it. `add` prepends the date
-itself and writes `knowledge/<date>-<slug>.<type>.html`, so the date appears
-in the filename whether or not you typed one. Pass `--file
-prior-art-controlled-natural-languages`, not `--file
-2026-07-31-prior-art-controlled-natural-languages`.
+`--file` takes a bare slug with **no date on it**, and nothing prepends one. An
+entry accretes, so a date on it would be a second copy of what git already
+answers, and the first thing to go stale. A slug carrying a date is refused
+outright with an error naming the slug to pass instead.
 
-The dated form is now rejected with an error naming the slug to pass
-instead. It used to silently produce
-`2026-07-31-2026-07-31-prior-art-….observation.html`, since such a node
-validates fine and shows its only symptom in the filename. This has
-happened before.
+Confidence and status both left. 570 earlier nodes carried a confidence, 60% of
+them sat on three values, and nothing ever read the field. Status belonged to
+the goals that left, and nothing fluid is pending.
 
-The surrounding prose talks about date-prefixed filenames constantly, so a
-slug that already carries a date looks like it is following the convention
-rather than breaking it.
+`--detail` is where the finding goes. The title is a title — a line you can
+scan in a list — and everything else belongs in `--detail`, which takes real
+HTML with no tag restriction. For anything longer than a line pass `--detail -`
+and pipe it in on a heredoc; on `update`, `--detail ""` clears it.
 
-Note the argument names in the signature above: `<undated-slug>` for
-`add`, whose value you are choosing, against `<file>` for every other
-command, which takes the full existing filename including its date and its
-`.<type>.html` suffix. The same split, and the same guard, applies to
-`spec add` below.
+That flag went undocumented for days and the cost was measurable: eight nodes
+from one afternoon average 415 characters of title against 117 for the rest,
+and use `detail` zero times. An agent copies the signature, not the prose.
 
-`--detail` is where the finding goes. The title is a title — a line you
-can scan in a list. Everything else (the evidence, the numbers, the reasoning,
-the caveats) belongs in `--detail`, which takes real HTML with no tag
-restriction.
+`--tag` repeats and takes a plain name. A tag matching an entry of the same
+name reads as a link to it, and one matching nothing stays a word until
+somebody writes that page. `notebook tags` prints the vocabulary with counts,
+which is how a near-duplicate shows up as drift and a typo shows up alone.
 
-For anything longer than a line, pass `--detail -` and pipe the content in
-on stdin via a heredoc, which avoids fighting shell quoting. On `update`,
-`--detail ""` clears the field.
+### An experiment carries its instrument
 
-This flag existed for days before this file documented it, and the cost was
-measurable: eight nodes from 2026-07-27 average 415 characters of title
-against 117 for the rest of the graph, and use `detail` zero times. An agent
-copies the signature, not the prose — so if a field is missing from the line
-above, it does not get used.
+`notebook run <file>` runs an experiment's `mycelium/experiment` script and
+prints what it returns. `--record` writes that into `notebook-reading`, so the
+next run has something to disagree with — and the disagreement is the finding.
+A red check means the code broke; a changed reading means the corpus moved.
 
-This replaces the Write/Read+Edit dance for every node/edge `knowledge-*`
-covers — no file content passes through the model doing the logging, the
-same as `deciduous add`/`deciduous link` never did.
+Nothing here runs during `validate`. A probe that fails a build is a check with
+worse manners, and a probe is allowed to be inconclusive.
 
-The `add` command creates a node, `link` connects two, and `update` fills
-in or clears a field on one that already exists — for example, adding
-`<knowledge-commit>` to an action node once its commit exists. This
-closes the field-update gap this section used to name.
+Write the document before you know the answer, because running the script is
+how the answer arrives. Every capture failure this project has recorded has the
+same shape: logging after the work competes with the work and loses. Here
+nothing remains to do afterward.
 
-`unlink` and `del` are the two undo operations, and both are about not
-leaving a wrong claim standing. Concretely: `unlink` removes one edge, and
-`del` removes a node **and** every edge pointing at it, printing each one
-it drops, because an incoming edge is something upstream resting on the
-node you just took away.
+### Edges
+
+Eight `data-rel` labels: `depends_on`, `blocks`, `supports`, `contradicts`,
+`alternative_to`, `leads_to`, `specifies`, `elaborates`. The schema holds that
+list as a pattern on the `<a>` each type declares, so `validate` rejects a
+ninth rather than accepting it.
+
+`link <from-file> <to-file>` always writes the edge inside `<from-file>`, so
+argument order decides direction, and "link X to Y" in prose does not say which
+is which. `link` upserts on (rel, href), so it can correct a label but never a
+direction or a wrong `--rel`. Those leave a second, wrong edge beside the right
+one, and `unlink` then `link` is the two-command repair. Do not delete and
+rebuild an entry.
+
+`del` removes an entry **and** every edge pointing at it, printing each one it
+drops, because an incoming edge is something upstream resting on what you just
+took away.
+
+No audit requires an entry to carry an edge. A wiki has stubs, and 49 entries
+came out of the 2026-08-10 prune with none.
+
+### CRITICAL: what a reader can open
+
+Two stores have been deleted, and the same rule covers both.
+
+An earlier SQLite log froze on 2026-07-23 and went on 2026-07-30. Its node
+numbers (`#349`) meant something only inside it, and nothing here may refer to
+them. 60 of its ~400 nodes came in as imports first, by one rule: a node comes
+in only if it links to material already here.
+
+Then on 2026-08-10 the graph itself lost 203 of 579 entries — build records
+that git already held, task goals, bug notes, and stale measurements. What
+survived is what nothing else holds.
+
+So: **an entry may only refer to what a reader can open.** Not a number in a
+deleted database, and not something recoverable only from git history — git is
+not a place a reader can follow a link to. When nothing holds the target, describe it
+rather than cite it: "an option about which language to implement in". The
+description is what a reader needed anyway.
+
+An external source is fine, and wanted, so long as the link is live. Entries on
+IBIS, on truth-maintenance systems and on the capture cost that killed earlier
+rationale systems all link straight out to the work they name.
+
+Writing the href forces you to open the target, which is the step that catches
+a wrong reference — two of twenty citations pointed at the wrong node before
+anyone checked.
 
 ### CRITICAL: the spec comes before the implementation
 
@@ -149,7 +151,7 @@ Once a design settles, write its spec doc before you touch a source file.
 Not after, and not alongside.
 
 The reason is dogfooding, and it is the whole point rather than a nicety.
-This project builds authoring tooling for specs and for knowledge nodes, so
+This project builds authoring tooling for specs and for notebook entries, so
 the only way that tooling gets exercised on real input is by using it on
 this project's own work. Skip to the implementation and the commands only
 ever run on toy input, which is how `--detail` went undocumented for days
@@ -169,10 +171,11 @@ yet — deferred, not forgotten:
 pnpm mycelium spec add --title "…" --file <undated-topic> [--status draft|approved|implemented] --body "…"
 pnpm mycelium spec update <file> [--title "…"] [--status S] [--body "…"]
 ```
-`spec add`'s `--file` is undated for the same reason `knowledge add`'s is, with
-one difference: there is no `--date` flag here at all. The date is always
-today's, and it fills both the filename and the `<spec-date>` field from one
-value so the two can never drift apart.
+`spec add`'s `--file` is undated the same way `notebook add`'s is, and refuses a
+dated slug for the same reason. One difference: a spec does carry a date, always
+today's, filling both the filename and the `<spec-date>` field from one value so
+the two can never drift apart.
+
 No hand-authoring gap remains for either family. Full design:
 `docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`
 (commands),
@@ -186,7 +189,7 @@ families now share).
 ### Follow-ups: the store that drains
 
 When you notice something mid-work that belongs later, it goes here and not
-in the knowledge graph. Eleven knowledge nodes read as deferrals before this
+in the notebook. Eleven entries read as deferrals before this
 family existed, seven of them naming no condition at all, and two have been
 dead since January without anything saying so.
 
@@ -217,8 +220,8 @@ Design: `docs/specs/2026-08-09-followup-family.spec.html`.
 document lives in `docs/tests/<slug>.test.html` and carries no date.
 
 ```bash
-pnpm mycelium test run [<file>] [--show] [--timeout MS] [--port N]
-pnpm mycelium test list
+pnpm mycelium canon test [<file>] [--show] [--timeout MS] [--port N]
+pnpm mycelium canon list
 ```
 
 The script type on a case decides which runner opens it. Nothing else
@@ -261,14 +264,14 @@ SUCCESS into a document.
 
 `validate` cannot test the figure engine, and no audit ever will: it parses
 with happy-dom, which computes no layout, so every rect is zero. See
-`docs/knowledge/2026-08-05-happy-dom-computes-no-layout.observation.html`.
+`docs/notebook/happy-dom-computes-no-layout.observation.html`.
 
 ### The canon family: what the project holds true, and what it promises
 
 A canon document is one subsystem: `docs/canon/<subsystem>.canon.html`, holding
 that subsystem's own axioms and the specification its behaviours belong to. An
 axiom carries no confidence and no date, because it states what holds now. How
-it came to hold, and how sure anybody was, belongs to a knowledge node — dated,
+it came to hold, and how sure anybody was, belongs to a notebook entry — dated,
 carrying the prompt behind it, and never rewritten afterwards.
 `root.canon.html` holds the axioms that govern everything, and a subsystem axiom
 narrows one of those.
@@ -334,185 +337,103 @@ something the document no longer claims. And a broad axiom nobody has read down
 into a subsystem reaches nothing there, which no check separates from an axiom
 that genuinely does not apply.
 
-### The Core Rule
+### The core rule
 
 ```
-BEFORE you do something -> `pnpm mycelium knowledge add goal|action ...`
-AFTER it succeeds/fails  -> `pnpm mycelium knowledge add outcome ...`
-CONNECT immediately      -> `pnpm mycelium knowledge link <from> <to> --rel ...`
-AUDIT regularly          -> Check for missing connections (see below)
+NOTICE something        -> pnpm mycelium notebook add observation|research ...
+MEASURE something       -> pnpm mycelium notebook add experiment ...   (then run --record)
+CONNECT it              -> pnpm mycelium notebook link <from> <to> --rel ...
+SOMETHING FOR LATER     -> pnpm mycelium followup add --at <path> ...
 ```
 
-### Behavioral Triggers - MUST LOG WHEN:
+Nothing logs that work happened. Git holds commits, the checks hold whether the
+code works, and a second copy of either drifts from the first. 170 of the 203
+entries dropped on 2026-08-10 recorded doing, and a commit hook manufactured
+most of them.
 
-| Trigger | Node type | Example |
-|---------|-----------|---------|
-| User asks for a new feature | `knowledge-goal` **with `<knowledge-prompt>`** | "Add dark mode" |
-| Choosing between approaches | `knowledge-decision` | "Choose state management" |
-| About to write/edit code | `knowledge-action` | "Implementing Redux store" |
-| Something worked or failed | `knowledge-outcome` | "Redux integration successful" |
-| Notice something interesting | `knowledge-observation` | "Existing code uses hooks" |
+### Log when
 
-### CRITICAL: Capture VERBATIM User Prompts
+| Trigger | Type | Example |
+|---------|------|---------|
+| You notice something worth keeping | `notebook-observation` | "A gate known to fail teaches people to ignore it" |
+| You read something outside this project | `notebook-research` | "Unison identifies code by the hash of its AST" |
+| You measure the corpus or probe behaviour | `notebook-experiment` | "How many entries state a rule?" |
+| You settle on a rule the canon should hold | an axiom, which cites the entry it came from | |
+| You notice something for later | a followup, with `--at` | |
 
-`<knowledge-prompt>` must be the exact user message, not a summary. When
-a user request triggers new work, capture their full message word-for-word
-inside the field — same rule deciduous had for `-p`/`--prompt-stdin`, just a
-tag instead of a flag.
+A number you wrote down goes stale the moment you write it. If a finding is a
+count, make it an experiment so it can recompute — that is the whole reason the
+type exists.
 
-When to capture prompts:
-- Root `knowledge-goal` nodes: yes, the full original request
-- Major direction changes: yes, when the user redirects the work
-- Routine downstream nodes: no, they inherit context via `data-rel` edges
+### CRITICAL: capture verbatim prompts
 
-### Node shape
+`--prompt` must be the exact message, not a summary. It repeats, and it sits on
+any entry rather than on one type, since an entry gathers prompts over months.
 
-Six types, in one file: `docs/templates/knowledge.template.html`
-is the source of truth for exact required/optional fields per type — don't
-duplicate that table here, read it. In short: every type has `title` and
-`confidence`; `status` (`pending`/`active`/`completed`/`rejected`) is on
-`goal`/`decision`/`action` only; `commit`/`files`/`branch` are optional on
-`action`/`outcome` only; `prompt` is optional, `goal` only; `detail` is
-optional on every type (free-form content, including `<script>`, no tag
-restriction — see
-`docs/specs/2026-07-24-mycelium-knowledge-detail-field.spec.html`).
+Capture one when a request opens a line of thinking, and when somebody redirects
+the work. Routine entries inherit context through their edges and need none.
+
+A prompt is a record of what somebody typed, so nothing edits one to satisfy a
+style rule — `language-prose.ts` exempts the field for exactly that reason.
+
+### Entry shape
+
+`docs/templates/notebook.template.html` is the source of truth for required and
+optional fields per type; read it rather than trusting a copy here.
 
 ```html
-docs/knowledge/<slug>.<type>.html   (type = goal|decision|option|action|outcome|observation)
+docs/notebook/<slug>.<type>.html   (type = observation | research | experiment)
 
-<knowledge-TYPE data-conforms-to="../templates/knowledge.template.html#knowledge-TYPE">
-  <knowledge-title>…</knowledge-title>
-  <knowledge-confidence>NN</knowledge-confidence>
-  <knowledge-status>pending</knowledge-status>
-  <a data-rel="leads_to" href="./other-node.type.html">…</a>
-</knowledge-TYPE>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>…</notebook-title>
+  <notebook-tag>…</notebook-tag>
+  <notebook-prompt>… somebody's exact words …</notebook-prompt>
+  <notebook-detail>… any markup …</notebook-detail>
+  <a data-rel="supports" href="./other-entry.observation.html">…</a>
+</notebook-observation>
 ```
 
-### CRITICAL: Maintain Connections
+### Grounding an axiom
 
-The graph's value is in its connections, not just its nodes.
+An axiom names what it came from, with an ordinary anchor inside a
+`canon-references` child. Nothing marks an entry as promoted and nothing tracks
+a queue: promotion would need state to keep in sync, and one link already
+carries the fact.
 
-`link <from-file> <to-file>` always writes the edge inside `<from-file>` —
-so the argument order decides direction, and "link X to Y" in prose is not
-enough to know which is `from` and which is `to`. `dangling-outcome`
-specifically checks for an *incoming* edge on the outcome, so an outcome
-node must be `<to-file>`, never `<from-file>`. Getting this backwards
-still runs `link` without error — it just leaves the wrong-direction edge
-for `pnpm mycelium validate` to catch later, or for nothing to catch if
-the edge's own rel happens to satisfy no audit. Copy the literal command
-below rather than inferring the order from the target column:
+Containment does the work. No ninth relation joins the vocabulary, the axiom's
+own `depends_on` pattern stays untouched, and `grounded` reads direct children
+only, so a reference cannot make a claim look load-bearing.
 
-| When you create... | Run |
-|-------------------|-----|
-| `knowledge-outcome` | `link <the-goal-or-action-file> <this-outcome-file> --rel leads_to` |
-| `knowledge-action` | `link <this-action-file> <the-goal-or-decision-file> --rel depends_on` |
-| `knowledge-option` | `link <this-option-file> <its-parent-decision-file> --rel depends_on` |
-| `knowledge-observation` | `link <this-observation-file> <the-related-goal-or-action-file> --rel supports` |
+Seventeen axioms carry no reference today. That number is a reading rather than
+a gate: much of the canon came top-down from the implementation, and demanding
+grounding now would manufacture entries to satisfy the check.
 
-`--rel` in that last row is the common case; use `contradicts` instead when
-the observation conflicts with something already in the graph — that is
-what feeds `knowledge recover`'s contested-claims list.
+### Before every commit
 
-Root `knowledge-goal` nodes are the only valid orphans — exactly what
-`orphans-except-goal` (one of the audits collocated in
-`knowledge.template.html`) checks for, now for real: `pnpm mycelium validate` runs it against the actual
-files, not just sample markup. Still worth checking by eye before running
-`pnpm mycelium validate`, but it's an automated gate now, not just a judgment call.
+`pnpm mycelium validate` validates every instance against its own template and
+runs every corpus-wide audit. It **exits non-zero on failure**. `mycelium
+--help` lists the audits, so read that rather than a count here.
 
-Eight `data-rel` edge labels. Six come unchanged from deciduous:
-`depends_on`, `blocks`, `supports`, `contradicts`, `alternative_to`,
-`leads_to`. `specifies` and `elaborates` got minted for the spec-doc work.
+Three audits that policed the old types went with them: `orphans-except-goal`,
+`dangling-outcome` and `hollow-action` all lost their subject on 2026-08-10.
 
-The schema now holds that list, as a pattern on the `<a>` each type
-declares, so `pnpm mycelium validate` rejects a ninth label rather than
-accepting it. Minting therefore means editing that pattern in
-`knowledge.template.html` and `language.template.html` — nine
-placeholders, one find-and-replace. Do that when the project genuinely
-needs a relation, the way those two arrived; `DESIGN.html`'s
-"open-vocabulary links" is the argument for keeping that door open, and
-the check is the argument for making you walk through it deliberately.
+The order a template lists its placeholders in binds, so a field written before
+one the template ranks earlier fails validation. You should never hit this,
+since every authoring command places a field where its template puts it. If you
+hand-edit a document and get it wrong, `pnpm mycelium validate autofix` sorts
+every instance's fields back into declared order.
 
-Two edges used labels no list named until 2026-08-07, when both became
-`leads_to` — see
-`docs/knowledge/2026-08-07-unlisted-relations-become-leads-to.decision.html`.
-
-### CRITICAL: Link Commits to Actions/Outcomes
-
-After every git commit, add the hash to the relevant node — but that
-usually means editing the node you already wrote, not writing a new one.
+### Session start
 
 ```bash
-git commit -m "feat: add auth"
+pnpm mycelium followup list   # what is outstanding, and where it applies
+pnpm mycelium validate        # every document validated, every audit run
+git status                    # current state
 ```
 
-Then update the `knowledge-action` node this commit belongs to — via the CLI, not a hand edit:
-
-```bash
-pnpm mycelium knowledge update <action-file> --commit <HEAD's short hash> --branch main
-```
-A **new** `knowledge-outcome` node is for reporting something not already
-evident from the action: a result that differs from what was planned, a
-verification that actually ran, a failure, a surprise. "The thing the
-action said would happen, happened, here's the hash" is not new
-information — it belongs in the action node's own `knowledge-commit`
-field, not a second file whose only content is confirming the first one.
-Writing one anyway for every single commit is exactly the over-fragmentation
-["field vs link"](docs/specs/2026-07-23-deciduous-template-series.spec.html#field-vs-link)
-already warns against, just at the level of nodes instead of fields.
-
-If a single commit doesn't map cleanly to one node — spans several nodes'
-worth of work, or one node spans several commits — omit `knowledge-commit`
-rather than pointing it at just one arbitrarily. `write-template-series.action.html`
-does this on purpose.
-
-### Audit Checklist (Before Every Commit)
-
-Same three questions deciduous asked. The first two are automated now —
-`pnpm mycelium validate` runs `dangling-outcome` and `orphans-except-goal` against the
-real files:
-
-1. Does every **knowledge-outcome** link back to what caused it? (`dangling-outcome`)
-2. Any dangling nodes, besides root goals? (`orphans-except-goal`)
-3. Does every **knowledge-action** link to why you did it? Still a judgment
-   call — no audit checks "why," only "is it connected at all."
-
-### Session Start Checklist
-
-```bash
-pnpm mycelium knowledge recover   # the graph's live threads
-pnpm mycelium validate                     # every node validated, every audit run
-git status                        # current state
-```
-`knowledge recover` replaces the old `/recover` slash command, which drove
-the frozen CLI. It prints three things, each a property of the graph rather
-than of any node: **active goals**, **decisions with no outcome** (an outcome
-reachable through outgoing edges, or one pointing back), and **contested
-claims** (either end of a `contradicts` edge). It is read-only and a
-SessionStart hook runs it automatically, so this is here as documentation
-rather than something to remember.
-
-`pnpm mycelium validate` validates every instance against its own template and runs
-every graph-wide audit. `mycelium --help` lists them, so read that rather
-than a count here. It **exits non-zero on failure** — true only
-since 2026-07-30; before that it printed failures and exited 0, so no audit
-had ever actually gated anything.
-
-The order a template lists its placeholders in now binds, so a field written
-before one the template ranks earlier fails validation. You should never hit
-this: every authoring command places a new field where its template puts it.
-
-If you hand-edit a document and get it wrong, `pnpm mycelium validate autofix`
-sorts every instance's fields back into declared order. It moves declared
-fields relative to each other and nothing else — an edge or an embedded
-script keeps its place, and a diff shows lines changing places and no
-content.
-
-It lives beside the gate rather than inside it, the same way `comments check`
-and `comments autofix` split, because a gate that repairs what it measures
-reports nothing.
-
-For a plain enumeration rather than a verdict, use `mycelium knowledge list
-nodes` and `list edges`.
+A SessionStart hook runs the first already, so this is documentation rather
+than something to remember. `recover` went with the goals and decisions it
+reported on.
 
 ### Capability gaps
 

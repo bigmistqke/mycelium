@@ -594,20 +594,6 @@ function neighbours(side) {
   return box
 }
 
-/**
- * Scroll a selected box out from under the pane.
- *
- * The pane floats over the bottom right corner, so selecting something down
- * there answers a click by hiding what was clicked. This moves the grid just
- * far enough that the box clears the pane's top edge, which is always possible
- * because the grid carries the pane's height as padding beneath its content.
- */
-function clearOfPane(box) {
-  if (!box || pane.hidden) return
-  const b = box.getBoundingClientRect(), p = pane.getBoundingClientRect()
-  const covered = b.bottom > p.top && b.top < p.bottom && b.right > p.left && b.left < p.right
-  if (covered) grid.scrollTop += b.bottom - p.top + 12
-}
 
 let selected = null
 
@@ -641,8 +627,9 @@ function show(address) {
   fillPane(selected)
   if (selected) {
     const box = boxOf(selected)
+    // Centring accounts for the pane through scroll-margin on the box itself,
+    // so nothing here measures anything or scrolls a second time.
     if (box) box.scrollIntoView({ block: 'center', inline: 'center' })
-    clearOfPane(box)
   }
   rememberSelection()
 }

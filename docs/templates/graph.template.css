@@ -13,7 +13,8 @@
           --ink-3: color-mix(in oklab, currentColor 48%, Canvas);
           --ink-4: color-mix(in oklab, currentColor 30%, Canvas);
           --line: color-mix(in oklab, currentColor 22%, Canvas);
-          --thumb: color-mix(in oklab, currentColor 32%, Canvas); --pane-h: 15rem; }
+          --thumb: color-mix(in oklab, currentColor 32%, Canvas);
+          --pane-h: min(32rem, calc(100vh - 12rem)); --pane-w: min(27rem, calc(100vw - 2.5rem)); }
   /* The pane floats over the bottom right corner rather than taking a band of
      the page, so a wide graph keeps its full height. It covers whatever is
      under it, which the grid answers by carrying the pane's own height as
@@ -22,7 +23,7 @@
          height: 100vh; display: flex; flex-direction: column; }
   #grid { flex: 1; min-height: 0; overflow: auto; padding-bottom: calc(var(--pane-h) + 3rem); }
   #pane { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 6;
-          width: min(36rem, calc(100vw - 2.5rem)); height: var(--pane-h); overflow: auto;
+          width: var(--pane-w); height: var(--pane-h); overflow: auto;
           border: 1px solid var(--line); border-radius: 6px; padding: 1rem 1.25rem;
           background: Canvas; }
   #pane[hidden] { display: none; }
@@ -198,6 +199,11 @@
   .node { border: 1px solid var(--line); border-radius: 5px; padding: .4rem .55rem;
           margin-bottom: .35rem; cursor: pointer; position: relative; background: Canvas;
           z-index: 1; }
+  /* Centring a box means centring its scroll-margin box, so the margin below and
+     right of it stands for what the pane covers. Without this a selected box
+     lands dead centre and reads as pinned against the pane's edge, and a box in
+     the last column sits behind it outright. */
+  .node { scroll-margin-bottom: calc(var(--pane-h) + 2rem); scroll-margin-right: var(--pane-w); }
   .node:hover { border-color: currentColor; }
   /* A lit chain stays one brightness, since dimming part of it made the whole
      thing harder to read. The node somebody picked takes a heavier border

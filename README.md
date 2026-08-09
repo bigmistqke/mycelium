@@ -103,13 +103,10 @@ A `<template>` is inert: a browser parses it and renders nothing, which makes it
 | `enum="a b c"` | its text must be one of these space-separated values |
 
 ```html
-<template id="knowledge-observation">
-  <knowledge-title required></knowledge-title>
-  <knowledge-confidence
-    required
-    pattern="^(0|[1-9][0-9]?|100)$"
-  ></knowledge-confidence>
-  <knowledge-detail></knowledge-detail>
+<template id="notebook-observation">
+  <notebook-title required></notebook-title>
+  <notebook-tag repeatable></notebook-tag>
+  <notebook-detail markup></notebook-detail>
 </template>
 ```
 
@@ -130,7 +127,7 @@ Nothing constrains what the function does. A command is ordinary code holding th
 Presence, pattern and enumeration cover most of it. A constraint reaching past those goes in a script beside the template:
 
 ```html
-<script data-validates="#knowledge-observation">
+<script data-validates="#notebook-observation">
   export function check(root) { … }
 </script>
 ```
@@ -141,10 +138,10 @@ No type in this repository needs one today. Every hand-written check moved into 
 
 ### `data-audits`, a check across every document
 
-A schema states what one document must look like. Other claims only hold across the whole corpus: that every outcome links back to whatever caused it, or that no link points at a deleted file. Those go in an audit, a script carrying `data-audits` and the name it reports under.
+A schema states what one document must look like. Other claims only hold across the whole corpus: that every behaviour names an axiom, or that no link points at a deleted file. Those go in an audit, a script carrying `data-audits` and the name it reports under.
 
 ```html
-<script type="mycelium/audit" data-audits="every-link-resolves" data-touches="knowledge-*">
+<script type="mycelium/audit" data-audits="every-link-resolves" data-touches="notebook-*">
   export function check(fs) { … }   // returns the violations it found
 </script>
 ```
@@ -205,7 +202,8 @@ An `<id>` resolves to `<id>.template.html` first and `<id>.command.html` second,
 
 Nothing above mentions a spec or a decision, because the engine has never heard of either. The five below are what this project wrote for itself while building it, and they are the actual experiment.
 
-- [knowledge](https://bigmistqke.github.io/mycelium/templates/knowledge.template.html): the decision graph behind this project, spanning goal, decision, option, action, outcome, and observation (inspired by [deciduous](https://crates.io/crates/deciduous), the CLI this project kept its graph in before)
+- [notebook](https://bigmistqke.github.io/mycelium/templates/notebook.template.html): the thinking that underpins this project's code, as observation, research, and experiment — split by where the knowledge came from rather than by what it is about
+- [followup](https://bigmistqke.github.io/mycelium/templates/followup.template.html): one intention with somewhere to land, which drains where the notebook accumulates
 - [spec](https://bigmistqke.github.io/mycelium/templates/spec.template.html): a design spec that precedes or accompanies the work (inspired by the [superpowers](https://github.com/obra/superpowers) skill of the same name)
 - [plan](https://bigmistqke.github.io/mycelium/templates/plan.template.html): a plan whose steps carry a shell command that proves they're done (inspired by the [superpowers](https://github.com/obra/superpowers) skill of the same name)
 - [language](https://bigmistqke.github.io/mycelium/templates/language.template.html): the writing rules and terms of art this project holds itself to (inspired by [ASD-STE100](https://www.asd-ste100.org/), the controlled English of aerospace maintenance manuals)
