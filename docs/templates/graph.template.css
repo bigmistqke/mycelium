@@ -47,6 +47,14 @@
      typed rather than one the layout chose. */
   #pane-detail p { margin: 0 0 .6rem; }
   #pane-detail .doc { white-space: pre-wrap; }
+  /* An experiment's question, which the title only abbreviates. Set larger than
+     the prose under it because it is the thing the entry exists to ask. */
+  #pane-detail .question { font-size: 1.05em; color: var(--ink-1); }
+  /* What the script last returned. Code type, since it is output rather than
+     prose, and boxed so a reader can see where the machine stopped talking. */
+  #pane-detail .reading { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                          font-size: .92em; white-space: pre-wrap;
+                          border-left: 3px solid var(--line); padding: .1rem 0 .1rem .8rem; }
   /* Quoted the way prose quotes, since it is prose somebody else wrote. */
   /* Italic, because it is somebody else's words rather than the project's.
      Monospace said the same thing and said it too loudly: a transcript is still

@@ -579,6 +579,30 @@
   }
 
   /**
+   * An experiment's question, the reading it last returned, and the script
+   * between them.
+   *
+   * Only one of the three types carries these, so an observation gets no entry
+   * here at all rather than three empty strings. The page then asks whether it
+   * has a question rather than whether the question is blank, and the payload
+   * stays the size of the corpus rather than three times it.
+   */
+  function instrumentOf(documents) {
+    const found = new Map()
+    for (const { path, dom } of documents) {
+      for (const entry of Array.from(dom.querySelectorAll("notebook-experiment"))) {
+        const text = (selector) => (entry.querySelector(selector)?.textContent ?? "").trim()
+        found.set(entry.id || path, {
+          question: text("notebook-question"),
+          reading: text("notebook-reading"),
+          snippet: text("script"),
+        })
+      }
+    }
+    return found
+  }
+
+  /**
    * Draw the notebook, as days in columns.
    *
    *   mycelium notebook generate graph [--out <path>] [--base [<href>]]
@@ -682,12 +706,16 @@
       throw new Error("this is a shallow clone, so every entry dates to the one commit it holds and the drawing collapses to a single column. Fetch the full history and draw again.")
     }
 
+    // An experiment spreads its three extra fields in, and the other two types
+    // spread nothing, so only the entries that have an instrument carry one.
+    const instrument = instrumentOf(documents)
     const drawn = nodes.map((n) => ({
       address: rel(n.id),
       title: n.title,
       kind: n.type.replace("notebook-", ""),
       prompt: prompts.get(n.id) ?? "",
       detail: detail.get(n.id) ?? "",
+      ...(instrument.get(n.id) ?? {}),
     }))
     const joins = kept.map((e) => ({ from: rel(e.from), to: rel(e.to), rel: e.rel }))
     const days = new Set(drawn.map((n) => (arrived[n.address] ?? "").slice(0, 10)))

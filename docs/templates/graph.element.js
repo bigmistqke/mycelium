@@ -103,12 +103,17 @@ function numberRows() {
  * the claim, because that is the reasoning a reader came for, and the code is
  * what they open when the reasoning is not enough.
  *
+ * Two drawings open this, and the code means a different thing in each: one
+ * holds the declaration a claim answers for, the other the script that measured
+ * the corpus. The summary says which, since a reader decides whether to open it
+ * from that word alone.
+ *
  * @behaviour canon/chain.canon.html#the-drawing-carries-the-comment-and-the-code
  */
-function codeFor(code) {
+function codeFor(code, label) {
   const d = document.createElement('details')
   const summary = document.createElement('summary')
-  summary.textContent = 'implementation'
+  summary.textContent = label ?? 'implementation'
   d.appendChild(summary)
   const holder = document.createElement('div')
   holder.className = 'code'
@@ -466,6 +471,12 @@ function fillReach(node) {
  * A claim's reasoning is markup it wrote and a declaration's is the prose of
  * its own comment. Both read immediately, and only the code waits, since the
  * reasoning is what a reader came for.
+ *
+ * An experiment reasons in three parts, and they read in the order somebody
+ * ran them: the question, the reading it returned, then whatever prose
+ * interprets the two. Its script waits with the rest of the code, because a
+ * reader came for the finding and opens the instrument only to decide whether
+ * to believe it.
  */
 function fillDetail(node) {
   const detail = document.getElementById('pane-detail')
@@ -478,6 +489,22 @@ function fillDetail(node) {
     quote.textContent = node.prompt
     detail.appendChild(quote)
   }
+  // An experiment asks before it answers. The title only abbreviates the
+  // question, and the reading means nothing to a reader who has not read it.
+  // Where the two say the same words the pane says them once, since a title
+  // short enough to scan is a different job from a question worth asking.
+  if (node.question && node.question !== node.title) {
+    const asked = document.createElement('p')
+    asked.className = 'question'
+    asked.textContent = node.question
+    detail.appendChild(asked)
+  }
+  if (node.reading) {
+    const reading = document.createElement('p')
+    reading.className = 'reading'
+    reading.textContent = node.reading
+    detail.appendChild(reading)
+  }
   if (node.detail) detail.insertAdjacentHTML('beforeend', node.detail)
   if (node.doc) {
     const doc = document.createElement('p')
@@ -485,7 +512,7 @@ function fillDetail(node) {
     doc.textContent = node.doc
     detail.appendChild(doc)
   }
-  if (node.snippet) detail.appendChild(codeFor(node))
+  if (node.snippet) detail.appendChild(codeFor(node, node.question ? 'the script that ran' : undefined))
 }
 
 /**
