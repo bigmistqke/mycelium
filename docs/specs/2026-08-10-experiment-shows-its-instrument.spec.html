@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: An experiment shows the instrument it ran</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>An experiment shows the instrument it ran</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-10</spec-date>
+  <spec-problem>
+<p>The drawing's side pane tells a reader almost nothing about an experiment.
+It shows a title and, where one exists, the prompt behind it. Both experiments
+in the corpus therefore read as a bare line of text, while an observation beside
+them carries paragraphs.</p>
+<p>Two separate causes produce the same symptom, and fixing either one alone
+leaves the pane thin.</p>
+<p>The first is that the page never receives the fields. An experiment adds
+three of them to the shape the other two types share — a question, the script,
+and the reading that script last returned. The payload the drawing builds
+carries an address, a title, a kind, a prompt and a detail, so all three go
+missing before the page loads. No amount of authoring reaches the reader.</p>
+<p>The second is that neither experiment carries a detail. That field is
+already the last one the type declares, and it takes markup, so nothing in the
+schema stood in the way. The flag went unused, which is the same gap that once
+had eight entries stuffing their findings into the title.</p>
+<p>The cost lands on the type that can least afford it. An experiment exists so
+a number can recompute, and a reader who cannot see the question or the reading
+cannot tell what recomputed or whether it moved.</p>
+</spec-problem>
+  <spec-design>
+<p>The payload gains the three fields, and the pane renders them in the order a
+reader needs them.</p>
+<p>A prompt stays first and quoted, under the rule the pane already follows:
+somebody else said it, and everything under it answers it. The question comes
+next, because it is the experiment's own thesis and the title only abbreviates
+it. The reading follows immediately, so the question and its answer sit
+together.</p>
+<p>Where the title and the question say the same words, the pane shows them
+once. A title earns its place by being short enough to scan in a column of
+boxes, and an experiment whose title grew into the whole question has stopped
+doing that job — but the pane repeating itself is the wrong way to complain.</p>
+<p>The detail comes after both, since interpreting a number means the reader
+has already seen it. The script goes last, behind a disclosure.</p>
+<p>Putting the instrument last follows the rule the pane states for
+declarations, where the reasoning reads immediately and only the code waits. A
+reader came for the finding. The script answers a different question — whether
+to believe the finding — and that question arrives second.</p>
+<p>The disclosure itself already exists, and the canon drawing opens a
+declaration's implementation through it. It hardcodes the word
+<code>implementation</code>, which is wrong for a script that measures the
+corpus. The summary becomes a parameter, so one disclosure serves both drawings
+and each says what it holds.</p>
+<p>Both existing experiments then get a detail written for them. The schema
+needs no change to allow it.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Nothing here runs an experiment. The reading the pane shows is whatever
+<code>run --record</code> last wrote, and a page that recomputed on load would
+turn a probe into a build step.</p>
+<p>The reading stays a plain string. Giving it structure, so the page could
+show that a number moved between runs, needs a second reading to compare
+against, and nothing stores one.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Whether a detail should become required on an experiment. Both entries
+lacked one, which argues the field is too easy to skip, but the same was true
+of every type before anybody wrote prose into them.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
