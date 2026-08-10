@@ -98,9 +98,11 @@
   // A box's rectangle in the figure's own coordinates. Measured after the
   // browser has laid the grid out, which is why no position is ever written
   // into the document.
-  /** @returns {Box} */
-  /** @param {Origin} origin */
-  /** @param {Element} node */
+  /**
+   * @param {Element} node
+   * @param {Origin} origin
+   * @returns {Box}
+   */
   function boxOf(node, origin) {
     var r = node.getBoundingClientRect()
     return {
@@ -134,10 +136,12 @@
   }
 
   // Present by the time it is asked for, or the passes ran out of order.
-  /** @returns {T} */
-  /** @param {string} what */
-  /** @param {T | undefined} value */
-  /** @template T */
+  /**
+   * @template T
+   * @param {T | undefined} value
+   * @param {string} what
+   * @returns {T}
+   */
   function must(value, what) {
     if (value === undefined) throw new Error("a figure was drawn before its " + what + " was worked out")
     return value
@@ -426,8 +430,10 @@
   /** @type {WeakMap<Element, { arrivalSpacing?: number, askedGap?: number }>} */
   var memory = new WeakMap()
 
-  /** @returns {{ arrivalSpacing?: number, askedGap?: number }} */
-  /** @param {Element} graph */
+  /**
+   * @param {Element} graph
+   * @returns {{ arrivalSpacing?: number, askedGap?: number }}
+   */
   function remembered(graph) {
     var found = memory.get(graph)
     if (!found) {
@@ -546,8 +552,10 @@
     // The bottom of the nearest row above a given line, or the top of the
     // figure when nothing is above it. A peer edge's label goes in that space,
     // since its own row is solid boxes from side to side.
-    /** @returns {number} */
-    /** @param {number} top */
+    /**
+     * @param {number} top
+     * @returns {number}
+     */
     function rowAbove(top) {
       var found = 0
       Array.prototype.forEach.call(graph.querySelectorAll("figure-node"), function (/** @type {Element} */ node) {

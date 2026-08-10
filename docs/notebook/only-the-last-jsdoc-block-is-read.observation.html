@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TypeScript reads only the last JSDoc block before a declaration</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>TypeScript reads only the last JSDoc block before a declaration</notebook-title>
+  <notebook-tag>gates</notebook-tag>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-prompt>check github ci -&gt; something wrong in deploy -&gt; we want to have the knowledge graph we recently worked on deployed</notebook-prompt>
+  <notebook-detail><p>Four functions in <code>figure.element.js</code> annotate themselves with one
+tag per comment, stacked:</p>
+<pre><code>/** @returns {Box} */
+/** @param {Origin} origin */
+/** @param {Element} node */
+function boxOf(node, origin) {</code></pre>
+<p>Only the block nearest the declaration applies. The other two are ordinary
+comments, so <code>origin</code> arrives untyped and <code>@returns</code> never
+lands. The shape reads as though each line adds to the one above it, and it
+does the opposite.</p>
+<p>How loudly this fails depends on which tag ends up last, which is why it
+survived three commits. Two of the four stacks lost a <code>@param</code>, and
+<code>noImplicitAny</code> named them. The other two lost only a
+<code>@returns</code>, and a dropped return type is an inference rather than an
+error — nothing said a word about those until fixing the first two brought the
+rest into view.</p>
+<p>So the visible failure and the silent one differ by tag order alone. A
+convention that types a function correctly or not depending on which line
+somebody wrote last is worth replacing with the single block the syntax
+expects.</p>
+</notebook-detail>
+</notebook-observation>
+</body></html>
