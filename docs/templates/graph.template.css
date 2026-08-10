@@ -22,10 +22,15 @@
   body { margin: 0; font: 13px/1.45 ui-sans-serif, system-ui, sans-serif;
          height: 100vh; display: flex; flex-direction: column; }
   #grid { flex: 1; min-height: 0; overflow: auto; padding-bottom: calc(var(--pane-h) + 3rem); }
+  /* A column, so the relations can sit against the bottom edge however short
+     the detail above them runs. Nothing shrinks: a child keeps its natural
+     height and the pane scrolls once they outgrow it. */
   #pane { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 6;
+          display: flex; flex-direction: column;
           width: var(--pane-w); height: var(--pane-h); overflow: auto;
           border: 1px solid var(--line); border-radius: 6px; padding: 1rem 1.25rem;
           background: Canvas; }
+  #pane > * { flex: none; }
   #pane[hidden] { display: none; }
   #pane h2 { font-size: .95rem; margin: 0 0 .3rem; padding-right: 2rem; }
   /* Where the claim lives and how far it reaches, on one line and on the same
@@ -67,7 +72,10 @@
      would put it half a gap right of centre. The space between the two comes
      from padding inside each half, which leaves the line itself exactly on the
      middle. */
-  #pane-links { margin-top: .9rem; display: grid; align-items: start;
+  /* The block sits at the bottom of the pane, and reads top-down inside itself.
+     margin-top: auto eats whatever space the detail above leaves, so the
+     relations stay put instead of floating wherever the prose happens to end. */
+  #pane-links { margin-top: auto; padding-top: .9rem; display: grid; align-items: start;
                 grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 0; }
   /* One divider, between the two columns and never at an edge. The relations
      stack inside a column, so nothing separates them but the space they sit
