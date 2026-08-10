@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How many observations does anything later reach?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>How many observations does anything later reach?</notebook-title>
+  <notebook-tag>notebook</notebook-tag>
+  <notebook-tag>measurement</notebook-tag>
+  <notebook-prompt>i think we should differentiate between observation and reflection in the notebook -&gt; you are currently using it again more as a worklog type thing, which is getting material daily observations mixed with philosophical drivers. i'm not sure what's the added value of these type of observations over git commits.</notebook-prompt>
+  <notebook-question>How many observations does anything later reach, and how many of the rest read as notes about a state of this repository that a commit ended?</notebook-question>
+  <script type="mycelium/experiment">
+export default function ({ fs }) {
+  // The question underneath: can the corpus tell a note about today's defect
+  // from a rule that outlives it? Both come from thinking, so the type says
+  // nothing, and a reader wanting only the second has to have some other signal
+  // to sort by.
+  //
+  // Reach is the obvious candidate. An entry another entry links to, or an
+  // axiom names as its source, went on being useful after the day somebody
+  // wrote it, and nothing reaches a note about a defect once somebody fixes the
+  // defect.
+  //
+  // The opening word of a title is the other, borrowed whole from the
+  // experiment that counts rule-shaped titles, weakness included: one word
+  // carries most of it, so this is a floor rather than a count.
+  const RULE = /^(A|An|Every|Nothing|Only|Derive|Link|Information|Reach)\b/
+  const reached = new Set()
+  const grounds = new Set()
+  const entries = []
+
+  for (const { path, doc } of fs.list("notebook")) {
+    const entry = doc.querySelector("notebook-observation, notebook-research, notebook-experiment")
+    if (!entry) continue
+    const name = path.split("/").pop()
+    if (entry.tagName.toLowerCase() === "notebook-observation") {
+      entries.push({ name, rule: RULE.test(entry.querySelector("notebook-title")?.textContent?.trim() ?? "") })
+    }
+    // An entry pointing at itself would count as its own reader, which is the
+    // one edge the corpus permits and this reading must not believe.
+    for (const a of doc.querySelectorAll("a[data-rel][href]")) {
+      const href = a.getAttribute("href").split("/").pop()
+      if (href !== name) reached.add(href)
+    }
+  }
+
+  // An axiom naming its source is the strongest reach there is: the entry
+  // stopped being a note and became something the project holds true.
+  for (const { doc } of fs.list("canon")) {
+    for (const a of doc.querySelectorAll("canon-references > a[href]")) {
+      grounds.add(a.getAttribute("href").split("/").pop())
+    }
+  }
+
+  const held = entries.filter((one) => grounds.has(one.name))
+  const seen = entries.filter((one) => reached.has(one.name) || grounds.has(one.name))
+  const alone = entries.filter((one) => !reached.has(one.name) && !grounds.has(one.name))
+  // The share of rule-shaped titles on each side. If reach tracked durability
+  // these two numbers would pull apart, with the rules on the reached side.
+  const share = (group) => `${Math.round(group.filter((one) => one.rule).length / group.length * 100)}%`
+  return `${entries.length} observations: ${held.length} an axiom rests on, ` +
+    `${seen.length - held.length} another entry links to, ${alone.length} nothing reaches. ` +
+    `Rule-shaped titles: ${share(seen)} of the reached, ${share(alone)} of the rest`
+}
+</script>
+  <notebook-reading>338 observations: 23 an axiom rests on, 182 another entry links to, 133 nothing reaches. Rule-shaped titles: 19% of the reached, 34% of the rest</notebook-reading>
+  <notebook-detail><p>Observations carry almost the whole notebook: 338 of the 387 entries, against
+47 research entries and two experiments. So any question about what the notebook
+holds is a question about this one type, and any drift in what it means shows up
+nowhere else.</p>
+<p>Reach looked like the way to sort a rule from a note about today's defect. An
+entry another entry links to, or an axiom names as its source, went on being
+useful after the day somebody wrote it, and nothing reaches a defect note once
+somebody fixes the defect.</p>
+<p>It points the other way. Rule-shaped titles make up 19% of the entries
+something reaches and 34% of the entries nothing reaches, so the reached side
+holds fewer rules rather than more. An entry acquires edges by sitting next to
+its neighbours on the day somebody wrote it, which measures clustering rather
+than durability.</p>
+<p>Twenty-three observations carry the one signal that does mean something: an
+axiom rests on them. That is 7% of the type, and the remaining 93% offers
+nothing a reader could sort by.</p>
+<p>So the corpus cannot tell the two kinds apart, and no cleverer query will,
+because the distinction never got written down. Deriving beats storing only
+where the fact exists somewhere to derive from. Whoever writes the entry is the
+last person who knows which kind it is.</p>
+<p>The opening-word test is a floor rather than a count, borrowed whole from the
+experiment that counts rule-shaped titles. One word carries most of it there, so
+it reads a habit of phrasing as much as a habit of thinking. Both shares here
+carry that same error, which is the reason to compare them against each other
+rather than to trust either alone.</p>
+</notebook-detail>
+</notebook-experiment>
+</body></html>
