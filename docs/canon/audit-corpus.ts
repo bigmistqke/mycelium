@@ -84,18 +84,24 @@ export function corpus(documents: Record<string, string>): AuditFs {
 // canon document holds one subsystem's axioms and the specification its
 // behaviours belong to, so a fixture made of them reads like the corpus does.
 export function canonDoc(options: {
-  axioms?: { id: string; title: string; narrows?: string }[]
+  axioms?: { id: string; title: string; narrows?: string; grounds?: string }[]
   specification?: { id: string; title: string; behaviours?: { id: string; title: string; refines?: string }[] }
 }): string {
   const conforms = (type: string) => `data-conforms-to="../templates/canon.template.html#canon-${type}"`
   const axioms = (options.axioms ?? []).map((axiom) => {
     const up = axiom.narrows ? `\n  <a data-rel="depends_on" href="${axiom.narrows}">narrows</a>` : ""
+    // A reference names where the principle came from. It sits in its own
+    // container rather than among the edges, which is what a case here needs to
+    // put in front of grounded.
+    const from = axiom.grounds
+      ? `\n  <canon-references><a href="${axiom.grounds}">where this came from</a></canon-references>`
+      : ""
     // Every axiom carries a detail, because the template requires one. These
     // fixtures exist to make a chain check fire, and a document that fails to
     // validate would stop the check before it ever ran.
     return `<canon-axiom id="${axiom.id}" ${conforms("axiom")}>
   <canon-title>${axiom.title}</canon-title>
-  <canon-detail><p>The reasoning under a fixture principle.</p></canon-detail>${up}
+  <canon-detail><p>The reasoning under a fixture principle.</p></canon-detail>${from}${up}
 </canon-axiom>`
   })
   const specification = options.specification

@@ -291,6 +291,8 @@ pnpm mycelium canon add behaviour --canon <name> --id <slug> --title "…"
 pnpm mycelium canon update <canon>#<id> [--title "…"] [--id <slug>] [--detail "…"]
 pnpm mycelium canon link <canon>#<id> <target> --rel <rel> --label "…"
 pnpm mycelium canon unlink <canon>#<id> <target> --rel <rel>
+pnpm mycelium canon reference <canon>#<id> <entry> --label "…"
+pnpm mycelium canon unreference <canon>#<id> <entry>
 pnpm mycelium canon move <canon>#<id> <to-canon>
 ```
 
@@ -395,18 +397,25 @@ docs/notebook/<slug>.<type>.html   (type = observation | research | experiment)
 
 ### Grounding an axiom
 
-An axiom names what it came from, with an ordinary anchor inside a
-`canon-references` child. Nothing marks an entry as promoted and nothing tracks
-a queue: promotion would need state to keep in sync, and one link already
-carries the fact.
+An axiom names what it came from, with `canon reference`, which writes an
+ordinary anchor inside a `canon-references` child. Nothing marks an entry as
+promoted and nothing tracks a queue: promotion would need state to keep in sync,
+and one link already carries the fact.
 
 Containment does the work. No ninth relation joins the vocabulary, the axiom's
 own `depends_on` pattern stays untouched, and `grounded` reads direct children
 only, so a reference cannot make a claim look load-bearing.
 
-Seventeen axioms carry no reference today. That number is a reading rather than
-a gate: much of the canon came top-down from the implementation, and demanding
-grounding now would manufacture entries to satisfy the check.
+`--label` is required, and it says what the claim took from that entry rather
+than restating either end. A reader can open the href for what the entry says;
+what they cannot reconstruct is which part of it hardened into the rule.
+
+Most axioms carry no reference, and that is a reading rather than a gate: much
+of the canon came top-down from the implementation, so demanding grounding now
+would manufacture entries to satisfy the check. For the current count, run
+`notebook run how-many-axioms-name-where-they-came-from.experiment.html` — a
+number written here instead would be the same stale copy that had this section
+claiming a field nothing had built.
 
 ### Before every commit
 

@@ -342,5 +342,41 @@ export default async function ({ assert, sandbox }: TestContext) {
 }
 </script>
   </canon-behaviour>
+  <canon-behaviour id="reference-writes-into-the-container" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>reference puts a grounding link inside canon-references, ahead of the claim's own edges.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the declared order binds the command too</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">// A reference among the edges would be a ninth relation in all but name, and
+// grounded reads direct children, so one landing loose would make an axiom
+// nothing derives from look load-bearing.
+import type { TestContext } from "../../src/api.ts"
+
+export default async function ({ assert, sandbox }: TestContext) {
+  const run = (...argv: string[]) => {
+    const done = sandbox.mycelium(...argv)
+    assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
+  }
+  run("notebook", "add", "observation", "--file", "a-thing-somebody-noticed",
+    "--title", "Something somebody noticed before the rule existed.")
+  run("canon", "add", "axiom", "--canon", "sample", "--id", "a-principle",
+    "--title", "A principle that came from somewhere.",
+    "--detail", "<p>Reasoning, so the axiom validates.</p>")
+  run("canon", "link", "sample#a-principle", "sample#a-principle",
+    "--rel", "depends_on", "--label", "an edge the reference has to sort ahead of")
+  run("canon", "reference", "sample#a-principle", "notebook/a-thing-somebody-noticed.observation.html",
+    "--label", "what the principle took from it")
+
+  const after = sandbox.read("canon/sample.canon.html")
+  assert(
+    after.includes('<canon-references><a href="../notebook/a-thing-somebody-noticed.observation.html">'),
+    `the reference did not land inside the container:\n${after}`,
+  )
+  assert(
+    after.indexOf("<canon-references>") < after.indexOf('<a data-rel'),
+    `the container landed after the claim's own edge:\n${after}`,
+  )
+}
+</script>
+  </canon-behaviour>
 </canon-specification>
 </body></html>

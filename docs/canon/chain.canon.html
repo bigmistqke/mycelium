@@ -397,5 +397,32 @@ export default async function ({ assert, sandbox }: TestContext) {
 }
 </script>
   </canon-behaviour>
+  <canon-behaviour id="a-reference-does-not-ground-an-axiom" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>An axiom carrying only a reference still fails validation.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a gap in the chain fails the build</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">// A reference says where a principle came from, which is a different question
+// from whether anything beneath it can push back. Counting one as reach would
+// let an axiom ground itself on the note that proposed it.
+import type { TestContext } from "../../src/api.ts"
+import { canonDoc, violationsFrom } from "./audit-corpus.ts"
+
+export default async function ({ assert }: TestContext) {
+  const found = await violationsFrom("canon.template.html", "grounded", {
+    "docs/canon/sourced.canon.html": canonDoc({
+      axioms: [{
+        id: "sourced",
+        title: "A principle naming where it came from and nothing else.",
+        grounds: "../notebook/link-do-not-tag.observation.html",
+      }],
+    }),
+  })
+  assert(
+    found.includes("docs/canon/sourced.canon.html#sourced"),
+    `grounded counted a reference as reach; it reported: ${found.join(", ") || "nothing"}`,
+  )
+}
+</script>
+  </canon-behaviour>
 </canon-specification>
 </body></html>

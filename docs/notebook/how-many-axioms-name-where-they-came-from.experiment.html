@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How many axioms name where they came from?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>How many axioms name where they came from?</notebook-title>
+  <notebook-tag>canon</notebook-tag>
+  <notebook-tag>measurement</notebook-tag>
+  <notebook-question>How many of the corpus's axioms carry a canon-references child, and how many does a naive text count overstate that by?</notebook-question>
+  <script type="mycelium/experiment">
+export default function ({ fs }) {
+  // Two readings of the same corpus. One asks the documents, and one counts the
+  // string anywhere it appears — including inside a test script, where an axiom
+  // is a sandbox fixture rather than something the project claims. A spec
+  // counted seventeen axioms that way while fifteen existed.
+  let axioms = 0, grounded = 0, links = 0, fixtures = 0
+  for (const { doc } of fs.list("canon")) {
+    for (const axiom of doc.querySelectorAll("canon-axiom[data-conforms-to]")) {
+      axioms++
+      const refs = Array.from(axiom.children)
+        .find((child) => child.tagName.toLowerCase() === "canon-references")
+      if (!refs) continue
+      grounded++
+      links += refs.querySelectorAll("a[href]").length
+    }
+    for (const script of doc.querySelectorAll("script")) {
+      fixtures += (script.textContent.match(/<canon-axiom id="/g) ?? []).length
+    }
+  }
+  return `${grounded} of ${axioms} axioms name a source, over ${links} link(s); ` +
+    `a text count would say ${axioms + fixtures}, counting ${fixtures} sandbox fixture(s)`
+}
+</script>
+  <notebook-reading>1 of 15 axioms name a source, over 1 link(s); a text count would say 17, counting 2 sandbox fixture(s)</notebook-reading>
+</notebook-experiment>
+</body></html>

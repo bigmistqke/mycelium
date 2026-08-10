@@ -69,17 +69,27 @@
   <canon-axiom id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
     <canon-title required=""></canon-title>
     <canon-detail markup="" required=""></canon-detail>
+    <canon-references conforms-to="#canon-references"></canon-references>
     <a repeatable="" href=".+" data-rel="^(depends_on)$"></a>
   </canon-axiom>
 </template>
 <pre><code>&lt;canon-axiom&gt;
   &lt;canon-title&gt;… the principle, in one line …&lt;/canon-title&gt;
     &lt;canon-detail&gt;… required, free-form: the reasoning …&lt;/canon-detail&gt;
+  &lt;canon-references&gt;
+    &lt;a href="../notebook/a-known-gate.observation.html"&gt;… what this took from it …&lt;/a&gt;
+  &lt;/canon-references&gt;
   &lt;a data-rel="depends_on" href="./documents-are-the-source.axiom.html"&gt;narrows&lt;/a&gt;
 &lt;/canon-axiom&gt;</code></pre>
+<template id="canon-references">
+  <canon-references>
+    <a repeatable="" required="" href=".+"></a>
+  </canon-references>
+</template>
 <template id="canon-specification">
   <canon-specification id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
     <canon-title required=""></canon-title>
+    <canon-references conforms-to="#canon-references"></canon-references>
     <a repeatable="" href=".+" data-rel="^(specifies)$"></a>
     <canon-behaviour repeatable="" conforms-to="#canon-behaviour"></canon-behaviour>
   </canon-specification>
@@ -88,6 +98,7 @@
   <canon-behaviour id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
     <canon-title required=""></canon-title>
     <canon-detail markup=""></canon-detail>
+    <canon-references conforms-to="#canon-references"></canon-references>
     <a repeatable="" href=".+" data-rel="^(depends_on)$"></a>
     <canon-verdict enum="PENDING"></canon-verdict>
     <canon-message></canon-message>
@@ -246,6 +257,37 @@
   specifies, and a specification pointing at the command it answers for is the same shape one rung
   lower. The corpus retired its last two unlisted relations rather than widen the list, and a
   <code>describes</code> here would have reopened exactly that.
+</p>
+<h2>Grounding: where a claim came from</h2>
+<p>
+  A claim names the notebook entries it came from, inside a
+  <code>canon-references</code> child. Nothing marks an entry as promoted and nothing tracks a
+  queue, because promotion needs state somewhere and one link already carries the fact.
+</p>
+<p>
+  The container is what keeps this cheap. No ninth relation joins the vocabulary, since containment
+  already says what the link is, and <code>canon-axiom</code> keeps its <code>depends_on</code>
+  pattern untouched. <code>grounded</code> reads direct children only, so a reference cannot make a
+  claim look load-bearing.
+</p>
+<p>
+  Every claim may carry one, so a behaviour grounds the same way an axiom does. The prefix follows
+  the family rather than the element, which is the naming rule everywhere else here.
+</p>
+<p>
+  Each anchor carries a label, and the schema requires it. A bare href says which entry, and the
+  label says what the claim took from that entry, which is the part a reader cannot reconstruct by
+  opening it. An axiom's reasoning and its source say different things.
+</p>
+<p>
+  Checking comes free. <code>every-link-resolves</code> queries every anchor in the corpus rather
+  than the ones a family declares, so a reference to a missing entry fails validation the day
+  somebody writes it.
+</p>
+<p>
+  Fifteen axioms carried no reference when this landed. That number is a reading rather than a gate,
+  because much of this canon came top-down from the implementation, and demanding grounding now
+  would manufacture entries to satisfy the check.
 </p>
 <h2>A test cites a behaviour</h2>
 <p>
@@ -1127,6 +1169,93 @@
     if (!a) throw new Error(`no ${args.rel} edge from ${args._[0]} to ${args._[1]}`)
     a.remove()
   }
+
+  /**
+   * Ground a claim in the notebook entry it came from.
+   *
+   *   mycelium canon reference <canon>#<id> <entry> --label "…"
+   *
+   * An axiom states what holds now. How it came to hold, and how sure anybody
+   * was, belongs to a notebook entry — dated, carrying the prompt behind it, and
+   * never rewritten afterwards. This is the link between the two.
+   *
+   * <entry> is a path from the documents root, the same spelling <target> takes
+   * on link: notebook/a-known-gate-teaches-people-to-ignore-it.observation.html.
+   *
+   * --label is required, and it says what the claim took from that entry rather
+   * than restating either end. A reader can open the href for what the entry
+   * says; what they cannot reconstruct is which part of it hardened into this
+   * rule.
+   *
+   * The links land inside a canon-references child rather than loose among the
+   * claim's own edges. That is what keeps a reference out of the vocabulary: no
+   * ninth relation, an untouched depends_on pattern, and grounded still reading
+   * direct children only, so a reference never makes a claim look load-bearing.
+   *
+   * Upserts on the href, so this corrects a label and never a wrong target. Use
+   * unreference and then reference.
+   *
+   * Nothing here marks the entry as promoted, and no queue tracks what is
+   * waiting. Promotion would need state to keep in sync, which derive, do not
+   * maintain rules out, and one link already carries the fact.
+   *
+   * @behaviour canon/authoring.canon.html#reference-writes-into-the-container
+   * @behaviour canon/chain.canon.html#a-reference-does-not-ground-an-axiom
+   */
+  export function reference({ fs, args, cli }: CommandContext) {
+    requireArgs([args._[0], '<canon>#<id>'], [args._[1], '<entry>'], [args.label, '--label'])
+    const path = canonPathFor(fileOf(args._[0]))
+    const doc = fs.get(path)
+    const root = entryOf(doc, args._[0])
+    primeFieldOrder(fs)
+    const target = targetOf(args._[1])
+    const href = cli.href(path, target.path)
+
+    // Direct children only, the same reason link scopes its own lookup: a
+    // behaviour holds behaviours, and a descendant search would relabel a
+    // child's reference instead of adding this claim's own.
+    let container = root.querySelector(':scope > canon-references')
+    if (!container) {
+      container = doc.createElement('canon-references')
+      placeField(root, container, FIELD_ORDER[typeOf(root)])
+    }
+    const existing = container.querySelector(`:scope > a[href="${href}"]`)
+    if (existing) {
+      existing.textContent = args.label
+      return
+    }
+    const a = doc.createElement('a')
+    a.setAttribute('href', href)
+    a.textContent = args.label
+    container.appendChild(a)
+  }
+
+  /**
+   * Drop a grounding link from a claim.
+   *
+   *   mycelium canon unreference <canon>#<id> <entry>
+   *
+   * What a reference aimed at the wrong entry needs, since reference upserts on
+   * the href and can only ever correct a label.
+   *
+   * The container goes when its last link does. An empty canon-references would
+   * fail its own schema, which requires at least one anchor, so leaving one
+   * behind would break the document this just edited.
+   */
+  export function unreference({ fs, args, cli }: CommandContext) {
+    requireArgs([args._[0], '<canon>#<id>'], [args._[1], '<entry>'])
+    const path = canonPathFor(fileOf(args._[0]))
+    const doc = fs.get(path)
+    const root = entryOf(doc, args._[0])
+    const target = targetOf(args._[1])
+    const href = cli.href(path, target.path)
+    const container = root.querySelector(':scope > canon-references')
+    const a = container?.querySelector(`:scope > a[href="${href}"]`)
+    if (!a) throw new Error(`${args._[0]} carries no reference to ${args._[1]}`)
+    a.remove()
+    if (!container.querySelector(':scope > a')) container.remove()
+  }
+
   /**
    * Draw the chain, so an axiom's reach is visible rather than merely checked.
    *
