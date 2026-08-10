@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A container of repeated links reads to the prose lint as one sentence, so the word limit divides by the number of links</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>A container of repeated links reads to the prose lint as one sentence, so the word limit divides by the number of links</notebook-title>
+  <notebook-tag>language</notebook-tag>
+  <notebook-tag>canon</notebook-tag>
+  <notebook-detail><p>Twenty-two grounding references landed across thirteen axioms, and
+<code>prose-follows-the-language</code> failed four of them for sentence length.
+Each label was around twenty words. The reported sentences ran to 48, 53, 54 and
+59.</p>
+<p><code>extractProse</code> appends a newline after a tag in
+<code>BLOCK_TAGS</code>, and neither <code>canon-references</code> nor
+<code>a</code> is one. So three labels inside one container concatenate with no
+separator, and the rule counts them as a single sentence. An axiom with one
+reference passes at twenty words; the same axiom with three fails at the same
+twenty each.</p>
+<p>This is not new and it is not about references. Any claim carrying two
+<code>data-rel</code> edges already merges their labels the same way. It has
+stayed invisible because every edge label in the corpus is a short phrase —
+<q>the principle this refines</q>, <q>the files it answers for</q> — and three of
+those still fit.</p>
+<p>The check was right about the labels, which had grown into sentences. It was
+right for a reason that will mislead somebody later, though: the fix it points
+at is shortening, when the fault is that a repeated inline field has no
+boundary. Two medium labels fail where one long one passes.</p>
+</notebook-detail>
+  <a data-rel="leads_to" href="./a-specced-field-reads-as-shipped.observation.html">the work that surfaced it</a>
+</notebook-observation>
+</body></html>
