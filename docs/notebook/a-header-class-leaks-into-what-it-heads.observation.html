@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A header lands on the container, and the code inside it shouts</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>A header lands on the container, and the code inside it shouts</notebook-title>
+  <notebook-tag>notebook</notebook-tag>
+  <notebook-detail><p>The pane grew section headers, and one of them unfolds a script. Giving that
+disclosure the header class put the styling on the container rather than on the
+word, so <code>text-transform: uppercase</code> inherited straight into the
+code. Every identifier in the script rendered in capitals.</p>
+<p>The mistake is easy to repeat, because a header's styling is exactly the
+styling that must not inherit. A header uppercases, tracks its letters out, and
+shrinks — all of which a container passes to its children, and none of which
+survives contact with a code listing.</p>
+<p>So a class naming a section belongs on the text that names it, never on what
+it heads. The fix separated the two selectors, and the summary carries the
+styling while the disclosure carries only the spacing.</p>
+<p>A screenshot caught this in one glance and no check would have. The page
+renders, the audits pass, and the drawing has no layout to measure under
+happy-dom — the failure existed only as pixels.</p>
+</notebook-detail>
+  <a data-rel="elaborates" href="./the-payload-is-a-second-schema.observation.html">the same pane, one step further in</a>
+</notebook-observation>
+</body></html>

@@ -112,6 +112,11 @@ function numberRows() {
  */
 function codeFor(code, label) {
   const d = document.createElement('details')
+  // A labelled disclosure is one section of a report, so its summary is that
+  // section's header. The class goes on the disclosure and the styling on the
+  // summary alone: a header's own styling includes uppercasing, and the code
+  // inherits anything the container carries.
+  if (label) d.className = 'section-fold'
   const summary = document.createElement('summary')
   summary.textContent = label ?? 'implementation'
   d.appendChild(summary)
@@ -465,6 +470,21 @@ function fillReach(node) {
 }
 
 /**
+ * The header naming one section of a report, drawn only when that section has
+ * something under it.
+ *
+ * An empty section with a header reads as a bug in the page. The same section
+ * missing entirely reads as an experiment somebody has not finished, which is
+ * the true statement.
+ */
+function sectionHeader(label) {
+  const head = document.createElement('h3')
+  head.className = 'section'
+  head.textContent = label
+  return head
+}
+
+/**
  * Whatever reasoning the node carries, and the code it names behind a
  * disclosure.
  *
@@ -472,11 +492,16 @@ function fillReach(node) {
  * its own comment. Both read immediately, and only the code waits, since the
  * reasoning is what a reader came for.
  *
- * An experiment reasons in three parts, and they read in the order somebody
- * ran them: the question, the reading it returned, then whatever prose
- * interprets the two. Its script waits with the rest of the code, because a
- * reader came for the finding and opens the instrument only to decide whether
- * to believe it.
+ * An experiment is a report rather than a paragraph, and its four fields play
+ * four roles: the question it asked, the script that answered it, the reading
+ * that came back, and the prose reading that back. Naming them in the page is
+ * what separates a report from a column of prose, so each gets a header.
+ *
+ * They run in the order somebody ran them, and the method sits second and
+ * folded. Unfolded there it would put a thousand characters of code between the
+ * question and the finding; left to the end it would break the order the
+ * sections otherwise read in. The fold is what protects the finding, not the
+ * position, so the position can stay honest.
  */
 function fillDetail(node) {
   const detail = document.getElementById('pane-detail')
@@ -489,22 +514,31 @@ function fillDetail(node) {
     quote.textContent = node.prompt
     detail.appendChild(quote)
   }
-  // An experiment asks before it answers. The title only abbreviates the
-  // question, and the reading means nothing to a reader who has not read it.
-  // Where the two say the same words the pane says them once, since a title
-  // short enough to scan is a different job from a question worth asking.
+  // Only an experiment carries a question, and only an experiment gets headers.
+  // One blob of prose needs no signposting, so an observation reads exactly as
+  // it did before any of this.
+  const report = Boolean(node.question)
+  // The title only abbreviates the question. Where the two say the same words
+  // the pane says them once, since a title short enough to scan in a column of
+  // boxes is a different job from a question worth asking.
   if (node.question && node.question !== node.title) {
+    detail.appendChild(sectionHeader('question'))
     const asked = document.createElement('p')
     asked.className = 'question'
     asked.textContent = node.question
     detail.appendChild(asked)
   }
+  // The method, folded, with its own header doing the unfolding. A label above
+  // a disclosure would say the same word twice.
+  if (report && node.snippet) detail.appendChild(codeFor(node, 'method'))
   if (node.reading) {
+    if (report) detail.appendChild(sectionHeader('data'))
     const reading = document.createElement('p')
     reading.className = 'reading'
     reading.textContent = node.reading
     detail.appendChild(reading)
   }
+  if (node.detail && report) detail.appendChild(sectionHeader('conclusion'))
   if (node.detail) detail.insertAdjacentHTML('beforeend', node.detail)
   if (node.doc) {
     const doc = document.createElement('p')
@@ -512,7 +546,7 @@ function fillDetail(node) {
     doc.textContent = node.doc
     detail.appendChild(doc)
   }
-  if (node.snippet) detail.appendChild(codeFor(node, node.question ? 'the script that ran' : undefined))
+  if (!report && node.snippet) detail.appendChild(codeFor(node))
 }
 
 /**
