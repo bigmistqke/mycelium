@@ -2,28 +2,54 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How many knowledge nodes state a general rule?</title>
+<title>How many entries state a rule?</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/notebook.template.css">
 </head>
 <body>
 <notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
-  <notebook-title>How many knowledge nodes state a general rule?</notebook-title>
+  <notebook-title>How many entries state a rule?</notebook-title>
   <notebook-tag>measurement</notebook-tag>
   <notebook-question>How many entries state a rule rather than record an event?</notebook-question>
   <script type="mycelium/experiment">
 export default function ({ fs }) {
+  // The family this counted retired on 2026-08-10, taking docs/knowledge with
+  // it, so the same question now asks the notebook. A title is a title in both,
+  // which is why the reading survives the move as a number to compare against.
   const RULE = /^(A|An|Every|Nothing|Only|Derive|Link|Information|Reach)\b/
   let rules = 0, total = 0
-  for (const { doc } of fs.list("knowledge")) {
-    const title = doc.querySelector("knowledge-title")?.textContent?.trim() ?? ""
+  const opening = {}
+  for (const { doc } of fs.list("notebook")) {
+    const title = doc.querySelector("notebook-title")?.textContent?.trim() ?? ""
     if (!title) continue
     total++
-    if (RULE.test(title)) rules++
+    if (!RULE.test(title)) continue
+    rules++
+    const word = RULE.exec(title)[1]
+    opening[word] = (opening[word] ?? 0) + 1
   }
-  return `${rules} of ${total} titles open like a rule`
+  // Which words carry it, because one word doing most of the work would mean
+  // the regex measures a habit of phrasing rather than a habit of thinking.
+  const spread = Object.entries(opening).sort((a, b) => b[1] - a[1])
+    .map(([word, n]) => `${word} ${n}`).join(", ")
+  return `${rules} of ${total} titles open like a rule (${spread})`
 }
 </script>
-  <notebook-reading>86 of 579 titles open like a rule</notebook-reading>
+  <notebook-reading>81 of 384 titles open like a rule (A 58, An 6, Derive 6, Every 5, Reach 2, Link 2, Information 1, Only 1)</notebook-reading>
+  <notebook-detail><p>The question outlived the family it first asked about. This counted
+<code>docs/knowledge</code> until that directory retired on 2026-08-10, and the
+script then failed outright rather than returning a stale number. Pointing it at
+the notebook keeps the old reading comparable, because a title is a title in
+either family.</p>
+<p>The proportion rose across the prune, from 86 of 579 to 81 of 384. Only five
+rule-shaped titles went, against 190 of everything else, which is the prune
+working as intended: what left recorded that something happened, and a record of
+an event rarely opens like a rule.</p>
+<p>The spread is the part worth watching, and it undercuts the measure. One word
+carries 58 of the 81, so this counts titles beginning <q>A</q> far more than it
+counts rules. A sharper instrument would read the sentence rather than its first
+word, and until somebody writes one this reading is a floor rather than a
+count.</p>
+</notebook-detail>
 </notebook-experiment>
 </body></html>
