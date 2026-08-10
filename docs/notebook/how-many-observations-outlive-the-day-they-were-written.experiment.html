@@ -68,31 +68,32 @@ export default function ({ fs }) {
 }
 </script>
   <notebook-reading>338 observations: 23 an axiom rests on, 182 another entry links to, 133 nothing reaches. Rule-shaped titles: 19% of the reached, 34% of the rest</notebook-reading>
-  <notebook-detail><p>Observations carry almost the whole notebook: 338 of the 387 entries, against
-47 research entries and two experiments. So any question about what the notebook
-holds is a question about this one type, and any drift in what it means shows up
-nowhere else.</p>
-<p>Reach looked like the way to sort a rule from a note about today's defect. An
-entry another entry links to, or an axiom names as its source, went on being
-useful after the day somebody wrote it, and nothing reaches a defect note once
-somebody fixes the defect.</p>
-<p>It points the other way. Rule-shaped titles make up 19% of the entries
-something reaches and 34% of the entries nothing reaches, so the reached side
-holds fewer rules rather than more. An entry acquires edges by sitting next to
-its neighbours on the day somebody wrote it, which measures clustering rather
-than durability.</p>
-<p>Twenty-three observations carry the one signal that does mean something: an
-axiom rests on them. That is 7% of the type, and the remaining 93% offers
-nothing a reader could sort by.</p>
-<p>So the corpus cannot tell the two kinds apart, and no cleverer query will,
-because the distinction never got written down. Deriving beats storing only
-where the fact exists somewhere to derive from. Whoever writes the entry is the
-last person who knows which kind it is.</p>
+  <notebook-detail><p>The reading answers a narrower question than it looks like it answers. All 338
+observations entered <code>docs/notebook</code> in one commit on 2026-08-10, when
+the graph moved over from the family that held it before. So reach here measures
+how the earlier store linked its nodes, and says nothing about how anybody writes
+an entry now.</p>
+<p>Within that pile the signal still points the wrong way. Rule-shaped titles make
+up 19% of the entries something reaches and 34% of the entries nothing reaches,
+so the reached side holds fewer rules rather than more. An entry acquires edges
+from sitting beside its neighbours on the day somebody wrote it, which measures
+clustering.</p>
+<p>Twenty-three observations carry the one signal that means something: an axiom
+rests on them. That is 7% of the type, and it postdates the move, since grounding
+arrived with the notebook rather than with the graph.</p>
+<p>The question worth asking needs a window this script cannot open. Entries
+authored since the family landed number seven, and separating those from the
+migrated pile takes the commit that added each file. An experiment reads
+documents, and a document says nothing about when it arrived.</p>
+<p>So the corpus cannot sort a rule from a note about today's defect, and no
+cleverer query will, because nobody wrote the distinction down. Deriving beats
+storing only where the fact exists somewhere to derive from. Whoever writes the
+entry is the last person who knows which kind it is.</p>
 <p>The opening-word test is a floor rather than a count, borrowed whole from the
 experiment that counts rule-shaped titles. One word carries most of it there, so
 it reads a habit of phrasing as much as a habit of thinking. Both shares here
-carry that same error, which is the reason to compare them against each other
-rather than to trust either alone.</p>
+carry that error, which is the reason to compare them against each other rather
+than to trust either alone.</p>
 </notebook-detail>
 </notebook-experiment>
 </body></html>
