@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A claim carries its check into the drawing, because a claim with no proof beside it is an assertion</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A claim carries its check into the drawing, because a claim with no proof beside it is an assertion</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-10</spec-date>
+  <spec-problem>
+<p>The chain page puts real content in its pane for every rank but one. An axiom
+shows the reasoning under the principle, a specification names the files it
+answers for, and a declaration shows its doc comment and its whole body. A
+reader selects a principle and reads down to the code that answers it.</p>
+<p>A behaviour breaks the run. <code>readCanon</code> reduces the script inside a
+<code>canon-behaviour</code> to <code>checks: boolean</code>, and the page spends
+that one bit twice: the box reads <q>behaviour</q> or <q>behaviour, proved
+beneath</q>, and the counts line totals how many claims carry a check. The script
+itself reaches nothing.</p>
+<p>So the pane shows a sentence asserting something about the system, and
+nothing a reader can weigh it against. The rung where a claim stops being an
+assertion is the one rung the drawing hides.</p>
+<p>Twelve of those claims are browser cases in the figure subsystem, each running
+against a <code>canon-fixture</code> the script never mentions. A reader meeting
+<code>assert(rowOf(box) === 3)</code> with the markup out of sight gets the
+assertion and not the case.</p>
+</spec-problem>
+  <spec-design>
+<p>The reading widens by one field and loses none. <code>Behaviour</code> carries
+<code>check</code>, the script's own source, and <code>fixture</code>, the markup
+a browser case runs against; both are empty when a claim takes its proof from the
+claims beneath it. Every place that wanted the boolean asks whether
+<code>check</code> holds anything, so the box label and the counts line keep
+reading exactly as they do now.</p>
+<p>The pane then renders a check the way it already renders a declaration's body:
+a disclosure, folded, under a summary naming what it holds. The summary says
+<q>check</q>, which is the word the schema, the validator and the runner all
+use for the script that falsifies a claim.</p>
+<p>A fixture gets its own fold beside it, and only when one exists. The two are
+different things — the case and what the case runs against — and a reader
+opening one has no use for the other.</p>
+<p>Folded rather than open, for the reason the experiment's method fold already
+gives: a thousand characters of code between a claim and its neighbours buries
+everything under it. The claim's own reasoning still reads immediately, since
+that is what a reader came for.</p>
+<p>The highlighter takes a language rather than assuming TypeScript. A node case
+is TypeScript, a browser case is plain JavaScript, and a fixture is markup, so
+each caller names the language it is handing over.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>No verdict on the page. A result belongs to a run, nothing commits one, and
+every <code>canon-verdict</code> in the corpus reads PENDING by schema. A drawing
+showing that field would show the same word on every claim.</p>
+<p>No running a check from the page. The chain page is a drawing generated from
+the corpus, and the runner it would need opens Chrome over WebDriver.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Whether a claim proved by the claims beneath it should gather their checks
+into its own pane. It carries no script of its own, so its pane stays prose, and
+the reader has to step down to each child to find what actually runs.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
