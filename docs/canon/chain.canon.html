@@ -424,5 +424,43 @@ export default async function ({ assert }: TestContext) {
 }
 </script>
   </canon-behaviour>
+  <canon-behaviour id="the-drawing-carries-the-check" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>Selecting a claim shows the check that falsifies it, and a browser case's fixture with it.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-document-is-read-by-a-person">a claim shown without its proof is an assertion</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">// A claim is a sentence about the system, and the check beneath it is the only
+// thing on the page able to argue back. The drawing reduced it to a boolean,
+// which spent the whole of a rung on colouring one box differently from
+// another.
+//
+// The fixture comes along. Twelve claims in this corpus are browser cases, and
+// an assertion about a row index says nothing without the boxes it counts rows
+// over.
+import type { TestContext } from "../../src/api.ts"
+import { chainOf, tinySubsystem } from "./canon-chain-fixture.ts"
+
+export default async function ({ assert, sandbox }: TestContext) {
+  const files = tinySubsystem()
+  files["canon/sample.canon.html"] = files["canon/sample.canon.html"].replace(
+    "  </canon-behaviour>",
+    `    <canon-verdict>PENDING</canon-verdict>
+    <canon-fixture><figure-graph data-columns="2"></figure-graph></canon-fixture>
+    <script type="text/mycelium-test">assert(rowOf(box) === 3)<\/script>
+  </canon-behaviour>`)
+  for (const [path, text] of Object.entries(files)) sandbox.write(path, text)
+
+  const claim = chainOf(sandbox, assert).behaviours.find((one) => one.address.endsWith("#a-claim"))
+  assert(claim, "no claim reached the drawing")
+  assert(
+    claim.check.includes("rowOf(box) === 3"),
+    `the check never arrived: ${JSON.stringify(claim.check)}`,
+  )
+  assert(
+    claim.fixture.includes("figure-graph"),
+    `the fixture never arrived: ${JSON.stringify(claim.fixture)}`,
+  )
+}
+</script>
+  </canon-behaviour>
 </canon-specification>
 </body></html>

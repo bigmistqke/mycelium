@@ -1405,11 +1405,17 @@
         address: behaviour.address,
         title: behaviour.title,
         detail: behaviour.detail,
-        kind: behaviour.checks ? 'behaviour' : 'behaviour, proved by the claims beneath it',
+        kind: behaviour.check ? 'behaviour' : 'behaviour, proved by the claims beneath it',
         specification: behaviour.specification,
         refines: behaviour.parent ? [behaviour.parent] : behaviour.dependsOn,
         parent: behaviour.parent,
-        checks: behaviour.checks,
+        // The check itself and not a flag saying one exists. A claim is a
+        // sentence about the system, and the only thing that can argue with it
+        // is the script beneath it, so the page carries both or carries an
+        // assertion. A browser case takes its fixture along, since an assertion
+        // about a row index says nothing without the boxes it counts over.
+        check: behaviour.check,
+        fixture: behaviour.fixture,
       })),
       // Both directions, precomputed, so selecting anything can light the whole
       // chain it belongs to rather than only what hangs beneath it.
@@ -1442,7 +1448,7 @@
       base,
       counts: `<b>${data.axioms.length}</b> axioms &middot;
     <b>${data.behaviours.length}</b> behaviours &middot;
-    <b>${data.behaviours.filter(b => b.checks).length}</b> checks &middot;
+    <b>${data.behaviours.filter(b => b.check).length}</b> checks &middot;
     <b>${data.specifications.length}</b> subsystems &middot;
     <b>${data.code.filter(d => d.cites.length > 1).length}</b> declarations answering more than one claim`,
       scripts: ['graph.element.js', 'chain.element.js'].map(templateFile),

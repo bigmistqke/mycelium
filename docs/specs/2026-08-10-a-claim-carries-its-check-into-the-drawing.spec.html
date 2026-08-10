@@ -47,9 +47,16 @@ opening one has no use for the other.</p>
 gives: a thousand characters of code between a claim and its neighbours buries
 everything under it. The claim's own reasoning still reads immediately, since
 that is what a reader came for.</p>
-<p>The highlighter takes a language rather than assuming TypeScript. A node case
-is TypeScript, a browser case is plain JavaScript, and a fixture is markup, so
-each caller names the language it is handing over.</p>
+<p>The disclosure takes its summary word, its language and whether it is a
+report's section from the caller. Only an experiment's method is a section, so
+the check keeps the plain summary a declaration's body already has; and the
+highlighter needs the language because a fixture is markup, which coloured as
+TypeScript reads as one long string.</p>
+<p>The pane also strips the indentation a script inherits from the element
+holding it. A script sits wherever its element sits, so its lines carry two or
+six spaces belonging to the page, and trimming the block cuts the first line's
+indent while leaving every other one. That fix lands in the drawing and not in
+the corpus, since the markup is right and only the reading of it was wrong.</p>
 </spec-design>
   <spec-out-of-scope>
 <p>No verdict on the page. A result belongs to a run, nothing commits one, and

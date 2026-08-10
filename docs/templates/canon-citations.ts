@@ -51,10 +51,21 @@ export interface Behaviour extends CanonEntry {
    */
   parent: string | null
   /**
-   * Whether this claim carries the check that falsifies it. A leaf does; a
-   * claim proved by the ones beneath it does not.
+   * The check that falsifies this claim, as its own source. A leaf carries one;
+   * a claim proved by the ones beneath it carries an empty string.
+   *
+   * The source rather than a flag saying one exists. A claim is a sentence
+   * about the system and the check is the only thing that can argue with it, so
+   * anything showing a reader the claim has something to show them beside it.
    */
-  checks: boolean
+  check: string
+  /**
+   * The markup a browser case runs against, empty for every other claim.
+   *
+   * Half of what a browser case says lives here: an assertion about a row index
+   * means nothing without the boxes it counts rows over.
+   */
+  fixture: string
 }
 
 export interface Canon {
@@ -101,23 +112,30 @@ function edges(element: Element, path: string, rel = "depends_on"): string[] {
     .map((child) => resolveHref(path, child.getAttribute("href") ?? ""))
 }
 
+/**
+ * One field of a claim, by tag name.
+ *
+ * Direct children only, everywhere, for the reason the behaviour validator
+ * gives: a script belonging to a grandchild is that grandchild's proof and says
+ * nothing about this claim.
+ */
+function childOf(element: Element, tag: string): Element | undefined {
+  return Array.from(element.children).find((child) => child.tagName.toLowerCase() === tag)
+}
+
 function titleOf(element: Element): string {
-  return Array.from(element.children)
-    .find((child) => child.tagName.toLowerCase() === "canon-title")
-    ?.textContent?.trim() ?? ""
+  return childOf(element, "canon-title")?.textContent?.trim() ?? ""
 }
 
 /**
  * A claim's own reasoning, as markup rather than text, since a detail holds
  * paragraphs.
  *
- * Direct children only: a claim holds claims, and a parent showing a child's
- * reasoning would put an argument under a heading it never made.
+ * A parent showing a child's reasoning would put an argument under a heading it
+ * never made, which is one of the reasons childOf looks no deeper.
  */
 function detailOf(element: Element): string {
-  return Array.from(element.children)
-    .find((child) => child.tagName.toLowerCase() === "canon-detail")
-    ?.innerHTML?.trim() ?? ""
+  return childOf(element, "canon-detail")?.innerHTML?.trim() ?? ""
 }
 
 /**
@@ -142,7 +160,8 @@ function behavioursIn(element: Element, path: string, parent: string | null): Be
       detail: detailOf(child),
       dependsOn: edges(child, path),
       parent,
-      checks: Array.from(child.children).some((n) => n.tagName.toLowerCase() === "script"),
+      check: childOf(child, "script")?.textContent?.trim() ?? "",
+      fixture: childOf(child, "canon-fixture")?.innerHTML?.trim() ?? "",
     })
     found.push(...behavioursIn(child, path, at))
   }

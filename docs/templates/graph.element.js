@@ -97,36 +97,57 @@ function numberRows() {
 }
 
 /**
- * A cited declaration's whole implementation, behind a disclosure.
+ * Code without the indentation of whatever markup held it.
+ *
+ * A script inside a document sits wherever its element sits, so its lines carry
+ * two or six spaces that belong to the page rather than to the code. The
+ * reading trims the block, which strips the first line's indent and leaves
+ * every other line's, and the pane then shows code that steps right at line
+ * two.
+ *
+ * Reading the shallowest line rather than assuming a width, since one corpus
+ * holds scripts at three different depths.
+ */
+function dedent(source) {
+  const lines = source.split('\n')
+  const depths = lines.slice(1).filter((line) => line.trim()).map((line) => line.match(/^ */)[0].length)
+  if (!depths.length) return source
+  const cut = Math.min(...depths)
+  return [lines[0], ...lines.slice(1).map((line) => line.slice(cut))].join('\n')
+}
+
+/**
+ * A block of source behind a disclosure.
  *
  * Only the code sits here. The prose introducing it reads immediately beside
  * the claim, because that is the reasoning a reader came for, and the code is
  * what they open when the reasoning is not enough.
  *
- * Two drawings open this, and the code means a different thing in each: one
- * holds the declaration a claim answers for, the other the script that measured
- * the corpus. The summary says which, since a reader decides whether to open it
- * from that word alone.
+ * Four things arrive here and each means something different: the declaration a
+ * claim answers for, the script that measured the corpus, the check that
+ * falsifies a claim, and the fixture that check runs against. The summary says
+ * which, since a reader decides whether to open it from that word alone.
  *
  * @behaviour canon/chain.canon.html#the-drawing-carries-the-comment-and-the-code
  */
-function codeFor(code, label) {
+function codeFor(text, { label = 'implementation', lang = 'typescript', section = false } = {}) {
+  const source = dedent(text)
   const d = document.createElement('details')
-  // A labelled disclosure is one section of a report, so its summary is that
+  // A disclosure inside a report is one of its sections, so its summary is that
   // section's header. The class goes on the disclosure and the styling on the
   // summary alone: a header's own styling includes uppercasing, and the code
   // inherits anything the container carries.
-  if (label) d.className = 'section-fold'
+  if (section) d.className = 'section-fold'
   const summary = document.createElement('summary')
-  summary.textContent = label ?? 'implementation'
+  summary.textContent = label
   d.appendChild(summary)
   const holder = document.createElement('div')
   holder.className = 'code'
   const pre = document.createElement('pre')
-  pre.textContent = code.snippet
+  pre.textContent = source
   holder.appendChild(pre)
   d.appendChild(holder)
-  paint(holder, code.snippet)
+  paint(holder, source, lang)
   return d
 }
 
@@ -136,12 +157,15 @@ function codeFor(code, label) {
  * The page shows the code first and colours it afterwards, so a reader who
  * opens the pane offline still reads the code. Nothing waits on the network to
  * render.
+ *
+ * The caller names the language, since a fixture is markup and everything else
+ * here is code, and markup coloured as TypeScript reads as one long string.
  */
-async function paint(holder, source) {
+async function paint(holder, source, lang) {
   try {
     const { codeToHtml } = await shiki()
     holder.innerHTML = await codeToHtml(source, {
-      lang: 'typescript',
+      lang,
       themes: { light: 'github-light', dark: 'github-dark' },
       defaultColor: false,
     })
@@ -502,6 +526,10 @@ function sectionHeader(label) {
  * question and the finding; left to the end it would break the order the
  * sections otherwise read in. The fold is what protects the finding, not the
  * position, so the position can stay honest.
+ *
+ * A claim ends with the check that falsifies it, folded the same way and last.
+ * Everything above it is what the project says, and the check is the one thing
+ * on the page that can argue back.
  */
 function fillDetail(node) {
   const detail = document.getElementById('pane-detail')
@@ -530,7 +558,7 @@ function fillDetail(node) {
   }
   // The method, folded, with its own header doing the unfolding. A label above
   // a disclosure would say the same word twice.
-  if (report && node.snippet) detail.appendChild(codeFor(node, 'method'))
+  if (report && node.snippet) detail.appendChild(codeFor(node.snippet, { label: 'method', section: true }))
   if (node.reading) {
     if (report) detail.appendChild(sectionHeader('data'))
     const reading = document.createElement('p')
@@ -546,7 +574,13 @@ function fillDetail(node) {
     doc.textContent = node.doc
     detail.appendChild(doc)
   }
-  if (!report && node.snippet) detail.appendChild(codeFor(node))
+  if (!report && node.snippet) detail.appendChild(codeFor(node.snippet))
+  // A claim's check, last and folded, because it is what a reader opens when
+  // the claim alone does not convince them. Its fixture goes beside it rather
+  // than inside it: the case and what the case runs against are two things, and
+  // a reader opening one has no use for the other.
+  if (node.check) detail.appendChild(codeFor(node.check, { label: 'check' }))
+  if (node.fixture) detail.appendChild(codeFor(node.fixture, { label: 'fixture', lang: 'html' }))
 }
 
 /**

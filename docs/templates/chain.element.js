@@ -75,7 +75,7 @@ for (let d = 0; d <= behaviourDepthMax; d++)
   ranks.push({ name: d === 0 ? 'behaviours' : '', items: data.behaviours
     .filter((b, i) => depths[i] === d)
     .map(b => ({ address: b.address, title: b.title, group: specTitle[b.specification] || 'unspecified',
-                 kind: b.checks ? 'behaviour' : 'behaviour, proved beneath',
+                 kind: b.check ? 'behaviour' : 'behaviour, proved beneath',
                  subsystem: subsystemOf(b.specification), groupOf: b.specification })) })
 
 /**
