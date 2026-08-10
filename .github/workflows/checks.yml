@@ -57,7 +57,7 @@ jobs:
       # the Chrome this image already carries. CHROMEWEBDRIVER points at a
       # matching driver, so nothing downloads one.
       - name: Run the browser tests
-        run: pnpm mycelium test run
+        run: pnpm mycelium canon test
 
       # A failing layout test writes a picture of the fixture that failed. That
       # picture is most of the value of testing a drawing, and it is unreachable
