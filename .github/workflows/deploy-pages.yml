@@ -33,7 +33,12 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
+      # The whole history, because the drawing dates every entry by the commit
+      # that added it. A shallow clone has no such commit to find, so the
+      # default depth of 1 published all 383 entries stacked in one column.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v7
         with:

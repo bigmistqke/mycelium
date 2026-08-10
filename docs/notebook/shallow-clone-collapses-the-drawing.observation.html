@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A shallow clone dates every entry to the same day, and the drawing says nothing</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+  <notebook-title>A shallow clone dates every entry to the same day, and the drawing says nothing</notebook-title>
+  <notebook-tag>gates</notebook-tag>
+  <notebook-tag>notebook</notebook-tag>
+  <notebook-prompt>it looks to me that file:///private/var/folders/kf/33x7c6xs76l2v21jmt7lmhpm0000gn/T/mycelium-notebook-1786318340791.html has a lot more data then https://bigmistqke.github.io/mycelium/</notebook-prompt>
+  <notebook-detail><p>The drawing puts days in columns, and takes each day from the commit that
+added the file. That makes the depth of the clone an input to how the page
+looks, which nothing about the command suggests.</p>
+<p>The published site drew all 383 entries in one column while the same command
+locally drew 21 days. Both pages held every entry and every relation, so the
+counts in the header agreed on everything except the axis:</p>
+<pre><code>local    383 entries · 412 relations · 21 days
+deployed 383 entries · 412 relations ·  1 days</code></pre>
+<p>The cause was <code>actions/checkout</code>, which clones at depth 1 unless
+somebody asks for more. The interesting part is how it fails. A shallow clone
+does not lose the answer, it invents one: its boundary commit has no reachable
+parent, so git reports every file in the tree as an addition by that single
+commit, and every entry honestly arrives on the day of the deploy.</p>
+<p>So the failure had no error and no empty field to notice. It produced a
+well-formed page, passing every audit, that quietly asserted the whole notebook
+appeared in one afternoon. A guard now asks git whether the repository is
+shallow and refuses to draw. Asking directly beats reading the collapse off the
+dates, since a young corpus can hold one day and mean it.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./only-the-last-jsdoc-block-is-read.observation.html">another failure the same push turned up, where a check stayed quiet</a>
+</notebook-observation>
+</body></html>

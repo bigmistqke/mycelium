@@ -668,6 +668,20 @@
     const arrived = {}
     for (const { path } of fs.list(DIR)) arrived[path] = firstSeen[slugOf(path)] ?? ""
 
+    // A shallow clone answers this question wrongly rather than not at all. Its
+    // boundary commit has no reachable parent, so git calls every file an
+    // addition by that one commit and every entry arrives on the same day. The
+    // page then stacks 383 entries in one column, which is what a CI checkout at
+    // the default depth of 1 published. Ask git what it is rather than reading
+    // the collapse off the dates, since a young corpus really can hold one day.
+    const shallow = execFileSync("git", ["rev-parse", "--is-shallow-repository"], {
+      cwd: resolvePath(fs.root, ".."),
+      encoding: "utf8",
+    }).trim()
+    if (shallow === "true") {
+      throw new Error("this is a shallow clone, so every entry dates to the one commit it holds and the drawing collapses to a single column. Fetch the full history and draw again.")
+    }
+
     const drawn = nodes.map((n) => ({
       address: rel(n.id),
       title: n.title,
