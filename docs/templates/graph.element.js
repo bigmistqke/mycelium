@@ -693,6 +693,24 @@ function neighbours(side) {
 let selected = null
 
 /**
+ * Whether a box is already somewhere a reader can see it: inside the
+ * viewport, and clear of the pane sitting over its corner.
+ *
+ * Read after the pane's own visibility is settled, since a box the pane now
+ * covers and a box it no longer covers give opposite answers from the same
+ * geometry.
+ */
+function isVisible(box) {
+  const rect = box.getBoundingClientRect()
+  if (rect.top < 0 || rect.left < 0 ||
+      rect.bottom > window.innerHeight || rect.right > window.innerWidth) return false
+  if (pane.hidden) return true
+  const over = pane.getBoundingClientRect()
+  return rect.right <= over.left || rect.left >= over.right ||
+         rect.bottom <= over.top || rect.top >= over.bottom
+}
+
+/**
  * Light one node's chain, fill the pane from it, and bring it into view.
  *
  * The one place selection changes, so a click on the graph and a step through
@@ -719,12 +737,17 @@ function show(address) {
     path.classList.toggle('lit', on)
     if (on) litWires.appendChild(path.cloneNode())
   }
+  // The pane has to be showing, or already hidden, before isVisible reads its
+  // rect below — otherwise a box the pane is about to cover still measures as
+  // clear of it.
   fillPane(selected)
   if (selected) {
     const box = boxOf(selected)
     // Centring accounts for the pane through scroll-margin on the box itself,
-    // so nothing here measures anything or scrolls a second time.
-    if (box) box.scrollIntoView({ block: 'center', inline: 'center' })
+    // so nothing here measures anything or scrolls a second time. Only when
+    // the box isn't already visible, or the pane now sits over it — a reader
+    // who can already see the node they picked does not want the page to move.
+    if (box && !isVisible(box)) box.scrollIntoView({ block: 'center', inline: 'center' })
   }
   rememberSelection()
 }
