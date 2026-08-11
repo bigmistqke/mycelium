@@ -698,7 +698,7 @@
     // which has to be a real absolute one. fs.list returns paths relative to
     // docs/, the root run.ts resolves as "./docs".
     const documents = fs.list(DIR).map(({ path, doc }) => ({ path: resolvePath("./docs", path), dom: doc }))
-    const { nodes, edges } = extractGraph(documents)
+    const { nodes, edges } = extractGraph(documents, TAGS)
 
     const prompts = new Map()
     for (const { path, dom } of documents) {

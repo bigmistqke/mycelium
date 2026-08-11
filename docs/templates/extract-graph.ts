@@ -31,17 +31,22 @@ export interface GraphEdge {
   label: string
 }
 
-const TYPES = [
-  "notebook-observation",
-  "notebook-research",
-  "notebook-experiment",
-]
-
-export function extractGraph(documents: GraphDocument[]): { nodes: GraphNode[]; edges: GraphEdge[] } {
+/**
+ * Which element names count as nodes, from the caller that already knows.
+ *
+ * This held its own list until the family split one type into three, and a list
+ * nobody updated left the drawing showing 50 of 387 entries while looking
+ * exactly as correct as before. The command builds its tags off the type list
+ * the schema declares, so taking them from there leaves one copy.
+ */
+export function extractGraph(
+  documents: GraphDocument[],
+  types: string[],
+): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const nodes: GraphNode[] = []
   const edges: GraphEdge[] = []
   for (const { path, dom } of documents) {
-    for (const tag of TYPES) {
+    for (const tag of types) {
       const family = tag.split("-")[0]
       for (const el of Array.from(dom.querySelectorAll(tag))) {
         nodes.push({
@@ -52,7 +57,7 @@ export function extractGraph(documents: GraphDocument[]): { nodes: GraphNode[]; 
       }
     }
     for (const a of Array.from(dom.querySelectorAll("a[data-rel]"))) {
-      const source = a.closest(TYPES.join(","))
+      const source = a.closest(types.join(","))
       if (!source) continue
       const href = a.getAttribute("href")!
       // A same-document "#id" addresses a node in this file; anything else is
