@@ -418,6 +418,14 @@
     }
 
     single("notebook-title", args.title)
+    // The page's own title travels with the entry's. A document carries the
+    // same sentence twice, once for the corpus and once for the browser tab,
+    // and a retitle that moved only the first left a reader browsing by tab
+    // looking at a question the entry had stopped asking.
+    if (args.title !== undefined && args.title !== "") {
+      const head = doc.querySelector("title")
+      if (head) head.textContent = args.title
+    }
     single("notebook-question", args.question)
     single("notebook-reading", args.reading)
     if (args.detail !== undefined) {
