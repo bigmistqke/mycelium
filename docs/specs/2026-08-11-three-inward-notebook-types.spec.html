@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Principle, practice and direction replace the observation, split by how the thought arrived</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Principle, practice and direction replace the observation, split by how the thought arrived</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-11</spec-date>
+  <spec-problem>
+<p>The notebook family is one day old and one of its types already carries 338
+of the 387 entries. Research holds 47 and experiment holds two, so
+<code>notebook-observation</code> means <q>everything nobody read and nobody
+ran</q> rather than anything a reader can use.</p>
+<p>Seven entries date from after the family landed, and they wear one label
+while being three things. Three name a constraint the ground imposed —
+TypeScript reads only the last JSDoc block, a shallow clone flattens every
+date, a container of repeated links reads to the prose lint as one sentence.
+Two state a rule that outlives the code under it. Two say what their own commit
+says.</p>
+<p>The system this replaced had the same failure and the earlier spec named it:
+one type spread across principle, vision, reference, method and mechanism, and
+grew to 231 nodes doing five jobs. Collapsing six types into three renamed that
+type rather than fixing it.</p>
+<p>The design already knew the answer it did not write down. Its charter
+sentence names four things the notebook holds: <q>prior art somebody read, a
+rule noticed before a check could hold it, a direction the work bends toward,
+and a remark about how the work itself goes</q>. The type list carries two of
+the four.</p>
+<p>An earlier draft did propose principle, practice and direction, and
+<a href="./2026-08-09-notebook-replaces-the-knowledge-graph.spec.html">the
+notebook spec</a> rejected it for sorting entries by what each could become.
+That objection lands on the justification, which was promotion wearing a
+vocabulary. The categories fell with it, and they were not the thing at
+fault.</p>
+</spec-problem>
+  <spec-design>
+<p>Three types replace the observation: <code>notebook-principle</code>,
+<code>notebook-practice</code> and <code>notebook-direction</code>. Research and
+experiment stay exactly as they are. All five share the field shape they have
+now, since a type here says where something came from and never what it
+holds.</p>
+<h3>The criterion is arrival, and it names no destination</h3>
+<p>A practice arrives from the ground pushing back while somebody works. A
+principle arrives from stepping back over what has accumulated. A direction
+arrives from wanting the work somewhere it does not currently go.</p>
+<p>None of those three tests mentions the canon, an axiom or a check. Sorting
+entries by what each could be promoted into is what the earlier draft got wrong,
+and grounding already carries that relation as a link an axiom writes for
+itself. An entry's type answers where the thought came from, which stays true
+whatever the project later does with it.</p>
+<p>Provenance therefore remains the axis, and the split narrows it rather than
+turning it. Research came from someone else, experiment came from running
+something, and the three below divide what used to arrive as <q>from
+thinking</q>.</p>
+<h3>A fact about the terrain is a practice</h3>
+<p>Three of the seven recent entries name what a tool does when somebody leans
+on it. That is not a rule the project holds, and nothing about it says where the
+work should go, so both other types reject it.</p>
+<p>Practice takes it, because the ground pushing back is exactly how somebody
+learns it. A remark about how the work goes covers what the tools do underneath
+the work, and a reader hitting the same wall wants the same page.</p>
+<h3>The migration reads every entry</h3>
+<p>No rule sorts the 338. Their titles split 35 directive-opening, 123
+rule-opening and 180 opening as neither, and that last group holds all three
+kinds — a direction, a principle and a practice sit side by side in any sample
+of it.</p>
+<p>So the pass reads each entry and assigns one type, the way the 56 goals in
+the earlier migration needed a hand pass rather than a rule. The type also names
+the file, so <code>&lt;slug&gt;.observation.html</code> becomes
+<code>&lt;slug&gt;.practice.html</code>, and every href pointing at a renamed
+entry moves with it.</p>
+<p>A parser does that and never a pattern. This corpus carries the scars
+already: an anchored regex renamed opening tags and left the closing ones,
+writing mismatched markup into eighty documents.</p>
+<h3>What changes outside the corpus</h3>
+<p>The template declares three schemas where it declared one, the stylesheet
+labels each type with what it came from, and <code>TYPES</code> in the command
+script gains the two names. The command line then reads
+<code>notebook add practice</code>, and the listing regex that strips a type off
+a filename learns the new extensions.</p>
+<p>CLAUDE.md's table gains two rows, and its core rule stops saying
+<q>NOTICE something</q> for a type that no longer exists.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>The bar an entry has to clear. Two of the seven recent entries say what their
+commit says, and they will say it as practices unless something else stops them.
+Whether an entry earns its place against git is a rule about writing rather than
+about types, and it wants its own design.</p>
+<p>Anything that drains. A direction says where the work bends and nothing
+closes it, while a followup exists in order to stop existing. Mixing the two is
+what turned the earlier graph into a task tracker.</p>
+<p>Retyping anything twice. An entry never changes type, so the migration
+assigns one and the question does not reopen.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Whether a direction and a followup separate cleanly enough in the moment.
+Both arrive from wanting something, and the difference is whether anything could
+close it, which somebody has to judge while mid-work.</p>
+<p>Whether a fact about the terrain eventually wants its own type. Practice
+takes it here on the argument that the ground pushing back is how somebody
+learns both, and a corpus with two hundred practices will show whether that
+argument holds.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
