@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Two kinds of staleness, and only one of them is detectable from the code</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>Two kinds of staleness, and only one of them is detectable from the code</notebook-title>
+  <notebook-detail><h3>Drift</h3>
+<p>The code moved and the claim no longer describes it. Checks fail. Every tool
+targets this one.</p>
+<h3>Expiry</h3>
+<p>The code still matches the claim perfectly and the claim is dead anyway,
+because the reason evaporated. We cache this because the upstream API rate-limits
+us, and the limit went away two years ago.</p>
+<p>Every check passes. Nothing is wrong with the code, so nothing that reads the
+code will ever find it.</p>
+<h3>What follows</h3>
+<p>A claim needs a premise: what has to stay true in the world for it to be worth
+having. Some premises are checkable, being a version or a scale number or a config
+value. The rest are questions asked on a schedule and answered by a person in ten
+seconds.</p>
+<p>That is the half of the design test suite which cannot be automated, and the
+half that catches the expensive mistakes.</p>
+<p>There is an inverse signal too. A check that has passed for two years while the
+code under it churned is a check nobody needs. Dead rules are as informative as
+failing ones.</p>
+<p>The strongest defence against staleness is not checking at all. It is use.
+Documents rot because nothing reads them. A claim read before every change gets
+exercised daily and its errors surface on their own.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./architecture-is-a-depth-slice-of-the-intent-graph.principle.html">the premise a claim needs before anything can notice expiry</a>
+</notebook-principle>
+</body></html>

@@ -87,7 +87,7 @@
       <code>todayDate()</code> lives once in each family's own <code>type="mycelium/command"</code> script
       (<code>knowledge.template.html</code>'s and <code>spec.template.html</code>'s), not in
       <code>utils.ts</code> as a shared export. Same reasoning
-      <a data-rel="elaborates" href="../notebook/duplicate-not-share-loadcheck.observation.html">already
+      <a data-rel="elaborates" href="../notebook/duplicate-not-share-loadcheck.practice.html">already
       applied to <code>loadModule</code>/<code>loadCheck</code></a>: a data: URL-loaded command script can't
       do a relative import anyway (a data: URL has no hierarchical base to resolve <code>./utils.ts</code>
       against), and each family's command script stays self-contained by design — <code>requireArgs</code>

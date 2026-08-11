@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Autofix applies a verified fix by default; --diff previews it instead</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Autofix applies a verified fix by default; --diff previews it instead</notebook-title>
+  <notebook-detail><p>Adopts the apply-mode option as proposed, and only that option. Every other command in
+this CLI writes in place with no confirmation step, so autofix follows the same
+convention: it applies a fix once that fix passes the violated rule's own check, and a
+session that wants to see the rewrite first passes <code>--diff</code>, which prints the
+proposed change without writing it.</p>
+<p>The CLI-routing option stays open. Whether a fix inside an actual corpus document goes
+through that family's own <code>update</code> command, or every fix is a raw file write
+regardless of target, waits for a follow-up decision.</p>
+</notebook-detail>
+</notebook-direction>
+</body></html>

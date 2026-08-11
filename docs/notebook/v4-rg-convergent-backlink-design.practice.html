@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: v4 and rg's proposed ADR-0018 independently converged on the same two link-protocol moves</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>v4 and rg's proposed ADR-0018 independently converged on the same two link-protocol moves</notebook-title>
+  <notebook-detail><p>v4's <code>data-conforms-to</code>/<code>data-rel</code> machinery and rg's proposed ADR-0018 derivation-link protocol converged independently on the same two moves:</p>
+<ul>
+  <li><strong>typed self-declaration</strong>, and</li>
+  <li><strong>backlinks computed at render, never stored</strong>.</li>
+</ul>
+<p>The convergence holds despite quite different topologies: v4's graph is federated across many files, while rg's is anchors within one document per subsystem.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./v4-for-rg-derivation-methodology.direction.html">informs the exploration of how v4 could serve rg's methodology</a>
+</notebook-practice>
+</body></html>

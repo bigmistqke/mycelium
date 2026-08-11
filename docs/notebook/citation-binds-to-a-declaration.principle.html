@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Every declaration names the behaviour it answers, and the citation binds to the declaration</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>Every declaration names the behaviour it answers, and the citation binds to the declaration</notebook-title>
+  <notebook-detail><p>The first draft made an export owe a citation and let an internal helper carry
+one. Retrofitting broke it within the hour:
+<code>figure.element.js</code> exports nothing at all and answers twelve
+behaviours, so the rule gave that whole subsystem no unit to tag.</p>
+<p>A doc comment concerns declarations, not exports. So every declaration in a
+participating file names the behaviour it answers, and one naming none is a
+finding with three fixes: cite what it already answers, split it until each part
+answers one, or write the behaviour nobody had written down. The third is the
+valuable case.</p>
+<p>Coverage counts both ways, because each direction catches what the other
+misses. From the claim it asks whether anything implements what the canon
+promises. From the code it asks whether the code does anything nobody
+promised.</p>
+<p>The citation also moves into a doc comment rather than a line comment, which
+matters more than style. The compiler hands a leading comment to the next node
+across a blank line, so a run of line comments binds to whatever follows it
+whether the author meant that or not. A doc comment declares what it belongs
+to.</p>
+<p>What the tag measures is intent against lines of code, which is the question
+this project exists to ask. A declaration carrying five citations does five
+things, and the count names the decomposition worth doing. One citation per
+declaration is the target, and nothing in this corpus meets it yet.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./behaviour-to-implementation-citation.direction.html">the goal this shapes</a>
+</notebook-principle>
+</body></html>

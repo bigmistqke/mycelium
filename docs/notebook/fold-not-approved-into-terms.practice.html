@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Fold not-approved words into the term that replaces them</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>Fold not-approved words into the term that replaces them</notebook-title>
+  <notebook-detail><p>
+  Six words had their own entries saying only <q>Not used here</q> and pointing at a replacement.
+  None was a definition. Each cost a document, an edge, and a required
+  <code>language-meaning</code> field it had nothing to put in.
+</p>
+<p>
+  They are now a comma-separated <code>language-avoid</code> field on the word that replaces them, so
+  <code>use</code> carries <q>utilize, leverage</q>. <code>language-status</code> is deleted with
+  them: a term is approved by existing, which is the third declared field today that turned out to
+  say something the structure already said.
+</p>
+<p>
+  <strong>Correction.</strong> The commit for this said the merge gives up the reverse lookup that
+  ASD-STE100 centers on, where you look up the word you wrote rather than the word you should
+  have written. That was wrong, and wrong in a way this project keeps arguing against elsewhere:
+  storage form is not queryability. A field is as queryable as a filename, given something to query
+  it with.
+</p>
+<p>
+  So the lookup exists as a query. <code>language list --avoid utilize</code> answers <q>use</q>, and
+  the same data drives a check in both the corpus pass and <code>lint</code>, so writing
+  <code>utilize</code> in a commit message is reported as <q>write use instead</q>. Nothing declares
+  that check and no rule document holds it: adding a word to a term's avoid field is what turns it
+  on, so the list and the check cannot disagree.
+</p>
+<p>
+  It could not have been a rule. A rule is handed the text it checks, and this needs the whole
+  family to know what replaces what. Written as a rule, its own failing example sees no terms and
+  the self-test caught it immediately.
+</p>
+</notebook-detail>
+</notebook-practice>
+</body></html>

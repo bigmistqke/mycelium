@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Reverse src/runtime.js from an ES module back to globalThis so every document double-clicks open</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Reverse src/runtime.js from an ES module back to globalThis so every document double-clicks open</notebook-title>
+  <notebook-detail><p>Reverse <code>src/runtime.js</code> from a real ES module — which required a server for one live demo — back to the <code>globalThis</code>/classic-script version, so every document keeps working with a plain double-click, <strong>no exceptions</strong>.</p>
+<p>
+  Both directions were already spike-verified before the first decision, so this wasn't new research, just
+  re-weighing the same evidence: real <code>import</code>/<code>export</code> syntax for one small function,
+  against "just open it, no server, ever" holding with zero exceptions across every document in this
+  project. On reflection the second property is not a minor nicety here — it's the specific thing that
+  kept getting a genuine reaction tonight, turn after turn. Added <code>runtime.d.ts</code>
+  (<code>declare global</code>) alongside the reversal so <code>crawl.ts</code> keeps real types without
+  needing an actual <code>export</code> anywhere.
+</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./crawler-built.practice.html">reconsidered immediately after the
+    real-module version shipped and was verified working</a>
+</notebook-direction>
+</body></html>

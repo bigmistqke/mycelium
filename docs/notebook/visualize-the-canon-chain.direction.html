@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Draw the canon chain, so an axiom's reach is visible rather than merely checked</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Draw the canon chain, so an axiom's reach is visible rather than merely checked</notebook-title>
+  <notebook-prompt>it would be cool to have a visualization of how the axioms-&gt;specifications-&gt;behaviors-&gt;tests-&gt;implementation graph looks like, similar to what we do for the knowledge graph command</notebook-prompt>
+  <notebook-detail><p><code>knowledge generate graph</code> already draws its family, so the shape
+of the command exists. The canon chain differs in one way that matters: it has
+fixed layers. An axiom narrows an axiom, a behaviour refines an axiom, a case
+checks a behaviour, and a specification names the files it answers for. That is
+a ranked graph rather than a mesh, so it wants a layered drawing rather than a
+force layout.</p>
+<p>What it should make visible is the thing no check reports.
+<code>grounded</code> says an axiom reaches a behaviour; it never says how far or
+how much. An axiom carrying one behaviour and an axiom carrying twelve pass
+identically, and the difference is exactly what a reader wants when deciding
+whether a principle is load-bearing or merely vague.</p>
+<p>The same reading gives a blast radius. Rewording an axiom means re-deriving
+everything beneath it, and today that list has to be assembled by hand from
+edges pointing the other way.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./methodology-in-our-own-codebase.direction.html">the chain this draws</a>
+</notebook-direction>
+</body></html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: The EE parallel: schematic, layout, simulation, LVS and DRC each map onto a mycelium check</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>The EE parallel: schematic, layout, simulation, LVS and DRC each map onto a mycelium check</notebook-title>
+  <notebook-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23.</em></p>
+<p>EE parallel for mycelium verification:</p>
+<ul>
+  <li><strong>Schematic</strong> → Intent layer.</li>
+  <li><strong>Layout</strong> → AST layer.</li>
+  <li><strong>Simulation</strong> → run both levels, compare.</li>
+  <li><strong>LVS</strong> → structural match check.</li>
+  <li><strong>DRC</strong> → constraint validation.</li>
+</ul>
+</notebook-detail>
+  <a data-rel="supports" href="./verification-ladder-is-compositional-not-a-single-track.principle.html">an existing discipline already layering behavioral, structural and constraint checks side by side</a>
+</notebook-principle>
+</body></html>

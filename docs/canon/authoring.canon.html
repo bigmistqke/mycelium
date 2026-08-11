@@ -77,7 +77,7 @@ path before asking for the href.</p>
       import type { TestContext } from "../../src/api.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         const done = sandbox.mycelium(
-          "notebook", "add", "observation",
+          "notebook", "add", "practice",
           "--title", "Already dated",
           "--file", "2026-08-06-already-dated",
         )
@@ -85,7 +85,7 @@ path before asking for the href.</p>
 
         const complaint = done.stderr + done.stdout
         assert(complaint.includes("already-dated"), `the error names no slug to use instead: ${complaint.trim()}`)
-        assert(!sandbox.exists("notebook/2026-08-06-already-dated.observation.html"), "it wrote the dated name anyway")
+        assert(!sandbox.exists("notebook/2026-08-06-already-dated.practice.html"), "it wrote the dated name anyway")
       }
     </script>
     </canon-behaviour>
@@ -107,7 +107,7 @@ path before asking for the href.</p>
           return `${slug}.${type}.html`
         }
 
-        const noticed = make("observation", "the-thought")
+        const noticed = make("practice", "the-thought")
         const source = make("research", "the-reading")
 
         const done = sandbox.mycelium("notebook", "link", noticed, source, "--rel", "leads_to", "--label", "what came of it")
@@ -186,13 +186,13 @@ path before asking for the href.</p>
       import type { TestContext } from "../../src/api.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         const made = sandbox.mycelium(
-          "notebook", "add", "observation",
+          "notebook", "add", "practice",
           "--title", "The templates exist",
           "--file", "templates-exist",
         )
         assert(made.ok, `add failed: ${made.stderr || made.stdout}`)
 
-        const node = "templates-exist.observation.html"
+        const node = "templates-exist.practice.html"
         const target = "../templates/notebook.template.html"
         const done = sandbox.mycelium("notebook", "link", node, target, "--rel", "elaborates", "--label", "the family itself")
         assert(done.ok, `link failed: ${done.stderr || done.stdout}`)
@@ -356,19 +356,19 @@ export default async function ({ assert, sandbox }: TestContext) {
     const done = sandbox.mycelium(...argv)
     assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
   }
-  run("notebook", "add", "observation", "--file", "a-thing-somebody-noticed",
+  run("notebook", "add", "practice", "--file", "a-thing-somebody-noticed",
     "--title", "Something somebody noticed before the rule existed.")
   run("canon", "add", "axiom", "--canon", "sample", "--id", "a-principle",
     "--title", "A principle that came from somewhere.",
     "--detail", "<p>Reasoning, so the axiom validates.</p>")
   run("canon", "link", "sample#a-principle", "sample#a-principle",
     "--rel", "depends_on", "--label", "an edge the reference has to sort ahead of")
-  run("canon", "reference", "sample#a-principle", "notebook/a-thing-somebody-noticed.observation.html",
+  run("canon", "reference", "sample#a-principle", "notebook/a-thing-somebody-noticed.practice.html",
     "--label", "what the principle took from it")
 
   const after = sandbox.read("canon/sample.canon.html")
   assert(
-    after.includes('<canon-references><a href="../notebook/a-thing-somebody-noticed.observation.html">'),
+    after.includes('<canon-references><a href="../notebook/a-thing-somebody-noticed.practice.html">'),
     `the reference did not land inside the container:\n${after}`,
   )
   assert(

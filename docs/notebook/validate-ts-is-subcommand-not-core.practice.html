@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: validate.ts's crawl-and-report logic is a subcommand's implementation, not core</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>validate.ts's crawl-and-report logic is a subcommand's implementation, not core</notebook-title>
+  <notebook-detail><p>
+  Checked what "the document declares the command, never the implementation, which is
+  true of every other family too" actually claims, against the other four families plus
+  <code>explore.command.html</code>. It's false: <code>knowledge.template.html</code>,
+  <code>language.template.html</code>, <code>plan.template.html</code>,
+  <code>spec.template.html</code>, and <code>explore.command.html</code> all implement
+  their real logic inline in their own <code>&lt;script type="mycelium/command"&gt;</code>,
+  importing only the <code>CommandContext</code> type and small generic helpers
+  (<code>loadModule</code>, <code>todayDate</code>) from <code>src/</code>.
+  <code>validate.command.html</code> is the only one that imports a working
+  implementation — <code>validate()</code> — from a <code>src/</code> file and calls it.
+</p>
+<p>
+  The framing offered in conversation to explain the asymmetry — that
+  <code>validate.ts</code> counts as engine, the same tier as <code>run.ts</code>, because
+  it's "protocol-only" rather than family business logic — doesn't hold up either. The
+  actually generic, reused-elsewhere primitives (<code>parseHTML</code>,
+  <code>walkFiles</code>, <code>walkHtmlFiles</code>, <code>resolveTemplateRef</code>,
+  <code>loadCheck</code>, <code>loadGenericValidator</code>, <code>validateInstance</code>)
+  already live in <code>src/utils.ts</code>, shared by both <code>run.ts</code>'s authoring
+  commands and <code>validate.ts</code>. What's left in <code>validate.ts</code> — walking
+  the whole corpus, discovering templates/audits/instances, running them, formatting
+  results — is command-level orchestration built on those primitives, the same
+  relationship <code>knowledge.template.html</code>'s <code>extractGraph</code> or
+  <code>language.template.html</code>'s lint logic has to <code>src/</code>. Nothing about
+  it is more "engine" than what any other family's script does.
+</p>
+<p>
+  Corrected framing: core is <code>run.ts</code> + <code>api.ts</code> +
+  <code>script-hooks.ts</code> + the generic half of <code>utils.ts</code>. Every
+  subcommand, <code>validate</code> included, sits on top of that as ordinary
+  command implementation — none of them get a special tier just because their content
+  happens to be about the protocol's own vocabulary.
+</p>
+</notebook-detail>
+  <a data-rel="contradicts" href="./validate-is-a-command-document.principle.html">delegating to src/validate.ts is not what every other family does, and validate.ts is not a special engine tier</a>
+</notebook-practice>
+</body></html>

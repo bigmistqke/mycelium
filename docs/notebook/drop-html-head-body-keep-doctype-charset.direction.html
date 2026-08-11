@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Keep DOCTYPE and meta charset in node files; drop html/head/body</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Keep DOCTYPE and meta charset in node files; drop html/head/body</notebook-title>
+  <notebook-detail><p>In knowledge and spec node files, keep <code>&lt;!DOCTYPE html&gt;</code> and <code>&lt;meta charset&gt;</code>; drop <code>&lt;html&gt;</code>, <code>&lt;head&gt;</code> and <code>&lt;body&gt;</code>, relying on HTML's optional-tag inference for leaner markup.</p>
+</notebook-detail>
+  <a data-rel="elaborates" href="./html-as-store.principle.html">refines the earlier HTML-as-canonical-store decision down to which wrapper tags are actually load-bearing</a>
+  <a data-rel="depends_on" href="./shadow-dom-panel-isolation.direction.html">surfaced directly while discussing how the canvas would load a panel's real HTML</a>
+</notebook-direction>
+</body></html>

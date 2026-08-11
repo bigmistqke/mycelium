@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Audits collocate with their family and derive from real markup, not a fixture</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>Audits collocate with their family and derive from real markup, not a fixture</notebook-title>
+  <notebook-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23. Two corrections to the just-shipped
+audits.</em></p>
+<p>1. Location. A separate <code>audits/knowledge-integrity.html</code>
+did not earn its separation. Different scope — one instance versus the whole
+graph — argues for a different <em>kind of script</em>, not a different file, and
+both audits concern only <code>knowledge-*</code> types already bundled in one
+file.</p>
+<p>Folded in, with a parallel convention: <code>data-audits="name"</code> plus
+<code>data-touches="…"</code> alongside the existing
+<code>data-validates="#id"</code>, so an audit's scope is
+<strong>queryable rather than prose</strong>. An audit spanning two families
+would still earn its own file; neither of these is that.</p>
+<p>2. Input. Replaced the hand-typed JS fixture with extraction
+from the template's own sample instances, wired with real <code>data-rel</code>
+edges. <code>querySelectorAll</code> even reads the six type names from the
+document's own template ids, rather than retyping them — a closer preview of
+the eventual crawler than a fixture, short of actually fetching across files.</p>
+</notebook-detail>
+  <a data-rel="leads_to" href="./rename-graph-family-to-knowledge.principle.html">the audits followed the family into one file</a>
+  <a data-rel="supports" href="./gate-on-shape-not-rate.principle.html">the data-audits convention today's four audits build on</a>
+</notebook-principle>
+</body></html>

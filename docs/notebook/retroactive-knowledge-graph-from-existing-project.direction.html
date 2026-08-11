@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Derive a knowledge graph from an existing codebase, its history and its issues</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Derive a knowledge graph from an existing codebase, its history and its issues</notebook-title>
+  <notebook-prompt>1. i think mycelium is so cool. you and your previous iterations have been doing a really good job. 2. 1 thing i was thinking about: mycelium is currently very focussed on being tools for moving a project forward. i wonder if it could also become a tool to retroactively generate a knowledge graph from an existing codebase+git history+gitlab/github issues. this is a discussion session, don't jump into implementation.</notebook-prompt>
+  <notebook-detail><p>Mycelium builds a graph while a project moves forward. This asks the
+opposite: point it at a project that already exists, read the codebase, the git
+history and the issue tracker, and build the graph after the fact.</p>
+<p>The session that raised this settled two things about scope. Derivation is an
+application of the engine, not a change to it. And the point of building the
+graph is to query it, so the target is not a report but a structure that answers
+questions later.</p>
+<p>The known cost problem: commit messages are cheap and lossy, so undocumented
+commits need a judgement on the diff itself, which does not scale over a large
+repository without some way of picking which commits are worth reading.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./code-as-derivative-of-intent.principle.html">reverse-engineering intent from code is noisy, so this derives once to bootstrap a project that has no graph</a>
+</notebook-direction>
+</body></html>

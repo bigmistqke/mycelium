@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: A graph is a cache of comprehension: small agents must ask rather than read</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>A graph is a cache of comprehension: small agents must ask rather than read</notebook-title>
+  <notebook-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23.</em></p>
+<p>The cost argument. Reading is O(agents × files) — fifty small
+agents each re-deriving the same comprehension and throwing it away. A graph is a
+<strong>cache of comprehension</strong>: pay O(files) once, query N times.</p>
+<p>The resolution of context bloat. You do not render a database
+into a prompt; you give the agent a <em>query interface</em>. That is v0's
+<a href="./query-interface-design.principle.html">the query-interface decision</a>, written in January for the package everyone had since written off
+as the abandoned first exploration.</p>
+<p>The reversal. v0 was never the wrong direction — it is the
+foundation, built first and mistaken for a false start.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./context-bloat-of-graph-serialization.practice.html">the real answer to context bloat: a query interface, not a better serialization</a>
+  <a data-rel="depends_on" href="./query-interface-design.principle.html">v0 was the foundation, mistaken for a false start</a>
+</notebook-principle>
+</body></html>

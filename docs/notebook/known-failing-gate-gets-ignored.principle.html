@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A gate known to fail teaches people to ignore it, which is field evidence against letting gaps stand</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>A gate known to fail teaches people to ignore it, which is field evidence against letting gaps stand</notebook-title>
+  <notebook-detail><p>The project that ran this methodology before kept its derivation checker out
+of the blocking gate until every count reached zero. Its reasoning: a gate known
+to fail teaches people to ignore it, and a check nobody trusts makes its silence
+ambiguous again, which is the property the whole protocol exists to remove.</p>
+<p>That runs against
+<a href="./gaps-are-ordinary-validation-errors.principle.html">a gap in
+the chain is an ordinary validation error</a>, which holds that non-zero is
+communication rather than permission and that a person may ignore it the way a
+type error does not stop code from running.</p>
+<p>One reconciliation is available and worth testing rather than assuming. There
+the checker reported for a long time before it ever gated, so reporting and
+gating were two stages. Here <code>validate</code> is one command doing both,
+which is the arrangement that decision ruled on.</p>
+<p>The weight is uneven in a way worth stating. The decision reasons from what
+this corpus already does, and the counter-evidence comes from people who lived
+with the arrangement and moved off it.</p>
+</notebook-detail>
+  <a data-rel="contradicts" href="./gaps-are-ordinary-validation-errors.principle.html">field evidence that people stop reading a gate they expect to fail</a>
+</notebook-principle>
+</body></html>

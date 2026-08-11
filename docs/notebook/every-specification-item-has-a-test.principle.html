@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Every specification item has a test, so nothing marks a behaviour as exempt</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>Every specification item has a test, so nothing marks a behaviour as exempt</notebook-title>
+  <notebook-detail><p>The design carried a marking that split a behaviour into a requirement, which
+owed a test, and context, which did not. RFC 2119 keywords in the prose or an
+attribute on the element were the two forms it could take. Neither survives.</p>
+<p>The argument for the split was that a requirement is a promise holding across
+refactors, while context describes internals a refactor may invalidate. That
+reasons from the code level, outside the chain. Within the chain nothing below
+may make something above false, so an implementation contradicting a behaviour is
+the finding travelling up rather than an allowed drift.</p>
+<p>So every behaviour is a claim about the system and owes evidence, which is the
+same sentence Grounded already says about an axiom with nothing under it.
+Exhaustive and Cited stop being two audits over a filtered set and become total
+in both directions: every behaviour has a test, every test has a behaviour.</p>
+<p>RFC 2119 also came from a situation that does not exist here. Its keywords
+encode optionality for independent implementers of one standard, where several
+parties build to a single document and some features stay negotiable. A
+specification here describes one system, this one.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./methodology-in-our-own-codebase.direction.html">what a specification lists, which the two coverage audits run over</a>
+</notebook-principle>
+</body></html>

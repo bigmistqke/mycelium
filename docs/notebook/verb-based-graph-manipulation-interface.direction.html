@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Have the AI issue graph verbs like add_node and wire instead of reading and writing full JSON</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Have the AI issue graph verbs like add_node and wire instead of reading and writing full JSON</notebook-title>
+  <notebook-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23.</em></p>
+<p>Graph manipulation interface: instead of the AI reading and writing full JSON, the AI issues commands — <code>add_node()</code>, <code>wire()</code>, <code>delete()</code>. The tool maintains graph state; the AI speaks in verbs, not nouns.</p>
+<p>Solves context bloat (small commands rather than a full dump) and the training mismatch (“wire X to Y” is natural language).</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./context-bloat-of-graph-serialization.practice.html">proposes commands over the graph as the fix for the bloat measured here</a>
+  <a data-rel="supports" href="./graph-as-cache-of-comprehension.principle.html">an early form of the same answer: query and command the graph rather than dump it</a>
+</notebook-direction>
+</body></html>

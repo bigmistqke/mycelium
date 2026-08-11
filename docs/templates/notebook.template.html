@@ -9,14 +9,17 @@
 </head>
 <body>
 
-<h1>Template: notebook-observation, notebook-research, notebook-experiment</h1>
+<h1>Template: notebook-principle, notebook-practice, notebook-direction, notebook-research,
+  notebook-experiment</h1>
 <div class="meta">
-  <div><b>Node types:</b> <code>notebook-observation</code>, <code>notebook-research</code>,
+  <div><b>Node types:</b> <code>notebook-principle</code>, <code>notebook-practice</code>,
+    <code>notebook-direction</code>, <code>notebook-research</code>,
     <code>notebook-experiment</code></div>
   <div><b>File naming:</b> <code>docs/notebook/&lt;slug&gt;.&lt;type&gt;.html</code>, with no date on it</div>
   <div><b>Purpose:</b> the thinking that underpins the code, before any of it hardens into a canon claim</div>
   <div><b>Design:</b> <a href="../specs/2026-08-09-notebook-replaces-the-knowledge-graph.spec.html">the spec
-    for this family</a></div>
+    for this family</a>, and <a href="../specs/2026-08-11-three-inward-notebook-types.spec.html">the three
+    inward types that replaced the observation</a></div>
   <div><b>Styling:</b> <code>./notebook.template.css</code>, plus the shared <code>../theme.css</code></div>
 </div>
 
@@ -32,11 +35,17 @@
   it came from is the symptom this family answers.
 </p>
 
-<h2>Three types, by where the knowledge came from</h2>
+<h2>Five types, by where the knowledge came from</h2>
 <p>
-  A <code>notebook-observation</code> comes from thinking. A <code>notebook-research</code> comes from
-  someone else, so it holds prior art and external work. A <code>notebook-experiment</code> comes from
-  running something, and it carries the code that ran.
+  A <code>notebook-research</code> comes from someone else, so it holds prior art and external work. A
+  <code>notebook-experiment</code> comes from running something, and it carries the code that ran. The other
+  three divide what arrives from thinking.
+</p>
+<p>
+  A <code>notebook-practice</code> arrives from the ground pushing back while somebody works, so it holds
+  what a tool does when you lean on it and how the work itself goes. A <code>notebook-principle</code>
+  arrives from stepping back over what accumulated, and states a rule that outlives the file that taught it.
+  A <code>notebook-direction</code> arrives from wanting the work somewhere it does not currently go.
 </p>
 <p>
   Provenance is the axis because it does not move. What an entry is about drifts as a project's vocabulary
@@ -44,19 +53,42 @@
   from stays fixed.
 </p>
 <p>
-  The first two types share one shape, since nothing about their fields differs. The third adds the three
+  None of the three inward tests names a destination. Sorting entries by what each could be promoted into is
+  what an earlier draft of this family got wrong, and grounding already carries that relation as a link an
+  axiom writes for itself.
+</p>
+<p>
+  Four of the five share one shape, since nothing about their fields differs. The experiment adds the three
   fields an instrument needs.
 </p>
 
 <h2>Shape</h2>
-<template id="notebook-observation">
-  <notebook-observation>
+<template id="notebook-principle">
+  <notebook-principle>
     <notebook-title required></notebook-title>
     <notebook-tag repeatable></notebook-tag>
     <notebook-prompt repeatable></notebook-prompt>
     <notebook-detail markup></notebook-detail>
     <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
-  </notebook-observation>
+  </notebook-principle>
+</template>
+<template id="notebook-practice">
+  <notebook-practice>
+    <notebook-title required></notebook-title>
+    <notebook-tag repeatable></notebook-tag>
+    <notebook-prompt repeatable></notebook-prompt>
+    <notebook-detail markup></notebook-detail>
+    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+  </notebook-practice>
+</template>
+<template id="notebook-direction">
+  <notebook-direction>
+    <notebook-title required></notebook-title>
+    <notebook-tag repeatable></notebook-tag>
+    <notebook-prompt repeatable></notebook-prompt>
+    <notebook-detail markup></notebook-detail>
+    <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
+  </notebook-direction>
 </template>
 <template id="notebook-research">
   <notebook-research>
@@ -79,13 +111,13 @@
     <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </notebook-experiment>
 </template>
-<pre><code>&lt;notebook-observation&gt;
+<pre><code>&lt;notebook-practice&gt;
   &lt;notebook-title&gt;&hellip;&lt;/notebook-title&gt;
   &lt;notebook-tag&gt;&hellip;&lt;/notebook-tag&gt;
   &lt;notebook-prompt&gt;&hellip; somebody's exact words &hellip;&lt;/notebook-prompt&gt;
   &lt;notebook-detail&gt;&hellip; any markup &hellip;&lt;/notebook-detail&gt;
   &lt;a data-rel="supports" href="&hellip;"&gt;&hellip;&lt;/a&gt;
-&lt;/notebook-observation&gt;</code></pre>
+&lt;/notebook-practice&gt;</code></pre>
 
 <h2>What an entry no longer carries</h2>
 <p>
@@ -147,20 +179,36 @@
 <div class="worked-example">
   <h4>A worked example</h4>
   <p>
-    Three sample instances, checked by <code>template.template.html</code>'s generic validator against the
+    Five sample instances, checked by <code>template.template.html</code>'s generic validator against the
     attributes on the <code>&lt;template&gt;</code> elements above. <code>mycelium validate</code> finds them
     by their <code>data-conforms-to</code> the same way it finds every instance, so this file fails if any of
     them stops conforming.
   </p>
 
   <div id="sample-instance">
-    <notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+    <notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
       <notebook-title>A gate known to fail teaches people to ignore it</notebook-title>
       <notebook-tag>gates</notebook-tag>
       <notebook-detail>
         <p>Field evidence against letting a chain carry a known gap.</p>
       </notebook-detail>
-    </notebook-observation>
+    </notebook-principle>
+
+    <notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+      <notebook-title>TypeScript reads only the last JSDoc block before a declaration</notebook-title>
+      <notebook-tag>harness</notebook-tag>
+      <notebook-detail>
+        <p>What the parser does underneath, learned by stacking four blocks and losing three.</p>
+      </notebook-detail>
+    </notebook-practice>
+
+    <notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+      <notebook-title>Read a document with a parser, never with a pattern</notebook-title>
+      <notebook-tag>naming</notebook-tag>
+      <notebook-detail>
+        <p>Where the work should go, before anything holds it to that.</p>
+      </notebook-detail>
+    </notebook-direction>
 
     <notebook-research data-conforms-to="../templates/notebook.template.html#notebook-research">
       <notebook-title>Unison identifies code by the hash of its AST, not by name</notebook-title>
@@ -203,8 +251,13 @@
   }
 
   const DIR = "notebook"
-  const TYPES = ["observation", "research", "experiment"]
+  const TYPES = ["principle", "practice", "direction", "research", "experiment"]
   const TAGS = TYPES.map((type) => `notebook-${type}`)
+  /**
+   * What a filename carries beyond the slug, built from the type list so a
+   * sixth type needs no second edit here.
+   */
+  const SUFFIX = new RegExp(`\\.(${TYPES.join("|")})\\.html$`)
 
   /**
    * Every directory this corpus has lived in, newest first.
@@ -231,14 +284,20 @@
   /**
    * Create a notebook entry.
    *
-   *   mycelium notebook add <observation|research|experiment> --title "…"
-   *     [--tag NAME]… [--prompt "…" | --prompt -] [--detail "…" | --detail -]
-   *     [--question "…"] [--file <slug>]
+   *   mycelium notebook add <principle|practice|direction|research|experiment>
+   *     --title "…" [--tag NAME]… [--prompt "…" | --prompt -]
+   *     [--detail "…" | --detail -] [--question "…"] [--file <slug>]
    *
-   * The type says where the knowledge came from: observation from thinking,
-   * research from someone else, experiment from running something. Nothing
-   * else distinguishes them, and an entry never changes type — a thought that
-   * arrived one way did not arrive the other.
+   * The type says where the knowledge came from: research from someone else,
+   * experiment from running something, and the other three from thinking. A
+   * practice arrives from the ground pushing back while somebody works, a
+   * principle from stepping back over what accumulated, a direction from
+   * wanting the work somewhere it does not currently go.
+   *
+   * Nothing else distinguishes them, and an entry never changes type — a
+   * thought that arrived one way did not arrive the other. None of the three
+   * tests names what an entry could become, since sorting by that is promotion
+   * in disguise and grounding already carries the relation as a link.
    *
    * --file is a slug with no date on it, because an entry accretes and git
    * holds when it first appeared. A slug carrying a date is rejected rather
@@ -492,7 +551,7 @@
     const counts = new Map()
     const pages = new Set()
     for (const { path, doc } of fs.list(DIR)) {
-      pages.add(path.slice(DIR.length + 1).replace(/\.(observation|research|experiment)\.html$/, ""))
+      pages.add(path.slice(DIR.length + 1).replace(SUFFIX, ""))
       for (const el of Array.from(doc.querySelectorAll("notebook-tag"))) {
         const name = (el.textContent ?? "").trim()
         if (name) counts.set(name, (counts.get(name) ?? 0) + 1)
@@ -582,10 +641,10 @@
    * An experiment's question, the reading it last returned, and the script
    * between them.
    *
-   * Only one of the three types carries these, so an observation gets no entry
-   * here at all rather than three empty strings. The page then asks whether it
-   * has a question rather than whether the question is blank, and the payload
-   * stays the size of the corpus rather than three times it.
+   * Only one of the five types carries these, so every other entry gets no
+   * entry here at all rather than three empty strings. The page then asks
+   * whether it has a question rather than whether the question is blank, and
+   * the payload stays the size of the corpus rather than three times it.
    */
   function instrumentOf(documents) {
     const found = new Map()
@@ -749,9 +808,9 @@
   Conformance is a <code>data-conforms-to</code> attribute on the element making the claim, the same as every
   other family here.
 </p>
-<pre><code>&lt;notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation"&gt;
+<pre><code>&lt;notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice"&gt;
   &hellip;
-&lt;/notebook-observation&gt;</code></pre>
+&lt;/notebook-practice&gt;</code></pre>
 
 </body>
 </html>

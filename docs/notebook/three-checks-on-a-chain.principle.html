@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Three checks keep an intent-to-implementation chain honest: grounded, covered, entailed</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>Three checks keep an intent-to-implementation chain honest: grounded, covered, entailed</notebook-title>
+  <notebook-detail><p>An axiom is checked against the code. A chain is checked against itself, and the
+question is whether it is intact. Three checks fall out, and two are cheap.</p>
+<h3>Grounded</h3>
+<p>Every intent reaches something real. An intent with nothing under it is
+aspiration: stated, believed, never built. Mechanical to detect.</p>
+<h3>Covered</h3>
+<p>Every piece of implementation traces up to some intent. Code with no reachable
+reason is the rot from
+<a href="./history-holds-what-code-cannot.principle.html">scars and rot</a>, now with a
+definition instead of a feeling.</p>
+<p>Also mechanical, and harsh in practice. Most codebases would light up.</p>
+<h3>Entailed</h3>
+<p>Each step follows from the one above it. The intent was X, the thing someone
+built was Y, and Y does not get you X.</p>
+<p>That is where bad architecture lives. Not in code that breaks a rule, but in
+code that faithfully implements a step which does not serve its parent. No type
+system catches it. It is a judgement, so it is the expensive one, and the only one
+worth a model.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./architecture-is-a-depth-slice-of-the-intent-graph.principle.html">what can be checked about a chain once architecture is a slice through one</a>
+  <a data-rel="depends_on" href="./v0-lacks-upward-links-to-intent.direction.html">the upward implements edges these three checks would run over</a>
+  <a data-rel="supports" href="./v4-for-rg-derivation-methodology.direction.html">the three checks that keep an axiom-to-implementation chain honest</a>
+</notebook-principle>
+</body></html>

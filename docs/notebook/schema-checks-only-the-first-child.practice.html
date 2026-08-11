@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: The schema permits repeated children and checks only the first, so most of every plan goes unvalidated</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>The schema permits repeated children and checks only the first, so most of every plan goes unvalidated</notebook-title>
+  <notebook-detail><p>A template declares a repeated child once, and
+<a href="../commands/validate.command.html">the validator</a> adds that tag to the
+allowed list, so every occurrence passes the unexpected-child test. It then reads
+the child with a find, which returns the first and drops the rest.</p>
+<p>Eleven plan documents hold between three and seven <code>plan-task</code>
+elements each. One of each faces a check. Around thirty have never faced one, and
+neither have the steps inside them.</p>
+<p>Nothing reported this, because a missing check produces silence rather than a
+failure. The audits all pass and always did.</p>
+<p>The figure spike hit the same wall from the other side, with twelve nodes and
+thirteen edges in one graph and only the first of each reachable by a rule.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./schema-checks-lists.direction.html">the gap this work closes</a>
+</notebook-practice>
+</body></html>

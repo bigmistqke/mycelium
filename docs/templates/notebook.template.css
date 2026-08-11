@@ -3,10 +3,12 @@
    scoped under each type so this file's rules can never leak onto another
    template's same-named field tags.
 
-   Three types share one shape, because they differ by where the knowledge came
-   from rather than by what they hold. So the rules below list all three
+   Five types share one shape, because they differ by where the knowledge came
+   from rather than by what they hold. So the rules below list all five
    selectors rather than styling a common ancestor that does not exist. */
-notebook-observation,
+notebook-principle,
+notebook-practice,
+notebook-direction,
 notebook-research,
 notebook-experiment {
   display: block;
@@ -16,7 +18,9 @@ notebook-experiment {
   background: var(--code-bg);
   margin: 1.25rem 0;
 }
-notebook-observation::before,
+notebook-principle::before,
+notebook-practice::before,
+notebook-direction::before,
 notebook-research::before,
 notebook-experiment::before {
   display: block;
@@ -26,7 +30,9 @@ notebook-experiment::before {
   letter-spacing: 0.05em;
   margin-bottom: 0.35rem;
 }
-notebook-observation::before { content: "observation — from thinking"; }
+notebook-principle::before { content: "principle — from stepping back"; }
+notebook-practice::before { content: "practice — from the ground pushing back"; }
+notebook-direction::before { content: "direction — from wanting the work elsewhere"; }
 notebook-research::before { content: "research — from someone else"; }
 notebook-experiment::before { content: "experiment — from running something"; }
 

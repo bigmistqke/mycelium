@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A history gives back what got built and removed, not what nobody ever built</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>A history gives back what got built and removed, not what nobody ever built</notebook-title>
+  <notebook-detail><p>Three abandoned designs came back cleanly from pulse's commits: the Awaitable
+model, the pending brand, and signal write-back. All three shipped and then went
+away, so each left a trail for a reader to follow.</p>
+<p>The design records hold a bigger decision that no reading found. pulse chose not
+to build a transitions runtime at all, having weighed three ways other libraries do
+it and turned down each one.</p>
+<p>Nobody ever wrote that code, so it left no commits. A reader of the history
+cannot see a road the project declined to take.</p>
+<p>This narrows <a href="./history-holds-what-code-cannot.principle.html">the claim that
+a history holds the dead alternatives</a>. It holds the ones somebody built. The ones
+that died in an argument live only in prose.</p>
+</notebook-detail>
+  <a data-rel="contradicts" href="./history-holds-what-code-cannot.principle.html">only the built-then-removed alternatives come back; the ones nobody built leave nothing</a>
+  <a data-rel="supports" href="./run-three-readings-over-pulse.practice.html">measured against the held-out records</a>
+</notebook-principle>
+</body></html>

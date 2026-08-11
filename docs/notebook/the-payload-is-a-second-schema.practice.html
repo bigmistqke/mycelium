@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A drawing's payload is a second schema, and nothing checks it against the first</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>A drawing's payload is a second schema, and nothing checks it against the first</notebook-title>
+  <notebook-tag>notebook</notebook-tag>
+  <notebook-tag>canon</notebook-tag>
+  <notebook-prompt>currently 'experiments' do not display a lot of information in the side overlay, it's not very informative. the current experiments do also lack any context. probably needs a -detail like other node-types do</notebook-prompt>
+  <notebook-detail><p>The notebook declares three types. Two share a shape, and the third adds the
+three fields an instrument needs: a question, the script, and the reading that
+script last returned. The template says so, and the validator enforces it.</p>
+<p>The drawing carried none of them. Its payload named five fields — address,
+title, kind, prompt, detail — so an experiment reached the page as a title and
+nothing else, however carefully somebody had written it. The schema and the
+payload are two lists of fields that have to agree, and only one of them has a
+validator.</p>
+<p>Nothing failed. Every audit passed on both sides of the gap, because each
+list is internally consistent and no check reads them against each other. The
+symptom surfaced only when somebody opened the pane and found it empty.</p>
+<p>The same shape will recur on the next field any type gains. A payload built
+by naming fields cannot notice one it was never told about, so the gap is
+structural rather than an oversight — closing it means deriving the payload from
+the template, or checking one against the other.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./shallow-clone-collapses-the-drawing.practice.html">a second way the drawing went wrong while every check stayed green</a>
+</notebook-practice>
+</body></html>

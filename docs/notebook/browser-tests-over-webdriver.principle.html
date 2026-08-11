@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Drive browser tests with W3C WebDriver, and let the CLI fetch its own chromedriver</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>Drive browser tests with W3C WebDriver, and let the CLI fetch its own chromedriver</notebook-title>
+  <notebook-detail><p>
+  A preference for web standards over a proprietary protocol decided this, and a
+  probe then showed it costs nothing. The same measurements came back identical
+  over WebDriver and over the devtools protocol, to the last decimal: a grid of
+  <code>70.5625px 123.109px 123.109px 123.109px 123.109px</code>, thirteen wires,
+  and a back edge at x=60.28.
+</p>
+<p>
+  WebDriver needs no client library. Six <code>fetch</code> calls cover a whole run:
+  <code>POST /session</code>, <code>POST /session/{id}/timeouts</code>,
+  <code>POST /session/{id}/url</code>,
+  <code>POST /session/{id}/execute/async</code>,
+  <code>GET /session/{id}/element/{eid}/screenshot</code> and
+  <code>DELETE /session/{id}</code>. The devtools route wanted a WebSocket and
+  fifteen lines correlating replies to requests, so the standard is also the smaller
+  of the two.
+</p>
+<p>
+  <code>execute/async</code> carries the deadline. The injected script polls and
+  calls back once the page settles, and chromedriver enforces the script timeout, so
+  nothing on the Node side runs a timer of its own.
+</p>
+<p>
+  The driver provisions itself. Chrome for Testing publishes a chromedriver per
+  platform as a plain zip, one per build number that an installed Chrome reports.
+  Chrome 150.0.7871.189 here matched a 150.0.7871.124 driver. Node's fetch writes no
+  <code>com.apple.quarantine</code> attribute, so the binary runs immediately and
+  macOS asks nothing.
+</p>
+<p>
+  Element screenshots clip to the viewport. Chromedriver scrolls an element into
+  view and captures the part that fits, so a figure taller than the window loses its
+  lower rows. A run that wants the whole figure sets
+  <code>POST /session/{id}/window/rect</code> first.
+</p>
+<p>
+  The cost is one binary that npm does not manage, plus a cache directory to keep it
+  in. What it buys, besides the standard itself, is a route to Firefox that the
+  devtools protocol never had.
+</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./test-document-browser-renders-it.principle.html">which protocol opens the page</a>
+</notebook-principle>
+</body></html>

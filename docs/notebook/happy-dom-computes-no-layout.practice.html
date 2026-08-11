@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: happy-dom computes no layout, so no audit can reach the figure engine's geometry</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>happy-dom computes no layout, so no audit can reach the figure engine's geometry</notebook-title>
+  <notebook-detail><p>
+  The open question on this branch was whether the figure layout engine should be
+  tested by an audit collocated in <code>figure.template.html</code>, or by a new
+  <code>mycelium/test</code> script type. A probe settles part of it: neither can
+  measure anything.
+</p>
+<p>
+  <code>validate</code> parses documents with happy-dom (<code>src/utils.ts</code>).
+  happy-dom implements the DOM but not CSS layout. Given a div with
+  <code>position:absolute; top:10px; left:20px; width:120px; height:40px</code>,
+  <code>getBoundingClientRect()</code> returns
+  <code>{top:0, left:0, width:0, height:0}</code>.
+</p>
+<p>
+  Everything the engine decides — which edges share a connected component, how many
+  lanes a gap needs, which lane sits nearest the source, where a back edge's gutter
+  runs — is computed from measured boxes. Under a zero-rect DOM those inputs are all
+  identical, so any check running there passes on every figure and fails on none.
+</p>
+<p>
+  This does not touch the two audits already in the template. Both read the document
+  rather than its rendering: <code>figure-edges-resolve</code> checks that an edge
+  names cells that exist, and <code>figure-edges-run-the-way-they-claim</code> checks
+  a declared back edge against the cell order. Those are corpus claims, and they work.
+  The gap is the engine's own arithmetic, which is not a corpus claim at all.
+</p>
+<p>
+  So the choice is not audit against test. Either the engine gives up its decisions
+  as a function taking boxes and returning lanes, which synthetic boxes can then
+  drive under happy-dom, or a real browser comes in and tests the drawing itself.
+  The first is reachable from here. The second is new machinery, and nothing else in
+  the repository needs it yet.
+</p>
+</notebook-detail>
+  <a data-rel="supports" href="./figure-layout-engine.practice.html">constrains how the engine can be tested at all</a>
+  <a data-rel="supports" href="./test-document-browser-renders-it.principle.html">why happy-dom cannot be the venue for a layout test</a>
+</notebook-practice>
+</body></html>

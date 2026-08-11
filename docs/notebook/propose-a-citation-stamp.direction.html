@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Ask git whether a citation is stale, rather than stamping one by hand</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Ask git whether a citation is stale, rather than stamping one by hand</notebook-title>
+  <notebook-detail><p>A citation resolves for as long as its target exists and says nothing about
+whether the two still agree. Both the citation design and the fold admit this
+from opposite ends: a tag naming a behaviour the code does not implement
+resolves fine, and rewording a claim keeps every citation to it resolving.</p>
+<p>The first shape of this proposed a digest of the declaration carried in the
+tag, so a check could report every citation whose code had moved since somebody
+read the two together. That is a second copy of a fact git already stores.
+<a href="../canon/root.canon.html#derive-do-not-maintain">Deriving rather than
+maintaining</a> rules it out for the same reason the graph stores no reverse
+index: a hand-kept copy rots, and a stale one looks exactly like a fresh
+one.</p>
+<p>Git holds both dates already. A citation is stale when the declaration
+changed more recently than the claim it cites, and following a declaration
+through edits and renames is what <code>git log -L</code> does. The claim's own
+span in its canon document gets followed the same way.</p>
+<p>That comes out symmetric, which the digest never was. Editing the prose and
+leaving the code alone flags the pair too, which is the reworded-behaviour
+problem the fold left open.</p>
+<p>What git cannot see is confirmation. Changing code and leaving prose alone
+reads the same whether somebody checked or never looked. A stamp would force the
+answer, and that is the friction earlier rationale systems got routed around —
+worst on the large declarations that change most, where the signal is already
+weakest. Directing attention is the part worth having.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./fold-test-family-into-canon.direction.html">the citation layer this would strengthen</a>
+</notebook-direction>
+</body></html>

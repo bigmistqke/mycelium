@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Information goes up, constraints go down</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>Information goes up, constraints go down</notebook-title>
+  <notebook-detail><p>The two directions of the chain carry different cargo, and naming that
+settles which passes are legitimate. Constraints travel down: an axiom settles
+what a specification may say, and a specification settles what a test checks.
+Information travels up: an implementation, a test, or a bug reports what is
+actually there, and that reaches the layer above as evidence.</p>
+<p>So deriving axioms from an existing codebase is not the chain run backwards.
+It is the upward direction doing its job, and it is the only direction available
+on a project that is already running.</p>
+<p>An abstraction cannot cover a complexity it has never met. A specification
+written from a vacuum states what somebody guessed a subsystem promises, and the
+guess is not made better by arriving first. Implementation and the complexity it
+ran into are what inform an axiom worth writing, which is why the practice
+alternates rather than starting at the top.</p>
+<p>The rule this gives for reading a thin spot: an axiom reached by one
+specification is information, not a construction artifact. It says the corpus
+exercises little of what that principle governs, and it names where to look
+next.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./findings-travel-upward.principle.html">what each direction carries, and why the upward one is not a fallback</a>
+</notebook-principle>
+</body></html>

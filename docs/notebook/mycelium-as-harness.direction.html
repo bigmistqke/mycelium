@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Mycelium as the harness, not a tool the harness drives, is the automation side of an unsettled argument</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Mycelium as the harness, not a tool the harness drives, is the automation side of an unsettled argument</notebook-title>
+  <notebook-detail><blockquote>
+  <p>
+    right now mycelium is a tool that claude uses and we can introduce hooks/skills to try to
+    reenforce it -&gt; i wonder if mycelium could at some point become the harness instead: becomes
+    the interface between llm and human, or maybe even chain-of-thought becoming the knowledge-graph
+  </p>
+</blockquote>
+<p>
+  Mycelium is a tool an agent is asked to use, and every mechanism for making that happen sits
+  outside it: a hook, a skill, prose in <code>CLAUDE.md</code>. The question is whether it could be
+  the harness instead, so capture is not a separate act that can be skipped.
+</p>
+<h3>This lands on an edge the graph already marks as contested</h3>
+<p>
+  <a href="./automation-kills-maintenance-burden.principle.html">Automation kills the
+  maintenance burden</a> and
+  <a href="./capture-cost-killed-rationale-systems.research.html">capture cost is what
+  killed prior rationale systems</a> contradict each other, and have since January with no outcome
+  on either. This is the strong form of the first: not sync between two representations, but no
+  second representation at all.
+</p>
+<h3>What argues for it</h3>
+<p>
+  Every failure on 2026-07-31 was the harness deciding what got done, which is the claim
+  <a href="./harness-manufactures-the-clutter.practice.html">the harness manufactures
+  the clutter</a> already makes. <code>unlink</code> existed and was invisible, so a session
+  rebuilt a node instead of using it. The command list in <code>CLAUDE.md</code> went stale twice in
+  one day. Someone wrote a dictionary rule that duplicated an audit already gating the build. Logging
+  happened three times only after a person asked for it.
+</p>
+<h3>Two things the strong form has to answer</h3>
+<p>
+  Chain of thought is not a decision graph. It is exploratory, repetitive and
+  mostly wrong on the way to being right. The session that prompted this produced roughly
+  twenty-five nodes from a great deal of reasoning, and the discarding is where the value was.
+  </p>
+<p>
+  <a href="./container-per-fact.principle.html">A node carries a claim, not an
+  incident</a>, and raw reasoning is all incident. Transcribing it reproduces what made the earlier
+  log unusable, which is why
+  <a href="./link-do-not-tag.principle.html">the import rule</a> kept 60 nodes of 400.
+</p>
+<p>
+  So the question is not whether capture can be free. It is what the derived layer looks like once
+  it is. At zero capture cost, selection is the scarce thing and every design decision moves to the
+  read path, which is the direction
+  <a href="./fix-incentives-before-guardrails.direction.html">fix the read path first</a>
+  already chose.
+</p>
+<p>
+  A single system has nothing outside it to catch its own bias. Today's
+  distortions were visible because two systems disagreed: the command list against the tool, a
+  dictionary rule against an audit. Something that is both the harness and the record loses that,
+  and the claim it would be losing it against is precisely that the bias is large.
+</p>
+</notebook-detail>
+  <a data-rel="supports" href="./automation-kills-maintenance-burden.principle.html">the strong form of it: no second representation, not sync between two</a>
+  <a data-rel="contradicts" href="./capture-cost-killed-rationale-systems.research.html">capture cost is the thing this proposes to remove rather than pay</a>
+  <a data-rel="depends_on" href="./harness-manufactures-the-clutter.practice.html">the finding that makes the harness the place to change</a>
+  <a data-rel="depends_on" href="./container-per-fact.principle.html">why transcribed reasoning is not a graph</a>
+</notebook-direction>
+</body></html>

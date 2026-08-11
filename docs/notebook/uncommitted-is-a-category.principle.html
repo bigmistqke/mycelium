@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: A declaration naming no behaviour is uncommitted, counted rather than failed</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>A declaration naming no behaviour is uncommitted, counted rather than failed</notebook-title>
+  <notebook-detail><p>An earlier draft made a declaration owe a citation and failed the ones without.
+Two declarations in the first file tagged showed why that overreaches.
+<code>MODEL</code> picks which model to ask and could pick another tomorrow, and
+<code>Verdict</code> declares a shape that promises nothing on its own.</p>
+<p>Exempting them by kind hides them, and forcing a behaviour on them invents a
+promise nobody made. A test for <q>the judge runs on this model</q> goes red when
+somebody edits the line and never catches a mistake.</p>
+<p>So the absence becomes a category rather than an error. The check counts what
+names a claim and what does not, and prints both. A typed language works the same
+way: <code>any</code> is legal, and the point is that it shows.</p>
+<p>The ratio is what the design exists to move. Counting uncommitted code makes it
+visible, where a rule exempting it by kind would leave the same code invisible and
+the number flattering.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./behaviour-to-implementation-citation.direction.html">the goal this shapes</a>
+</notebook-principle>
+</body></html>

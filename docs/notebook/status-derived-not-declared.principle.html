@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Composition makes decision status derived rather than declared</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>Composition makes decision status derived rather than declared</notebook-title>
+  <notebook-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23.</em></p>
+<p>Claims bottom out in tests, so status can be computed instead of stored:</p>
+<ul>
+  <li>Tests exist and pass → the decision is <strong>live</strong>.</li>
+  <li>Tests gone because the constrained code no longer exists → the decision
+  <strong>auto-retires</strong>.</li>
+  <li>New claims contradict old claims → <strong>superseded</strong>, with the
+  exact colliding claim identified.</li>
+</ul>
+<p>Same trick as a materialized view over an event log, and as deriving an AST
+from dataflow rather than hand-authoring it: <strong>don't store it, derive it
+from the layer below.</strong></p>
+<p>It solves metadata maintenance by eliminating the metadata.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./pending-decisions-are-abandonment-not-rot.principle.html">the retirement gap is what derived status closes</a>
+</notebook-principle>
+</body></html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: A rule and a guide are two types, so the label cannot disagree with the mechanism</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>A rule and a guide are two types, so the label cannot disagree with the mechanism</notebook-title>
+  <notebook-detail><p>
+  A rule that gates and guidance a person applies are different things, and reading a directory of
+  both told you nothing about which was which. The obvious fix, a directory per kind, would have
+  restated in the filesystem what
+  <a href="./derive-enforceability-from-check.principle.html">derive enforceability from
+  the check</a> had just decided to derive: a file in <code>rules/</code> with no script would be
+  the same disagreement the deleted <code>language-checkable</code> field allowed.
+</p>
+<p>
+  Two types instead. <code>language-rule</code> declares <code>&lt;script required&gt;</code> and
+  <code>language-guide</code> does not, so the label and the mechanism cannot come apart: a rule
+  with no check fails its own template and the validator blocks it. The directory then follows
+  the type, the way <code>terms/</code> and <code>rules/</code> already do, and carries no claim of
+  its own.
+</p>
+<p>
+  This is why the earlier objection does not apply. Declaring something a machine can check is
+  unsafe when nothing verifies the claim. Declaring a type whose schema requires the check is the
+  verification.
+</p>
+<p>
+  The guard runs one way. The schema can require a script on a rule and cannot forbid one on a
+  guide, because the closed-field rule inspects <code>dictionary-*</code> children and a script is
+  not one. That is the attribute gap left open earlier today, and the audit covers it: a guide
+  carrying a check is reported, since it would be enforcing something while filed as guidance.
+</p>
+<p>
+  Thirteen of the fourteen rules became guides, which is the honest count of how much of this
+  dictionary is enforced. One rule carries a check.
+</p>
+</notebook-detail>
+  <a data-rel="supports" href="./derive-enforceability-from-check.principle.html">makes the derivation structural rather than a convention</a>
+</notebook-principle>
+</body></html>

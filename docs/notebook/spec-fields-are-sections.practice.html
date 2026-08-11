@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Spec template fields are named sections, not a three-field header</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>Spec template fields are named sections, not a three-field header</notebook-title>
+  <notebook-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23.</em></p>
+<p>Queryability is bounded by tag membership, not by
+structured-fields-versus-prose. A container tag can hold arbitrary
+freeform content and still be addressable by tag name across every instance.</p>
+<p>The first spec template declared a three-field header (title, status, date)
+and left the rest of a design document as untagged prose, so almost nothing in a
+spec was actually queryable.</p>
+<p>Revised to declare named sections inside the root: <code>problem</code> and
+<code>design</code> required, <code>out-of-scope</code> and
+<code>open-questions</code> optional — and optional means <em>omitted</em> rather
+than present-but-empty. Each section still holds whatever content a given design
+needs.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./write-template-series.practice.html">the first correction in the template series: sections, not a header</a>
+</notebook-practice>
+</body></html>

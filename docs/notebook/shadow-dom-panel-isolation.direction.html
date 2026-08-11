@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: Use Shadow DOM on a new panel-wrapper custom element for per-panel style isolation between opened documents, instead of iframes</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Use Shadow DOM on a new panel-wrapper custom element for per-panel style isolation between opened documents, instead of iframes</notebook-title>
+  <notebook-detail><p>Reasons: same-document DOM access lets the canvas call <code>panel.shadowRoot.querySelector('a[data-rel]')</code> and read its <code>getBoundingClientRect()</code> directly, which an iframe's separate context would not give as cleanly.</p><p>CSS custom properties still cross a shadow boundary, so panels stay themed consistently via the shared <code>theme.css</code> variables even while isolated. And every tag in this project is already deliberately hyphenated in anticipation of real Custom Elements behavior, per <code>spec.template.html</code>'s own stated reasoning.</p><p>Loading a panel means fetching the real document, parsing it with <code>DOMParser</code>, taking <code>.body.innerHTML</code>, and resolving its relative stylesheet hrefs (<code>../theme.css</code>, <code>../templates/knowledge.template.css</code>) against the source file's own URL before reinserting them into the shadow root. That is a load-time transform inside the canvas tool, not a change to the source file format.</p></notebook-detail>
+  <a data-rel="leads_to" href="./drop-html-head-body-keep-doctype-charset.direction.html">surfaced the markup-boilerplate question while discussing how a panel gets loaded</a>
+</notebook-direction>
+</body></html>

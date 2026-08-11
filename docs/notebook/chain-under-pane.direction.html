@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal: Give the chain an under pane, and make it the only route from a node to a document</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Give the chain an under pane, and make it the only route from a node to a document</notebook-title>
+  <notebook-prompt>1. Where the panel sits when the graph scrolls sideways. The page now scrolls horizontally by design, and a bottom-side panel either pins to the viewport or scrolls away with the columns. Pinning means it overlays whichever column you've scrolled to.
+2. Whether the panel is the only way to reach a document. Removing the title link makes the panel a required step for every navigation, including the ones where you already know where you're going. mm i see. maybe instead of a side bottom overlay we should have a pane? we could do an under pane? -&gt; yes, only way to reach the document</notebook-prompt>
+  <notebook-detail><p>A node's title is a link today, so following a claim means leaving the page
+and losing the selection. The reasoning a claim carries has nowhere to appear at
+all: an axiom's detail, a parent behaviour's detail and a declaration's comment
+are three things a reader wants beside the graph rather than instead of it.</p>
+<p>An overlay was the first shape and the wrong one. The graph scrolls sideways
+by design now, so a pinned overlay covers whichever column a reader scrolled to,
+and one that scrolls away stops being reachable.</p>
+<p>A pane beneath the graph avoids both. It spans the viewport, takes its own
+height, and covers nothing.</p>
+</notebook-detail>
+</notebook-direction>
+</body></html>

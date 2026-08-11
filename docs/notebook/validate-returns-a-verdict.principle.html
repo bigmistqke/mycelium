@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision: runValidate returns its verdict rather than only printing it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>runValidate returns its verdict rather than only printing it</notebook-title>
+  <notebook-detail><p>The command printed its failures and set an exit code, so the only way to
+read a verdict was to parse output or inspect a process. A case doing either is
+coupled to formatting, and a parser that quietly stops matching returns an empty
+list — which reads exactly like a clean run.</p>
+<p>That failure had already happened twice this session at the same joint, so
+the shape was familiar enough to refuse. The run hands back counts and failures
+as a value, and printing them plus failing the build is what
+<code>check</code> does with it.</p>
+<p>The cost is that a case reading the value proves nothing about the exit code,
+which is the whole of what a build reads. Two cases run the real command line
+for that, and they are the only ones that need a process.</p>
+</notebook-detail>
+</notebook-principle>
+</body></html>

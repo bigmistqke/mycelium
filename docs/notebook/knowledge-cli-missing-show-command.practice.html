@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: mycelium knowledge has no read-one-node command, only list's one-line summaries</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>mycelium knowledge has no read-one-node command, only list's one-line summaries</notebook-title>
+  <notebook-detail><p><code>mycelium knowledge</code> has no read-one-node command. <code>list</code> only prints one-line summaries — a bare <code>[+detail]</code> marker, not <code>detail</code>'s content — so the only way to actually read a node's full fields is to open the raw HTML file directly.</p>
+<p>This surfaced directly. Mid-conversation, reading nodes back required raw Bash and Read calls against <code>docs/knowledge/*.html</code> instead of any CLI command.</p>
+<p><code>add</code>, <code>link</code>, <code>update</code>, <code>list</code> and <code>generate</code> cover create, connect, mutate, enumerate and visualize. Nothing covers getting one node back in full: title, confidence, status, and especially the whole detail body.</p>
+<p>Distinct from the gaps CLAUDE.md already names as known-missing (sync/publishing, config, diff/apply) — those are about multi-user sync; this is a more basic capability that seems to have been overlooked rather than deliberately deferred.</p>
+<p>A natural fix: <code>mycelium knowledge show &lt;file&gt;</code> (or <code>get</code>), printing one node's full fields plus its outgoing edges in readable form.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./finalize-knowledge-cli.direction.html">a second, previously-overlooked gap in the same CLI surface that goal finalized: no read-one-node-back command, discovered while this session had to fall back to raw Bash/cat to read nodes</a>
+</notebook-practice>
+</body></html>

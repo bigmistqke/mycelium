@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Edges crossing the soft/rigid template boundary carry the epistemic weight</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>Edges crossing the soft/rigid template boundary carry the epistemic weight</notebook-title>
+  <notebook-detail><p>A <code>data-rel</code> edge does not care what template its target conforms
+to, so a soft knowledge-family node and a rigid proof-family node can link
+directly. The interesting part is not that they can — it is that the edge
+crossing that boundary is what carries the weight.</p>
+<p>Two directions, two meanings:</p>
+<ul>
+  <li>A <code>knowledge-decision</code> that <code>leads_to</code> a proof node is
+  a <strong>commitment</strong>. It concentrates review exactly where
+  translation-fidelity risk lives.</li>
+  <li>A failing proof emitting a <code>knowledge-observation</code> back across
+  the seam is a <strong>refutation</strong>. It surfaces a counterexample as
+  fresh low-confidence material.</li>
+</ul>
+<p>The consequence: the graph's confidence gradient becomes legible from topology
+alone, without reading any node's content.</p>
+</notebook-detail>
+</notebook-principle>
+</body></html>

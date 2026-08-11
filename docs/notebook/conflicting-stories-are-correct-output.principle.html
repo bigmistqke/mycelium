@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Conflicting stories are the right output, and the code decides between them</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>Conflicting stories are the right output, and the code decides between them</notebook-title>
+  <notebook-detail><p>A codebase holds several stories at once, and some of them conflict. A
+derivation that resolves this early is lying.</p>
+<p>First separate plural from contradictory. How data flows and how to extend this
+do not conflict. They are two projections. Keep both.</p>
+<p>Real contradiction is two claims that cannot both hold. Do not ask a person to
+settle it in the abstract. Derive checks from both and run them against the code.
+The code is the arbiter.</p>
+<p>Whichever claim the code breaks is either dead or aspirational, and that
+difference matters. The architecture a team enforces in review and the architecture
+that shipped are both real, and usually not the same.</p>
+<p>Two cases fall out, and they are the useful ones. If a claim holds in one region
+and fails in another, it is not false. You have found its boundary, usually a
+boundary in time, matching the
+<a href="./history-holds-what-code-cannot.principle.html">eras</a> the code layers
+into.</p>
+<p>So a failing check can narrow a claim instead of killing it. And if both claims
+fail in the same place, that region has no story at all. Nobody's model covers it,
+which makes it the most valuable thing the whole apparatus could point at.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./architecture-is-a-depth-slice-of-the-intent-graph.principle.html">what to do when a slice yields two claims that cannot both hold</a>
+</notebook-principle>
+</body></html>

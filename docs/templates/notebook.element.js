@@ -48,8 +48,9 @@ const days = [...new Set(notebook.nodes.map(n => dayOf(n.address)))].sort()
  * nothing about where a node belongs today.
  *
  * Walking the edges rather than the types. Ranking by type was the other
- * candidate and the counts rule it out — observations are 224 of 565, so a type
- * column would hold two fifths of the graph with its edges reaching everywhere.
+ * candidate and the counts rule it out. One type held 224 of 565 entries when
+ * somebody last counted, so its column would carry two fifths of the graph and
+ * reach everywhere.
  */
 function depthWithinDay(address, seen = new Set()) {
   if (seen.has(address)) return 0

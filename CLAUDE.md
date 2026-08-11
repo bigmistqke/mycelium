@@ -18,11 +18,13 @@ An intention — something to come back to — is not this. That belongs in the
 followup family below, which drains where the notebook accumulates. Design:
 `docs/specs/2026-08-09-notebook-replaces-the-knowledge-graph.spec.html`.
 
-### Three types, by where the knowledge came from
+### Five types, by where the knowledge came from
 
 | Type | Comes from | Holds |
 |------|------------|-------|
-| `notebook-observation` | thinking | something you noticed, at any altitude |
+| `notebook-practice` | the ground pushing back | what a tool does when you lean on it, how the work goes |
+| `notebook-principle` | stepping back over what accumulated | a rule that outlives the file that taught it |
+| `notebook-direction` | wanting the work somewhere else | a proposal, an intention, a scope |
 | `notebook-research` | someone else | prior art, external work, things read |
 | `notebook-experiment` | running something | a question, a script, and its reading |
 
@@ -30,6 +32,17 @@ Provenance is the axis because it does not move. What an entry is *about*
 drifts as the project's vocabulary shifts, and that drift is what left one
 earlier type doing five jobs across 231 nodes. An entry never changes type: a
 thought that arrived one way did not arrive the other.
+
+The first three replaced a single `notebook-observation`, which took 338 of 387
+entries within a day of arriving and so meant "everything nobody read and
+nobody ran". None of the three tests names what an entry could become: sorting
+by that is promotion in disguise, and `canon reference` already carries the
+relation as a link. Design:
+`docs/specs/2026-08-11-three-inward-notebook-types.spec.html`.
+
+A fact about the terrain is a practice. TypeScript reading only the last JSDoc
+block is not a rule the project holds and says nothing about where the work
+should go, and the ground pushing back is exactly how somebody learns it.
 
 ### The commands
 
@@ -264,7 +277,7 @@ SUCCESS into a document.
 
 `validate` cannot test the figure engine, and no audit ever will: it parses
 with happy-dom, which computes no layout, so every rect is zero. See
-`docs/notebook/happy-dom-computes-no-layout.observation.html`.
+`docs/notebook/happy-dom-computes-no-layout.practice.html`.
 
 ### The canon family: what the project holds true, and what it promises
 
@@ -342,7 +355,10 @@ that genuinely does not apply.
 ### The core rule
 
 ```
-NOTICE something        -> pnpm mycelium notebook add observation|research ...
+HIT something           -> pnpm mycelium notebook add practice ...
+STEP BACK AND SEE IT    -> pnpm mycelium notebook add principle ...
+WANT THE WORK ELSEWHERE -> pnpm mycelium notebook add direction ...
+READ SOMEBODY ELSE      -> pnpm mycelium notebook add research ...
 MEASURE something       -> pnpm mycelium notebook add experiment ...   (then run --record)
 CONNECT it              -> pnpm mycelium notebook link <from> <to> --rel ...
 SOMETHING FOR LATER     -> pnpm mycelium followup add --at <path> ...
@@ -357,7 +373,9 @@ most of them.
 
 | Trigger | Type | Example |
 |---------|------|---------|
-| You notice something worth keeping | `notebook-observation` | "A gate known to fail teaches people to ignore it" |
+| Something pushed back while you worked | `notebook-practice` | "TypeScript reads only the last JSDoc block before a declaration" |
+| You stepped back and saw a rule | `notebook-principle` | "A gate known to fail teaches people to ignore it" |
+| You want the work somewhere it does not go | `notebook-direction` | "Read a document with a parser, never with a pattern" |
 | You read something outside this project | `notebook-research` | "Unison identifies code by the hash of its AST" |
 | You measure the corpus or probe behaviour | `notebook-experiment` | "How many entries state a rule?" |
 | You settle on a rule the canon should hold | an axiom, which cites the entry it came from | |
@@ -384,15 +402,16 @@ style rule — `language-prose.ts` exempts the field for exactly that reason.
 optional fields per type; read it rather than trusting a copy here.
 
 ```html
-docs/notebook/<slug>.<type>.html   (type = observation | research | experiment)
+docs/notebook/<slug>.<type>.html
+(type = principle | practice | direction | research | experiment)
 
-<notebook-observation data-conforms-to="../templates/notebook.template.html#notebook-observation">
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
   <notebook-title>…</notebook-title>
   <notebook-tag>…</notebook-tag>
   <notebook-prompt>… somebody's exact words …</notebook-prompt>
   <notebook-detail>… any markup …</notebook-detail>
-  <a data-rel="supports" href="./other-entry.observation.html">…</a>
-</notebook-observation>
+  <a data-rel="supports" href="./other-entry.principle.html">…</a>
+</notebook-practice>
 ```
 
 ### Grounding an axiom

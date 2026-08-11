@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: A hand-placed diagram stops being a document the moment its meaning lives in coordinates</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>A hand-placed diagram stops being a document the moment its meaning lives in coordinates</notebook-title>
+  <notebook-detail><p>The first architecture diagram for
+<a href="../reports/2026-08-05-repl.report.html">the repl report</a> was inline
+markup with every box and arrow positioned by hand. It rendered well and cost three
+rounds of fixing collisions between labels and dividers.</p>
+<p>The deeper cost is that nobody can read it back. Its structure lives in x and y
+numbers, so learning what it claims means re-deriving the layout rather than
+reading a list of nodes and edges.</p>
+<p>Mermaid keeps the same picture as a document. Twelve lines name the nodes and
+the edges, a renderer decides the geometry, and changing a claim means editing a
+line rather than moving four rectangles.</p>
+<p>This is the same argument this project makes about
+<a href="./mechanism-comes-back-intent-does-not.practice.html">rationale that
+nothing can query</a>, one level down. A picture is a rendering of a structure, and
+keeping only the rendering loses the structure.</p>
+<p>One caveat against reading it too widely. A drawing whose whole point is spatial,
+such as a timeline laid out against real dates, holds information no node-and-edge
+list carries.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./derive-repl-architecture-report.practice.html">what adding the architecture diagram taught</a>
+</notebook-principle>
+</body></html>

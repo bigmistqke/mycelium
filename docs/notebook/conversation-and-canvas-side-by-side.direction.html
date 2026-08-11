@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: UI flow: conversation and canvas side by side, comments linking chat to timeline</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>UI flow: conversation and canvas side by side, comments linking chat to timeline</notebook-title>
+  <notebook-detail><p><em>Imported from the project’s earlier decision log, frozen 2026-07-23.</em></p>
+<p>Conversation and canvas sit side by side.</p>
+<ul>
+  <li>Chat carries intent and discussion with the LLM.</li>
+  <li>Canvas carries visualization and annotation.</li>
+  <li>Comments on the canvas link to chat messages.</li>
+  <li>Chat links onward to the timeline — git, and the decision log.</li>
+</ul>
+</notebook-detail>
+  <a data-rel="depends_on" href="./whiteboard-annotation-layer.direction.html">the canvas half of the split is the whiteboard annotation layer</a>
+</notebook-direction>
+</body></html>

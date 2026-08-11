@@ -477,9 +477,9 @@ function fillWhere(node) {
  * The blast radius, up top where a reader meets it before the reasoning.
  *
  * The caller writes the sentence, because the thing being counted is its own
- * vocabulary. Saying it here put behaviours into a drawing that also draws
- * goals and observations, and a reader met a word for something the graph in
- * front of them does not contain.
+ * vocabulary. Saying it here put behaviours into a drawing that draws notebook
+ * entries instead, and a reader met a word for something the graph in front of
+ * them does not contain.
  *
  * A caller with nothing worth saying says nothing, which is why an empty string
  * hides the line rather than needing a second flag.
@@ -543,8 +543,8 @@ function fillDetail(node) {
     detail.appendChild(quote)
   }
   // Only an experiment carries a question, and only an experiment gets headers.
-  // One blob of prose needs no signposting, so an observation reads exactly as
-  // it did before any of this.
+  // One blob of prose needs no signposting, so every other entry reads exactly
+  // as it did before any of this.
   const report = Boolean(node.question)
   // The title only abbreviates the question. Where the two say the same words
   // the pane says them once, since a title short enough to scan in a column of

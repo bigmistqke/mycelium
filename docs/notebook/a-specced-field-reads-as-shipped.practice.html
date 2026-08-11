@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>canon-references was designed, documented and never built, and three documents read as if it existed</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>canon-references was designed, documented and never built, and three documents read as if it existed</notebook-title>
+  <notebook-tag>canon</notebook-tag>
+  <notebook-tag>notebook</notebook-tag>
+  <notebook-prompt>we recently restructured knowledge-* to notebook-* -&gt; i want to look at axioms -&gt; we added axiom-references to ground axioms in prior discourse -&gt; can you query the notebook-graph for these
+</notebook-prompt>
+  <notebook-detail><p>The request assumed the field was live. It was not. The design sits in
+<a href="../specs/2026-08-09-notebook-replaces-the-knowledge-graph.spec.html">the
+notebook spec</a>, which argues the container out in full — no ninth relation,
+an untouched <code>depends_on</code> pattern, and <code>grounded</code> reading
+direct children so a reference cannot fake load-bearing. CLAUDE.md then
+described it in the present tense, and the followup spec cited it as a
+precedent something else could follow.</p>
+<p>None of the three touched the template. <code>canon.template.html</code>
+declared no such child, so the closed-field check would have rejected one, and
+no command could write it. Zero axioms carried a reference and nothing said so,
+because there was no gap for a check to find: an absent optional field looks
+exactly like a field nobody has filled yet.</p>
+<p>Three documents agreeing is what made this hard to see. A design doc says
+what should be, and reads the same either way. A precedent citation is the
+worse one, since it argues from the thing rather than describing it, and an
+argument from something that does not exist still sounds like an argument.</p>
+<p>The number gave it away rather than the prose. The spec counted seventeen
+ungrounded axioms; the corpus holds fifteen. The other two are markup inside
+<code>sandbox.write(...)</code> strings in test scripts, which a text search
+finds and a reader does not. A count written into prose cannot notice that it
+counted the wrong thing, which is
+<a href="./fifty-two-percent-figure-is-unreplicated.practice.html">the same
+failure as a figure nothing can re-run</a>.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./no-edges-between-the-two-graphs.practice.html">the gap this closes: the canon could not point back</a>
+  <a data-rel="supports" href="./how-many-axioms-name-where-they-came-from.experiment.html">the count that recomputes, so seventeen cannot go stale again</a>
+</notebook-practice>
+</body></html>

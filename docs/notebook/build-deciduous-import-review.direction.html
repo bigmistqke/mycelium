@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Build a per-node review surface for the 400 frozen deciduous nodes</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Build a per-node review surface for the 400 frozen deciduous nodes</notebook-title>
+  <notebook-detail><p>The import cut was settled by user call as <strong>read every node and decide
+individually</strong>, rather than applying a criterion mechanically and
+accepting the resulting number. 400 nodes is too many to adjudicate in
+conversation, so this builds a scannable review surface: every node with a
+recommended keep/drop, a one-line reason, and a per-row override.</p>
+<p>Reading all 400 produced a finding that changes the criterion.
+"Keep what git cannot tell you" is necessary but not sufficient.</p>
+<p>It keeps the
+package-manager decision and its single option, "use pnpm" — a rejection git
+genuinely does not record and that nobody will ever want. It equally keeps the
+implementation-language decision weighing TypeScript against Rust and a hybrid,
+and the community-detection comparison of Louvain, Infomap and Leiden with real
+complexity and connectivity analysis, which are foundational. Identical shape by
+the criterion, opposite value. A second filter is needed — <em>did the choice
+have consequences?</em> — and it is a judgment the criterion cannot make, which
+is precisely why per-node review is the right call here.</p>
+<p>Second finding: the spec's least-certain block is backwards.
+The spec names the 87 January vision observations as the least certain material.
+Reading them, they are among the <em>most</em> valuable in the corpus: two
+prior-art surveys covering Intentional Programming, JetBrains MPS, Unison, Alloy,
+TLA+, Hazel and Subtext, then MLIR, Nanopass, refinement types and the EE
+verification parallel — plus the analysis of why Intentional Programming never
+shipped, which is the same question this project is currently living inside. The
+genuinely low-value block is the January implementation record, not the vision
+material.</p>
+<p>Defaults encoded in the surface. Bare implementation records
+and feature-request goals default to drop, since git holds them verbatim.
+Decisions and options default to keep but are flagged <em>soft</em>, because that
+is exactly where the consequence filter has to be applied by hand. The nodes the
+v4 graph already cites are locked keeps — leaving the graph unable to
+resolve its own citations is not an option.</p>
+<p>Superseded 2026-07-30. The keep/drop axis that anchored this surface was
+replaced by
+<a href="./link-do-not-tag.principle.html">link, do not tag</a>: a node
+is imported only if something can link to it, which makes relevance a property of
+the topology rather than a per-node judgment. The surface remains useful as a
+reading view of the whole corpus.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./unify-knowledge-graph-fix-harness.practice.html">the import cut, decided per node</a>
+  <a data-rel="supports" href="./capture-cost-killed-rationale-systems.research.html">the prior-art block it cites is itself the material under review</a>
+</notebook-direction>
+</body></html>

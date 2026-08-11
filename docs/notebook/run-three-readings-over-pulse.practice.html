@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action: Run three independent readings over pulse's async commit history</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>Run three independent readings over pulse's async commit history</notebook-title>
+  <notebook-detail><p>The first pass tries the method by hand before anything automates it. Subject:
+the pulse repository, a reactive-signals library. Slice: the 78 of its 220
+code-touching commits that mention async, promises, settling or speculation.</p>
+<p>Three agents read that slice at the same time, in separate contexts, with no
+sight of each other. One read diffs and ignored the messages. One hunted
+feature-then-repair sequences. One read messages and never opened a diff.</p>
+<p>All three worked with the documents directory off limits, so the twelve decision
+records stay available as an answer key.</p>
+<p>Each returned at most ten claims, and each claim carries evidence, a confidence
+and an alternative reading. The three runs came to 175,000 tokens.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./retroactive-knowledge-graph-from-existing-project.direction.html">the first hand pass, before anything automates it</a>
+  <a data-rel="depends_on" href="./several-readings-kept-apart.principle.html">the method this pass puts to the test</a>
+</notebook-practice>
+</body></html>

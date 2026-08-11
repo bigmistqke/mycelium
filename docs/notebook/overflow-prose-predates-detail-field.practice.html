@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observation: Before knowledge-detail existed, overflow prose went into the body, outside every field</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>Before knowledge-detail existed, overflow prose went into the body, outside every field</notebook-title>
+  <notebook-detail><p>Nineteen nodes carry real prose <em>after</em> their closing
+<code>&lt;/knowledge-*&gt;</code> tag — sitting in <code>&lt;body&gt;</code>,
+inside no field at all. <strong>All nineteen are dated 2026-07-23.</strong>
+<code>knowledge-detail</code> landed the following day in <code>4738449</code>.
+Not one node written after the field existed does this.</p>
+<p>The content is real, not stray formatting.
+<code>build-shared-runtime</code>'s orphan paragraph records the spikes behind the
+decision: classic scripts and <code>data:</code> URL imports both work over
+<code>file://</code>, real ES module imports of a local sibling do not because
+browsers CORS-check module fetches and <code>file://</code> has no stable origin.
+<code>crawler-built</code>'s explains why its two audit failures are the correct
+result. That is exactly the material the graph exists to hold.</p>
+<p>It is invisible to every tool. <code>list nodes</code> does
+not show it, the audits do not see it, and the <code>[+detail]</code> marker
+reports these nodes as having no detail — which, strictly, is true.</p>
+<p>What this changes about the diagnosis. The story was that
+authors crammed findings into titles because the detail field was missing from
+the documented signature. That is right for everything after 2026-07-24.</p>
+<p>Before
+the field existed at all, the overflow went somewhere else — outside the schema.
+So the pressure to record more than a title holds is constant, and what varies is
+only where it lands: the body when there is no field, the title when there is a
+field nobody knew about. Both are the schema failing to offer a home, not an
+author failing to be disciplined.</p>
+<p>Not repaired by the current pass. No audit flags it, and
+moving nineteen nodes' body prose into <code>knowledge-detail</code> is a
+separate decision from the title and hollow-action repairs. Recorded here so it
+is not rediscovered later as a mystery.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./harness-manufactures-the-clutter.practice.html">the overflow predates the field; only its destination changed</a>
+</notebook-practice>
+</body></html>
