@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>An upload step told to ignore an empty match cannot report a stale path</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>An upload step told to ignore an empty match cannot report a stale path</notebook-title>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-detail><p>The checks workflow uploads a failing browser case's screenshot as an artifact, and it named <code>docs/tests/*.failure.png</code>. The runner writes each picture beside the document that failed. Those cases moved into the canon documents, and the path went on matching nothing. Setting <code>if-no-files-found</code> to ignore swallowed the difference, so the step went green on a red run while returning nothing.</p>
+<p>Ignoring an empty match suits the case it exists for, since most red runs fail on typecheck or validate and draw no picture at all. It cannot tell that case apart from a path pointing at a directory nobody has written to in weeks. A glob naming no directory removes the question, because <code>docs/**/*.failure.png</code> follows the documents wherever they land.</p>
+</notebook-detail>
+</notebook-practice>
+</body></html>

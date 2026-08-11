@@ -62,10 +62,17 @@ jobs:
       # A failing layout test writes a picture of the fixture that failed. That
       # picture is most of the value of testing a drawing, and it is unreachable
       # from a log, so it comes back as an artifact.
+      #
+      # The glob names no directory, because the runner writes each picture
+      # beside the document that failed and those documents move. This path
+      # named docs/tests for as long as the cases lived there, and went on
+      # matching nothing once they moved into the canon documents: with
+      # if-no-files-found set to ignore, a wrong path and a clean run look the
+      # same from here.
       - name: Keep the pictures of what failed
         if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: failed-figures
-          path: docs/tests/*.failure.png
+          path: docs/**/*.failure.png
           if-no-files-found: ignore
