@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A walk that skips dot-entries makes a dot-named corpus invisible to itself</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>A walk that skips dot-entries makes a dot-named corpus invisible to itself</notebook-title>
+  <notebook-tag>corpus</notebook-tag>
+  <notebook-tag>audit</notebook-tag>
+  <notebook-detail><p>
+  <code>walkFiles</code> steps over any entry whose name starts with a dot, which keeps
+  <code>.git</code> and <code>.claude</code> out of every audit. Rooting the corpus at
+  <code>.mycelium/</code> puts the corpus itself behind that same filter. A walk handed the directory
+  by name still works, because nothing filters the root a caller names; a walk starting one level above
+  finds nothing at all.
+</p>
+<p>
+  An audit reads through <code>AuditFs</code>, which roots one level above the corpus so a rule can
+  reach <code>src/</code>. Fourteen call sites across five documents therefore name the corpus with the
+  literal string <code>"docs"</code>. Each one returns an empty list rather than an error once the
+  directory has another name, and an audit finding nothing to check reports success.
+</p>
+<p>
+  The failure has no symptom, which is what makes it worth writing down. Every audit passes, the count
+  of checked documents drops, and nobody reads a count that has always gone up. A rename that breaks
+  loudly costs an afternoon and a rename that breaks quietly costs whatever the audits were holding.
+</p>
+<p>
+  <code>AuditFs</code> already carries <code>root</code>, and the corpus directory belongs beside it as
+  the same kind of fact. Handing an audit that name removes the literal rather than updating it, so the
+  next rename touches one line.
+</p>
+</notebook-detail>
+</notebook-practice>
+</body></html>

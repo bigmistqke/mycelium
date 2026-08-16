@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pkg.pr.new skips a package declaring itself private</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>pkg.pr.new skips a package declaring itself private</notebook-title>
+  <notebook-tag>distribution</notebook-tag>
+  <notebook-detail><p>
+  The publisher reads each package's own manifest and drops any carrying <code>"private": true</code>,
+  printing <q>skipping … because the package is private</q> and moving on. It does not fail the run, so
+  a workflow that publishes nothing at all still reports success.
+</p>
+<p>
+  That flag is the usual guard against publishing something by accident, and this project set it for
+  exactly that reason. Continuous previews and that guard cannot both stand, so the flag goes and
+  nothing running <code>npm publish</code> ever exists here to need guarding.
+</p>
+<p>
+  The <code>--compact</code> form of the install URL goes for a related reason: it resolves a bare
+  package name, which means a name claimed on the registry. A project deliberately staying off the
+  registry gets the <code>owner/repo</code> form instead.
+</p>
+</notebook-detail>
+</notebook-practice>
+</body></html>

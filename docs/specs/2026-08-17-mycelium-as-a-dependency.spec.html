@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Mycelium installs into another project: a package, a bare specifier, and a corpus the base command seeds</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Mycelium installs into another project: a package, a bare specifier, and a corpus the base command seeds</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-17</spec-date>
+  <spec-problem>
+<p>This project grew as one checkout where the engine and the corpus sit beside
+each other, and nothing about that arrangement was ever a decision. Another
+project wanting the same tooling needs the engine from <code>node_modules</code>
+and a corpus of its own. Neither half survives that separation today.</p>
+<p>The package declares itself private, carries no <code>bin</code> and exports
+nothing, so nothing installs it and nothing runs it. Twenty-one documents reach
+the engine through <code>../../src/api.ts</code>, a path that holds only while
+the corpus is a sibling of <code>src/</code>. The engine resolves its corpus as
+<code>./docs</code> against the working directory, which is the single tie that
+already works in somebody else's repository.</p>
+<p>Releases go through pkg.pr.new rather than a registry. That publisher reads
+each manifest and drops any package marked private, printing
+<q>skipping … because the package is private</q> while the workflow still
+reports success. Its <code>--compact</code> URL form resolves a bare package
+name, so a project staying off the registry gets the <code>owner/repo</code>
+form instead.</p>
+<p>A consumer's corpus lands at <code>.mycelium/</code>, and this repository
+moves there too so that both run the same shape. That rename has one quiet
+hazard. <code>walkFiles</code> skips every entry whose name starts with a dot,
+and fourteen call sites across five documents name the corpus with the literal
+string <code>"docs"</code>, so each one would return nothing rather than fail
+and every audit would pass while checking an empty list.</p>
+</spec-problem>
+  <spec-design>
+<p>Four changes carry this, and each one stands alone. The corpus moves, the
+package gains a shape, the documents reach the engine by name, and the base
+command seeds a corpus where none exists.</p>
+<h3>The corpus moves to .mycelium</h3>
+<p>One directory name serves both this repository and a consumer, so nothing
+has to keep two arrangements in step. Two constants hold the old name,
+<code>src/run.ts</code> where the engine resolves its root and
+<code>editor/check.ts</code> where the language server finds documents to check.
+Configuration holds the rest: the ignore file, the TypeScript project, and both
+workflows.</p>
+<p>The ignore file needs care beyond a rename. It already lists
+<code>.mycelium/</code>, left over from a store that went in July, so moving the
+corpus there without dropping that line hands the whole corpus to git's ignore
+rules.</p>
+<p>Audits stop naming the directory. <code>AuditFs</code> already carries
+<code>root</code>, and the corpus directory belongs beside it as the same kind
+of fact, so an audit reads a name it receives rather than one it repeats.
+Fourteen literals become zero, and the next rename touches one line.</p>
+<h3>The package gains a shape</h3>
+<p>The manifest drops <code>private</code> and gains <code>bin</code>,
+<code>exports</code>, <code>files</code> and <code>repository</code>. The
+<code>bin</code> entry points at a shim that imports <code>src/run.ts</code>,
+because Node 24 strips types on import and this project has no build step to
+add. <code>exports</code> maps <code>./api</code> and <code>./utils</code>, the
+two modules a document ever reaches for.</p>
+<p>Nothing here runs <code>npm publish</code>, so dropping the private flag
+removes a guard against something no script does. The workflow publishes one
+preview per commit and consumers install from
+<code>https://pkg.pr.new/bigmistqke/mycelium@&lt;sha&gt;</code>.</p>
+<h3>Documents reach the engine by name</h3>
+<p>Every <code>../../src/api.ts</code> becomes <code>mycelium/api</code>, and
+the same for <code>utils</code>. A bare specifier resolves through
+<code>node_modules</code> in a consumer and through this package's own
+<code>exports</code> here, so one string works in both places.</p>
+<p>This repository depends on itself, with <code>"mycelium": "link:."</code>,
+rather than leaning on Node's self-reference. The link puts a real
+<code>node_modules/mycelium</code> in place, so the editor resolves the
+specifier the way a consumer's editor will, and <code>pnpm mycelium</code> runs
+the published <code>bin</code> rather than a path only this checkout has.</p>
+<h3>The base command seeds a corpus</h3>
+<p>Running <code>mycelium</code> with nothing after it looks for
+<code>.mycelium/</code> and writes a seed when nothing is there, then prints the
+roster as it does now. A second run finds the directory and leaves it alone, so
+the command stays safe to run at any time. More may attach to that command
+later, and this is the first thing on it.</p>
+<p>Seeding lives in the engine because a corpus command cannot bootstrap the
+corpus that would hold it. That is the one thing the engine has to know beyond
+its protocol, and it knows it as a directory to copy rather than as anything
+about what the copied documents mean.</p>
+<h3>What the seed holds</h3>
+<p>An instance names its own template by relative path and
+<code>every-link-resolves</code> opens that path, so every template a consumer
+authors against has to sit in the consumer's own tree. The seed therefore holds
+<code>template.template.html</code> with the schema vocabulary and the generic
+validator, the notebook, language and followup families with their stylesheets
+and scripts, and the language rules that give
+<code>prose-follows-the-language</code> something to enforce. It holds the
+command documents too.</p>
+<p>Six links in those documents point at this project's own specs and notebook
+entries, which a consumer's corpus will not hold. Each becomes an absolute URL
+into the published site, so a reader can still open what the document cites and
+<code>every-link-resolves</code> stops caring.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Publishing to a registry, which the whole design exists to avoid. The three
+capability gaps waiting on the crawler stay where they are: a browsable
+published graph, grouping by branch, and exchanging patches between people.</p>
+<p>A consumer's own instructions for an agent. This repository's
+<code>CLAUDE.md</code> teaches an agent how to use these commands, and a
+consumer needs something equivalent, but what shape that takes is a separate
+question from what installs.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Whether the seed carries agent instructions alongside the documents. A
+consumer installing the tooling gets no <code>CLAUDE.md</code>, and an agent
+that cannot read the rules will hand-edit documents the commands exist to
+write.</p>
+<p>Whether this repository still publishes its corpus to a site once the
+corpus has a dot-name. The deploy workflow uploads the directory as an
+artifact, which should survive the rename, though a hidden directory reads as
+tooling state rather than as a website.</p>
+<p>How a consumer upgrades. Command documents live in the consumer's tree
+after seeding, so a later engine release leaves those copies behind with no
+mechanism saying so.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>

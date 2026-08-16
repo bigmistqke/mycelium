@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mycelium installs into another project as a dependency</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Mycelium installs into another project as a dependency</notebook-title>
+  <notebook-tag>distribution</notebook-tag>
+  <notebook-tag>corpus</notebook-tag>
+  <notebook-tag>engine</notebook-tag>
+  <notebook-prompt>i want to start using mycelium in other projects. currently the project has been created without too much thought about how it could be distributed. i don't want to use a package registry, but use pkg.pr.new instead for continuous releases. it can just be the cli as-is. maybe it can just start with some content? maybe the notebook and the commands
+</notebook-prompt>
+  <notebook-prompt>let's also rename docs to .mycelium in this repo</notebook-prompt>
+  <notebook-prompt>maybe we can add other functionality later to the the base 'mycelium' command -&gt; but one of the things it should do is to check if there is already a .mycelium and create and seed it if it doesn't exist yet.</notebook-prompt>
+  <notebook-detail><p>
+  This project grew as one checkout where the engine and the corpus sit side by side, and nothing about
+  that arrangement was ever a decision. Another project wanting the same tooling needs the engine from
+  <code>node_modules</code> and a corpus of its own, and today neither half can survive the separation.
+</p>
+<p>
+  Three things hold the halves together. The package declares itself private, carries no
+  <code>bin</code> and exports nothing, so nothing installs it. Twenty-one documents reach the engine
+  through <code>../../src/api.ts</code>, a path that exists only while <code>docs/</code> is a sibling of
+  <code>src/</code>. The engine then resolves its corpus as <code>./docs</code> against the working
+  directory, which is the one tie that already works in somebody else's repository.
+</p>
+<p>
+  Releases go through pkg.pr.new rather than a registry, one build per commit. The corpus moves to
+  <code>.mycelium/</code> in this repository too, so what a consumer gets and what this project runs
+  are the same shape rather than two arrangements to keep in step.
+</p>
+<p>
+  The bare <code>mycelium</code> command grows a job beyond printing the roster: it looks for
+  <code>.mycelium/</code> and seeds one when nothing is there. Running it a second time finds the
+  directory and leaves it alone. More may attach to that command later, and this is the first thing on it.
+</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./what-must-be-copied-is-what-something-names.principle.html">what a seeded project must hold a copy of</a>
+  <a data-rel="depends_on" href="./pkg-pr-new-skips-a-private-package.practice.html">why the private flag has to go</a>
+  <a data-rel="depends_on" href="./a-dot-named-corpus-hides-from-its-own-walk.practice.html">what the rename to a dot-directory breaks quietly</a>
+  <a data-rel="leads_to" href="../specs/2026-08-17-mycelium-as-a-dependency.spec.html">the design this direction settled into</a>
+</notebook-direction>
+</body></html>

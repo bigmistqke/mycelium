@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What a project must hold a copy of is whatever its own documents name</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>What a project must hold a copy of is whatever its own documents name</notebook-title>
+  <notebook-tag>corpus</notebook-tag>
+  <notebook-tag>distribution</notebook-tag>
+  <notebook-detail><p>
+  An instance names its own template by relative path, and
+  <code>every-link-resolves</code> opens that path on every run. So a template has to sit in the same
+  committed tree as the entries conforming to it. Point one at a package directory instead and the
+  corpus stops resolving the moment somebody clones without installing.
+</p>
+<p>
+  Nothing ever names a command host. No document points at <code>validate.command.html</code>, because
+  the engine resolves a host by id at run time from the identifier somebody typed. A command can
+  therefore live anywhere the engine can reach, and a copy of one buys nothing but drift.
+</p>
+<p>
+  The rule generalises past this split. Whether a thing must be copied is not a question about what it
+  is, and asking whether a template feels more essential than a command answers nothing. Ask instead
+  what points at it, and whether that pointer has to keep resolving.
+</p>
+</notebook-detail>
+</notebook-principle>
+</body></html>
