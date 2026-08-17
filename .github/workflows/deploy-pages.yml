@@ -65,7 +65,7 @@ jobs:
         run: pnpm mycelium canon test
 
       - name: Build the index
-        run: node src/run.ts notebook generate graph --out index.html
+        run: pnpm mycelium notebook generate graph --out index.html
 
       - uses: actions/configure-pages@v6
 
