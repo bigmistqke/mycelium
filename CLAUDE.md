@@ -463,6 +463,32 @@ A SessionStart hook runs the first already, so this is documentation rather
 than something to remember. `recover` went with the goals and decisions it
 reported on.
 
+### Installing into another project
+
+There is no registry release. Every commit publishes a preview through
+pkg.pr.new, so another project installs a commit of this one:
+
+```bash
+pnpm add -D https://pkg.pr.new/bigmistqke/mycelium@<sha>
+pnpm mycelium      # writes .mycelium/ if none is there, then prints the roster
+```
+
+The bare `mycelium` command is the one thing the engine does beyond the
+protocol, because a command lives inside a document and so cannot put the first
+documents in place. It seeds the notebook, language and followup families, the
+schema vocabulary validating them, and the commands. Running it twice seeds
+nothing the second time.
+
+The seed is documents and stylesheets only. An instance names its template by
+relative path and `every-link-resolves` opens it, so a template has to sit
+beside what conforms to it; nothing names a `.ts` helper or an `.element.js`, so
+the package keeps the only copy and the templates import them as
+`mycelium/shared`, `mycelium/graph-page` and so on. A seeded document may import
+this package and nothing else — reaching a transitive dependency by its own name
+works only where `node_modules` happens to be flat.
+
+Design: `.mycelium/specs/2026-08-17-mycelium-as-a-dependency.spec.html`.
+
 ### Capability gaps
 
 Three things the earlier system did that this one does not: publishing the

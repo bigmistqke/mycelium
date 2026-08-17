@@ -220,6 +220,7 @@ The engine never asks them to come from one family. An element of any other type
 ## Getting started
 
 ```sh
+pnpm mycelium                # write a corpus if none is here, then print the roster
 pnpm mycelium --help         # every host and every command, read off the documents declaring them
 pnpm mycelium <id> --help    # one host's own flags and caveats
 ```
@@ -227,6 +228,21 @@ pnpm mycelium <id> --help    # one host's own flags and caveats
 `<id>` is any file under `.mycelium/` named `<id>.template.html` or `<id>.command.html`. Start from the roster rather than from this page: the engine carries no commands of its own, so `mycelium validate` reaches it the same way `mycelium spec add` does, and a family written tomorrow appears there without anyone editing a list.
 
 Node ≥24. Type annotations in `.ts` files are stripped natively at run time; no build step, no `tsx`/`ts-node`.
+
+### In another project
+
+There is no registry release. Every commit publishes a preview through [pkg.pr.new](https://pkg.pr.new), so a project installs whichever commit it wants:
+
+```sh
+pnpm add -D https://pkg.pr.new/bigmistqke/mycelium@<sha>
+pnpm mycelium
+```
+
+The bare command writes `.mycelium/` when nothing is there: the notebook, language and followup families, the schema vocabulary validating them, and the commands. Run it again and it prints the roster without touching what you have written since.
+
+Commit that directory. An instance names its own template by relative path and `every-link-resolves` opens that path, so the templates belong beside the documents conforming to them. Nothing points at a command host, which is why the seed is documents rather than everything the package holds.
+
+A seeded template cites the design it came from, and those citations point at the published site, since the corpus a consumer keeps has no copy of it.
 
 ## See also
 

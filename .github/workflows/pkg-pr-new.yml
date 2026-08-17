@@ -1,0 +1,49 @@
+name: Publish to pkg.pr.new
+
+# A build per commit, on every branch, so another project can install any commit
+# of this one without a registry in between. Consumers install from
+# https://pkg.pr.new/bigmistqke/mycelium@<sha>.
+#
+# Not the --compact form solid-three uses. That resolves a bare package name,
+# which means a name claimed on npm, and staying off the registry is the point.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  publish:
+    # A push and a pull request both fire for a branch in this repository, the
+    # same duplication the checks workflow drops here rather than by narrowing
+    # the trigger. Pull requests stay for the ones arriving from a fork, where
+    # no push event reaches this repository at all.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Nothing builds. The package ships the TypeScript it runs, because Node
+      # 24 strips types on import, so a preview is the source at that commit.
+      #
+      # Publishing a package whose corpus fails its own audits would hand
+      # another project documents this one already knows are malformed. Same
+      # command as the checks workflow, and it exits non-zero on any failure.
+      - name: Validate the corpus
+        run: pnpm mycelium validate
+
+      - name: Publish preview
+        run: pnpx pkg-pr-new publish --no-template
