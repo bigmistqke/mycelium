@@ -163,7 +163,7 @@
   there were none.
 </p>
 <script type="mycelium/audit" data-audits="every-link-resolves" data-expects=".mycelium/templates/template.template.html:#no-such-behaviour">
-  import type { AuditFs } from "../../src/api.ts"
+  import type { AuditFs } from "mycelium/api"
   /**
    * Every link in the corpus points at a file that exists, and at the anchor
    * it names inside that file.
@@ -246,7 +246,7 @@
   declaring a <code>&lt;template&gt;</code>, which separates the two without naming a directory.
 </p>
 <script type="mycelium/audit" data-audits="nothing-outside-the-type">
-  import type { AuditFs } from "../../src/api.ts"
+  import type { AuditFs } from "mycelium/api"
   /**
    * A document that is an instance keeps its content inside its declared type.
    *

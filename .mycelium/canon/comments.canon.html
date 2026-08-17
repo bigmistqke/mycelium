@@ -89,7 +89,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a check that quietly skips is one nobody can rely on</a>
     <canon-verdict>PENDING</canon-verdict>
     <script type="mycelium/test">
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { CUT, GUIDE, PROMOTE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -124,7 +124,7 @@ so the judgment stays affordable while keeping what it needs.</p>
       // The line number is the whole point of the offset arithmetic: a comment
       // inside the second script has to report where it sits in the page, not
       // where it sits in that script.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { CUT, GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -168,7 +168,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">judging nothing in silence reads the same as passing</a>
     <canon-verdict>PENDING</canon-verdict>
     <script type="mycelium/test">
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -194,7 +194,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <script type="mycelium/test">
       // The sandbox has no language directory unless a case writes one, so the
       // guide is missing here by leaving it out.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { CUT, GUIDE, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write("sample.ts", `// ${CUT} says what the next line says\nconst a = 1\n`)
@@ -220,7 +220,7 @@ so the judgment stays affordable while keeping what it needs.</p>
       // Each field carries its own sentinel, so a field dropped from the prompt
       // names itself here instead of failing as one undifferentiated mismatch.
       import { readFileSync } from "node:fs"
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { FIELDS, GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -246,7 +246,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <script type="mycelium/test">
       // The refusing stub is the assertion: it fails the run if anything asks
       // it, so a pass here means the verdict came from the tag alone.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -272,7 +272,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <script type="mycelium/test">
       // The roster prints this comment, so cutting it would silently empty a
       // command's description. The stub refuses, so a pass means nothing asked.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -296,7 +296,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <a data-rel="depends_on" href="./comments.canon.html#the-file-may-state-its-own-verdict">what went unasked gets said out loud</a>
     <canon-verdict>PENDING</canon-verdict>
     <script type="mycelium/test">
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -320,7 +320,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <a data-rel="depends_on" href="./root.canon.html#a-gate-people-ignore">a verdict that costs nothing to ignore</a>
     <canon-verdict>PENDING</canon-verdict>
     <script type="mycelium/test">
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { CUT, GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -343,7 +343,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <script type="mycelium/test">
       // Rationale sitting in the wrong place is worth reporting and is not a
       // failure, so a gate that reddened here would teach people to skip it.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { GUIDE, PROMOTE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -365,7 +365,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <a data-rel="depends_on" href="./comments.canon.html#nothing-changes-a-file-unasked">the report was the whole request</a>
     <canon-verdict>PENDING</canon-verdict>
     <script type="mycelium/test">
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { CUT, GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -387,7 +387,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <a data-rel="depends_on" href="./comments.canon.html#nothing-changes-a-file-unasked">a preview that edits is not a preview</a>
     <canon-verdict>PENDING</canon-verdict>
     <script type="mycelium/test">
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { CUT, GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -413,7 +413,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <a data-rel="depends_on" href="./comments.canon.html#a-fix-changes-only-what-it-reported">the cut list is the whole change</a>
     <canon-verdict>PENDING</canon-verdict>
     <script type="mycelium/test">
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { CUT, GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -446,7 +446,7 @@ so the judgment stays affordable while keeping what it needs.</p>
       // The one thing this command must never do. A comment carrying a rejected
       // alternative is the most expensive thing in the file to lose, because
       // nothing anywhere else records it.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { GUIDE, PROMOTE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -468,7 +468,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <a data-rel="depends_on" href="./comments.canon.html#never-deletes-rationale">saying where it belongs, in a line somebody can run</a>
     <canon-verdict>PENDING</canon-verdict>
     <script type="mycelium/test">
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { GUIDE, PROMOTE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -498,7 +498,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <script type="mycelium/test">
       // A comment's own range stops at its last character, so removing exactly
       // that leaves the indented blank line it sat on.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { CUT, GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -525,7 +525,7 @@ so the judgment stays affordable while keeping what it needs.</p>
       // Widening the cut through the newline is right for a comment that owns
       // its line and wrong for one that trails code, which is why both ends of
       // the range turn on the same question.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { CUT, GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -551,7 +551,7 @@ so the judgment stays affordable while keeping what it needs.</p>
     <script type="mycelium/test">
       // Splicing front to back would shift every later position by what the
       // earlier cut removed, and the damage lands on whatever sits there now.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { CUT, GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -595,7 +595,7 @@ so the judgment stays affordable while keeping what it needs.</p>
       // catches the regression that actually happened, which is somebody
       // putting these four back.
       import { readFileSync } from "node:fs"
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -624,7 +624,7 @@ so the judgment stays affordable while keeping what it needs.</p>
        * runs one line long names itself here.
        */
       import { readFileSync } from "node:fs"
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())
@@ -655,7 +655,7 @@ so the judgment stays affordable while keeping what it needs.</p>
        * here as a second copy of the standard.
        */
       import { readFileSync } from "node:fs"
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { FIELDS, GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write(GUIDE, guideDoc())

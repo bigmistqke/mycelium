@@ -24,7 +24,7 @@
       //
       // The tree carries its own validator so it needs no generic one, which
       // keeps it self-contained: --dir names it, and the run reads nothing else.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { tidyTree } from "./validate-fixture.ts"
 
       export default async function ({ assert, sandbox }: TestContext) {
@@ -47,7 +47,7 @@
       // process.exitCode rather than calling exit(), so the output above it
       // still flushes; a case that only read the code could not tell the
       // difference.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { tidyTree } from "./validate-fixture.ts"
 
       export default async function ({ assert, sandbox }: TestContext) {
@@ -85,7 +85,7 @@
       // The corpus is a tree of its own rather than this repository, because
       // the real one carries deliberate violations that its own audits declare
       // in data-expects. Pointing at a small tree is what --dir exists for.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -107,7 +107,7 @@
       // the only way to test the comparison rather than whichever audit happens
       // to exist, and it is deliberate: a document a case wrote has no real file
       // for the module hook to load a script out of.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { auditDoc, runValidateOn } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -133,7 +133,7 @@
       // The other way to be wrong, and the quieter one. An example built to
       // demonstrate a check has stopped demonstrating it, so the check is no
       // longer known to work even though it now reports nothing.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { auditDoc, runValidateOn } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -160,7 +160,7 @@
       // acceptable, so an audit's own opinion of itself carries no weight. This
       // one says ok:false and still passes, because everything it found was
       // declared.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { auditDoc, runValidateOn } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -185,7 +185,7 @@
       // One broken audit may not silence the others. A run that stopped at the
       // first throw would report a corpus as fine on the strength of never
       // having looked at most of it.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { auditDoc, runValidateOn } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -221,7 +221,7 @@
       // depth it sits, so a test-case inside a test-doc answers for itself. A
       // pass that only looked at a document's outermost element would let every
       // nested claim through unread.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { runValidateOn } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -276,7 +276,7 @@
       // unchecked, so it fails rather than passing. The address it looked for
       // goes in the message, because a claim and the file it meant to name sit
       // in different places.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -299,7 +299,7 @@
       <script type="mycelium/test">
       // The contract the template declares is what an instance answers to, and
       // this is the check the whole command exists to run.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { runValidateOn, typeDoc } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -328,7 +328,7 @@
       <script type="mycelium/test">
       // As well as, never instead of. A type declaring a validator for what the
       // vocabulary cannot say still answers to the shape the schema states.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -358,7 +358,7 @@
       // declares for itself, and a type declaring nothing leaves its instances
       // covered by nothing. Passing them would be the quietest failure this
       // command has.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -382,7 +382,7 @@
       // One broken validator may not decide the verdict for everything after
       // it. A run that stopped here would report the rest of a corpus as fine
       // on the strength of never having looked at it.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -420,7 +420,7 @@
       // The engine finds an audit by crawling for the tag that declares it, so adding
       // one adds no case to any list in the engine. A run that stopped at the
       // first would make that discovery worthless.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { auditDoc, runValidateOn } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -452,7 +452,7 @@
       // deliberate violation is an assertion rather than a failure. Filtering
       // templates out instead would make a directory mean "fixture", and an
       // audit declared in one template could never see anything in another.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { auditDoc, runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -490,7 +490,7 @@
       // without being this project's own, which every case in these documents
       // relies on. A broken instance sitting outside the named tree stays
       // outside it.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { runValidateOn, typeDoc, typeInstance } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -520,7 +520,7 @@
       // to prose in a document, and an audit that could only see HTML could
       // never say so. The filesystem is rooted above the documents directory
       // for that reason, so src/ is reachable.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { auditDoc, runValidateOn } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -560,7 +560,7 @@
        * had no test and no behaviour until the code got tagged and turned out
        * to be answering to nothing.
        */
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { orderedTree } from "./validate-autofix-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         for (const [path, text] of Object.entries(orderedTree({ shuffled: true }))) sandbox.write(path, text)
@@ -587,7 +587,7 @@
        * script keep their place, so a diff shows lines swapping and no content
        * changing.
        */
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { orderedTree } from "./validate-autofix-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         for (const [path, text] of Object.entries(orderedTree({ shuffled: true }))) sandbox.write(path, text)

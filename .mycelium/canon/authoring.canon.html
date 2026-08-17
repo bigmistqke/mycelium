@@ -40,7 +40,7 @@ path before asking for the href.</p>
       // The slug a caller passes carries no date, and the command supplies one.
       // That split is the reason add takes an undated slug while every other
       // command takes a whole filename.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { todayDate } from "../templates/shared.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         const done = sandbox.mycelium(
@@ -74,7 +74,7 @@ path before asking for the href.</p>
       // validates, so the only symptom was the name, and the surrounding prose
       // talks about dated filenames constantly enough that the mistake looks
       // like it is following the convention.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const done = sandbox.mycelium(
           "notebook", "add", "practice",
@@ -99,7 +99,7 @@ path before asking for the href.</p>
       // without complaint. It leaves an edge pointing the wrong way for a later
       // audit to catch, or for nothing to catch when the relation happens to
       // satisfy none of them.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const make = (type: string, slug: string) => {
           const done = sandbox.mycelium("notebook", "add", type, "--title", slug, "--file", slug)
@@ -134,7 +134,7 @@ path before asking for the href.</p>
       // command resolved them against language/terms/ or language/guides/. Two
       // bases, so the href came out right only for two files sharing a
       // directory, where the mistakes cancelled.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const term = sandbox.mycelium(
           "language", "add", "term",
@@ -183,7 +183,7 @@ path before asking for the href.</p>
       // One node in the real graph points at a template, and a person wrote
       // that edge by hand. The command has to produce the same string, or the
       // upsert appends a second edge beside it and unlink never finds either.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const made = sandbox.mycelium(
           "notebook", "add", "practice",
@@ -218,7 +218,7 @@ path before asking for the href.</p>
       <script type="mycelium/test">
       // The failure names --detail rather than the tag it would have become,
       // because the person typed a flag and never saw a tag.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const done = sandbox.mycelium(
           "canon", "add", "axiom",
@@ -243,7 +243,7 @@ path before asking for the href.</p>
       // field put it below the edge, and the closed-schema check then rejected
       // the document the command had just written, so the update failed
       // outright rather than landing in the wrong place.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write("canon/sample.canon.html", `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>Canon: sample</title></head>
@@ -279,7 +279,7 @@ path before asking for the href.</p>
       // edge added after the first behaviour has somewhere wrong to land. An
       // axiom has nothing ranked below its edges, which is why appending went
       // unnoticed until a specification grew a second edge.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const add = (...argv: string[]) => {
           const done = sandbox.mycelium("canon", ...argv)
@@ -315,7 +315,7 @@ path before asking for the href.</p>
 // edges. The upsert used one, found a child already naming the same axiom,
 // and relabelled that instead of adding an edge to the parent. Every one of
 // eleven groupings came out ungrounded and the command reported success.
-import type { TestContext } from "../../src/api.ts"
+import type { TestContext } from "mycelium/api"
 
 export default async function ({ assert, sandbox }: TestContext) {
   const run = (...argv: string[]) => {
@@ -349,7 +349,7 @@ export default async function ({ assert, sandbox }: TestContext) {
     <script type="mycelium/test">// A reference among the edges would be a ninth relation in all but name, and
 // grounded reads direct children, so one landing loose would make an axiom
 // nothing derives from look load-bearing.
-import type { TestContext } from "../../src/api.ts"
+import type { TestContext } from "mycelium/api"
 
 export default async function ({ assert, sandbox }: TestContext) {
   const run = (...argv: string[]) => {

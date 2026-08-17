@@ -24,8 +24,8 @@
       // line. A sandbox links the templates directory and nothing else, so it
       // holds no host for validate, and the thing under test here is one
       // exported function anyway.
-      import type { TestContext } from "../../src/api.ts"
-      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import type { TestContext } from "mycelium/api"
+      import { parseHTML, loadGenericValidator } from "mycelium/utils"
       import { fileURLToPath } from "node:url"
       import { dirname, resolve } from "node:path"
 
@@ -65,8 +65,8 @@
       // Three children against a placeholder written once. Without the
       // declaration this same markup fails as a duplicate, which is the point
       // of the word.
-      import type { TestContext } from "../../src/api.ts"
-      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import type { TestContext } from "mycelium/api"
+      import { parseHTML, loadGenericValidator } from "mycelium/utils"
       import { fileURLToPath } from "node:url"
       import { dirname, resolve } from "node:path"
 
@@ -104,8 +104,8 @@
       // ever met a check, so a figure with twelve nodes had one placement
       // checked and eleven ignored. The first item here is sound and the
       // second one is not.
-      import type { TestContext } from "../../src/api.ts"
-      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import type { TestContext } from "mycelium/api"
+      import { parseHTML, loadGenericValidator } from "mycelium/utils"
       import { fileURLToPath } from "node:url"
       import { dirname, resolve } from "node:path"
 
@@ -145,8 +145,8 @@
       // An edge with no label still has two ends, so its meaning survives an
       // empty body. A placeholder declaring no attributes keeps the older
       // rule and still has to carry text, which the second half checks.
-      import type { TestContext } from "../../src/api.ts"
-      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import type { TestContext } from "mycelium/api"
+      import { parseHTML, loadGenericValidator } from "mycelium/utils"
       import { fileURLToPath } from "node:url"
       import { dirname, resolve } from "node:path"
 
@@ -191,8 +191,8 @@
       // update at a time, because adding a field appended it. Nothing read
       // them wrongly, but two documents saying the same thing serialized
       // differently, and the order stopped meaning anything.
-      import type { TestContext } from "../../src/api.ts"
-      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import type { TestContext } from "mycelium/api"
+      import { parseHTML, loadGenericValidator } from "mycelium/utils"
       import { fileURLToPath } from "node:url"
       import { dirname, resolve } from "node:path"
 
@@ -234,8 +234,8 @@
       // forward has already passed the run's slot by the time the run
       // resumes, so the same rule that catches a field out of order catches
       // a split run.
-      import type { TestContext } from "../../src/api.ts"
-      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import type { TestContext } from "mycelium/api"
+      import { parseHTML, loadGenericValidator } from "mycelium/utils"
       import { fileURLToPath } from "node:url"
       import { dirname, resolve } from "node:path"
 
@@ -274,8 +274,8 @@
       // div or a blink sat on a knowledge node and met nothing. Five hundred
       // and fifty edges and twenty two scripts lived in that gap, which is
       // the whole graph structure and the substance of every test case.
-      import type { TestContext } from "../../src/api.ts"
-      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import type { TestContext } from "mycelium/api"
+      import { parseHTML, loadGenericValidator } from "mycelium/utils"
       import { fileURLToPath } from "node:url"
       import { dirname, resolve } from "node:path"
 
@@ -321,8 +321,8 @@
       // flattens into textContent, so a pattern tested the flattened string
       // and the markup passed unseen. Strict is the default now, and a field
       // whose content is genuinely open says markup.
-      import type { TestContext } from "../../src/api.ts"
-      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import type { TestContext } from "mycelium/api"
+      import { parseHTML, loadGenericValidator } from "mycelium/utils"
       import { fileURLToPath } from "node:url"
       import { dirname, resolve } from "node:path"
 
@@ -368,8 +368,8 @@
       // so beats granting it every tag there is. Text between the elements
       // never reaches a check, which is what makes mixed content work with no
       // rule of its own.
-      import type { TestContext } from "../../src/api.ts"
-      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import type { TestContext } from "mycelium/api"
+      import { parseHTML, loadGenericValidator } from "mycelium/utils"
       import { fileURLToPath } from "node:url"
       import { dirname, resolve } from "node:path"
 
@@ -417,8 +417,8 @@
       // The second child here declares its own conformance, which the crawler
       // checks separately, so this skips it rather than reporting every fault
       // twice.
-      import type { TestContext } from "../../src/api.ts"
-      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import type { TestContext } from "mycelium/api"
+      import { parseHTML, loadGenericValidator } from "mycelium/utils"
       import { fileURLToPath } from "node:url"
       import { dirname, resolve } from "node:path"
 
@@ -472,8 +472,8 @@
       // Four notebook types carry the same declaration, and a practice stands
       // for all of them. A copy of this case per type would assert that a
       // find-and-replace replaced four things.
-      import type { TestContext } from "../../src/api.ts"
-      import { parseHTML, loadGenericValidator } from "../../src/utils.ts"
+      import type { TestContext } from "mycelium/api"
+      import { parseHTML, loadGenericValidator } from "mycelium/utils"
       import { readFileSync } from "node:fs"
       import { fileURLToPath } from "node:url"
       import { dirname, resolve } from "node:path"

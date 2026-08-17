@@ -6,7 +6,7 @@
 // to do with its actual prose.
 
 import { marked } from "marked"
-import { parseHTMLWithLocations, findFirstByTag } from "../../src/utils.ts"
+import { parseHTMLWithLocations, findFirstByTag } from "mycelium/utils"
 
 // Text no rule may be applied to, the same set the audit has always used: a
 // code block is code, a quotation is quoted for a reason, and a

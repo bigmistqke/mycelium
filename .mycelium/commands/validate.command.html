@@ -40,8 +40,8 @@
   one would only repeat the host's own name.
 </p>
 <script type="mycelium/command">
-  import type { CommandContext, Corpus, ValidateEnv, ValidateReport } from "../../src/api.ts"
-  import { parseHTML, walkFiles, loadCheck, loadGenericValidator } from "../../src/utils.ts"
+  import type { CommandContext, Corpus, ValidateEnv, ValidateReport } from "mycelium/api"
+  import { parseHTML, walkFiles, loadCheck, loadGenericValidator } from "mycelium/utils"
   import { existsSync, readFileSync } from "node:fs"
   import { styleText } from "node:util"
   import { dirname, resolve as resolvePath } from "node:path"

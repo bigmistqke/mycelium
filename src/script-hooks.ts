@@ -29,7 +29,7 @@
 // this implements: docs/knowledge/2026-07-25-virtual-module-extraction-not-concatenation.decision.html
 // and docs/knowledge/2026-07-25-id-based-cross-script-imports.decision.html.
 
-import { readFileSync } from "node:fs"
+import { readFileSync, realpathSync } from "node:fs"
 import { parseHTML } from "./utils.ts"
 
 const MARKER = "__mycelium_virtual__"
@@ -48,9 +48,30 @@ function isHtmlPath(pathname: string): boolean {
   return /\.html?$/.test(pathname)
 }
 
+// A virtual module sits beside the REAL file, never beside a symlink pointing
+// at it. Where a module sits decides what it can import: Node walks up from
+// there looking for node_modules, so a script reaching for a bare specifier
+// finds the package the real file could see.
+//
+// A test sandbox is a throwaway tree with the templates linked in, and a
+// template is where every command lives. Minting the module beside the link put
+// it in a directory with no node_modules above it, so every bare import failed
+// with the package "not found" while the same script ran fine outside a
+// sandbox. Relative imports never noticed, which is why this held up until the
+// engine moved to a bare specifier.
+//
+// A path with nothing behind it keeps whatever came in, so a caller naming a
+// file that is not there still reaches load() and gets the real error from
+// there rather than a confusing one from here.
 function syntheticUrlFor(htmlPath: string, locator: string): string {
-  const dir = htmlPath.slice(0, htmlPath.lastIndexOf("/"))
-  const base = htmlPath.slice(htmlPath.lastIndexOf("/") + 1)
+  let real: string
+  try {
+    real = realpathSync(htmlPath)
+  } catch {
+    real = htmlPath
+  }
+  const dir = real.slice(0, real.lastIndexOf("/"))
+  const base = real.slice(real.lastIndexOf("/") + 1)
   return `file://${dir}/${base}.${MARKER}.${encodeURIComponent(locator)}.mjs`
 }
 

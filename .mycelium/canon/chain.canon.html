@@ -19,7 +19,7 @@
     <script type="mycelium/test">
       // An axiom with nothing under it cannot be falsified, because nothing
       // beneath it can push back. That is what grounded exists to say.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { canonDoc, violationsFrom } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -42,7 +42,7 @@
     <script type="mycelium/test">
       // The other half of the same check. A specification answering to nothing
       // is a list of assertions nobody can argue with.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { canonDoc, violationsFrom } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -72,7 +72,7 @@
       // `unreached` is the control. This case decides on an absence, and a
       // check that has stopped working also reports an absence, so it has to
       // find something first.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { canonDoc, violationsFrom } from "./audit-corpus.ts"
 
       export default async function ({ assert }: TestContext) {
@@ -111,7 +111,7 @@
       // checks fire on, which is why readCanon still hands them over and every
       // consumer decides for itself. This one is counting the system, and a
       // sample counted among real principles overstates every number drawn.
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         sandbox.write("canon/sample.canon.html", `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><title>Canon: sample</title></head>
@@ -145,7 +145,7 @@
        * what makes a finer box possible, and reading it is what makes the box
        * appear without anybody authoring one.
        */
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { chainOf, tinySubsystem } from "./canon-chain-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         for (const [path, text] of Object.entries(tinySubsystem())) sandbox.write(path, text)
@@ -176,7 +176,7 @@
        * that matters — a count of lines gets the first ones right and stops
        * somewhere arbitrary.
        */
-      import type { TestContext } from "../../src/api.ts"
+      import type { TestContext } from "mycelium/api"
       import { chainOf, tinySubsystem } from "./canon-chain-fixture.ts"
       export default async function ({ assert, sandbox }: TestContext) {
         for (const [path, text] of Object.entries(tinySubsystem())) sandbox.write(path, text)
@@ -210,7 +210,7 @@
 // The half a schema cannot state survives: a claim with nothing beneath it,
 // and a claim with two kinds of proof. This covers the first, which is the one
 // a person actually writes by accident.
-import type { TestContext } from "../../src/api.ts"
+import type { TestContext } from "mycelium/api"
 
 export default async function ({ assert, sandbox }: TestContext) {
   sandbox.write("canon/bare.canon.html", `<!DOCTYPE html>
@@ -245,7 +245,7 @@ export default async function ({ assert, sandbox }: TestContext) {
 // looked for one with a descendant search, found the first child's, and ran it
 // a second time under the parent's name. Nothing failed: the count went up and
 // a check that had already passed passed again.
-import type { TestContext } from "../../src/api.ts"
+import type { TestContext } from "mycelium/api"
 
 export default async function ({ assert, sandbox }: TestContext) {
   const run = (...argv: string[]) => {
@@ -281,7 +281,7 @@ export default async function ({ assert, sandbox }: TestContext) {
 // This runs a real page, because the reader under test lives in one. It is the
 // slowest check here and the only one that starts a browser from inside a
 // check.
-import type { TestContext } from "../../src/api.ts"
+import type { TestContext } from "mycelium/api"
 
 export default async function ({ assert, sandbox }: TestContext) {
   const run = (...argv: string[]) => {
@@ -322,7 +322,7 @@ export default async function ({ assert, sandbox }: TestContext) {
 //
 // `unreached` is the control. This case decides on an absence, and a check that
 // has stopped working also reports an absence.
-import type { TestContext } from "../../src/api.ts"
+import type { TestContext } from "mycelium/api"
 import { canonDoc, violationsFrom } from "./audit-corpus.ts"
 
 export default async function ({ assert }: TestContext) {
@@ -371,7 +371,7 @@ export default async function ({ assert }: TestContext) {
 //
 // Silent at one on purpose. A number every box carries is a number nobody
 // reads, and the only interesting value is the one above the target.
-import type { TestContext } from "../../src/api.ts"
+import type { TestContext } from "mycelium/api"
 import { chainOf, tinySubsystem } from "./canon-chain-fixture.ts"
 
 export default async function ({ assert, sandbox }: TestContext) {
@@ -404,7 +404,7 @@ export default async function ({ assert, sandbox }: TestContext) {
     <script type="mycelium/test">// A reference says where a principle came from, which is a different question
 // from whether anything beneath it can push back. Counting one as reach would
 // let an axiom ground itself on the note that proposed it.
-import type { TestContext } from "../../src/api.ts"
+import type { TestContext } from "mycelium/api"
 import { canonDoc, violationsFrom } from "./audit-corpus.ts"
 
 export default async function ({ assert }: TestContext) {
@@ -436,7 +436,7 @@ export default async function ({ assert }: TestContext) {
 // The fixture comes along. Twelve claims in this corpus are browser cases, and
 // an assertion about a row index says nothing without the boxes it counts rows
 // over.
-import type { TestContext } from "../../src/api.ts"
+import type { TestContext } from "mycelium/api"
 import { chainOf, tinySubsystem } from "./canon-chain-fixture.ts"
 
 export default async function ({ assert, sandbox }: TestContext) {

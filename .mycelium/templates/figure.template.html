@@ -232,7 +232,7 @@
   claims, and a peer edge reaches its neighbour without crossing a box.
 </p>
 <script type="mycelium/audit" data-audits="figure-edges-resolve" data-touches="figure-edge">
-  import type { AuditFs } from "../../src/api.ts"
+  import type { AuditFs } from "mycelium/api"
 
   /**
    * Every figure-edge names two nodes that exist in its own figure.
@@ -260,7 +260,7 @@
   }
 </script>
 <script type="mycelium/audit" data-audits="figure-edges-run-the-way-they-claim" data-touches="figure-edge">
-  import type { AuditFs } from "../../src/api.ts"
+  import type { AuditFs } from "mycelium/api"
 
   /**
    * Every figure-edge runs the direction it claims, measured in grid rows.
@@ -311,7 +311,7 @@
   }
 </script>
 <script type="mycelium/audit" data-audits="figure-peer-edges-span-no-box" data-touches="figure-edge">
-  import type { AuditFs } from "../../src/api.ts"
+  import type { AuditFs } from "mycelium/api"
 
   /**
    * A peer edge reaches its neighbour without crossing a box between them.

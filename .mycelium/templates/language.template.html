@@ -277,8 +277,8 @@
   session that added the command roster</a> ran into directly.
 </p>
 <script type="mycelium/command">
-  import type { CommandContext } from "../../src/api.ts"
-  import { loadModule } from "../../src/utils.ts"
+  import type { CommandContext } from "mycelium/api"
+  import { loadModule } from "mycelium/utils"
   import { resolve as resolvePath } from "node:path"
   import { readFileSync, writeFileSync } from "node:fs"
   import { spawnSync } from "node:child_process"
@@ -1396,8 +1396,8 @@
   document is, rather than to each rule.
 </p>
 <script type="mycelium/audit" data-audits="prose-follows-the-language" data-touches="language-rule">
-  import type { AuditFs } from "../../src/api.ts"
-  import { loadModule, parseHTML } from "../../src/utils.ts"
+  import type { AuditFs } from "mycelium/api"
+  import { loadModule, parseHTML } from "mycelium/utils"
   import { resolve as resolvePath } from "node:path"
   import { PROTECTED_TAGS, extractProse, stripProtected, markdownToHtmlFragment } from "./language-prose.ts"
   import { commentRanges } from "./code-comments.ts"

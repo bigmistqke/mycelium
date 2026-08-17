@@ -13,8 +13,8 @@
 import { readFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { loadCheck, loadGenericValidator, loadModule, parseHTML, resolveTemplateRef } from "../../src/utils.ts"
-import type { AuditFs, AuditResult } from "../../src/api.ts"
+import { loadCheck, loadGenericValidator, loadModule, parseHTML, resolveTemplateRef } from "mycelium/utils"
+import type { AuditFs, AuditResult } from "mycelium/api"
 
 const DOCS = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const TEMPLATES = resolve(DOCS, "templates")
@@ -136,8 +136,8 @@ ${[...axioms, ...specification].join("\n\n")}
 // everything else arrive from the real tree, so a fixture stays a few lines
 // rather than a copy of the corpus.
 import { existsSync } from "node:fs"
-import type { Corpus, ValidateEnv, ValidateReport } from "../../src/api.ts"
-import { CORPUS_DIR, walkFiles } from "../../src/utils.ts"
+import type { Corpus, ValidateEnv, ValidateReport } from "mycelium/api"
+import { CORPUS_DIR, walkFiles } from "mycelium/utils"
 
 const REPO = resolve(DOCS, "..")
 

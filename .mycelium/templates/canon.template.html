@@ -401,7 +401,7 @@
   apply. Writing the reading is the work, and no audit does it for you.
 </p>
 <script type="mycelium/audit" data-audits="grounded" data-expects=".mycelium/templates/canon.template.html#sample-ungrounded-axiom .mycelium/templates/canon.template.html#sample-freelancing-behaviour" data-touches="canon-axiom canon-behaviour">
-  import type { AuditFs } from "../../src/api.ts"
+  import type { AuditFs } from "mycelium/api"
   import { readCanon } from "./canon-citations.ts"
 
   /**
@@ -502,7 +502,7 @@
   nowhere to live except the claim it answers.
 </p>
 <script type="mycelium/audit" data-audits="test-documents-load-the-runner" data-touches="canon-behaviour">
-  import type { AuditFs } from "../../src/api.ts"
+  import type { AuditFs } from "mycelium/api"
 
   /**
    * Every canon document holding a browser check loads test.element.js, so
@@ -545,15 +545,15 @@
   own, which turns a delete into a broken chain nothing warned about.
 </p>
 <script type="mycelium/command">
-  import type { CommandContext } from "../../src/api.ts"
+  import type { CommandContext } from "mycelium/api"
   import { readCanon, collectCodeCitations } from "./canon-citations.ts"
   import { declaredOrders, declaresATemplate, placeField } from "./shared.ts"
   import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync, chmodSync, rmSync } from "node:fs"
   import { tmpdir } from "node:os"
   import { dirname, join, resolve as resolvePath } from "node:path"
   import { spawn, spawnSync, execFileSync } from "node:child_process"
-  import { CORPUS_DIR, loadModule } from "../../src/utils.ts"
-  import { ELEMENT, chromePath, sleep, withBrowser } from "../../src/webdriver.ts"
+  import { CORPUS_DIR, loadModule } from "mycelium/utils"
+  import { ELEMENT, chromePath, sleep, withBrowser } from "mycelium/webdriver"
   import { graphPage, templateFile } from "./graph-page.ts"
   import { pathToFileURL } from "node:url"
 
@@ -1591,12 +1591,15 @@
   // and a copy would let a test pass against a stale duplicate of the thing it
   // is testing.
   //
-  // src arrives the same way, one level up, because a command script imports
-  // from it by a path relative to its own file: language.template.html reaches
-  // for ../../src/utils.ts, and the module hook resolves that inside whatever
-  // tree the document sits in. Node follows the symlink before resolving
-  // anything further, so the real file's own imports find the real
-  // node_modules.
+  // src arrives the same way, one level up, from back when a command script
+  // reached for ../../src/utils.ts by a path relative to its own file. Those
+  // imports name the package now, so nothing here needs the link, and it stays
+  // only until something proves no case still walks that way.
+  //
+  // What makes a bare import work is script-hooks.ts resolving the real file
+  // behind the link before it mints a module. A module beside the link would
+  // sit in a temp directory with no node_modules above it, and every package
+  // import inside a command would fail here alone.
   function sandboxFor(root) {
     const dir = mkdtempSync(join(tmpdir(), "mycelium-test-"))
     const docs = join(dir, CORPUS_DIR)

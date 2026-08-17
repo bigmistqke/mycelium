@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A module minted beside a symlink cannot see the packages the real file can</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>A module minted beside a symlink cannot see the packages the real file can</notebook-title>
+  <notebook-tag>modules</notebook-tag>
+  <notebook-tag>distribution</notebook-tag>
+  <notebook-detail><p>
+  Where a module sits decides what it may import. Node walks up from a module's own directory looking
+  for <code>node_modules</code>, so two paths to one file resolve a bare specifier differently. The
+  script hook minted its virtual module beside whichever path a caller handed in, and a symlink is a
+  path like any other.
+</p>
+<p>
+  A test sandbox links the templates into a throwaway tree, and a command lives inside a template. So
+  every command ran from a temp directory with nothing above it, and every package import failed there
+  while the same script worked everywhere else. Resolving the link before minting the module fixes it,
+  and the fix belongs in the hook rather than in the sandbox.
+</p>
+<p>
+  Relative imports never noticed, which is why this waited for a reason to surface. Moving the engine
+  behind a bare specifier was that reason, and twenty-one cases failed at once. A mechanism nothing
+  exercises keeps whatever shape it started with.
+</p>
+</notebook-detail>
+</notebook-practice>
+</body></html>
