@@ -1,14 +1,33 @@
 {
   "name": "mycelium",
   "version": "0.0.0",
-  "private": true,
   "description": "Intent-driven programming substrate",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bigmistqke/mycelium.git"
+  },
   "type": "module",
   "engines": {
     "node": ">=24"
   },
+  "bin": {
+    "mycelium": "./bin/mycelium.js"
+  },
+  "exports": {
+    "./api": "./src/api.ts",
+    "./utils": "./src/utils.ts",
+    "./webdriver": "./src/webdriver.ts"
+  },
+  "files": [
+    "bin",
+    "src",
+    ".mycelium/templates",
+    ".mycelium/commands",
+    ".mycelium/language",
+    ".mycelium/theme.css"
+  ],
   "scripts": {
-    "mycelium": "node src/run.ts",
+    "mycelium": "node bin/mycelium.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check-scripts": "node editor/check.ts"
   },
@@ -27,6 +46,7 @@
     "@volar/language-core": "2.4.28",
     "@volar/language-server": "2.4.28",
     "@volar/typescript": "2.4.28",
+    "mycelium": "link:.",
     "volar-service-typescript": "^0.0.71",
     "vscode-uri": "^3.1.0"
   }

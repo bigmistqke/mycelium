@@ -45,6 +45,9 @@ importers:
       '@volar/typescript':
         specifier: 2.4.28
         version: 2.4.28
+      mycelium:
+        specifier: link:.
+        version: 'link:'
       volar-service-typescript:
         specifier: ^0.0.71
         version: 0.0.71(@volar/language-service@2.4.28)
