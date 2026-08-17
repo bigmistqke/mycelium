@@ -137,15 +137,19 @@ ${[...axioms, ...specification].join("\n\n")}
 // rather than a copy of the corpus.
 import { existsSync } from "node:fs"
 import type { Corpus, ValidateEnv, ValidateReport } from "../../src/api.ts"
-import { walkFiles } from "../../src/utils.ts"
+import { CORPUS_DIR, walkFiles } from "../../src/utils.ts"
 
 const REPO = resolve(DOCS, "..")
 
-export function overlay(materials: Record<string, string>): Corpus {
+// docsDir defaults to the real corpus directory, so an audit reading "the
+// documents" over an overlay reads the same place it does over the real tree. A
+// case naming a different one is testing --dir, which is the only reason to.
+export function overlay(materials: Record<string, string>, docsDir: string = CORPUS_DIR): Corpus {
   const provided = Object.keys(materials)
   const has = (path: string) => Object.hasOwn(materials, path)
   return {
     root: REPO,
+    docsDir,
     list(dir = ".", options = {}) {
       const prefix = !dir || dir === "." ? "" : `${dir}/`
       const real = existsSync(resolve(REPO, dir))
@@ -190,10 +194,9 @@ export async function runValidateOn(
   const { runValidate } = (await loadModule(command, script)) as {
     runValidate: (env: ValidateEnv) => Promise<ValidateReport>
   }
-  const corpus = overlay(materials)
+  const corpus = overlay(materials, options.docsDir)
   const env: ValidateEnv = {
     corpus,
-    docsDir: options.docsDir ?? "docs",
     async loadCheck(file, script) {
       // data-validates writes its reference as a fragment and data-audits as a
       // bare name, so the key reads the same either way.
@@ -207,7 +210,7 @@ export async function runValidateOn(
     // still gets checked by the validator this repository actually ships.
     loadGenericValidator: () => options.withoutGenericValidator
       ? Promise.reject(new Error("no generic validator in this corpus"))
-      : loadGenericValidator(resolve(REPO, "docs")),
+      : loadGenericValidator(DOCS),
   }
   return runValidate(env)
 }

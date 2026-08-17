@@ -24,12 +24,12 @@
 
       export default async function ({ assert }: TestContext) {
         const found = await violationsFrom("canon.template.html", "grounded", {
-          "docs/canon/lonely.canon.html": canonDoc({
+          ".mycelium/canon/lonely.canon.html": canonDoc({
             axioms: [{ id: "lonely", title: "A principle nothing derives from." }],
           }),
         })
         assert(
-          found.includes("docs/canon/lonely.canon.html#lonely"),
+          found.includes(".mycelium/canon/lonely.canon.html#lonely"),
           `grounded did not report the lonely axiom; it reported: ${found.join(", ") || "nothing"}`,
         )
       }
@@ -47,14 +47,14 @@
 
       export default async function ({ assert }: TestContext) {
         const found = await violationsFrom("canon.template.html", "grounded", {
-          "docs/canon/floating.canon.html": canonDoc({
+          ".mycelium/canon/floating.canon.html": canonDoc({
             specification: { id: "floating", title: "a floating subsystem", behaviours: [
               { id: "does-a-thing", title: "It does a thing." },
             ] },
           }),
         })
         assert(
-          found.includes("docs/canon/floating.canon.html#does-a-thing"),
+          found.includes(".mycelium/canon/floating.canon.html#does-a-thing"),
           `grounded did not report the freelancing behaviour; it reported: ${found.join(", ") || "nothing"}`,
         )
       }
@@ -77,13 +77,13 @@
 
       export default async function ({ assert }: TestContext) {
         const found = await violationsFrom("canon.template.html", "grounded", {
-          "docs/canon/general.canon.html": canonDoc({
+          ".mycelium/canon/general.canon.html": canonDoc({
             axioms: [
               { id: "general", title: "The general principle." },
               { id: "unreached", title: "A principle nothing serves." },
             ],
           }),
-          "docs/canon/under.canon.html": canonDoc({
+          ".mycelium/canon/under.canon.html": canonDoc({
             axioms: [{ id: "narrow", title: "The narrower principle.", narrows: "./general.canon.html#general" }],
             specification: { id: "under", title: "a subsystem", behaviours: [
               { id: "does-a-thing", title: "It does a thing.", refines: "#narrow" },
@@ -91,11 +91,11 @@
           }),
         })
         assert(
-          found.includes("docs/canon/general.canon.html#unreached"),
+          found.includes(".mycelium/canon/general.canon.html#unreached"),
           `the control is missing, so this case cannot read an absence; grounded reported: ${found.join(", ") || "nothing"}`,
         )
         assert(
-          !found.includes("docs/canon/general.canon.html#general"),
+          !found.includes(".mycelium/canon/general.canon.html#general"),
           "grounded reported the general axiom, so it stopped after one step down instead of walking the chain",
         )
       }
@@ -154,7 +154,7 @@
         const cited = data.code.find((d) => d.name === "widen")
         assert(cited, `no declaration reached the drawing; it carried ${JSON.stringify(data.code.map((d) => d.name))}`)
         assert(
-          cited.cites.includes("docs/canon/sample.canon.html#a-claim"),
+          cited.cites.includes(".mycelium/canon/sample.canon.html#a-claim"),
           `the declaration cites ${JSON.stringify(cited.cites)}`,
         )
         assert(cited.kind === "function", `the drawing calls it a ${cited.kind || "(nothing)"}`)
@@ -347,14 +347,14 @@ export default async function ({ assert }: TestContext) {
 </body>`)
 
   const found = await violationsFrom("canon.template.html", "grounded", {
-    "docs/canon/held.canon.html": held,
+    ".mycelium/canon/held.canon.html": held,
   })
   assert(
-    found.includes("docs/canon/held.canon.html#unreached"),
+    found.includes(".mycelium/canon/held.canon.html#unreached"),
     `the control is missing, so this case cannot read an absence; grounded reported: ${found.join(", ") || "nothing"}`,
   )
   assert(
-    !found.includes("docs/canon/held.canon.html#narrow"),
+    !found.includes(".mycelium/canon/held.canon.html#narrow"),
     "grounded reported the nested claim, so it read its own edges and never looked at the claim holding it",
   )
 }
@@ -409,7 +409,7 @@ import { canonDoc, violationsFrom } from "./audit-corpus.ts"
 
 export default async function ({ assert }: TestContext) {
   const found = await violationsFrom("canon.template.html", "grounded", {
-    "docs/canon/sourced.canon.html": canonDoc({
+    ".mycelium/canon/sourced.canon.html": canonDoc({
       axioms: [{
         id: "sourced",
         title: "A principle naming where it came from and nothing else.",
@@ -418,7 +418,7 @@ export default async function ({ assert }: TestContext) {
     }),
   })
   assert(
-    found.includes("docs/canon/sourced.canon.html#sourced"),
+    found.includes(".mycelium/canon/sourced.canon.html#sourced"),
     `grounded counted a reference as reach; it reported: ${found.join(", ") || "nothing"}`,
   )
 }

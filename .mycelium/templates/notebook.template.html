@@ -15,7 +15,7 @@
   <div><b>Node types:</b> <code>notebook-principle</code>, <code>notebook-practice</code>,
     <code>notebook-direction</code>, <code>notebook-research</code>,
     <code>notebook-experiment</code></div>
-  <div><b>File naming:</b> <code>docs/notebook/&lt;slug&gt;.&lt;type&gt;.html</code>, with no date on it</div>
+  <div><b>File naming:</b> <code>.mycelium/notebook/&lt;slug&gt;.&lt;type&gt;.html</code>, with no date on it</div>
   <div><b>Purpose:</b> the thinking that underpins the code, before any of it hardens into a canon claim</div>
   <div><b>Design:</b> <a href="../specs/2026-08-09-notebook-replaces-the-knowledge-graph.spec.html">the spec
     for this family</a>, and <a href="../specs/2026-08-11-three-inward-notebook-types.spec.html">the three
@@ -236,7 +236,7 @@
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
   import { declaredOrder, placeField } from "./shared.ts"
-  import { loadModule } from "../../src/utils.ts"
+  import { CORPUS_DIR, loadModule } from "../../src/utils.ts"
   import { extractGraph } from "./extract-graph.ts"
   import { graphPage, templateFile } from "./graph-page.ts"
   import { tmpdir } from "node:os"
@@ -264,10 +264,15 @@
    *
    * Arrival comes from all of them, because a move that git records as an
    * add rather than a rename would otherwise date every entry to the day it
-   * moved. Two such moves have happened: out of the monorepo in August, and out
-   * of the knowledge graph into the notebook.
+   * moved. Three such moves have happened: out of the monorepo in August, out
+   * of the knowledge graph into the notebook, and out of docs/ into the
+   * corpus directory a consumer installs beside its own.
+   *
+   * Every earlier name stays. Git history still holds them, so dropping one
+   * would date every entry it covers to the day the directory changed name.
    */
   const WHERE_IT_HAS_LIVED = [
+    ".mycelium/notebook",
     "docs/notebook",
     "docs/knowledge",
     "experiments/v4/docs/knowledge",
@@ -685,10 +690,10 @@
    * out newest first, so the first mention of a path is the commit that added
    * it.
    *
-   * --out writes to that path, relative to docs/ or absolute. Omitted, this
+   * --out writes to that path, relative to the corpus or absolute. Omitted, this
    * writes a temp file and prints a file:// URL. Every address in the page is
-   * relative to docs/, so a page written outside it needs --base to resolve
-   * them; --base with no value points at this machine's own docs/, which is
+   * relative to the corpus, so a page written outside it needs --base to resolve
+   * them; --base with no value points at this machine's own corpus, which is
    * right for looking and wrong for committing.
    */
   export function generate({ fs, args }: CommandContext) {
@@ -696,8 +701,8 @@
 
     // extractGraph resolves cross-file edges against each document's own path,
     // which has to be a real absolute one. fs.list returns paths relative to
-    // docs/, the root run.ts resolves as "./docs".
-    const documents = fs.list(DIR).map(({ path, doc }) => ({ path: resolvePath("./docs", path), dom: doc }))
+    // the corpus directory, which is the root run.ts resolves.
+    const documents = fs.list(DIR).map(({ path, doc }) => ({ path: resolvePath(CORPUS_DIR, path), dom: doc }))
     const { nodes, edges } = extractGraph(documents, TAGS)
 
     const prompts = new Map()
@@ -721,7 +726,7 @@
     }
 
     // An absolute path bakes one machine's home directory into the page, so
-    // both ends go back to paths relative to docs/, which is what a published
+    // both ends go back to paths relative to the corpus, which is what a published
     // site serves. An address then doubles as its own href.
     const docsRoot = resolvePath("./docs")
     const rel = (p) => (p.startsWith(docsRoot + "/") ? p.slice(docsRoot.length + 1) : p)

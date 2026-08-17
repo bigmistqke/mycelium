@@ -244,7 +244,7 @@
    */
   export default async function (fs: AuditFs) {
     const violations = []
-    for (const path of fs.list("docs", { ext: ".html" })) {
+    for (const path of fs.list(fs.docsDir, { ext: ".html" })) {
       const doc = fs.parse(path)
       for (const graph of Array.from(doc.querySelectorAll("figure-graph"))) {
         const ids = new Set(Array.from(graph.querySelectorAll("figure-node")).map((n) => n.getAttribute("id")))
@@ -280,7 +280,7 @@
    */
   export default async function (fs: AuditFs) {
     const violations = []
-    for (const path of fs.list("docs", { ext: ".html" })) {
+    for (const path of fs.list(fs.docsDir, { ext: ".html" })) {
       const doc = fs.parse(path)
       for (const graph of Array.from(doc.querySelectorAll("figure-graph"))) {
         const rowOf = (name) => {
@@ -326,7 +326,7 @@
    */
   export default async function (fs: AuditFs) {
     const violations = []
-    for (const path of fs.list("docs", { ext: ".html" })) {
+    for (const path of fs.list(fs.docsDir, { ext: ".html" })) {
       const doc = fs.parse(path)
       for (const graph of Array.from(doc.querySelectorAll("figure-graph"))) {
         const cells = new Map()

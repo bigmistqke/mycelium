@@ -162,7 +162,7 @@
 
   // Still local on purpose, unlike todayDate above: two lines, one call
   // site each in this file, not worth a shared import for. See
-  // docs/specs/2026-07-25-virtual-module-script-imports.spec.html for why
+  // .mycelium/specs/2026-07-25-virtual-module-script-imports.spec.html for why
   // sharing is possible at all now — it wasn't when this comment last
   // said otherwise.
   function requireArgs(...checks) {
@@ -194,7 +194,7 @@
    *   mycelium spec add --title "…" --file <undated-topic>
    *     [--status draft|approved|implemented] [--body "…" | --body -]
    *
-   * --file is required and becomes docs/specs/<today's-date>-<topic>.spec.html
+   * --file is required and becomes .mycelium/specs/<today's-date>-<topic>.spec.html
    * — the date isn't a flag, it's today's actual date, used for both the
    * filename and the <spec-date> field so they can never drift apart.
    * The topic is therefore the SLUG ONLY, with no date on it; a topic that
@@ -281,7 +281,7 @@
    *   mycelium spec update <file> [--title "…"]
    *     [--status draft|approved|implemented] [--body "…" | --body -]
    *
-   * <file> is an existing docs/specs/<date>-<topic>.spec.html file.
+   * <file> is an existing .mycelium/specs/<date>-<topic>.spec.html file.
    *
    * --title/--status follow the usual rule: omitted leaves the field
    * untouched, any other value upserts it.

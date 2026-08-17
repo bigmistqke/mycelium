@@ -105,7 +105,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          const done = sandbox.mycelium("comments", "check", "docs/sample.ts")
+          const done = sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           assert(
             done.stdout.includes("3 comments, 1 earn their place, 1 to cut, 1 to promote"),
             `every comment should carry a verdict; said: ${done.stdout.trim()}${done.stderr.trim()}`,
@@ -148,13 +148,13 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          const done = sandbox.mycelium("comments", "check", "docs/page.html")
+          const done = sandbox.mycelium("comments", "check", ".mycelium/page.html")
           assert(
-            done.stdout.includes(`docs/page.html:${lineOf("first, inside")}`),
+            done.stdout.includes(`.mycelium/page.html:${lineOf("first, inside")}`),
             `the first script's comment reported the wrong line; said: ${done.stdout.trim()}${done.stderr.trim()}`,
           )
           assert(
-            done.stdout.includes(`docs/page.html:${lineOf("second, inside")}`),
+            done.stdout.includes(`.mycelium/page.html:${lineOf("second, inside")}`),
             `the second script's comment reported the wrong line; said: ${done.stdout.trim()}`,
           )
         } finally {
@@ -176,7 +176,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude("refuse")
         try {
-          const done = sandbox.mycelium("comments", "check", "docs/notes.md")
+          const done = sandbox.mycelium("comments", "check", ".mycelium/notes.md")
           const said = done.stdout + done.stderr
           assert(!done.ok, `a .md file should fail, and it exited ${done.status}`)
           assert(said.includes(".html"), `the failure should name the kinds it reads; said: ${said.trim()}`)
@@ -201,7 +201,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude("refuse")
         try {
-          const done = sandbox.mycelium("comments", "check", "docs/sample.ts")
+          const done = sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           const said = done.stdout + done.stderr
           assert(!done.ok, `a missing guide should fail, and it exited ${done.status}: ${said.trim()}`)
           assert(said.includes(GUIDE), `the failure should name the guide it wanted; said: ${said.trim()}`)
@@ -228,7 +228,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          sandbox.mycelium("comments", "check", "docs/sample.ts")
+          sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           const prompt = readFileSync(stub.promptFile, "utf8")
           for (const [field, sentinel] of Object.entries(FIELDS)) {
             assert(prompt.includes(sentinel), `the guide's ${field} never reached the model`)
@@ -254,7 +254,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude("refuse")
         try {
-          const done = sandbox.mycelium("comments", "check", "docs/sample.ts")
+          const done = sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           const said = done.stdout + done.stderr
           assert(!said.includes("the stub was asked"), `the tag should have settled it: ${said.trim()}`)
           assert(said.includes("cut"), `a working note should be cut; said: ${said.trim()}`)
@@ -280,7 +280,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude("refuse")
         try {
-          const done = sandbox.mycelium("comments", "check", "docs/sample.ts")
+          const done = sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           const said = done.stdout + done.stderr
           assert(done.ok, `nothing here is a cut, so it should exit zero: ${said.trim()}`)
           assert(!said.includes("the stub was asked"), `the export should have settled it: ${said.trim()}`)
@@ -304,7 +304,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude("refuse")
         try {
-          const done = sandbox.mycelium("comments", "check", "docs/sample.ts")
+          const done = sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           assert(
             done.stdout.includes("1 of those never judged because the roster prints them"),
             `the count hides what it skipped; said: ${done.stdout.trim()}`,
@@ -328,7 +328,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          const done = sandbox.mycelium("comments", "check", "docs/sample.ts")
+          const done = sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           assert(!done.ok, `a cut should fail the run, and it exited ${done.status}: ${done.stdout.trim()}`)
         } finally {
           stub.restore()
@@ -351,7 +351,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          const done = sandbox.mycelium("comments", "check", "docs/sample.ts")
+          const done = sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           assert(done.ok, `a promotion is not a failure, and it exited ${done.status}: ${done.stdout.trim()}`)
           assert(done.stdout.includes("promote"), `the promotion went unreported; said: ${done.stdout.trim()}`)
         } finally {
@@ -374,7 +374,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          sandbox.mycelium("comments", "check", "docs/sample.ts")
+          sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           assert(sandbox.read("sample.ts") === source, "check edited the file it was only asked to report on")
         } finally {
           stub.restore()
@@ -396,7 +396,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          const done = sandbox.mycelium("comments", "autofix", "docs/sample.ts", "--diff")
+          const done = sandbox.mycelium("comments", "autofix", ".mycelium/sample.ts", "--diff")
           assert(sandbox.read("sample.ts") === source, "--diff edited the file it was only previewing")
           assert(
             done.stdout.includes(`-// ${CUT}`),
@@ -427,7 +427,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          sandbox.mycelium("comments", "autofix", "docs/sample.ts")
+          sandbox.mycelium("comments", "autofix", ".mycelium/sample.ts")
           const after = sandbox.read("sample.ts")
           assert(!after.includes(CUT), `the cut comment survived: ${JSON.stringify(after)}`)
           assert(after.includes("another tool demands"), `a kept comment went with it: ${JSON.stringify(after)}`)
@@ -455,7 +455,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          sandbox.mycelium("comments", "autofix", "docs/sample.ts")
+          sandbox.mycelium("comments", "autofix", ".mycelium/sample.ts")
           assert(sandbox.read("sample.ts") === source, "autofix destroyed rationale it was told to promote")
         } finally {
           stub.restore()
@@ -476,7 +476,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          const done = sandbox.mycelium("comments", "autofix", "docs/sample.ts")
+          const done = sandbox.mycelium("comments", "autofix", ".mycelium/sample.ts")
           assert(
             done.stdout.includes("knowledge add decision"),
             `nothing offered a way to move it; said: ${done.stdout.trim()}`,
@@ -506,7 +506,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          sandbox.mycelium("comments", "autofix", "docs/sample.ts")
+          sandbox.mycelium("comments", "autofix", ".mycelium/sample.ts")
           assert(
             sandbox.read("sample.ts") === "function f() {\n  return 1\n}\n",
             `the line went but its blank stayed: ${JSON.stringify(sandbox.read("sample.ts"))}`,
@@ -533,7 +533,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          sandbox.mycelium("comments", "autofix", "docs/sample.ts")
+          sandbox.mycelium("comments", "autofix", ".mycelium/sample.ts")
           assert(
             sandbox.read("sample.ts") === "const a = 1\nconst b = 2\n",
             `the cut took the newline with it: ${JSON.stringify(sandbox.read("sample.ts"))}`,
@@ -569,7 +569,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          sandbox.mycelium("comments", "autofix", "docs/sample.ts")
+          sandbox.mycelium("comments", "autofix", ".mycelium/sample.ts")
           assert(
             sandbox.read("sample.ts") ===
               "const a = 1\n// the format another tool demands here\nconst b = 2\nconst c = 3\nconst d = 4\n",
@@ -603,7 +603,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          sandbox.mycelium("comments", "check", "docs/sample.ts")
+          sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           const prompt = readFileSync(stub.promptFile, "utf8")
           for (const copied of ["already visible in the code", "narrates", "explains the language", "rejected alternative"]) {
             assert(!prompt.includes(copied), `the prompt states a criterion of its own: "${copied}"`)
@@ -633,7 +633,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          sandbox.mycelium("comments", "check", "docs/sample.ts")
+          sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           const prompt = readFileSync(stub.promptFile, "utf8")
           assert(prompt.includes("const inside11"), "the twelfth line never reached the model")
           assert(!prompt.includes("beyondTheWindow"), "the window runs past the twelve lines it claims")
@@ -671,7 +671,7 @@ so the judgment stays affordable while keeping what it needs.</p>
 
         const stub = stubClaude()
         try {
-          sandbox.mycelium("comments", "check", "docs/sample.ts")
+          sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
           const log = readFileSync(stub.callLog, "utf8")
           const calls = log.split(FIELDS.title).length - 1
           assert(calls === 1, `the file went to the model in ${calls} calls`)

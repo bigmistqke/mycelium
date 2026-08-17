@@ -11,7 +11,7 @@
 <div class="meta">
   <div><b>Node types:</b> <code>canon-axiom</code>, <code>canon-specification</code>,
     with <code>canon-behaviour</code> nested inside the second</div>
-  <div><b>Instances:</b> <code>docs/canon/&lt;subsystem&gt;.canon.html</code>, one document per
+  <div><b>Instances:</b> <code>.mycelium/canon/&lt;subsystem&gt;.canon.html</code>, one document per
     subsystem holding its own axioms and its specification, with
     <code>root.canon.html</code> holding the axioms that govern everything</div>
   <div><b>Design:</b>
@@ -400,7 +400,7 @@
   subsystem reaches nothing there, and this check cannot tell that apart from an axiom that does not
   apply. Writing the reading is the work, and no audit does it for you.
 </p>
-<script type="mycelium/audit" data-audits="grounded" data-expects="docs/templates/canon.template.html#sample-ungrounded-axiom docs/templates/canon.template.html#sample-freelancing-behaviour" data-touches="canon-axiom canon-behaviour">
+<script type="mycelium/audit" data-audits="grounded" data-expects=".mycelium/templates/canon.template.html#sample-ungrounded-axiom .mycelium/templates/canon.template.html#sample-freelancing-behaviour" data-touches="canon-axiom canon-behaviour">
   import type { AuditFs } from "../../src/api.ts"
   import { readCanon } from "./canon-citations.ts"
 
@@ -522,7 +522,7 @@
    */
   export default async function (fs: AuditFs) {
     const violations = []
-    for (const path of fs.list("docs", { ext: ".html" })) {
+    for (const path of fs.list(fs.docsDir, { ext: ".html" })) {
       const doc = fs.parse(path)
       if (doc.querySelector("template[id]")) continue
       if (!doc.querySelector("canon-specification")) continue
@@ -552,7 +552,7 @@
   import { tmpdir } from "node:os"
   import { dirname, join, resolve as resolvePath } from "node:path"
   import { spawn, spawnSync, execFileSync } from "node:child_process"
-  import { loadModule } from "../../src/utils.ts"
+  import { CORPUS_DIR, loadModule } from "../../src/utils.ts"
   import { ELEMENT, chromePath, sleep, withBrowser } from "../../src/webdriver.ts"
   import { graphPage, templateFile } from "./graph-page.ts"
   import { pathToFileURL } from "node:url"
@@ -636,7 +636,7 @@
   // axiom about drawing look like a peer of an axiom about documents.
   //
   // Anything that is not a canon document passes through unchanged, already
-  // spelled relative to docs/. A specification names the files it answers for,
+  // spelled relative to the corpus. A specification names the files it answers for,
   // and those are commands, templates and source: commands/validate.command.html,
   // ../src/api.ts.
   function pathFor(name: string) {
@@ -672,7 +672,7 @@
   // to the specification instead.
   // Where an edge lands, as a docs-root path and an optional fragment. A target
   // is another claim, written <canon>#<id>, or any other file spelled relative
-  // to docs/ — which is how a specification names the code it answers for.
+  // to the corpus — which is how a specification names the code it answers for.
   function targetOf(target: string) {
     const hash = target.indexOf('#')
     if (hash === -1) return { path: pathFor(target), fragment: '' }
@@ -1278,10 +1278,10 @@
    * comment and its whole implementation, and the anchor into the corpus. The
    * blast radius as a gesture rather than a list assembled by hand.
    *
-   * --out writes to that path, relative to docs/ or absolute, for committing a
+   * --out writes to that path, relative to the corpus or absolute, for committing a
    * snapshot. Omitted, it writes to a temp file and prints a file:// URL.
-   * --base adds a <base> tag so a page outside docs/ still resolves the links
-   * it carries back into the corpus; bare, it points at this machine's docs/.
+   * --base adds a <base> tag, so a page written elsewhere still resolves the
+   * links it carries. Bare, it points at this machine's own corpus.
    *
    * A template's worked examples never reach the page. They conform, so every
    * reader of the corpus finds them, and a sample principle counted among real
@@ -1301,7 +1301,7 @@
     // counting the system, and a sample principle counted among real ones
     // overstates every number on the page.
     const declaring = new Set(
-      corpus.list('docs', { ext: '.html' }).filter((path) => declaresATemplate(corpus.parse(path))),
+      corpus.list(corpus.docsDir, { ext: '.html' }).filter((path) => declaresATemplate(corpus.parse(path))),
     )
     const claims = (address: string) => !declaring.has(address.split('#')[0])
 
@@ -1514,10 +1514,11 @@
   // citation reader both take one and a command is handed the other. Reading
   // is all either needs.
   function auditFsOver(fs) {
-    const docs = fs.list('').map(({ path, doc }) => ({ path: `docs/${path}`, doc }))
+    const docs = fs.list('').map(({ path, doc }) => ({ path: `${CORPUS_DIR}/${path}`, doc }))
     const byPath = new Map(docs.map((d) => [d.path, d.doc]))
     return {
       root: resolvePath(fs.root, '..'),
+      docsDir: CORPUS_DIR,
       list: (dir = '.', options: { ext?: string } = {}) => docs
         .map((d) => d.path)
         .filter((path) => (!dir || dir === '.' || path.startsWith(`${dir}/`)) && (!options.ext || path.endsWith(options.ext))),
@@ -1598,14 +1599,14 @@
   // node_modules.
   function sandboxFor(root) {
     const dir = mkdtempSync(join(tmpdir(), "mycelium-test-"))
-    const docs = join(dir, "docs")
+    const docs = join(dir, CORPUS_DIR)
     mkdirSync(docs, { recursive: true })
-    symlinkSync(join(root, "docs", "templates"), join(docs, "templates"))
+    symlinkSync(join(root, CORPUS_DIR, "templates"), join(docs, "templates"))
     // commands/ arrives for the same reason templates/ does. A command hosted
     // outside a family lives here — validate is the one that matters — and a
     // sandbox without it can run `knowledge add` but not the check that says
     // whether what it wrote is valid. That gap is why nothing tested validate.
-    symlinkSync(join(root, "docs", "commands"), join(docs, "commands"))
+    symlinkSync(join(root, CORPUS_DIR, "commands"), join(docs, "commands"))
     symlinkSync(join(root, "src"), join(dir, "src"))
     return {
       dir,

@@ -1,5 +1,5 @@
 // Shared between the prose-follows-the-language audit (real corpus
-// documents under docs/) and language lint's file mode (an ad-hoc document,
+// documents in the corpus) and language lint's file mode (an ad-hoc document,
 // not yet part of the corpus — a README, a spec still being drafted). Both
 // need the exact same answer to "what counts as checkable prose here," or a
 // document could pass one and fail the other for reasons that have nothing

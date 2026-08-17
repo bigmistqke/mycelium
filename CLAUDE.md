@@ -5,7 +5,7 @@
 Log in real time, not retroactively.
 
 This project keeps the thinking that underpins its code as HTML entries under
-`docs/notebook/`, conforming to `docs/templates/notebook.template.html`. The
+`.mycelium/notebook/`, conforming to `.mycelium/templates/notebook.template.html`. The
 canon is where thinking crystallises, and the notebook is where it stays fluid:
 prior art somebody read, a rule noticed before a check could hold it, a
 direction the work bends toward, a remark about how the work itself goes.
@@ -16,7 +16,7 @@ leaves nothing at all.
 
 An intention — something to come back to — is not this. That belongs in the
 followup family below, which drains where the notebook accumulates. Design:
-`docs/specs/2026-08-09-notebook-replaces-the-knowledge-graph.spec.html`.
+`.mycelium/specs/2026-08-09-notebook-replaces-the-knowledge-graph.spec.html`.
 
 ### Five types, by where the knowledge came from
 
@@ -38,7 +38,7 @@ entries within a day of arriving and so meant "everything nobody read and
 nobody ran". None of the three tests names what an entry could become: sorting
 by that is promotion in disguise, and `canon reference` already carries the
 relation as a link. Design:
-`docs/specs/2026-08-11-three-inward-notebook-types.spec.html`.
+`.mycelium/specs/2026-08-11-three-inward-notebook-types.spec.html`.
 
 A fact about the terrain is a practice. TypeScript reading only the last JSDoc
 block is not a rule the project holds and says nothing about where the work
@@ -190,11 +190,11 @@ today's, filling both the filename and the `<spec-date>` field from one value so
 the two can never drift apart.
 
 No hand-authoring gap remains for either family. Full design:
-`docs/specs/2026-07-23-mycelium-authoring-commands.spec.html`
+`.mycelium/specs/2026-07-23-mycelium-authoring-commands.spec.html`
 (commands),
-`docs/specs/2026-07-23-mycelium-update-command.spec.html`
+`.mycelium/specs/2026-07-23-mycelium-update-command.spec.html`
 (`update`, and the closed-schema validator check that backs it), and
-`docs/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html`
+`.mycelium/specs/2026-07-24-mycelium-spec-authoring-commands.spec.html`
 (spec's own `add`/`update`, its single `--body` flag covering multiple
 rich fields at once, and the date-prefixed-filename convention both
 families now share).
@@ -225,12 +225,12 @@ project decided not to do. Do not add priority, size or assignment: `plan`'s
 twelve documents hold 286 statuses that all say `completed`, which is what a
 maintained progress field becomes.
 
-Design: `docs/specs/2026-08-09-followup-family.spec.html`.
+Design: `.mycelium/specs/2026-08-09-followup-family.spec.html`.
 
 ### Tests
 
 `test.template.html` holds a family whose instances are tests. A test
-document lives in `docs/tests/<slug>.test.html` and carries no date.
+document lives in `.mycelium/tests/<slug>.test.html` and carries no date.
 
 ```bash
 pnpm mycelium canon test [<file>] [--show] [--timeout MS] [--port N]
@@ -277,11 +277,11 @@ SUCCESS into a document.
 
 `validate` cannot test the figure engine, and no audit ever will: it parses
 with happy-dom, which computes no layout, so every rect is zero. See
-`docs/notebook/happy-dom-computes-no-layout.practice.html`.
+`.mycelium/notebook/happy-dom-computes-no-layout.practice.html`.
 
 ### The canon family: what the project holds true, and what it promises
 
-A canon document is one subsystem: `docs/canon/<subsystem>.canon.html`, holding
+A canon document is one subsystem: `.mycelium/canon/<subsystem>.canon.html`, holding
 that subsystem's own axioms and the specification its behaviours belong to. An
 axiom carries no confidence and no date, because it states what holds now. How
 it came to hold, and how sure anybody was, belongs to a notebook entry — dated,
@@ -294,8 +294,8 @@ principle. A title states the rule in one line, and one line has no room for
 what the rule rules out or what it cost to learn. The field was optional until
 2026-08-09 and the first eleven axioms used it zero times, which is what a
 field nobody has to fill gets you. Full design:
-`docs/specs/2026-08-06-canon-template-html.spec.html` and
-`docs/specs/2026-08-08-behaviour-cites-its-axiom.spec.html`.
+`.mycelium/specs/2026-08-06-canon-template-html.spec.html` and
+`.mycelium/specs/2026-08-08-behaviour-cites-its-axiom.spec.html`.
 
 ```bash
 pnpm mycelium canon add axiom --canon <name> --id <slug> --title "…" --detail "…" | --detail -
@@ -398,11 +398,11 @@ style rule — `language-prose.ts` exempts the field for exactly that reason.
 
 ### Entry shape
 
-`docs/templates/notebook.template.html` is the source of truth for required and
+`.mycelium/templates/notebook.template.html` is the source of truth for required and
 optional fields per type; read it rather than trusting a copy here.
 
 ```html
-docs/notebook/<slug>.<type>.html
+.mycelium/notebook/<slug>.<type>.html
 (type = principle | practice | direction | research | experiment)
 
 <notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">

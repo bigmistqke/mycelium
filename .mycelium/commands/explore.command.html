@@ -10,7 +10,7 @@
 
 <h1>Commands: explore</h1>
 <div class="meta">
-  <div><b>Purpose:</b> whole-<code>docs/</code>-tree commands that don't belong to any one content family
+  <div><b>Purpose:</b> whole-corpus commands that don't belong to any one content family
     &mdash; the same reason <code>knowledge generate graph</code> can't be it: that command deliberately
     only ever looks inside <code>knowledge/</code>, and no single family's own <code>*.template.html</code>
     is the right scope for something that needs to see knowledge/, specs/, and everything else at once.</div>
@@ -36,12 +36,12 @@
   import type { CommandContext } from "../../src/api.ts"
   import { declaresATemplate } from "../templates/shared.ts"
   /**
-   * List every data-conforms-to instance across the whole docs/ tree,
+   * List every data-conforms-to instance across the whole corpus,
    * regardless of which family it belongs to.
    *
    *   mycelium explore list
    *
-   * One line per instance: its path (relative to docs/), its own root
+   * One line per instance: its path (relative to the corpus), its own root
    * tag name, and its data-conforms-to value. This command finds an
    * instance purely by the presence of the data-conforms-to attribute on
    * it — every matching element in a document, not just the first. That

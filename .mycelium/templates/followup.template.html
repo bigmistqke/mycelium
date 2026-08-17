@@ -133,6 +133,7 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext } from "../../src/api.ts"
+  import { CORPUS_DIR } from "../../src/utils.ts"
   import { declaredOrder, placeField } from "./shared.ts"
   import { dirname, relative } from "node:path"
 
@@ -153,7 +154,7 @@
    * directory, the same way canon's link does.
    */
   function hrefTo(path: string, target: string): string {
-    const href = relative(dirname(`docs/${path}`), target)
+    const href = relative(dirname(`${CORPUS_DIR}/${path}`), target)
     return href.startsWith(".") ? href : `./${href}`
   }
 
@@ -164,7 +165,7 @@
    *     [--label "…"] [--when "…"] [--file <slug>]
    *
    * --at is a path from the repository root, so it may name a document, a
-   * template or a source file — docs/templates/plan.template.html and
+   * template or a source file — .mycelium/templates/plan.template.html and
    * src/run.ts are both fine. It may carry a #fragment, which reaches one
    * claim inside a document rather than the whole file. The command turns it
    * into a relative href itself.

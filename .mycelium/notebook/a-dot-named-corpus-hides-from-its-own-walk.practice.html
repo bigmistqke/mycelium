@@ -20,14 +20,14 @@
 </p>
 <p>
   An audit reads through <code>AuditFs</code>, which roots one level above the corpus so a rule can
-  reach <code>src/</code>. Fourteen call sites across five documents therefore name the corpus with the
+  reach <code>src/</code>. Twelve call sites across five documents therefore name the corpus with the
   literal string <code>"docs"</code>. Each one returns an empty list rather than an error once the
   directory has another name, and an audit finding nothing to check reports success.
 </p>
 <p>
   The failure has no symptom, which is what makes it worth writing down. Every audit passes, the count
-  of checked documents drops, and nobody reads a count that has always gone up. A rename that breaks
-  loudly costs an afternoon and a rename that breaks quietly costs whatever the audits were holding.
+  of checked documents drops, and nobody reads a count that has always gone up. Watching that count
+  hold at 1001 across the rename is what said the audits still had the corpus in view.
 </p>
 <p>
   <code>AuditFs</code> already carries <code>root</code>, and the corpus directory belongs beside it as

@@ -31,7 +31,7 @@ form instead.</p>
 <p>A consumer's corpus lands at <code>.mycelium/</code>, and this repository
 moves there too so that both run the same shape. That rename has one quiet
 hazard. <code>walkFiles</code> skips every entry whose name starts with a dot,
-and fourteen call sites across five documents name the corpus with the literal
+and twelve call sites across five documents name the corpus with the literal
 string <code>"docs"</code>, so each one would return nothing rather than fail
 and every audit would pass while checking an empty list.</p>
 </spec-problem>

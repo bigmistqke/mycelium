@@ -182,7 +182,7 @@ export function readCanon(fs: AuditFs): Canon {
   const axioms: CanonEntry[] = []
   const specifications: Specification[] = []
 
-  for (const path of fs.list("docs", { ext: ".html" })) {
+  for (const path of fs.list(fs.docsDir, { ext: ".html" })) {
     const doc = fs.parse(path)
     for (const element of Array.from(doc.querySelectorAll('canon-axiom[data-conforms-to]'))) {
       axioms.push({
@@ -300,7 +300,7 @@ export function collectCodeCitations(fs: AuditFs, specifies: string[]): CodeCita
 
     for (const block of blocks) {
       for (const comment of commentRanges(block.text)) {
-        const cites = [...comment.raw.matchAll(TAG)].map((m) => `docs/${m[1]}`)
+        const cites = [...comment.raw.matchAll(TAG)].map((m) => `${fs.docsDir}/${m[1]}`)
         if (!cites.length) continue
         const at = block.offset + comment.pos
         // An audit exports one default function and never names it, since the

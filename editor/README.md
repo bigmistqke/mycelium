@@ -1,6 +1,6 @@
 # Editor support for this project's HTML documents
 
-Most of this project's code lives inside `<script>` blocks in `docs/`, and an
+Most of this project's code lives inside `<script>` blocks in `.mycelium/`, and an
 editor does two unhelpful things with them. It builds one virtual JavaScript
 document per HTML file and concatenates every script into it, merging scopes
 that are separate when they run. And it ignores a script whose `type` it does
@@ -18,7 +18,7 @@ Both follow from treating the file as the unit. This treats a block as the unit.
 | `vscode/` | The VS Code extension that starts the server. |
 
 The rule the plugin applies is the one
-`docs/specs/2026-08-01-script-type-decides-the-language.spec.html` states, and
+`.mycelium/specs/2026-08-01-script-type-decides-the-language.spec.html` states, and
 it is the same rule `src/script-hooks.ts` applies when it decides a module's
 format. If one changes, the other is wrong:
 
@@ -31,7 +31,7 @@ format. If one changes, the other is wrong:
 
 ```
 pnpm check-scripts                      # every document
-node editor/check.ts docs/templates/knowledge.template.html
+node editor/check.ts .mycelium/templates/knowledge.template.html
 ```
 
 Diagnostics come back at positions in the HTML file, not in the virtual files.
@@ -47,7 +47,7 @@ strips types itself.
 ln -s "$PWD/editor/vscode" ~/.vscode/extensions/mycelium-language-support
 ```
 
-Then reload VS Code and open any document under `docs/`. Output appears under
+Then reload VS Code and open any document under `.mycelium/`. Output appears under
 the "Mycelium" output channel. `mycelium.server.path` overrides which
 `server.ts` is launched, for working on the server itself.
 

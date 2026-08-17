@@ -382,7 +382,7 @@
    *
    * Exported, because the engine computes the href between two file arguments
    * and can only do that correctly if it knows where each one sits. Without
-   * it both resolve straight against docs/, which is right only when the two
+   * it both resolve straight against the corpus, which is right only when the two
    * share a directory: a term linking to another term worked, and a term
    * linking to a rule wrote ./passive-voice.rule.html from inside terms/.
    *
@@ -688,7 +688,7 @@
    * real document and stripped of every protected element, the same as the
    * prose-follows-the-language audit does for a real corpus document. Every
    * rule—including one that reads markup—runs exactly as it would once the file
-   * joins docs/. Every `<script>` it embeds is also checked, comment by
+   * joins the corpus. Every `<script>` it embeds is also checked, comment by
    * comment. A `.ts`/`.tsx`/`.js`/`.jsx` file is not a document at all — only
    * its comments and JSDoc are checked, the same way a script's comments are.
    * Anything else is treated as markdown: converted to just enough HTML for a
@@ -1406,7 +1406,7 @@
    *
    * Loads each rule, runs it against its own passing and failing example first.
    * Then runs it over every document's text with code, excluding recorded
-   * prompts and failing examples. It covers every `.html` file under docs/ (its
+   * prompts and failing examples. It covers every `.html` file in the corpus (its
    * own prose and `<script>` comments). It includes every `.md` file reachable
    * from the repository root (README.md, CLAUDE.md, editor/README.md),
    * converted to HTML for markup-aware rules. It covers comments and JSDoc
@@ -1433,8 +1433,8 @@
 
   // Rule scripts load through the same module hook the engine uses for every
   // other embedded script, so a rule can import and can be TypeScript. An
-  // AuditFs is rooted one level above docs/, which is why the paths it lists
-  // start with "docs/" and are resolved against that root here.
+  // AuditFs is rooted one level above the corpus, which is why the paths it lists
+  // start with the corpus directory and are resolved against that root here.
   // Which kinds of prose a rule applies to, read off the root element. Both
   // "all" and a bare "javascript" cover narrower kinds, so this is a prefix
   // match rather than equality. A rule declaring javascript fires on a doc
@@ -1446,7 +1446,7 @@
 
   async function loadRules(fs) {
     const rules = []
-    for (const path of fs.list('docs/language', { ext: '.rule.html' })) {
+    for (const path of fs.list(`${fs.docsDir}/language`, { ext: '.rule.html' })) {
       const root = fs.parse(path).querySelector('language-rule')
       const script = fs.parse(path).querySelector('language-rule > script')
       if (!script) continue
@@ -1511,7 +1511,7 @@
     // words needs to know the words, and that is not reaching into the corpus:
     // it is reading the language the rule belongs to. Rules that only look at
     // text ignore it.
-    const language = { replaces: replacements(fs, fs.list('docs/language/terms', { ext: '.term.html' })) }
+    const language = { replaces: replacements(fs, fs.list(`${fs.docsDir}/language/terms`, { ext: '.term.html' })) }
     const violations = []
 
     // The half the schema cannot state. A rule declares <script required>, so
@@ -1519,7 +1519,7 @@
     // guide, because the closed-field rule only inspects language-* children
     // and a <script> is not one. A guide carrying a check would be enforcing
     // something while filed as guidance, so we catch it here instead.
-    for (const path of fs.list('docs/language/guides', { ext: '.guide.html' })) {
+    for (const path of fs.list(`${fs.docsDir}/language/guides`, { ext: '.guide.html' })) {
       if (fs.parse(path).querySelector('language-guide > script')) {
         violations.push(`${path}: a guide carries a check, so it should be a rule`)
       }
@@ -1557,7 +1557,7 @@
       if (rule.check(...asExample(fail)).length === 0) violations.push(`${rule.path}: does not flag its own failing example`)
     }
 
-    for (const path of fs.list('docs', { ext: '.html' })) {
+    for (const path of fs.list(fs.docsDir, { ext: '.html' })) {
       const doc = fs.parse(path)
       const body = doc.querySelector('body')
       if (!body) continue
@@ -1590,7 +1590,7 @@
 
     // A real document that is not corpus HTML — README.md, CLAUDE.md — is
     // still a document, so it gets the same rules, not a free pass for
-    // happening to sit outside docs/. Converted to just enough HTML for a
+    // happening to sit outside the corpus. Converted to just enough HTML for a
     // rule about markup to read, the same way lint's file mode already
     // does for one file at a time; this is that conversion run over every
     // .md file the repository root can reach.

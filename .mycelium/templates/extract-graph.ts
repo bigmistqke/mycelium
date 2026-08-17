@@ -3,7 +3,7 @@
 // by notebook.template.html's generate command.
 //
 // A file rather than a <script> in that template, for the reason
-// docs/specs/2026-08-01-script-type-decides-the-language.spec.html gives: what
+// .mycelium/specs/2026-08-01-script-type-decides-the-language.spec.html gives: what
 // the engine discovers lives in the document, what is merely called can live in
 // a file. An audit is discovered by its type and stays embedded; this is only
 // ever called by one, and gains nothing from being embedded.

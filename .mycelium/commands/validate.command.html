@@ -10,7 +10,7 @@
 
 <h1>Commands: validate</h1>
 <div class="meta">
-  <div><b>Purpose:</b> check every document under <code>docs/</code> against the template it declares
+  <div><b>Purpose:</b> check every document in the corpus against the template it declares
     conformance to, then run every cross-document audit the corpus declares. The gate the whole corpus
     rests on, and the one command whose failure means something is wrong rather than missing.</div>
   <div><b>Not a template:</b> like <code>explore.command.html</code>, this file declares no
@@ -78,10 +78,15 @@
   }
 
   /**
-   * What an audit is handed. Read-only, and rooted one level above the docs
+   * What an audit is handed. Read-only, and rooted one level above the corpus
    * directory so src/ is reachable. A rule about language applies to a
    * comment in a source file as much as to prose in a document, and an
    * audit that can only see HTML can never say so.
+   *
+   * Rooting above the corpus costs an audit the ability to say "the documents"
+   * without naming them, and twelve call sites answered that by repeating the
+   * literal the directory happened to have. So the corpus carries its own name
+   * in docsDir, and an audit reads a name rather than repeating one.
    *
    * Handing over a filesystem rather than a list of parsed documents is the
    * whole point. Parsed documents are the engine deciding what a project's
@@ -93,9 +98,10 @@
    *
    * @behaviour canon/validate.canon.html#an-audit-reaches-outside-docs
    */
-  function realCorpus(root: string, cache: Map<string, Document>): Corpus {
+  function realCorpus(root: string, docsDir: string, cache: Map<string, Document>): Corpus {
     return {
       root,
+      docsDir,
       list(dir = ".", options = {}) {
         // A directory that does not exist holds no files, which is an answer
         // rather than an error. An audit asking about a family that has no
@@ -135,8 +141,7 @@
     const cache = new Map<string, Document>()
     const root = dirname(docsRoot)
     return {
-      corpus: realCorpus(root, cache),
-      docsDir: relative(root, docsRoot),
+      corpus: realCorpus(root, relative(root, docsRoot), cache),
       loadCheck: (file, script) => loadCheck(resolvePath(root, file), script),
       loadGenericValidator: () => loadGenericValidator(docsRoot),
     }
@@ -239,7 +244,8 @@
    * @behaviour canon/validate.canon.html#an-audit-sees-every-document
    */
   export async function runValidate(env: ValidateEnv): Promise<ValidateReport> {
-    const { corpus, docsDir } = env
+    const { corpus } = env
+    const { docsDir } = corpus
     // Every path below runs from the corpus root, the way an AuditFs lists one,
     // so nothing here holds an absolute path and a corpus somebody wrote in
     // memory reads the same as one on disk.
@@ -366,7 +372,7 @@
    * Prints one line of counts, then a block per failure. Exits non-zero
    * when anything failed, so a build or a hook can gate on it.
    *
-   * --dir defaults to the docs/ directory the engine already resolved.
+   * --dir defaults to the corpus directory the engine already resolved.
    * Pass one to check a corpus somewhere else, which is what the tests of
    * this project's own template fixtures do.
    *

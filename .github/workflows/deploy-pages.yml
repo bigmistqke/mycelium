@@ -8,7 +8,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docs/**'
+      - '.mycelium/**'
       - 'src/**'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
@@ -71,7 +71,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: docs
+          path: .mycelium
 
       - id: deploy
         uses: actions/deploy-pages@v5

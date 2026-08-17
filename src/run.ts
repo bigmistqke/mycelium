@@ -2,13 +2,13 @@
 // <template>, data-conforms-to, and how to find the one
 // script[type="mycelium/command"] a template file declares — never what any
 // command, validate included, actually does. See
-// docs/specs/2026-07-23-mycelium-authoring-commands.spec.html.
+// .mycelium/specs/2026-07-23-mycelium-authoring-commands.spec.html.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
 import { basename, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
 import ts from "typescript"
-import { parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
+import { CORPUS_DIR, parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
 
 register("./script-hooks.ts", import.meta.url)
 
@@ -22,7 +22,7 @@ export type { Cli, CommandContext, ParsedArgs, Validate }
 // A command host is either a content family's own <id>.template.html,
 // whose instances conform to it via data-conforms-to, or a singleton
 // <id>.command.html with no instances of its own. The latter is a
-// whole-docs-tree tool, like docs/commands/explore.command.html.
+// whole-corpus tool, like .mycelium/commands/explore.command.html.
 // findTemplateFile finds both the same way, searching in that order so a
 // family template always wins a name clash.
 const TEMPLATE_FILE_SUFFIXES = ["template.html", "command.html"]
@@ -286,7 +286,7 @@ class Filesystem {
 // this is parsed with the real TypeScript compiler rather than a JavaScript
 // parser that would have to strip types first. ScriptKind.TSX is a strict
 // superset of what a command script actually contains; see
-// docs/templates/code-comments.ts for why that is safe here.
+// .mycelium/templates/code-comments.ts for why that is safe here.
 function parseCommandSource(source: string): ts.SourceFile {
   return ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
 }
@@ -469,7 +469,7 @@ function leadingComment(source: string): string {
   return first ? firstSentence(formatComment(first.raw)) : ""
 }
 
-// Every audit declared anywhere under docs/, with what it holds true. Audits
+// Every audit declared anywhere in the corpus, with what it holds true. Audits
 // are the other half of what this tool does, and listing only commands is how
 // one of them stayed invisible long enough for someone to write a writing
 // rule duplicating it by hand.
@@ -530,7 +530,7 @@ function exitQuietlyOnClosedPipe() {
 async function main() {
   exitQuietlyOnClosedPipe()
   const [id, namedCommand, ...rest] = process.argv.slice(2)
-  const docsDir = resolvePath("./docs")
+  const docsDir = resolvePath(CORPUS_DIR)
 
   // Help someone asked for goes to stdout and exits 0; help printed because
   // the invocation was wrong goes to stderr and exits non-zero. The usual

@@ -7,10 +7,10 @@
 // implicit any.
 //
 // Kept separate from run.ts on purpose. An embedded script imports from here
-// with `import type`, which erases completely, so nothing in docs/ ends up
+// with `import type`, which erases completely, so nothing in the corpus ends up
 // depending on the engine at run time; what it depends on is the contract,
 // which is what this file is. See
-// docs/specs/2026-08-01-script-type-decides-the-language.spec.html.
+// .mycelium/specs/2026-08-01-script-type-decides-the-language.spec.html.
 
 // Every flag becomes a key. Positional arguments collect in `_`, so
 // `knowledge add goal --title x` gives { _: ["goal"], title: "x" }.
@@ -32,7 +32,7 @@ export interface Cli {
   // docs root the same way `fs.get` names them. The engine used to compute
   // this from the raw arguments, which only worked while a family kept every
   // file in one directory — see
-  // docs/specs/2026-08-07-link-href-from-the-command-base.spec.html.
+  // .mycelium/specs/2026-08-07-link-href-from-the-command-base.spec.html.
   href: (from: string, to: string) => string
 }
 
@@ -94,12 +94,18 @@ export interface TestContext {
   sandbox: TestSandbox
 }
 
-// What an audit is handed. Read-only, and rooted one level above the docs
+// What an audit is handed. Read-only, and rooted one level above the corpus
 // directory so src/ is reachable. A rule about language applies to a
 // comment in a source file as much as to prose in a document, and an
 // audit that can only see HTML can never say so.
 export interface AuditFs {
   root: string
+  // The corpus directory, relative to that root. Rooting above the corpus is
+  // what makes an audit need this: reaching src/ costs it the ability to say
+  // "the documents" without naming them, and twelve call sites answered that
+  // by repeating a literal. A dot-named corpus turns every one of those into an
+  // empty list rather than an error, and an audit checking nothing passes.
+  docsDir: string
   list(dir?: string, options?: { ext?: string }): string[]
   read(path: string): string
   parse(path: string): Document
@@ -133,10 +139,11 @@ export interface Corpus extends AuditFs {
 // does not virtualise the script inside it. Substituting code is a different
 // act from substituting data, and passing a loader makes a case say which one
 // it means rather than getting the other by accident.
+// Where the documents sit is not here, though it was until an audit needed the
+// same fact. It lives on the corpus now, so a run and an audit read one value
+// rather than two that agree by convention.
 export interface ValidateEnv {
   corpus: Corpus
-  // Where the documents sit, relative to the corpus root. What --dir names.
-  docsDir: string
   loadCheck(file: string, script: Element): Promise<(...args: unknown[]) => unknown>
   loadGenericValidator(): Promise<(templateEl: Element, instanceEl: Element) => { ok: boolean; errors: string[] }>
 }

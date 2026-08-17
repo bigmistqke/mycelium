@@ -1,7 +1,7 @@
 // A Volar language plugin for this project's HTML documents.
 //
 // The problem it solves is stated in
-// docs/specs/2026-08-01-script-type-decides-the-language.spec.html. An HTML
+// .mycelium/specs/2026-08-01-script-type-decides-the-language.spec.html. An HTML
 // language service builds one virtual JavaScript document per HTML file and
 // concatenates every script into it, which merges scopes that are separate
 // when they run. It also ignores a script whose type it does not

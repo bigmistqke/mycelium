@@ -1,7 +1,7 @@
 // Node module-customization hooks (node:module's register()) that let a
 // template-embedded <script> block import another one — real ES modules,
 // real import/export, no data: URL. See
-// docs/specs/2026-07-25-virtual-module-script-imports.spec.html.
+// .mycelium/specs/2026-07-25-virtual-module-script-imports.spec.html.
 //
 // A specifier of the form "<path-to-html>#<locator>" is resolved to a
 // synthetic file: URL sitting beside the real HTML file; load() re-parses
@@ -119,7 +119,7 @@ function findScript(document: Document, locator: string): Element | null {
 // Node — so it may be TypeScript, and this hook tells Node to strip it.
 // Anything else the hook serves has to stay valid in a browser, so this
 // hook hands it over unstripped. See
-// docs/specs/2026-08-01-script-type-decides-the-language.spec.html.
+// .mycelium/specs/2026-08-01-script-type-decides-the-language.spec.html.
 //
 // Node does not sniff: "module" against a source carrying a type annotation is
 // a SyntaxError, not a silent fallback. So this hook has to decide here, per

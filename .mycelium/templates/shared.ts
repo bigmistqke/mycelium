@@ -5,7 +5,7 @@
 // declined at a much smaller scale. That decision's own stated reason
 // ("a data: URL-loaded command script can't do a relative import
 // anyway") no longer holds once the script itself loads from a real
-// file: URL. See docs/specs/2026-07-25-virtual-module-script-imports.spec.html.
+// file: URL. See .mycelium/specs/2026-07-25-virtual-module-script-imports.spec.html.
 
 export function todayDate(): string {
   const d = new Date()

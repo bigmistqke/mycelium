@@ -74,5 +74,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: failed-figures
-          path: docs/**/*.failure.png
+          path: .mycelium/**/*.failure.png
           if-no-files-found: ignore

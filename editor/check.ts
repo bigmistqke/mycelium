@@ -3,7 +3,7 @@
 //
 //   node editor/check.ts [file.html ...]
 //
-// With no arguments it checks every HTML file under docs/. Diagnostics come
+// With no arguments it checks every HTML file in the corpus. Diagnostics come
 // back mapped to positions in the HTML file itself, not in the virtual files,
 // which is the part worth watching: a wrong mapping shows up here as a line
 // number that does not match the source.
@@ -14,7 +14,7 @@ import * as ts from "typescript"
 import { resolve, relative } from "node:path"
 import { readFileSync } from "node:fs"
 import { createMyceliumLanguagePlugin, findScriptBlocks, isNodeOnly } from "./language-plugin.ts"
-import { walkHtmlFiles } from "../src/utils.ts"
+import { CORPUS_DIR, walkHtmlFiles } from "../src/utils.ts"
 
 const root = resolve(import.meta.dirname, "..")
 const tsconfig = resolve(root, "tsconfig.json")
@@ -27,7 +27,7 @@ const checker = createTypeScriptChecker(
 
 const files = process.argv.slice(2).length
   ? process.argv.slice(2).map((f) => resolve(f))
-  : walkHtmlFiles(resolve(root, "docs"))
+  : walkHtmlFiles(resolve(root, CORPUS_DIR))
 
 let total = 0
 let withCode = 0

@@ -5,7 +5,7 @@ Free text only supports a read. A declared shape supports a check. Mycelium is a
 You write this:
 
 ```html
-<!-- docs/templates/spec.template.html -->
+<!-- .mycelium/templates/spec.template.html -->
 <template id="spec-doc">
   <spec-title required></spec-title>
   <spec-status required enum="draft approved implemented"></spec-status>
@@ -49,7 +49,7 @@ $ pnpm mycelium validate
 803 checked, 0 fail
 ```
 
-The CLI is empty by itself. Every command it has arrives the way that one did, from a document carrying the implementation and the documentation together. Even validation is a document: `docs/commands/validate.command.html` declares the command you just ran, and the engine has no notion of a spec, a plan, or a decision.
+The CLI is empty by itself. Every command it has arrives the way that one did, from a document carrying the implementation and the documentation together. Even validation is a document: `.mycelium/commands/validate.command.html` declares the command you just ran, and the engine has no notion of a spec, a plan, or a decision.
 
 A command reads those fields as structured data, so it can query them, sort them, and check them. A person reads the document they sit in. The scripts beside them run on either side: one block renders a live demo in a browser, another runs under Node with the whole dependency tree in reach. A block both sides need exports from `<script type="module" id="…">`, which either one imports as `#…`.
 
@@ -146,7 +146,7 @@ A schema states what one document must look like. Other claims only hold across 
 </script>
 ```
 
-The engine hands it a read-only view of the tree, rooted one level above `docs/` so a check can reach the source files too. It lists, reads and parses on demand rather than receiving a prepared graph, so what counts as a node or an edge stays the audit's own business. An audit reports what it found and never decides whether that is acceptable, which is the engine's call.
+The engine hands it a read-only view of the tree, rooted one level above `.mycelium/` so a check can reach the source files too. It lists, reads and parses on demand rather than receiving a prepared graph, so what counts as a node or an edge stays the audit's own business. An audit reports what it found and never decides whether that is acceptable, which is the engine's call.
 
 `mycelium validate` runs every audit it finds, and one failure fails the run. Six exist today:
 
@@ -190,11 +190,11 @@ The last two forms are what let one block serve both sides. `#preview` above run
 Some commands belong to no family. A `.command.html` file declares those: it carries the same `<script type="mycelium/command">` and no `<template>`, because nothing conforms to it and there is no shape to state.
 
 ```
-docs/commands/explore.command.html    mycelium explore list
-docs/commands/validate.command.html   mycelium validate
+.mycelium/commands/explore.command.html    mycelium explore list
+.mycelium/commands/validate.command.html   mycelium validate
 ```
 
-Both work on the whole tree, which is what puts them here. `explore list` reports every conforming element under `docs/`. No family template could own that, since each one knows only its own types. `validate` checks the corpus against whatever each document declares.
+Both work on the whole tree, which is what puts them here. `explore list` reports every conforming element under `.mycelium/`. No family template could own that, since each one knows only its own types. `validate` checks the corpus against whatever each document declares.
 
 An `<id>` resolves to `<id>.template.html` first and `<id>.command.html` second, so both kinds answer the same invocation. A host may also export a default, which runs when no subcommand follows it. That is why `mycelium validate` needs no second word.
 
@@ -224,11 +224,11 @@ pnpm mycelium --help         # every host and every command, read off the docume
 pnpm mycelium <id> --help    # one host's own flags and caveats
 ```
 
-`<id>` is any file under `docs/` named `<id>.template.html` or `<id>.command.html`. Start from the roster rather than from this page: the engine carries no commands of its own, so `mycelium validate` reaches it the same way `mycelium spec add` does, and a family written tomorrow appears there without anyone editing a list.
+`<id>` is any file under `.mycelium/` named `<id>.template.html` or `<id>.command.html`. Start from the roster rather than from this page: the engine carries no commands of its own, so `mycelium validate` reaches it the same way `mycelium spec add` does, and a family written tomorrow appears there without anyone editing a list.
 
 Node ≥24. Type annotations in `.ts` files are stripped natively at run time; no build step, no `tsx`/`ts-node`.
 
 ## See also
 
 - [DESIGN](https://bigmistqke.github.io/mycelium/DESIGN.html): the original argument for building this way, written before any of it existed
-- [editor/README.md](editor/README.md): every `<script>` block under `docs/` gets its own virtual file and the right language
+- [editor/README.md](editor/README.md): every `<script>` block under `.mycelium/` gets its own virtual file and the right language

@@ -29,11 +29,11 @@
 
       export default async function ({ assert, sandbox }: TestContext) {
         for (const [path, text] of Object.entries(tidyTree({ withBroken: false }))) sandbox.write(path, text)
-        const clean = sandbox.mycelium("validate", "--dir", "docs/tidy")
+        const clean = sandbox.mycelium("validate", "--dir", ".mycelium/tidy")
         assert(clean.ok, `a clean tree exited ${clean.status}: ${clean.stdout}${clean.stderr}`)
 
         sandbox.write("tidy/bad.thing.html", tidyTree({ withBroken: true })["tidy/bad.thing.html"])
-        const dirty = sandbox.mycelium("validate", "--dir", "docs/tidy")
+        const dirty = sandbox.mycelium("validate", "--dir", ".mycelium/tidy")
         assert(!dirty.ok, `a tree with a failure in it still exited zero: ${dirty.stdout}`)
       }
     </script>
@@ -52,7 +52,7 @@
 
       export default async function ({ assert, sandbox }: TestContext) {
         for (const [path, text] of Object.entries(tidyTree({ withBroken: true }))) sandbox.write(path, text)
-        const run = sandbox.mycelium("validate", "--dir", "docs/tidy")
+        const run = sandbox.mycelium("validate", "--dir", ".mycelium/tidy")
 
         assert(!run.ok, `expected the run to fail: ${run.stdout}`)
         assert(

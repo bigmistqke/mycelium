@@ -4,6 +4,17 @@ import { pathToFileURL } from "node:url"
 import { Window } from "happy-dom"
 import { parse as parse5Parse } from "parse5"
 
+// Where a corpus sits, relative to the working directory. One name serves this
+// repository and any project installing this package, so what a consumer gets
+// and what this project runs are one arrangement rather than two to keep in
+// step. See .mycelium/specs/2026-08-17-mycelium-as-a-dependency.spec.html.
+//
+// The leading dot puts the directory behind walkFiles's own filter below, which
+// steps over every dot-entry it meets. Nothing filters a root somebody names, so
+// a walk handed this directory works and a walk starting above it finds nothing.
+// That is why AuditFs carries the name rather than letting an audit repeat it.
+export const CORPUS_DIR = ".mycelium"
+
 export function parseHTML(html: string): { document: Document } {
   const window = new Window()
   window.document.write(html)
@@ -35,7 +46,7 @@ export function findFirstByTag(node: any, tag: string): any {
 }
 
 // Every file under dir, recursively. node_modules is skipped: rooting an
-// audit's filesystem above docs/ puts it in reach, and walking it would cost
+// audit's filesystem above the corpus puts it in reach, and walking it would cost
 // more than the rest of the tree by orders of magnitude.
 export function walkFiles(dir: string): string[] {
   const results: string[] = []
@@ -89,7 +100,7 @@ function locatorFor(script: Element): string {
 // script's own relative imports (a shared helper, another family's
 // validator via the same #locator form) resolve normally — unlike the
 // data: URL this replaced, which had no base to resolve anything against.
-// See docs/specs/2026-07-25-virtual-module-script-imports.spec.html.
+// See .mycelium/specs/2026-07-25-virtual-module-script-imports.spec.html.
 export async function loadModule(filePath: string, script: Element): Promise<Record<string, unknown>> {
   const locator = encodeURIComponent(locatorFor(script))
   const fileUrl = pathToFileURL(filePath).href

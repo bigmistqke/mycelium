@@ -51,7 +51,7 @@
   "include": [
     "src/**/*.ts",
     "editor/**/*.ts",
-    "docs/**/*.html",
-    "docs/templates/*.element.js"
+    ".mycelium/**/*.html",
+    ".mycelium/templates/*.element.js"
   ]
 }
