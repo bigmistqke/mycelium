@@ -10,7 +10,7 @@
 // readings, and a second copy is how two checks come to disagree about what a
 // citation is.
 import type { AuditFs } from "mycelium/api"
-import { commentRanges } from "./code-comments.ts"
+import { commentRanges } from "mycelium/code-comments"
 
 
 

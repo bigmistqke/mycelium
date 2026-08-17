@@ -64,7 +64,7 @@
 <h2>Commands</h2>
 <script type="mycelium/command">
   import type { CommandContext } from "mycelium/api"
-  import { commentRanges } from "../templates/code-comments.ts"
+  import { commentRanges } from "mycelium/code-comments"
   import { readFileSync, writeFileSync } from "node:fs"
   import { resolve as resolvePath } from "node:path"
   import { spawnSync } from "node:child_process"

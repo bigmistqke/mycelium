@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A seeded document may import the package that seeded it, and nothing else</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>A seeded document may import the package that seeded it, and nothing else</notebook-title>
+  <notebook-tag>distribution</notebook-tag>
+  <notebook-tag>modules</notebook-tag>
+  <notebook-detail><p>
+  A seeded corpus sits in somebody else's repository with one package installed. Its documents run
+  through the module hook, which mints each module beside the real file, so a bare specifier resolves
+  from the consumer's own tree. Anything that package depends on is reachable there only when the
+  package manager happens to flatten <code>node_modules</code>.
+</p>
+<p>
+  One rule reached for <code>retext</code> directly and failed under pnpm while passing under npm,
+  which is the worst version of this: it works until somebody switches tool. Re-exporting the library
+  through <code>mycelium/retext</code> costs one line and removes the question.
+</p>
+<p>
+  The rule sorts the rest of the seed as well. A <code>.ts</code> helper beside a template pulls in
+  <code>typescript</code> or <code>marked</code>, so copying one into a consumer would carry the same
+  problem; nothing in the corpus links to those files either, so the package keeps the only copy and
+  the templates import them by name.
+</p>
+</notebook-detail>
+  <a data-rel="supports" href="./what-must-be-copied-is-what-something-names.principle.html">the other half of what the seed carries</a>
+</notebook-principle>
+</body></html>

@@ -402,7 +402,7 @@
 </p>
 <script type="mycelium/audit" data-audits="grounded" data-expects=".mycelium/templates/canon.template.html#sample-ungrounded-axiom .mycelium/templates/canon.template.html#sample-freelancing-behaviour" data-touches="canon-axiom canon-behaviour">
   import type { AuditFs } from "mycelium/api"
-  import { readCanon } from "./canon-citations.ts"
+  import { readCanon } from "mycelium/canon-citations"
 
   /**
    * Every behaviour names an axiom, and every axiom is reached by one.
@@ -546,15 +546,15 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext } from "mycelium/api"
-  import { readCanon, collectCodeCitations } from "./canon-citations.ts"
-  import { declaredOrders, declaresATemplate, placeField } from "./shared.ts"
+  import { readCanon, collectCodeCitations } from "mycelium/canon-citations"
+  import { declaredOrders, declaresATemplate, placeField } from "mycelium/shared"
   import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync, chmodSync, rmSync } from "node:fs"
   import { tmpdir } from "node:os"
   import { dirname, join, resolve as resolvePath } from "node:path"
   import { spawn, spawnSync, execFileSync } from "node:child_process"
   import { CORPUS_DIR, loadModule } from "mycelium/utils"
   import { ELEMENT, chromePath, sleep, withBrowser } from "mycelium/webdriver"
-  import { graphPage, templateFile } from "./graph-page.ts"
+  import { graphPage, templateFile } from "mycelium/graph-page"
   import { pathToFileURL } from "node:url"
 
   const TYPES = ['axiom', 'specification']

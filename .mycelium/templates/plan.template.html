@@ -188,7 +188,7 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext } from "mycelium/api"
-  import { todayDate, declaredOrders, placeField } from "./shared.ts"
+  import { todayDate, declaredOrders, placeField } from "mycelium/shared"
   import { spawnSync } from "node:child_process"
 
   function requireArgs(...checks) {

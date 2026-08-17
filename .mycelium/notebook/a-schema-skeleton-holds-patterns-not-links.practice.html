@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A template's href is a pattern, so a link rewriter that reads text corrupts the schema</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>A template's href is a pattern, so a link rewriter that reads text corrupts the schema</notebook-title>
+  <notebook-tag>schema</notebook-tag>
+  <notebook-tag>distribution</notebook-tag>
+  <notebook-detail><p>
+  A <code>&lt;template&gt;</code> skeleton carries one placeholder per field, and an attribute on a
+  placeholder is a regular expression the validator tests an instance against. So
+  <code>href=".+"</code> inside a template says <q>an instance must carry some href</q> rather than
+  pointing anywhere.
+</p>
+<p>
+  Rewriting seeded links with a pattern over the text hit those too. Every <code>href=".+"</code> came
+  back as a URL ending in <code>.+</code>, and eleven documents then failed against a rule that had
+  stopped describing a link at all. The failure named the instances rather than the template that
+  broke them, which is the wrong end to start reading from.
+</p>
+<p>
+  A parse tells the two apart, because the tree says which subtree is a template and which is markup.
+  parse5 hands back each attribute's byte range, so the edits splice into the original and every other
+  byte survives as somebody wrote it. Reserialising a whole document would have been the other way to
+  do it, and it rewrites whitespace nothing asked it to touch.
+</p>
+</notebook-detail>
+</notebook-practice>
+</body></html>

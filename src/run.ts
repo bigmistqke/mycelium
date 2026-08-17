@@ -4,11 +4,11 @@
 // command, validate included, actually does. See
 // .mycelium/specs/2026-07-23-mycelium-authoring-commands.spec.html.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
-import { basename, dirname, relative as relativePath, resolve as resolvePath } from "node:path"
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
+import { basename, dirname, join, posix, relative as relativePath, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
 import ts from "typescript"
-import { CORPUS_DIR, parseHTML, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
+import { CORPUS_DIR, parseHTML, parseHTMLWithLocations, walkFiles, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
 
 register("./script-hooks.ts", import.meta.url)
 
@@ -35,6 +35,133 @@ function findTemplateFile(dir: string, id: string): string | null {
     if (found) return found
   }
   return null
+}
+
+// Where this package's own corpus sits, whether it is running from a checkout
+// or from node_modules. Both look the same from here, which is what lets a
+// consumer's seed come out of the same documents this project validates.
+const PACKAGE_CORPUS = resolvePath(import.meta.dirname, "..", CORPUS_DIR)
+
+// Where a seeded document's outward links point once they leave this
+// repository. The canon holds that an entry may only refer to what a reader can
+// open, and a live external link satisfies that where a relative one into a
+// corpus the consumer does not have cannot.
+const PUBLISHED_SITE = "https://bigmistqke.github.io/mycelium/"
+
+// The families a new corpus starts with, and nothing more. A template has to be
+// copied because every instance names it by relative path and the audit opens
+// that path; a family nobody has authored against yet has no such instance, so
+// it can wait until somebody wants it.
+//
+// canon, spec, plan and figure stay out for that reason rather than as a
+// judgement about them. Adding one is a line here plus whatever it names.
+const SEED_FAMILIES = ["template", "notebook", "language", "followup"]
+
+// Every file a fresh corpus gets, as paths relative to the corpus root.
+//
+// Only documents and their stylesheets. Nothing in the corpus names a .ts
+// helper beside a template, because a script imports it rather than linking to
+// it, so the package keeps the single copy. An .element.js goes the same way,
+// since the generated graph page inlines it from wherever the reading code sits.
+function seedPaths(): string[] {
+  const paths: string[] = ["theme.css"]
+  for (const family of SEED_FAMILIES) {
+    for (const suffix of ["html", "css"]) {
+      const path = `templates/${family}.template.${suffix}`
+      if (existsSync(resolvePath(PACKAGE_CORPUS, path))) paths.push(path)
+    }
+  }
+  for (const dir of ["language", "commands"]) {
+    const full = resolvePath(PACKAGE_CORPUS, dir)
+    if (!existsSync(full)) continue
+    for (const file of walkFiles(full)) {
+      if (file.endsWith(".html")) paths.push(relativePath(PACKAGE_CORPUS, file))
+    }
+  }
+  return paths
+}
+
+// Repoints the links a seeded document carries out of the corpus it is leaving.
+//
+// A template cites the spec it came from and the entries behind its rules, all
+// by relative path. Those resolve here and nowhere else, so in a consumer they
+// would fail every-link-resolves on the first run — a gate red before anybody
+// has written anything, which teaches people to stop reading it.
+//
+// Which links to rewrite is derived rather than listed: anything resolving to a
+// file the seed does not carry gets the published site instead, and a link the
+// seed does carry keeps exactly what its author wrote. So adding a family to
+// the seed quietly stops rewriting the links that now resolve, and no list here
+// falls behind.
+// A <template> holds a schema rather than markup, so its own href is a regular
+// expression the validator tests an instance against. Nothing here may descend
+// into one: a pattern reading `.+` came back as a URL ending in `.+`, and every
+// instance then failed against a rule that had stopped describing a link.
+//
+// Hence a parse rather than a search over the text. parse5 hands back each
+// attribute's byte range, so the edits splice into the original and every other
+// byte of the document survives exactly as somebody wrote it.
+function repointOutwardLinks(html: string, path: string, carried: Set<string>): string {
+  const edits: { start: number; end: number; text: string }[] = []
+
+  function visit(node: any) {
+    const tag = node.tagName?.toLowerCase()
+    if (tag === "template") return
+    for (const attribute of node.attrs ?? []) {
+      if (attribute.name !== "href" && attribute.name !== "src") continue
+      const value = attribute.value as string
+      if (!value || value.startsWith("#") || /^[a-z][a-z0-9+.-]*:/i.test(value)) continue
+      const hash = value.indexOf("#")
+      const target = hash === -1 ? value : value.slice(0, hash)
+      const fragment = hash === -1 ? "" : value.slice(hash)
+      const resolved = posix.normalize(posix.join(posix.dirname(path), target))
+      if (carried.has(resolved)) continue
+      const at = node.sourceCodeLocation?.attrs?.[attribute.name]
+      if (!at) continue
+      edits.push({
+        start: at.startOffset,
+        end: at.endOffset,
+        text: `${attribute.name}="${PUBLISHED_SITE}${resolved}${fragment}"`,
+      })
+    }
+    for (const child of node.childNodes ?? []) visit(child)
+  }
+  visit(parseHTMLWithLocations(html))
+
+  let out = html
+  for (const edit of edits.sort((a, b) => b.start - a.start)) {
+    out = out.slice(0, edit.start) + edit.text + out.slice(edit.end)
+  }
+  return out
+}
+
+// Writes a corpus where none exists, and reports every file it wrote.
+//
+// This is the one thing the engine knows that is not the protocol, and it has
+// to be: a command lives inside a document, so no command can put the first
+// documents there. Everything it knows is still a path to copy, never anything
+// about what the copied documents mean.
+//
+// Returns false when a corpus is already there, because running this a second
+// time must not overwrite whatever somebody has written since the first.
+function seedCorpus(target: string, out: (line: string) => void): boolean {
+  if (existsSync(target)) return false
+
+  const paths = seedPaths()
+  const carried = new Set(paths)
+  for (const path of paths) {
+    const from = resolvePath(PACKAGE_CORPUS, path)
+    const to = resolvePath(target, path)
+    mkdirSync(dirname(to), { recursive: true })
+    if (path.endsWith(".html")) writeFileSync(to, repointOutwardLinks(readFileSync(from, "utf8"), path, carried))
+    else copyFileSync(from, to)
+    out(`wrote    ${join(CORPUS_DIR, path)}`)
+  }
+  out("")
+  out(`A corpus is now at ${CORPUS_DIR}/. Commit it: an instance names its own`)
+  out("template by relative path, so the templates belong beside what conforms to them.")
+  out("")
+  return true
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -541,10 +668,29 @@ async function main() {
   const out = (line: string) => console.log(line)
   const err = (line: string) => console.error(line)
 
+  // `mycelium` with nothing after it is a command rather than a mistake, so it
+  // goes to stdout and exits zero the way an asked-for `--help` does. It makes
+  // sure a corpus exists, then prints the roster of what that corpus can do.
+  // Running it twice does the second half only.
+  //
+  // More may attach here later. Whatever does belongs on the same footing:
+  // something a person wants when they type the bare name, and safe to repeat.
   if (!id || id === "--help" || id === "-h") {
-    printRoster(docsDir, id ? out : err)
-    printAudits(docsDir, id ? out : err)
-    process.exit(id ? 0 : 1)
+    if (!id) seedCorpus(docsDir, out)
+    if (!existsSync(docsDir)) {
+      out(`No corpus here yet. Run \`mycelium\` with nothing after it to write one into ${CORPUS_DIR}/.`)
+      process.exit(0)
+    }
+    printRoster(docsDir, out)
+    printAudits(docsDir, out)
+    process.exit(0)
+  }
+
+  // Every command reads the corpus, so none of them has anything to say without
+  // one. Saying so here beats each command failing on its own missing path.
+  if (!existsSync(docsDir)) {
+    console.error(`no corpus at ${CORPUS_DIR}/ — run \`mycelium\` with nothing after it to write one`)
+    process.exit(1)
   }
 
   const templateFile = findTemplateFile(docsDir, id)

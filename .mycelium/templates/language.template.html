@@ -283,9 +283,9 @@
   import { readFileSync, writeFileSync } from "node:fs"
   import { spawnSync } from "node:child_process"
   import { tmpdir } from "node:os"
-  import { stripProtected, extractProse, markdownToHtmlFragment, markdownParagraphRanges, htmlLeafElementRanges, BLOCK_TAGS } from "./language-prose.ts"
-  import { extractComments, commentRanges, parseComment, formatAsComment } from "./code-comments.ts"
-  import { declaredOrders, placeField } from "./shared.ts"
+  import { stripProtected, extractProse, markdownToHtmlFragment, markdownParagraphRanges, htmlLeafElementRanges, BLOCK_TAGS } from "mycelium/language-prose"
+  import { extractComments, commentRanges, parseComment, formatAsComment } from "mycelium/code-comments"
+  import { declaredOrders, placeField } from "mycelium/shared"
   const TYPES = ['term', 'rule', 'guide']
 
   // Fields in the order they should appear in a written document, per type. The
@@ -1399,8 +1399,8 @@
   import type { AuditFs } from "mycelium/api"
   import { loadModule, parseHTML } from "mycelium/utils"
   import { resolve as resolvePath } from "node:path"
-  import { PROTECTED_TAGS, extractProse, stripProtected, markdownToHtmlFragment } from "./language-prose.ts"
-  import { commentRanges } from "./code-comments.ts"
+  import { PROTECTED_TAGS, extractProse, stripProtected, markdownToHtmlFragment } from "mycelium/language-prose"
+  import { commentRanges } from "mycelium/code-comments"
   /**
    * Prose in the corpus obeys every rule that carries a check.
    *

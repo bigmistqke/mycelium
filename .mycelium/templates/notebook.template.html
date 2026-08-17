@@ -235,10 +235,10 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext } from "mycelium/api"
-  import { declaredOrder, placeField } from "./shared.ts"
+  import { declaredOrder, placeField } from "mycelium/shared"
   import { CORPUS_DIR, loadModule } from "mycelium/utils"
-  import { extractGraph } from "./extract-graph.ts"
-  import { graphPage, templateFile } from "./graph-page.ts"
+  import { extractGraph } from "mycelium/extract-graph"
+  import { graphPage, templateFile } from "mycelium/graph-page"
   import { tmpdir } from "node:os"
   import { join, resolve, resolve as resolvePath } from "node:path"
   import { pathToFileURL } from "node:url"

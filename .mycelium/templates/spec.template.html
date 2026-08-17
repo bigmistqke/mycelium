@@ -158,7 +158,7 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext } from "mycelium/api"
-  import { todayDate, declaredOrder, placeField } from "./shared.ts"
+  import { todayDate, declaredOrder, placeField } from "mycelium/shared"
 
   // Still local on purpose, unlike todayDate above: two lines, one call
   // site each in this file, not worth a shared import for. See
