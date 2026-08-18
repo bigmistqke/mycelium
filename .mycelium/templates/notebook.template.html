@@ -1286,7 +1286,17 @@
       firstSeen[slugOf(line)] = named ? `${named[1]}T00:00:00+00:00` : when
     }
     const arrived = {}
-    for (const { path } of fs.list(DIR)) arrived[path] = firstSeen[slugOf(path)] ?? ""
+    // An entry nobody has committed appears in no commit, so git has nothing to
+    // say about it and the slug misses. Today is the honest answer: the rule
+    // that an entry carries no date holds because git answers for every
+    // committed file, and this is the one file git cannot answer for yet.
+    //
+    // Without this the entry lands under the empty string, which sorts before
+    // every real date and opens the drawing in a nameless column. That is the
+    // entry somebody redrawing while they work is watching for, so it is the
+    // worst one to misplace.
+    const today = `${todayDate()}T00:00:00+00:00`
+    for (const { path } of fs.list(DIR)) arrived[path] = firstSeen[slugOf(path)] ?? today
 
     // A shallow clone answers this question wrongly rather than not at all. Its
     // boundary commit has no reachable parent, so git calls every file an
