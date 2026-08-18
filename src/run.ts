@@ -754,21 +754,21 @@ async function main() {
   const out = (line: string) => console.log(line)
   const err = (line: string) => console.error(line)
 
-  // `mycelium` with nothing after it is a command rather than a mistake, so it
-  // goes to stdout and exits zero the way an asked-for `--help` does. It makes
-  // sure a corpus exists, then prints the same thing --help does. Running it
-  // twice does the second half only.
+  // `mycelium` with nothing after it is the one way in: it seeds a corpus if
+  // none exists, then prints what that corpus can do. Running it twice does
+  // the second half only.
   //
-  // A shorter version used to print here instead, on the theory that a bare
-  // invocation asks for nothing in particular and a wall of every command
-  // answers a question nobody posed. A session meeting the corpus cold needs
-  // the opposite: everything it takes to get started, in the one screen it is
-  // handed before a task exists to make it ask for anything narrower.
+  // --help used to trigger this same branch, as a second spelling of the same
+  // request. Two spellings reaching one function is not the drift a second
+  // implementation risks, but it is still a second thing to know exists, and
+  // this project holds that there is one way to do a thing. The bare name is
+  // it. Asking for --help on an id that is not a real family now fails the
+  // same way any other unknown id does, with a pointer back to the one way.
   //
   // More may attach here later. Whatever does belongs on the same footing:
   // something a person wants when they type the bare name, and safe to repeat.
-  if (!id || id === "--help" || id === "-h") {
-    if (!id) seedCorpus(docsDir, out)
+  if (!id) {
+    seedCorpus(docsDir, out)
     if (!existsSync(docsDir)) {
       out(`No corpus here yet. Run \`mycelium\` with nothing after it to write one into ${CORPUS_DIR}/.`)
       process.exit(0)
@@ -787,7 +787,10 @@ async function main() {
 
   const templateFile = findTemplateFile(docsDir, id)
   if (!templateFile) {
-    console.error(`no command host found for "${id}" (looked for ${id}.template.html or ${id}.command.html)`)
+    console.error(
+      `no command host found for "${id}" (looked for ${id}.template.html or ${id}.command.html) — ` +
+        "run `mycelium` with nothing after it to see every family and command",
+    )
     process.exit(1)
   }
   const templateLabel = relativePath(docsDir, templateFile)
