@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A team ditches AI code review for custom linters, and the reasons line up with why validate exists here</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-research data-conforms-to="../templates/notebook.template.html#notebook-research">
+  <notebook-title>A team ditches AI code review for custom linters, and the reasons line up with why validate exists here</notebook-title>
+  <notebook-tag>deterministic-checks</notebook-tag>
+  <notebook-detail><p>Swizec's team paid roughly $1000 a week for an AI review bot and got
+comments back ten to thirty minutes after every push, generic and detached
+from the team's own values. They replaced most of it with custom linters —
+rules like <q>no raw color</q> or <q>descriptive test names</q> — that run in
+seconds, work inside the editor, and gate a commit before it ever reaches a
+pull request.</p>
+<p>The shape of the argument is the same one <a href="./lint-stays-out-of-other-families.principle.html">this
+project's own linting design</a> already rests on: whatever a rule can check
+deterministically should run as a rule, fast and pre-commit, and a model's
+judgment is worth spending only on what a rule cannot state — architecture,
+whether an abstraction is premature, whether a test actually exercises the
+failure it claims to. Reading this after the fact is convergent validation
+rather than the origin of that split.</p>
+<p>Source: <a href="https://swizec.com/blog/stop-burning-tokens-on-code-review">Stop burning tokens on code review</a>.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./lint-stays-out-of-other-families.principle.html">convergent validation for cheap deterministic checks over expensive model review</a>
+</notebook-research>
+</body></html>
