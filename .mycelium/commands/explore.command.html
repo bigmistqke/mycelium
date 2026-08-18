@@ -169,7 +169,7 @@
         .join("\n    ")
       const count = files.length ? `<span class="count">${files.length}</span>` : ""
       return `<section class="family" id="${sectionId(family.name)}">
-  <h3>${escapeHtml(family.name)}${count}</h3>
+  <h3><a href="${escapeHtml(family.path)}">${escapeHtml(family.name)}</a>${count}</h3>
   <p>${escapeHtml(family.purpose)}${specLinks ? ` &mdash; ${specLinks}` : ""}</p>
   ${files.length ? `<ul>\n    ${fileLinks}\n  </ul>` : `<p class="empty">no files yet</p>`}
 </section>`
