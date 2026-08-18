@@ -238,6 +238,7 @@
   import { declaredOrder, placeField } from "mycelium/shared"
   import { CORPUS_DIR, loadModule } from "mycelium/utils"
   import { extractGraph } from "mycelium/extract-graph"
+  import { BLOCK_TAGS } from "mycelium/language-prose"
   import { graphPage, templateFile } from "mycelium/graph-page"
   import { tmpdir } from "node:os"
   import { join, resolve, resolve as resolvePath } from "node:path"
@@ -542,6 +543,174 @@
         for (const a of Array.from(root.querySelectorAll(":scope > a[data-rel]"))) {
           console.log(`${name}  --${a.getAttribute("data-rel")}-->  ${a.getAttribute("href")}`)
         }
+      }
+    }
+  }
+
+  /**
+   * Where an entry lives, worked out from a slug, a filename, or a path
+   * pasted out of list.
+   *
+   * A slug naming more than one type names every match rather than choosing
+   * one, which is how language resolves an entry across its three
+   * directories.
+   */
+  function resolveEntry(fs, name) {
+    const bare = name.replace(new RegExp(`^${DIR}/`), "")
+    if (SUFFIX.test(bare)) return `${DIR}/${bare}`
+    const slug = bare.replace(/\.html$/, "")
+    if (!/^[\w-]+$/.test(slug)) throw new Error(`"${name}" is neither a slug nor a notebook filename`)
+    const found = fs
+      .list(DIR)
+      .map((entry) => entry.path)
+      .filter((path) => new RegExp(`/${slug}\\.(${TYPES.join("|")})\\.html$`).test(path))
+    if (found.length === 1) return found[0]
+    if (found.length > 1) throw new Error(`"${slug}" names more than one entry: ${found.join(", ")}`)
+    throw new Error(`no notebook entry named "${slug}" \u2014 run mycelium notebook list to see them`)
+  }
+
+  /**
+   * An element's text, one line per block.
+   *
+   * A paragraph in a file wraps at the width the file keeps, so an anchor
+   * hard-wrapped across two source lines would print as two lines of prose
+   * with the sentence torn in half. Collapsing whitespace inside a block and
+   * breaking between blocks is the split language-prose.ts already draws with
+   * BLOCK_TAGS, and importing that set keeps one answer to where a line ends.
+   *
+   * Only a field the template declares as markup needs this. The others hold
+   * text somebody typed, and a newline in one of those is a newline they
+   * meant.
+   */
+  function blockLines(node) {
+    const out = []
+    let open = ""
+    const flush = () => {
+      const line = open.replace(/\s+/g, " ").trim()
+      if (line) out.push(line)
+      open = ""
+    }
+    const walk = (el) => {
+      for (const child of Array.from(el.childNodes)) {
+        if (child.nodeType === 3) {
+          open += child.textContent ?? ""
+          continue
+        }
+        const tag = child.tagName?.toLowerCase()
+        if (!tag) continue
+        // A pre keeps every newline it carries, because its whitespace is
+        // the content rather than the file's own wrapping.
+        if (tag === "pre") {
+          flush()
+          out.push(...(child.textContent ?? "").replace(/^\n/, "").trimEnd().split("\n"))
+          continue
+        }
+        if (BLOCK_TAGS.has(tag) || tag === "blockquote") {
+          flush()
+          walk(child)
+          flush()
+          continue
+        }
+        walk(child)
+      }
+    }
+    walk(node)
+    flush()
+    return out
+  }
+
+  /**
+   * Print one entry in full, without its markup.
+   *
+   *   mycelium notebook show <entry>
+   *
+   * <entry> is a slug, so `mycelium notebook show link-do-not-tag` finds the
+   * principle. A whole filename works too, and so does a path pasted straight
+   * out of list. A bare slug could name an entry of any of the five types, so
+   * this reports every match rather than picking one.
+   *
+   * Reading stays loose where writing stays strict. update, link and del still
+   * demand a whole filename, because a wrong guess there edits the wrong entry.
+   * A wrong guess here prints the wrong entry and costs one more command.
+   *
+   * list answers which entries exist, and this answers what one of them says.
+   * Keeping the two apart is what lets list stay a roster, since printing every
+   * entry in full turns it into the corpus with extra steps.
+   *
+   * Every field prints through textContent rather than innerHTML, which is the
+   * reason the command exists. A doctype, a head and two stylesheet links wrap
+   * each entry, paragraphs and anchors wrap the detail inside it, and a reader
+   * consulting the entry wants none of that. Anyone reading through the file
+   * instead pays for the wrapper on every entry.
+   *
+   * A prompt prints on its own, once per prompt. It repeats because an entry
+   * gathers prompts over months, and two run together would read as one message
+   * nobody sent.
+   *
+   * An experiment prints its script verbatim under instrument, for the reason
+   * the experiment-shows-its-instrument spec already gives: the script is the
+   * claim, and anything describing it instead drifts from what runs.
+   *
+   * Edges print last, carrying the labels list edges leaves out. That label
+   * says what the edge means rather than restating either end, and until now
+   * the only way to read one was to open the markup.
+   */
+  export function show({ fs, args }: CommandContext) {
+    requireArgs([args._[0], "<entry>"])
+
+    const path = resolveEntry(fs, args._[0])
+    const root = rootOf(fs.get(path))
+    if (!root) throw new Error(`${path} declares no conformance, so it is not a notebook entry`)
+
+    const type = root.tagName.toLowerCase().slice("notebook-".length)
+    const text = (tag) => root.querySelector(tag)?.textContent?.trim()
+    const section = (label, value) => {
+      if (!value) return
+      console.log(`\n${label}`)
+      for (const line of value.split("\n")) console.log(`  ${line.trim()}`)
+    }
+
+    console.log(`${path}\n${type}\t${text("notebook-title") ?? ""}`)
+
+    const names = Array.from(root.querySelectorAll("notebook-tag"))
+      .map((el) => (el.textContent ?? "").trim())
+      .filter(Boolean)
+    section("tags", names.join("  "))
+
+    for (const el of Array.from(root.querySelectorAll("notebook-prompt"))) {
+      section("prompt", (el.textContent ?? "").trim())
+    }
+
+    section("question", text("notebook-question"))
+    section("reading", text("notebook-reading"))
+
+    const detail = root.querySelector("notebook-detail")
+    if (detail) {
+      const body = blockLines(detail)
+      if (body.length) {
+        console.log("\ndetail")
+        for (const line of body) console.log(`  ${line}`)
+      }
+    }
+
+    const script = root.querySelector('script[type="mycelium/experiment"]')?.textContent
+    if (script?.trim()) {
+      // Strip the indentation the file gave the whole block, and no more. A
+      // fixed count would flatten the script's own nesting in any entry whose
+      // indentation differs from the entry this command grew up beside.
+      const lines = script.replace(/^\n/, "").trimEnd().split("\n")
+      const shared = Math.min(...lines.filter((line) => line.trim()).map((line) => line.match(/^ */)[0].length))
+      console.log("\ninstrument")
+      for (const line of lines) console.log(`  ${line.slice(shared)}`)
+    }
+
+    const edges = Array.from(root.querySelectorAll(":scope > a[data-rel]"))
+    if (edges.length) {
+      console.log("\nedges")
+      for (const edge of edges) {
+        console.log(`  --${edge.getAttribute("data-rel")}-->  ${edge.getAttribute("href")}`)
+        const label = (edge.textContent ?? "").trim()
+        if (label) console.log(`      ${label}`)
       }
     }
   }

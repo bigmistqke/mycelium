@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: The notebook family gets a show command, copied from language</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>The notebook family gets a show command, copied from language</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-08-18</spec-date>
+  <spec-problem>
+<p>An agent looking for an entry in this corpus reaches for <code>ls</code> and
+then strips the markup with <code>sed</code>, because <code>notebook list</code>
+answers which entries exist and nothing answers what one of them says. Reading a
+single entry means opening a file wrapped in a doctype, a head and two
+stylesheet links, and markup accounts for nearly two fifths of the bytes. The
+family one directory over solved this in July with <code>language show</code>,
+and the notebook never got the same command.</p>
+<p>The cost lands hardest on the reader who cannot see the file. A person opens
+an entry in a browser and the stylesheet does the work, so the gap stayed
+invisible to whoever was authoring. An agent pays it on every entry it reads,
+and the practice entry <code>an-agent-greps-the-filenames-not-the-list-command</code>
+records one such session mistaking the missing command for a missing
+capability.</p>
+</spec-problem>
+  <spec-design>
+<p>Add <code>mycelium notebook show &lt;entry&gt;</code>, following
+<code>language show</code> wherever the two families agree. It prints the path,
+the type and title, then every field the entry carries, each under a lowercase
+label and indented by two spaces. Fields print through <code>textContent</code>
+rather than <code>innerHTML</code>, which is the whole point: a reader wants the
+detail's wording, not its paragraph tags.</p>
+<p>Resolution stays loose the way language's does. <code>&lt;entry&gt;</code>
+takes a bare slug, a whole filename, or a path pasted straight out of
+<code>list</code>, and a slug naming more than one type reports every match
+instead of choosing. Writing stays strict, so <code>update</code>,
+<code>link</code> and <code>del</code> still demand a whole filename — a wrong
+guess there edits the wrong entry, where a wrong guess here costs one more
+command.</p>
+<p>Two fields print differently from the rest, and both differences follow the
+notebook's own shape. A prompt repeats and holds somebody's exact words, so each
+one prints separately rather than running together. An experiment's script
+prints verbatim under <code>instrument</code>, for the reason
+<code>2026-08-10-experiment-shows-its-instrument.spec.html</code> already gives:
+the script is the claim, and a description of it is a second copy that drifts.</p>
+<p>Edges print last, with their labels. <code>list edges</code> prints the
+relation and the target across the whole corpus and drops the label, so the one
+place a reader learns what an edge means is the file. This command becomes that
+place, which makes it the only way to read an edge's reasoning without opening
+markup.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Incoming edges stay out. A reader wanting them wants a neighbourhood view,
+which is a different command answering a different question, and folding it in
+here makes <code>show</code> scan the whole corpus to print one file.
+<code>language show</code> prints outgoing edges only and this follows it.</p>
+<p>No filter joins <code>list</code>, and no search command arrives. Both are
+worth weighing separately, and neither belongs to the gap this closes.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>Whether an entry should carry a repository path the way a followup does,
+so it surfaces where it applies instead of waiting for somebody to name it.
+That is delivery rather than retrieval, and it stays open here.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>
