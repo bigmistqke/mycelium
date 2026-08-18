@@ -314,7 +314,8 @@
   import { withBrowser } from "mycelium/webdriver"
   import { extractGraph } from "mycelium/extract-graph"
   import { BLOCK_TAGS } from "mycelium/language-prose"
-  import { graphPage, namedScripts } from "mycelium/graph-page"
+  import { graphPage, namedScripts, templatePath } from "mycelium/graph-page"
+  import { serveGraph } from "mycelium/graph-serve"
   import { tmpdir } from "node:os"
   import { basename, dirname, join, resolve, resolve as resolvePath } from "node:path"
   import { pathToFileURL } from "node:url"
@@ -1194,6 +1195,7 @@
    * Draw the notebook, as days in columns.
    *
    *   mycelium notebook generate graph [--out <path>] [--base [<href>]]
+   *   mycelium notebook generate graph --watch [--port N] [--open]
    *
    * A day is a partition rather than a rank: four fifths of the edges join
    * two entries from the same day, so columns of days alone would leave most
@@ -1211,12 +1213,33 @@
    * relative to the corpus, so a page written outside it needs --base to resolve
    * them; --base with no value points at this machine's own corpus, which is
    * right for looking and wrong for committing.
+   *
+   * --watch holds the process open instead of writing a file. It serves the
+   * page over HTTP, rooted at the corpus so a node's own link opens the real
+   * document. It redraws the page in the reader's own tab whenever an entry
+   * changes. --out and --base do nothing with it: nothing gets written, and
+   * nothing needs a base once the server is the one serving the links.
    */
   export function generate({ fs, args }: CommandContext) {
     if (args._[0] !== "graph") throw new Error(`unknown generate kind "${args._[0]}" — expected "graph"`)
+    const corpusRoot = resolvePath(CORPUS_DIR)
+
+    if (args.watch) {
+      return serveGraph({
+        page: GRAPH_PAGE,
+        sharedScriptPath: templatePath(GRAPH_PAGE.scripts[0]),
+        rankingScriptPath: templatePath(GRAPH_PAGE.scripts[1]),
+        cssPath: templatePath("graph.template.css"),
+        corpusRoot,
+        watchDir: DIR,
+        build: () => graphData(corpusView(corpusRoot, ".")),
+        port: args.port ? Number(args.port) : undefined,
+        open: args.open !== undefined,
+      })
+    }
+
     const { data, counts, dropped } = graphData(corpusView(fs.root, "."))
     if (dropped) console.log(`note: ${dropped} edge(s) leaving the notebook are not drawn`)
-    const corpusRoot = resolvePath(CORPUS_DIR)
     const rel = (p) => (p.startsWith(corpusRoot + "/") ? p.slice(corpusRoot.length + 1) : p)
 
     const base = args.base === undefined ? ""
