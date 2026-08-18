@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: The graph redraws itself while somebody works</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>The graph redraws itself while somebody works</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-18</spec-date>
+  <spec-problem>
+<p>The notebook drawing is a one-shot. <code>notebook generate graph</code> parses
+every entry, asks git for the day each one arrived, writes a self-contained page
+and prints a <code>file://</code> URL. Somebody who then writes an entry runs the
+command again and reopens the page, which throws away the selection, the kind
+filters and the scroll position every time.</p>
+<p>That loop costs about three seconds, and about two of them go before the
+command starts. <code>mycelium --help</code> alone costs roughly the same two,
+because the engine compiles each family's embedded scripts at load. So a watcher
+that re-invokes the command line spends two thirds of its bill re-learning what a
+command is, and a loop that holds one process open does not. The entry
+<code>starting-the-process-costs-more-than-the-work.practice.html</code> records
+the measurement.</p>
+<p>Two faults hide inside the one-shot, and a redrawing page meets both
+immediately. An entry nobody has committed has no commit to take a day from, so
+it opens the drawing in a nameless column at the far left — and that entry is
+exactly what somebody watching wants to see. Every node address is an absolute
+filesystem path, because the corpus moved from <code>docs/</code> to
+<code>.mycelium/</code> and two prefix strippers stayed behind. The entries
+<code>a-new-entry-has-no-day-to-stand-in.practice.html</code> and
+<code>a-rename-leaves-a-prefix-stripper-behind.practice.html</code> hold both
+readings.</p>
+</spec-problem>
+  <spec-design>
+<p><code>generate</code> gains <code>--watch</code>. With it the command builds
+the page as it always did, holds the process open, serves that page over HTTP and
+redraws it whenever the corpus underneath moves. Without it the command writes a
+file and exits, exactly as today, which is what
+<code>deploy-pages.yml</code> keeps calling.</p>
+<p>A new file, <code>graph-serve.ts</code>, sits beside <code>graph-page.ts</code>
+and holds the server, the change channel and the watcher. Both families already
+import <code>mycelium/graph-page</code>, so <code>canon generate --watch</code>
+costs one more argument rather than a second copy. Each family hands the module a
+function that rebuilds its data and the paths worth watching.</p>
+<p>Rebuilding needs the data on its own, and today <code>generate</code> reaches
+the end holding a whole page. So the command splits into a builder returning the
+nodes, the edges and the arrival dates, and a thin caller that wraps those in
+<code>graphPage</code> and writes them. The first request serves the page; every
+change after it sends only the data.</p>
+<p>The server roots at the corpus, so a click on a node's <q>where</q> link opens
+the real document rather than a dead path. That works only once an address goes
+back to naming a file relative to the corpus, which is why the stale
+<code>docs/</code> prefix leaves as part of this rather than after it. The same
+fix un-breaks the pane link and the permalink hash on the published site.</p>
+<p>One route carries changes, as <code>text/event-stream</code>, and what the
+page does depends on which file moved:</p>
+<ul>
+<li>a notebook document, or the family's own ranking script
+(<code>notebook.element.js</code>) — the page swaps the JSON under
+<code>#notebook</code>, re-evaluates the ranking script in a fresh function
+scope and mounts the drawing again;</li>
+<li><code>graph.template.css</code> — the page replaces the text of its own
+<code>&lt;style&gt;</code> and redraws the wires, with no remount;</li>
+<li><code>graph.element.js</code> — the page reloads, because
+<code>mountGraph</code> closes over its state inside an IIFE, and the listeners
+it registers on the grid and the window have no way to unregister themselves
+before a fresh copy of the same code registers a second set.</li>
+</ul>
+<p>Only the shared drawing engine forces a reload. The family's own ranking
+script registers no listener and holds no closured state of its own — it reads
+the current data and calls the one <code>mountGraph</code> that exists, so
+re-running it fresh is exactly what a data change already does. Splitting this
+from the shared engine landed while building the server: a probe run in a real
+headless browser showed that re-running a script this way is only unsafe for
+the piece that attaches listeners once and cannot detach them, and the ranking
+script has never been that piece.</p>
+<p>Mounting twice nearly works already. <code>render</code> clears the cells it
+rebuilds, and a second <code>mount</code> breaks in three small ways:
+<code>buildFilters</code> appends chips without clearing them, <code>mount</code>
+registers the same four page listeners again so a click toggles twice and nets to
+nothing, and <code>kindOf</code>, <code>addressByHash</code> and
+<code>relColour</code> keep keys for nodes that have gone. All three take a line
+each.</p>
+<p>The URL holds which kinds a reader has switched off, as
+<code>?hide=practice,research</code>, written through
+<code>history.replaceState</code> and read back on every mount. Selection already
+lives in the hash, and the page already reads <code>location.search</code> for
+<code>measure</code>, so a view's settings have somewhere established to sit.
+This makes a filtered view a link somebody can paste, and it means a remount
+recovers its state from the address bar instead of inheriting it from a closure
+that any reload would clear.</p>
+<p>An entry git has never seen takes today as its day. The rule that an entry
+carries no date holds because git answers for every committed file, and this is
+the one case where git has no answer. The fallback applies to a plain
+<code>generate</code> over a dirty tree too, which is the same statement: an
+entry nobody has committed is arriving now.</p>
+<p>Nothing new joins the dependencies. <code>node:http</code> and
+<code>node:fs</code>'s own watching cover all of it, the way the earlier
+<code>explore</code> server design already assumed.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Nothing edits the corpus from the page. A drawing that writes back is a
+different design with a different failure mode, and the authoring commands
+already own writing.</p>
+<p>The watcher covers one family's own directory and the three template files its
+page inlines, not the whole corpus. A spec or a canon claim changing moves
+nothing in the notebook drawing, and watching everything would rebuild on every
+keystroke somebody spends elsewhere.</p>
+<p>A change to a command script inside a template does not reach the running
+server. The process holds those modules compiled, and swapping them means the
+kind of module invalidation this project has no reason to build. Restarting is
+the answer, and the server says so when one of those files moves.</p>
+<p>Publishing stays as it is. <code>deploy-pages.yml</code> calls the one-shot
+<code>generate --out index.html</code>, and nothing about a watch mode changes
+what CI writes.</p>
+</spec-out-of-scope>
+  <spec-open-questions>
+<p>How long to wait after a file moves before rebuilding. One authoring command
+writes one file, so a short window covers it, and a rebase or a branch switch
+moves hundreds at once and wants a longer one.</p>
+<p>Whether the chain drawing needs anything the notebook does not. It ranks by a
+vocabulary of claims rather than by days and it has no arrival dates to fall back
+on, so its builder may be the only part that differs.</p>
+<p>What happens to a permalink somebody already saved. Corpus-relative addresses
+change every hash the published site has ever handed out, and nothing redirects
+an old one.</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>

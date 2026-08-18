@@ -314,7 +314,8 @@
   import { withBrowser } from "mycelium/webdriver"
   import { extractGraph } from "mycelium/extract-graph"
   import { BLOCK_TAGS } from "mycelium/language-prose"
-  import { graphPage, templateFile } from "mycelium/graph-page"
+  import { graphPage, namedScripts, templatePath } from "mycelium/graph-page"
+  import { serveGraph } from "mycelium/graph-serve"
   import { tmpdir } from "node:os"
   import { basename, dirname, join, resolve, resolve as resolvePath } from "node:path"
   import { pathToFileURL } from "node:url"
@@ -1314,6 +1315,7 @@
    * Draw the notebook, as days in columns.
    *
    *   mycelium notebook generate graph [--out <path>] [--base [<href>]]
+   *   mycelium notebook generate graph --watch [--port N] [--open]
    *
    * A day is a partition rather than a rank: four fifths of the edges join
    * two entries from the same day, so columns of days alone would leave most
@@ -1331,14 +1333,79 @@
    * relative to the corpus, so a page written outside it needs --base to resolve
    * them; --base with no value points at this machine's own corpus, which is
    * right for looking and wrong for committing.
+   *
+   * --watch holds the process open instead of writing a file. It serves the
+   * page over HTTP, rooted at the corpus so a node's own link opens the real
+   * document. It redraws the page in the reader's own tab whenever an entry
+   * changes. --out and --base do nothing with it: nothing gets written, and
+   * nothing needs a base once the server is the one serving the links.
    */
   export function generate({ fs, args }: CommandContext) {
     if (args._[0] !== "graph") throw new Error(`unknown generate kind "${args._[0]}" — expected "graph"`)
+    const corpusRoot = resolvePath(CORPUS_DIR)
 
+    if (args.watch) {
+      return serveGraph({
+        page: GRAPH_PAGE,
+        sharedScriptPath: templatePath(GRAPH_PAGE.scripts[0]),
+        rankingScriptPath: templatePath(GRAPH_PAGE.scripts[1]),
+        cssPath: templatePath("graph.template.css"),
+        corpusRoot,
+        watchDir: DIR,
+        build: () => graphData(corpusView(corpusRoot, ".")),
+        port: args.port ? Number(args.port) : undefined,
+        open: args.open !== undefined,
+      })
+    }
+
+    const { data, counts, dropped } = graphData(corpusView(fs.root, "."))
+    if (dropped) console.log(`note: ${dropped} edge(s) leaving the notebook are not drawn`)
+    const rel = (p) => (p.startsWith(corpusRoot + "/") ? p.slice(corpusRoot.length + 1) : p)
+
+    const base = args.base === undefined ? ""
+      : `<base href="${args.base === "true" ? pathToFileURL(corpusRoot + "/").href : args.base}">`
+
+    const page = graphPage({ ...GRAPH_PAGE, scripts: namedScripts(GRAPH_PAGE.scripts), data, counts, base })
+
+    const out = args.out
+      ? resolvePath(CORPUS_DIR, args.out)
+      : join(tmpdir(), `mycelium-notebook-${Date.now()}.html`)
+    fs.create(rel(out), page)
+    console.log(args.out ? out : pathToFileURL(out).href)
+  }
+
+  /**
+   * Everything about the page that does not change between drawings.
+   *
+   * Named once because two callers want it: the command that writes a file, and
+   * the server that keeps redrawing one. The shared drawing goes first and the
+   * notebook's own ranking second, since the second calls what the first
+   * defines.
+   */
+  const GRAPH_PAGE = {
+    title: "The notebook",
+    dataId: "notebook",
+    scripts: ["graph.element.js", "notebook.element.js"],
+  }
+
+  /**
+   * The notebook in the terms the drawing reads: nodes, edges and arrival days.
+   *
+   * Split out from the command around it because a watching page wants this
+   * without the page it normally arrives wrapped in.
+   *
+   * It reads through a corpus view rather than the engine's filesystem. So a
+   * caller wanting the corpus as it stands right now hands over a fresh view
+   * and gets a fresh answer. The engine's own filesystem keeps every document
+   * it has parsed, which suits a command that runs once and defeats one that
+   * runs every time a file moves.
+   */
+  function graphData(corpus) {
     // extractGraph resolves cross-file edges against each document's own path,
-    // which has to be a real absolute one. fs.list returns paths relative to
-    // the corpus directory, which is the root run.ts resolves.
-    const documents = fs.list(DIR).map(({ path, doc }) => ({ path: resolvePath(CORPUS_DIR, path), dom: doc }))
+    // which has to be a real absolute one. A corpus view lists paths relative
+    // to its own root, which here is the corpus directory.
+    const documents = corpus.list(DIR, { ext: ".html" })
+      .map((path) => ({ path: resolvePath(corpus.root, path), dom: corpus.parse(path) }))
     const { nodes, edges } = extractGraph(documents, TAGS)
 
     const prompts = new Map()
@@ -1357,15 +1424,19 @@
     // silently vanishing.
     const here = new Set(nodes.map((n) => n.id))
     const kept = edges.filter((e) => here.has(e.from) && here.has(e.to))
-    if (kept.length < edges.length) {
-      console.log(`note: ${edges.length - kept.length} edge(s) leaving the notebook are not drawn`)
-    }
 
     // An absolute path bakes one machine's home directory into the page, so
     // both ends go back to paths relative to the corpus, which is what a published
     // site serves. An address then doubles as its own href.
-    const docsRoot = resolvePath("./docs")
-    const rel = (p) => (p.startsWith(docsRoot + "/") ? p.slice(docsRoot.length + 1) : p)
+    //
+    // Named for the corpus rather than written out, because this said "./docs"
+    // for as long as the corpus lived there and went on saying it afterwards. A
+    // prefix that matches nothing strips nothing, so every address stayed
+    // absolute while every arrival date stayed corpus-relative. The two halves
+    // then never met, and all 410 entries collapsed into one nameless column.
+    // The counts line reported that as "1 days" and nobody read it. See
+    // ../notebook/a-guard-can-blame-the-wrong-cause.practice.html.
+    const rel = (p) => (p.startsWith(corpus.root + "/") ? p.slice(corpus.root.length + 1) : p)
     const detail = detailHtml(documents, rel)
 
     // A slug is what survives. The migration out of docs/knowledge rewrote
@@ -1385,7 +1456,7 @@
     const log = execFileSync(
       "git",
       ["log", "--diff-filter=AR", "--format=%aI", "--name-only", "--", ...WHERE_IT_HAS_LIVED],
-      { cwd: resolvePath(fs.root, ".."), encoding: "utf8" }
+      { cwd: resolvePath(corpus.root, ".."), encoding: "utf8" }
     )
     for (const line of log.split("\n")) {
       if (/^\d{4}-\d{2}-\d{2}T/.test(line)) { when = line; continue }
@@ -1398,16 +1469,32 @@
       firstSeen[slugOf(line)] = named ? `${named[1]}T00:00:00+00:00` : when
     }
     const arrived = {}
-    for (const { path } of fs.list(DIR)) arrived[path] = firstSeen[slugOf(path)] ?? ""
+    // An entry nobody has committed appears in no commit, so git has nothing to
+    // say about it and the slug misses. Today is the honest answer: the rule
+    // that an entry carries no date holds because git answers for every
+    // committed file, and this is the one file git cannot answer for yet.
+    //
+    // Without this the entry lands under the empty string, which sorts before
+    // every real date and opens the drawing in a nameless column. That is the
+    // entry somebody redrawing while they work is watching for, so it is the
+    // worst one to misplace.
+    const today = `${todayDate()}T00:00:00+00:00`
+    for (const path of corpus.list(DIR, { ext: ".html" })) arrived[path] = firstSeen[slugOf(path)] ?? today
 
     // A shallow clone answers this question wrongly rather than not at all. Its
     // boundary commit has no reachable parent, so git calls every file an
-    // addition by that one commit and every entry arrives on the same day. The
-    // page then stacks 383 entries in one column, which is what a CI checkout at
-    // the default depth of 1 published. Ask git what it is rather than reading
-    // the collapse off the dates, since a young corpus really can hold one day.
+    // addition by that one commit and every entry arrives on the same day. Ask
+    // git what it is rather than reading the collapse off the dates, since a
+    // young corpus really can hold one day.
+    //
+    // This guard went in against a real collapse it did not cause. The dates
+    // were fine and the addresses looking them up were not, so the drawing kept
+    // stacking every entry in one column with the guard sitting right here
+    // saying nothing. A shallow clone still collapses it, so this stays — but
+    // seeing one column is not evidence of one, and the counts line saying
+    // "1 days" is the thing to read.
     const shallow = execFileSync("git", ["rev-parse", "--is-shallow-repository"], {
-      cwd: resolvePath(fs.root, ".."),
+      cwd: resolvePath(corpus.root, ".."),
       encoding: "utf8",
     }).trim()
     if (shallow === "true") {
@@ -1428,27 +1515,15 @@
     const joins = kept.map((e) => ({ from: rel(e.from), to: rel(e.to), rel: e.rel }))
     const days = new Set(drawn.map((n) => (arrived[n.address] ?? "").slice(0, 10)))
 
-    const base = args.base === undefined ? ""
-      : `<base href="${args.base === "true" ? pathToFileURL(docsRoot + "/").href : args.base}">`
-
-    // The shared drawing goes first and the notebook's own ranking second,
-    // since the second calls what the first defines.
-    const page = graphPage({
-      title: "The notebook",
-      dataId: "notebook",
+    return {
       data: { nodes: drawn, edges: joins, arrived },
-      base,
       counts: `<b>${drawn.length}</b> entries &middot;
     <b>${joins.length}</b> relations &middot;
     <b>${days.size}</b> days`,
-      scripts: ["graph.element.js", "notebook.element.js"].map(templateFile),
-    })
-
-    const out = args.out
-      ? resolvePath("./docs", args.out)
-      : join(tmpdir(), `mycelium-notebook-${Date.now()}.html`)
-    fs.create(rel(out), page)
-    console.log(args.out ? out : pathToFileURL(out).href)
+      // Returned rather than printed, because a command says this once and a
+      // server redrawing every few seconds would say it on every change.
+      dropped: edges.length - kept.length,
+    }
   }
 </script>
 

@@ -31,8 +31,22 @@ export interface GraphPage {
    * The scripts to inline, in order. The shared drawing comes first and the
    * caller's own ranking second, since the second calls what the first
    * defines.
+   *
+   * Each becomes its own <script data-src="…"> tag rather than one
+   * concatenation, so a name on the page can find one script's own source
+   * again. Classic scripts share one top-level scope across tags the same way
+   * they did concatenated into one, so nothing about how they run changes —
+   * only that a caller wanting to re-run just the ranking script later, the
+   * way a live page does, now has something to select.
    */
-  scripts: string[]
+  scripts: { name: string; source: string }[]
+  /**
+   * A live page's own script, inlined last. Absent for the file `generate`
+   * writes, which has nothing to talk to once it exists; a server sets this
+   * to the small script that opens the change channel and answers what
+   * arrives on it.
+   */
+  hmrClient?: string
 }
 
 /**
@@ -46,6 +60,22 @@ export function templateFile(name: string): string {
   return readFileSync(join(here, name), "utf8")
 }
 
+/**
+ * Where one of this project's own files sits, without reading it.
+ *
+ * A server watching for changes needs an absolute path to hand to
+ * node:fs.watch, and this is the same "where do the templates live" fact
+ * templateFile already answers — split out so nothing recomputes it.
+ */
+export function templatePath(name: string): string {
+  return join(here, name)
+}
+
+/** Read several of this project's own files, keeping each one's own name beside it. */
+export function namedScripts(names: string[]): { name: string; source: string }[] {
+  return names.map((name) => ({ name, source: templateFile(name) }))
+}
+
 export function graphPage(page: GraphPage): string {
   const closing = "<" + "/script"
   const json = JSON.stringify(page.data).split(closing).join("<\\/script")
@@ -56,7 +86,7 @@ export function graphPage(page: GraphPage): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${page.title}</title>
 ${page.base ?? ""}
-<style>
+<style id="graph-style">
 ${templateFile("graph.template.css")}
 </style>
 </head>
@@ -81,9 +111,8 @@ ${templateFile("graph.template.css")}
   <div id="pane-links"></div>
 </aside>
 <script type="application/json" id="${page.dataId}">${json}${closing}>
-<script>
-${page.scripts.join("\n")}
-${closing}>
+${page.scripts.map(({ name, source }) => `<script data-src="${name}">\n${source}\n${closing}>`).join("\n")}
+${page.hmrClient ? `<script id="hmr-client">\n${page.hmrClient}\n${closing}>` : ""}
 </body>
 </html>
 `
