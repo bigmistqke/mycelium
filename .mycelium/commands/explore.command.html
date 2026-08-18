@@ -106,8 +106,8 @@
   /**
    * A landing page for the published site: what the corpus holds, grouped by
    * the family that governs it, with the two drawings linked above the list.
-   * A table of contents up top jumps straight to a family, since the
-   * notebook section alone runs to hundreds of entries.
+   * Each family is a card carrying its own file count, so scanning the grid
+   * finds one without a separate index needing to stay in sync with it.
    *
    *   mycelium explore generate index [--out &lt;path&gt;] [--base [&lt;href&gt;]]
    *
@@ -197,14 +197,6 @@
       ? `<a href="DESIGN.html">${escapeHtml(titleOf(design.doc))}</a> is the project's own first node, and the fuller argument behind everything else on this page.`
       : ""
 
-    const toc = `<nav>
-  <ul>
-    <li><a href="#drawings">drawings</a></li>
-    ${sortedFamilies.map((family) => `<li><a href="#${sectionId(family.name)}">${escapeHtml(family.name)}</a></li>`).join("\n    ")}
-    ${other.size ? `<li><a href="#other">other</a></li>` : ""}
-  </ul>
-</nav>`
-
     const base = args.base === undefined
       ? ""
       : `<base href="${args.base === "true" ? pathToFileURL(resolvePath(fs.root) + "/").href : args.base}">`
@@ -291,7 +283,6 @@ ${style}
 <body>
 <h1>mycelium</h1>
 <p class="lede">${about}</p>
-${toc}
 <h2 id="drawings">Drawings</h2>
 <ul class="drawings">
   <li><a href="notebook.html"><b>The notebook</b><span>every entry, ranked by the day it arrived</span></a></li>
