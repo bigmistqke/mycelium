@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How far has the hand-written command list drifted from the roster?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>How far has the hand-written command list drifted from the roster?</notebook-title>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-tag>measurement</notebook-tag>
+  <notebook-tag>corpus</notebook-tag>
+  <notebook-prompt>maybe we should remove the CLAUDE.md stuff -&gt; derivation &gt; state synchronization</notebook-prompt>
+  <notebook-question>How many commands does CLAUDE.md name, how many does the corpus export, and how much of the file is a copy of something a command already prints?</notebook-question>
+  <script type="mycelium/experiment">
+export default function ({ fs }) {
+  // What the corpus exports, read the way the roster reads it: every exported
+  // function in a host's command script, with the host's own id in front. No
+  // list of families appears here, so a twelfth one counts itself.
+  const real = new Set()
+  for (const dir of ["templates", "commands"]) {
+    for (const path of fs.list(`${fs.docsDir}/${dir}`, { ext: ".html" })) {
+      const match = /([a-z-]+)\.(template|command)\.html$/.exec(path)
+      if (!match) continue
+      const source = fs.parse(path).querySelector('script[type="mycelium/command"]')?.textContent ?? ""
+      for (const found of source.matchAll(/export\s+(?:async\s+)?function\s+(\w+)/g)) {
+        real.add(`${match[1]} ${found[1]}`)
+      }
+    }
+  }
+
+  // What the file claims, taken only from its fenced blocks. Prose naming a
+  // command in passing is a reference; a block is where somebody copies an
+  // interface, and copying is the thing under question.
+  const text = fs.read("CLAUDE.md")
+  const lines = text.split("\n")
+  let fenced = 0, open = false
+  const named = new Set()
+  for (const line of lines) {
+    if (line.startsWith("```")) { open = !open; continue }
+    if (!open) continue
+    fenced++
+    for (const found of line.matchAll(/mycelium (?:run )?([a-z-]+) ([a-z-]+)/g)) {
+      named.add(`${found[1]} ${found[2]}`)
+    }
+  }
+
+  const stale = [...named].filter((one) => !real.has(one)).sort()
+  const missing = [...real].filter((one) => !named.has(one)).sort()
+  return `the corpus exports ${real.size} commands and the file names ${named.size}; ` +
+    `${stale.length} named that do not exist (${stale.join(", ") || "none"}); ` +
+    `${missing.length} exist that it never names; ` +
+    `${fenced} of ${lines.length} lines sit inside a fenced block`
+}
+
+</script>
+  <notebook-reading>the corpus exports 46 commands and the file names 23; 0 named that do not exist (none); 23 exist that it never names; 48 of 499 lines sit inside a fenced block</notebook-reading>
+  <notebook-detail><p>The file governing how an agent works here lists commands in fenced blocks
+and warns that a person maintains them by hand. It names twenty-three of the
+forty-six the corpus exports. Nothing it names has gone away, so the drift runs
+one direction only: half the interface is invisible to whoever reads the file
+instead of the tool.</p>
+<p>Absence is the dangerous direction, and the corpus already knew that. An
+entry from an earlier session records a reader taking a hand-copied list as the
+whole command line, failing to find a command that existed, and reporting the
+gap as a real one. A command somebody never learns about cannot produce an
+error, so the failure stays silent.</p>
+<p>It happened again during the session this ran in. The file describes no
+language family, an agent concluded that nothing in the corpus prints an entry
+as text, and <code>language show</code> had done exactly that since July. The
+conclusion was confident, specific, and produced entirely from a file rather
+than from the tool.</p>
+<p>The copied surface is smaller than the file, which matters for what to do
+about it. Forty-eight of four hundred and ninety-nine lines sit inside a fenced
+block, so deleting the copied interface costs a tenth of the document. The rest
+is prose about why the families are shaped as they are, and that is a separate
+question from this one.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./hand-copied-command-list-reads-as-absence.practice.html">the same failure, counted rather than recounted</a>
+</notebook-experiment>
+</body></html>
