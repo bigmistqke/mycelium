@@ -1535,6 +1535,14 @@
     const joins = kept.map((e) => ({ from: rel(e.from), to: rel(e.to), rel: e.rel }))
     const days = new Set(drawn.map((n) => (arrived[n.address] ?? "").slice(0, 10)))
 
+    // Everything worth keeping is already copied into drawn/joins/arrived —
+    // plain data, not a document reference — so nothing needs the parsed
+    // corpus this function opened any more. A one-shot command exits right
+    // after this returns, and the OS reclaims it regardless. The watch
+    // server calls graphData again in a few seconds, in the same process,
+    // and every window left open here is one more standing when it does.
+    corpus.dispose?.()
+
     return {
       data: { nodes: drawn, edges: joins, arrived },
       counts: `<b>${drawn.length}</b> entries &middot;

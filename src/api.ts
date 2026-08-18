@@ -109,6 +109,12 @@ export interface AuditFs {
   list(dir?: string, options?: { ext?: string }): string[]
   read(path: string): string
   parse(path: string): Document
+  // Releases whatever parse() allocated to read a document, once nothing
+  // needs it queryable any more. Optional because it matters only to a
+  // caller that runs many times in one process — a one-shot command exits
+  // and the OS reclaims everything regardless. See corpusView in utils.ts
+  // for what parse() actually holds onto and why it needs releasing at all.
+  dispose?(): void
 }
 
 // What an audit returns. `violations` names what it found, and each audit

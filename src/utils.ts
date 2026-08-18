@@ -208,8 +208,27 @@ export async function readStdin(): Promise<string> {
  * Nothing here parses until somebody asks. Listing answers with paths, so
  * filtering by name costs a string comparison rather than a document, and the
  * cache makes a second reader of the same file free.
+ *
+ * parse() opens a real happy-dom Window per document and hands back its
+ * document, discarding the window — and a discarded window still stays
+ * reachable from its own browser context until something calls its own
+ * close(). A window nobody closes never becomes garbage, regardless of
+ * whether the caller still holds the document.
+ *
+ * Harmless for a command that parses a few hundred documents once and
+ * exits. Fatal for one that does it every few seconds in the same process,
+ * since every rebuild adds its own few hundred windows to what the last
+ * rebuild already left behind. See
+ * ../notebook/the-watching-graph-server-exhausts-a-two-gigabyte-heap-after-roughly-a-dozen-rebuilds.practice.html
+ * for the two gigabytes that cost.
+ *
+ * dispose() closes every window this view opened. A caller that runs once
+ * never needs it — the process exiting reclaims everything regardless — so
+ * the cost of not calling it is zero there and real everywhere else.
  */
 export function corpusView(root: string, docsDir: string, cache = new Map<string, Document>()): Corpus {
+  const windows: { happyDOM: { close(): Promise<void> } }[] = []
+
   return {
     root,
     docsDir,
@@ -235,9 +254,23 @@ export function corpusView(root: string, docsDir: string, cache = new Map<string
       if (!doc) {
         const { document } = parseHTML(readFileSync(full, "utf8"))
         doc = document as unknown as Document
+        // Reached through defaultView rather than kept from parseHTML's own
+        // return value, which keeps that signature untouched for its dozens
+        // of other callers. This is the one caller that needs the window
+        // back, not a reason for everyone else to carry it.
+        const window = (doc as unknown as { defaultView?: { happyDOM: { close(): Promise<void> } } }).defaultView
+        if (window) windows.push(window)
         cache.set(full, doc)
       }
       return doc
+    },
+    dispose() {
+      // Not awaited. happy-dom's own close() finishes asynchronously, and a
+      // caller disposing is about to sit idle until the next rebuild or exit.
+      // That idle time is what a tight loop never gives a fire-and-forget
+      // call, and here it is free.
+      for (const window of windows.splice(0)) window.happyDOM.close()
+      cache.clear()
     },
   }
 }

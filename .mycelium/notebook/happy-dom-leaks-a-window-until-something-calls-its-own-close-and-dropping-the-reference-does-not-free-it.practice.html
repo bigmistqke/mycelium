@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>happy-dom leaks a Window until something calls its own close, and dropping the reference does not free it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>happy-dom leaks a Window until something calls its own close, and dropping the reference does not free it</notebook-title>
+  <notebook-tag>graph</notebook-tag>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-detail><p>Every parse in this project opens a fresh happy-dom <code>Window</code>
+and returns only its document, discarding the window. That is harmless for
+a command that parses a corpus once and exits — the process ending
+reclaims everything regardless. It is fatal for a process that parses the
+same corpus every few seconds, which is what the watching graph server
+does: <q>the watching graph server exhausts a two gigabyte heap after
+roughly a dozen rebuilds</q> was the visible symptom, on a corpus of
+around four hundred documents.</p>
+<p>A synthetic test isolated the mechanism. Parsing two thousand documents
+and dropping every reference to them, then forcing garbage collection,
+left the heap permanently elevated by several hundred megabytes — proof
+that something other than the caller's own references was keeping every
+window reachable. Calling each window's own <code>happyDOM.close()</code>
+and giving the async teardown five hundred milliseconds before the next
+garbage collection returned the heap to baseline. Closing without waiting
+did not: the teardown is asynchronous, and measuring before it finishes
+reads as though nothing worked.</p>
+<p>One surprise the same test caught: querying a document immediately
+after closing its window returns null. Close is not a courtesy call for
+something already done with — it ends the document's usability the moment
+it runs, synchronously, well before the async teardown that actually frees
+memory gets anywhere. So closing has to happen only once nothing needs the
+document queryable any more, not defensively right after parsing it.</p>
+<p>The fix scopes disposal to the one caller that runs in a loop.
+<code>corpusView</code> now tracks each window it opens via the document's
+own <code>defaultView</code>, and exposes a <code>dispose()</code> that
+closes all of them and clears its cache. The watch server's own rebuild
+function calls it once it has copied everything it needs into plain data,
+right before the process goes idle waiting for the next change — which is
+exactly the gap the async teardown needs. Nothing else calls it, because
+nothing else needs to: a one-shot command parsing the same four hundred
+documents once was never the two gigabytes.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./the-watching-graph-server-exhausts-a-two-gigabyte-heap-after-roughly-a-dozen-rebuilds.practice.html">the symptom this traces to its mechanism and fixes</a>
+</notebook-practice>
+</body></html>
