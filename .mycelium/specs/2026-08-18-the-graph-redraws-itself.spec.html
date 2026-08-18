@@ -58,15 +58,25 @@ fix un-breaks the pane link and the permalink hash on the published site.</p>
 <p>One route carries changes, as <code>text/event-stream</code>, and what the
 page does depends on which file moved:</p>
 <ul>
-<li>a notebook document — the page swaps the JSON under
-<code>#notebook</code>, re-evaluates the ranking script in a fresh function scope
-and mounts the drawing again;</li>
+<li>a notebook document, or the family's own ranking script
+(<code>notebook.element.js</code>) — the page swaps the JSON under
+<code>#notebook</code>, re-evaluates the ranking script in a fresh function
+scope and mounts the drawing again;</li>
 <li><code>graph.template.css</code> — the page replaces the text of its own
 <code>&lt;style&gt;</code> and redraws the wires, with no remount;</li>
-<li><code>graph.element.js</code> or a family's own element script — the page
-reloads, because <code>mountGraph</code> closes over its state inside an IIFE and
-nothing can swap that code in place.</li>
+<li><code>graph.element.js</code> — the page reloads, because
+<code>mountGraph</code> closes over its state inside an IIFE, and the listeners
+it registers on the grid and the window have no way to unregister themselves
+before a fresh copy of the same code registers a second set.</li>
 </ul>
+<p>Only the shared drawing engine forces a reload. The family's own ranking
+script registers no listener and holds no closured state of its own — it reads
+the current data and calls the one <code>mountGraph</code> that exists, so
+re-running it fresh is exactly what a data change already does. Splitting this
+from the shared engine landed while building the server: a probe run in a real
+headless browser showed that re-running a script this way is only unsafe for
+the piece that attaches listeners once and cannot detach them, and the ranking
+script has never been that piece.</p>
 <p>Mounting twice nearly works already. <code>render</code> clears the cells it
 rebuilds, and a second <code>mount</code> breaks in three small ways:
 <code>buildFilters</code> appends chips without clearing them, <code>mount</code>
