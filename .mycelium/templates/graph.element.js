@@ -13,25 +13,157 @@
 // one script. Both files want to say `ranks` and `parentsOf`, and at the top
 // level the second declaration is a syntax error that kills the page before it
 // draws anything.
+//
+// @ts-check
+"use strict"
+
+/**
+ * One box, in the shape every rank's own items array holds it. A caller
+ * builds these; nothing here invents a field none of them set.
+ *
+ * @typedef {object} Item
+ * @property {string} address
+ * @property {string} [title]
+ * @property {string} [kind]
+ * @property {string} [group]
+ * @property {string} [subsystem]
+ * @property {number} [reach]
+ * @property {string} [counts]
+ * @property {string} [groupOf]
+ * @property {boolean} [file]
+ */
+
+/**
+ * Items sharing one group, ordered and placed by orderRank/numberRows.
+ *
+ * @typedef {object} Group
+ * @property {string} name
+ * @property {Item[]} items
+ * @property {string} [groupOf]
+ * @property {number} [band]
+ * @property {number} [at]
+ */
+
+/**
+ * One column. `groups` is filled in by orderRank, so a rank a caller just
+ * built has items and nothing else yet.
+ *
+ * @typedef {object} Rank
+ * @property {string} name
+ * @property {Item[]} items
+ * @property {Group[]} [groups]
+ */
+
+/** @typedef {{ from: string, to: string, rel?: string }} DrawnEdge */
+
+/** A box's canvas position, as pointIn measures it off a getBoundingClientRect. */
+/** @typedef {{ left: number, right: number, middle: number }} Placed */
+
+/**
+ * One column of a node's neighbours in the pane, as sidesFor or the default
+ * two-column reading builds it.
+ *
+ * @typedef {object} Side
+ * @property {string} title
+ * @property {string} [rel]
+ * @property {number} [column]
+ * @property {string[]} [addresses]
+ */
+
+/**
+ * Whatever the corpus knows about one address. Every field but address is
+ * one claim type's own, so a node the pane fills from carries only the ones
+ * its own kind set.
+ *
+ * @typedef {object} GraphNode
+ * @property {string} address
+ * @property {string} [title]
+ * @property {string} [name]
+ * @property {string} [kind]
+ * @property {boolean} [file]
+ * @property {string} [prompt]
+ * @property {string} [question]
+ * @property {string} [snippet]
+ * @property {string} [reading]
+ * @property {string} [detail]
+ * @property {string} [doc]
+ * @property {string} [check]
+ * @property {string} [fixture]
+ */
+
+/**
+ * What a caller hands mount(): everything specific to what is being drawn.
+ *
+ * @typedef {object} Model
+ * @property {Rank[]} ranks
+ * @property {Record<string, string[]>} parentsOf
+ * @property {string[]} bands
+ * @property {(address: string) => GraphNode | undefined} nodeAt
+ * @property {(address: string) => Set<string>} litFrom
+ * @property {(address: string) => string} [impactFor]
+ * @property {(address: string) => Side[]} [sidesFor]
+ * @property {DrawnEdge[]} [edges]
+ */
+
+/**
+ * An element this page's own markup always carries; absence is a broken page,
+ * not a type worth threading through every caller.
+ *
+ * @param {string} id
+ * @returns {HTMLElement}
+ */
+const need = (id) => /** @type {HTMLElement} */ (document.getElementById(id))
+
+/**
+ * Every match, typed as the div this page builds every one of them from.
+ * querySelectorAll only infers a real element type from a bare tag name, and
+ * every selector here is a class or an attribute, so without this the loop
+ * variable comes back as the untyped base Element.
+ *
+ * @param {ParentNode} root
+ * @param {string} selector
+ * @returns {HTMLElement[]}
+ */
+const allOf = (root, selector) => /** @type {HTMLElement[]} */ (Array.from(root.querySelectorAll(selector)))
+
+/**
+ * The wire layers are the one thing here drawn as SVG, so path methods below
+ * (getTotalLength, getPointAtLength) resolve.
+ *
+ * @param {string} id
+ * @returns {SVGSVGElement}
+ */
+const needSvg = (id) => /** @type {SVGSVGElement} */ (/** @type {unknown} */ (document.getElementById(id)))
+
 const mountGraph = (() => {
 
-const grid = document.getElementById('grid')
-const wires = document.getElementById('wires')
-const litWires = document.getElementById('wires-lit')
-const pane = document.getElementById('pane')
+const grid = need('grid')
+const wires = needSvg('wires')
+const litWires = needSvg('wires-lit')
+const pane = need('pane')
 
 /** What the caller supplies, filled in by mountGraph. */
+/** @type {Rank[]} */
 let ranks = []
+/** @type {Record<string, string[]>} */
 let parentsOf = {}
+/** @type {Record<string, string[]>} */
 let childrenOf = {}
+/** @type {string[]} */
 let bands = []
-let nodeAt = () => null
+/** @type {(address: string) => GraphNode | undefined} */
+let nodeAt = () => undefined
+/** @type {(address: string) => Set<string>} */
 let litFrom = (address) => new Set([address])
+/** @type {(address: string) => string} */
 let impactFor = () => ''
 /** The colour standing for each kind of node, and the kind each address is. */
+/** @type {Record<string, string>} */
 const kindColour = {}
+/** @type {Record<string, string>} */
 const kindOf = {}
 /** The colour standing for each relation, for the groups the pane lists. */
+/** @type {Record<string, string>} */
 const relColour = {}
 /** Kinds a reader has switched off. Empty means everything shows. */
 const hidden = new Set()
@@ -71,19 +203,31 @@ function rememberFilters() {
  * back, because reversing a transform means guessing at what got removed, and
  * the set of real addresses is right here.
  */
+/** @type {Record<string, string>} */
 const addressByHash = {}
+
+/**
+ * @param {string} address
+ * @returns {string}
+ */
 const hashOf = (address) => address.replace(/\.html(?=$|#)/, '')
 
+/** @type {(address: string) => Side[]} */
 let sidesFor = (address) => [
   { title: 'answers to', column: 0, addresses: parentsOf[address] },
   { title: 'answered by', column: 1, addresses: childrenOf[address] },
 ]
 
+/**
+ * @param {Item} item
+ * @returns {number}
+ */
 const bandOf = (item) => {
-  const at = bands.indexOf(item.subsystem)
+  const at = bands.indexOf(item.subsystem ?? '')
   return at === -1 ? bands.length : at
 }
 
+/** @type {Record<string, number>} */
 const row = {}
 
 /**
@@ -98,20 +242,29 @@ const row = {}
  * The band always wins. A band holds one stretch of every column whatever the
  * means say, so the sweep decides the order inside a band and never across
  * bands.
+ *
+ * @param {Rank} rank
+ * @param {Record<string, string[]>} neighbours
+ * @returns {void}
  */
 function orderRank(rank, neighbours) {
+  /**
+   * @param {Item} item
+   * @returns {number}
+   */
   const mean = (item) => {
     const ns = (neighbours[item.address] || []).map(a => row[a]).filter(n => n !== undefined)
     return ns.length ? ns.reduce((a, b) => a + b, 0) / ns.length : Number.MAX_SAFE_INTEGER
   }
+  /** @type {Map<string | undefined, Item[]>} */
   const groups = new Map()
   for (const item of rank.items) {
     if (!groups.has(item.group)) groups.set(item.group, [])
-    groups.get(item.group).push(item)
+    groups.get(item.group)?.push(item)
   }
   for (const items of groups.values()) items.sort((a, b) => mean(a) - mean(b))
   rank.groups = [...groups.entries()]
-    .map(([name, items]) => ({ name, items, groupOf: items[0].groupOf, band: bandOf(items[0]),
+    .map(([name, items]) => ({ name: name ?? '', items, groupOf: items[0].groupOf, band: bandOf(items[0]),
       at: items.reduce((n, i) => n + (mean(i) === Number.MAX_SAFE_INTEGER ? 0 : mean(i)), 0) / items.length }))
     .sort((a, b) => a.band - b.band || a.at - b.at)
 }
@@ -120,7 +273,9 @@ function orderRank(rank, neighbours) {
 function numberRows() {
   for (const rank of ranks) {
     let n = 0
-    for (const group of rank.groups) for (const item of group.items) row[item.address] = n++
+    // Always set by orderRank, which every caller runs first — there is no
+    // path from an empty rank.groups to here.
+    for (const group of rank.groups ?? []) for (const item of group.items) row[item.address] = n++
   }
 }
 
@@ -135,10 +290,13 @@ function numberRows() {
  *
  * Reading the shallowest line rather than assuming a width, since one corpus
  * holds scripts at three different depths.
+ *
+ * @param {string} source
+ * @returns {string}
  */
 function dedent(source) {
   const lines = source.split('\n')
-  const depths = lines.slice(1).filter((line) => line.trim()).map((line) => line.match(/^ */)[0].length)
+  const depths = lines.slice(1).filter((line) => line.trim()).map((line) => (line.match(/^ */) ?? [''])[0].length)
   if (!depths.length) return source
   const cut = Math.min(...depths)
   return [lines[0], ...lines.slice(1).map((line) => line.slice(cut))].join('\n')
@@ -157,6 +315,9 @@ function dedent(source) {
  * which, since a reader decides whether to open it from that word alone.
  *
  * @behaviour canon/chain.canon.html#the-drawing-carries-the-comment-and-the-code
+ * @param {string} text
+ * @param {{ label?: string, lang?: string, section?: boolean }} [options]
+ * @returns {HTMLDetailsElement}
  */
 function codeFor(text, { label = 'implementation', lang = 'typescript', section = false } = {}) {
   const source = dedent(text)
@@ -188,6 +349,11 @@ function codeFor(text, { label = 'implementation', lang = 'typescript', section 
  *
  * The caller names the language, since a fixture is markup and everything else
  * here is code, and markup coloured as TypeScript reads as one long string.
+ *
+ * @param {HTMLElement} holder
+ * @param {string} source
+ * @param {string} lang
+ * @returns {Promise<void>}
  */
 async function paint(holder, source, lang) {
   try {
@@ -202,8 +368,13 @@ async function paint(holder, source, lang) {
   }
 }
 
-let shikiOnce = null
-const shiki = () => (shikiOnce ??= import('https://esm.sh/shiki@1.24.0'))
+/** @type {Promise<{ codeToHtml: (source: string, options: object) => Promise<string> }> | undefined} */
+let shikiOnce = undefined
+const shiki = () =>
+  // A URL specifier, resolved by the browser at runtime and never on disk, so
+  // nothing here can offer TypeScript a module to find.
+  // @ts-expect-error
+  (shikiOnce ??= import('https://esm.sh/shiki@1.24.0'))
 
 /**
  * One box.
@@ -214,6 +385,9 @@ const shiki = () => (shikiOnce ??= import('https://esm.sh/shiki@1.24.0'))
  *
  * The badge says something different on each rank, so it carries what it counts
  * rather than leaving a bare number to guess at.
+ *
+ * @param {Item} item
+ * @returns {HTMLElement}
  */
 function boxFor(item) {
   const el = document.createElement('div')
@@ -226,10 +400,15 @@ function boxFor(item) {
   el.innerHTML = (item.reach === undefined ? ''
       : '<span class="reach" title="' + item.counts + '">' + item.reach + '</span>')
     + '<span class="title"></span>'
-  el.querySelector('.title').textContent = item.title
+  const title = el.querySelector('.title')
+  if (title) title.textContent = item.title ?? ''
   return el
 }
 
+/**
+ * @param {Group} group
+ * @returns {HTMLElement}
+ */
 function groupBox(group) {
   const g = document.createElement('div')
   g.className = 'group'
@@ -257,11 +436,14 @@ function groupBox(group) {
  *
  * Called again whenever a sweep reorders anything, so what is on screen is
  * always the arrangement being measured.
+ *
+ * @returns {void}
  */
 function render() {
-  for (const cell of Array.from(grid.querySelectorAll('.rank, .cell, .headband'))) cell.remove()
-  const used = bands.filter(band => ranks.some(rank => rank.groups.some(g => g.band === bands.indexOf(band))))
-  const loose = ranks.some(rank => rank.groups.some(g => g.band >= bands.length))
+  for (const cell of allOf(grid, '.rank, .cell, .headband')) cell.remove()
+  // Always set by orderRank, which every caller of render runs first.
+  const used = bands.filter(band => ranks.some(rank => (rank.groups ?? []).some(g => g.band === bands.indexOf(band))))
+  const loose = ranks.some(rank => (rank.groups ?? []).some(g => (g.band ?? 0) >= bands.length))
 
   /**
    * A backdrop under the headings, spanning every column so the gaps between
@@ -270,7 +452,7 @@ function render() {
    */
   const backdrop = document.createElement('div')
   backdrop.className = 'headband'
-  backdrop.style.gridRow = 1
+  backdrop.style.gridRow = '1'
   backdrop.style.gridColumn = '1 / -1'
   grid.appendChild(backdrop)
 
@@ -278,18 +460,18 @@ function render() {
     const head = document.createElement('div')
     head.className = 'rank'
     head.innerHTML = rank.name ? '<h2>' + rank.name + '</h2>' : '<h2>&nbsp;</h2>'
-    head.style.gridColumn = column + 1
-    head.style.gridRow = 1
+    head.style.gridColumn = String(column + 1)
+    head.style.gridRow = '1'
     grid.appendChild(head)
 
     const rows = [...used.map(band => bands.indexOf(band)), ...(loose ? [bands.length] : [])]
     rows.forEach((band, index) => {
       const cell = document.createElement('div')
       cell.className = 'cell'
-      cell.style.gridColumn = column + 1
-      cell.style.gridRow = index + 2
-      for (const group of rank.groups.filter(g => g.band === band)) {
-        const showing = group.items.filter((item) => !hidden.has(item.kind))
+      cell.style.gridColumn = String(column + 1)
+      cell.style.gridRow = String(index + 2)
+      for (const group of (rank.groups ?? []).filter(g => g.band === band)) {
+        const showing = group.items.filter((item) => !hidden.has(item.kind ?? ''))
         if (showing.length) cell.appendChild(groupBox({ ...group, items: showing }))
       }
       grid.appendChild(cell)
@@ -297,7 +479,13 @@ function render() {
   })
 }
 
+/** @type {DrawnEdge[]} */
 let links = []
+
+/**
+ * @param {string} address
+ * @returns {HTMLElement | null}
+ */
 const boxOf = (address) => grid.querySelector('[data-address="' + CSS.escape(address) + '"]')
 
 /**
@@ -308,6 +496,9 @@ const boxOf = (address) => grid.querySelector('[data-address="' + CSS.escape(add
  * visible corner comes off, and whatever it has scrolled goes back on. Leaving
  * the scroll out draws every wire at the offset the reader last scrolled by,
  * which looks like a layout fault and is a stale measurement.
+ *
+ * @param {DOMRect} rect
+ * @returns {Placed}
  */
 function pointIn(rect) {
   const origin = grid.getBoundingClientRect()
@@ -328,6 +519,10 @@ function pointIn(rect) {
  *
  * Two boxes sharing a column use the same side at both ends, since neither sits
  * left of the other and a wire between them has to bow out somewhere.
+ *
+ * @param {Placed} ra
+ * @param {Placed} rb
+ * @returns {[number, number]}
  */
 function sidesOf(ra, rb) {
   if (ra.right <= rb.left) return [ra.right, rb.left]
@@ -335,6 +530,7 @@ function sidesOf(ra, rb) {
   return [ra.right, rb.right]
 }
 
+/** @returns {void} */
 function draw() {
   for (const layer of [wires, litWires]) {
     layer.setAttribute('viewBox', '0 0 ' + grid.scrollWidth + ' ' + grid.scrollHeight)
@@ -375,9 +571,11 @@ function draw() {
  * reader sees. Sampling the curve rather than solving it: a wire crossing a box
  * spends many points inside it, and a sample fine enough to matter is cheaper
  * than the arithmetic that would be exact.
+ *
+ * @returns {number}
  */
 function overlaps() {
-  const boxes = Array.from(grid.querySelectorAll('.node')).map(el => ({
+  const boxes = allOf(grid, '.node').map(el => ({
     address: el.dataset.address,
     rect: pointIn(el.getBoundingClientRect()),
     height: el.getBoundingClientRect().height,
@@ -410,9 +608,11 @@ function overlaps() {
  * the next band's, and the only symptom is that every wire suddenly crosses far
  * more than before. Counting wires said the layout got worse; it never said the
  * boxes had landed on each other.
+ *
+ * @returns {number}
  */
 function collisions() {
-  const boxes = Array.from(grid.querySelectorAll('.node')).map(el => el.getBoundingClientRect())
+  const boxes = allOf(grid, '.node').map(el => el.getBoundingClientRect())
   let count = 0
   for (let i = 0; i < boxes.length; i++)
     for (let j = i + 1; j < boxes.length; j++) {
@@ -427,19 +627,23 @@ function collisions() {
  *
  * Ordering and placement only reach the short ones. A wire spanning several
  * columns passes over whatever fills those columns whatever the layout does.
+ *
+ * @returns {Record<string, number>}
  */
 function overlapsBySpan() {
+  /** @type {Record<string, number>} */
   const column = {}
-  Array.from(grid.querySelectorAll('.rank, .cell')).forEach(cell => {
-    for (const el of cell.querySelectorAll('[data-address]')) column[el.dataset.address] = Number(cell.style.gridColumn)
+  allOf(grid, '.rank, .cell').forEach(cell => {
+    for (const el of allOf(cell, '[data-address]')) column[el.dataset.address ?? ''] = Number(cell.style.gridColumn)
   })
-  const boxes = Array.from(grid.querySelectorAll('.node')).map(el => ({
+  const boxes = allOf(grid, '.node').map(el => ({
     address: el.dataset.address, rect: pointIn(el.getBoundingClientRect()),
     height: el.getBoundingClientRect().height,
   }))
+  /** @type {Record<string, number>} */
   const bySpan = {}
   for (const path of wires.querySelectorAll('path')) {
-    const span = Math.abs((column[path.dataset.from] ?? 0) - (column[path.dataset.to] ?? 0))
+    const span = Math.abs((column[path.dataset.from ?? ''] ?? 0) - (column[path.dataset.to ?? ''] ?? 0))
     const length = path.getTotalLength()
     const hit = new Set()
     for (let at = 0; at <= length; at += 6) {
@@ -491,9 +695,12 @@ function settle(rounds = 6) {
  * it is the link rather than a separate row offering to open something. The
  * href keeps the fragment, so following it lands on the node itself and not the
  * top of the file.
+ *
+ * @param {GraphNode} node
+ * @returns {void}
  */
 function fillWhere(node) {
-  const where = document.getElementById('pane-where')
+  const where = need('pane-where')
   where.textContent = (node.kind || 'declaration') + ' in '
   const anchor = document.createElement('a')
   // The address already names the file relative to the corpus, which is what a
@@ -515,14 +722,17 @@ function fillWhere(node) {
  *
  * A caller with nothing worth saying says nothing, which is why an empty string
  * hides the line rather than needing a second flag.
+ *
+ * @param {GraphNode} node
+ * @returns {void}
  */
 function fillReach(node) {
-  const reach = document.getElementById('pane-reach')
+  const reach = need('pane-reach')
   reach.textContent = impactFor(node.address)
   reach.hidden = !reach.textContent
   // The line beside it takes the whole width when nothing sits there, rather
   // than stopping at the halfway mark against an empty half.
-  document.getElementById('pane-meta').classList.toggle('alone', reach.hidden)
+  need('pane-meta').classList.toggle('alone', reach.hidden)
 }
 
 /**
@@ -532,6 +742,9 @@ function fillReach(node) {
  * An empty section with a header reads as a bug in the page. The same section
  * missing entirely reads as an experiment somebody has not finished, which is
  * the true statement.
+ *
+ * @param {string} label
+ * @returns {HTMLHeadingElement}
  */
 function sectionHeader(label) {
   const head = document.createElement('h3')
@@ -562,9 +775,12 @@ function sectionHeader(label) {
  * A claim ends with the check that falsifies it, folded the same way and last.
  * Everything above it is what the project says, and the check is the one thing
  * on the page that can argue back.
+ *
+ * @param {GraphNode} node
+ * @returns {void}
  */
 function fillDetail(node) {
-  const detail = document.getElementById('pane-detail')
+  const detail = need('pane-detail')
   detail.textContent = ''
   // The prompt first and quoted, because it is the one thing here somebody else
   // said. Everything under it answers it, and a reader meeting the answer
@@ -642,13 +858,16 @@ function fillDetail(node) {
  *
  * A node with steps in only one direction gives that column the whole width,
  * rather than leaving half the pane holding a rule and nothing else.
+ *
+ * @param {GraphNode} node
+ * @returns {void}
  */
 function fillSides(node) {
-  const box = document.getElementById('pane-links')
+  const box = need('pane-links')
   box.textContent = ''
   const sides = sidesFor(node.address)
   const columns = [0, 1]
-    .map((column) => sides.filter((side) => (side.column ?? 0) === column).map(neighbours).filter(Boolean))
+    .map((column) => sides.filter((side) => (side.column ?? 0) === column).map(neighbours).filter((el) => el !== null))
     .filter((group) => group.length)
   box.style.gridTemplateColumns = `repeat(${columns.length}, minmax(0, 1fr))`
   columns.forEach((group, at) => {
@@ -666,11 +885,13 @@ function fillSides(node) {
  * learns which boxes reward a click.
  *
  * @behaviour canon/chain.canon.html#the-drawing-carries-the-comment-and-the-code
+ * @param {string | null} address
+ * @returns {void}
  */
 function fillPane(address) {
   const node = address && nodeAt(address)
   if (!node) { pane.hidden = true; return }
-  document.getElementById('pane-title').textContent = node.title || node.name
+  need('pane-title').textContent = node.title || node.name || ''
   fillWhere(node)
   fillReach(node)
   fillDetail(node)
@@ -687,9 +908,12 @@ function fillPane(address) {
  *
  * An empty side renders nothing at all, since a heading over no items tells a
  * reader the same thing its absence does.
+ *
+ * @param {Side} side
+ * @returns {HTMLElement | null}
  */
 function neighbours(side) {
-  const found = (side.addresses || []).map(nodeAt).filter(Boolean)
+  const found = (side.addresses || []).map(nodeAt).filter((el) => el !== undefined)
   if (!found.length) return null
   const box = document.createElement('div')
   box.className = 'side'
@@ -707,7 +931,7 @@ function neighbours(side) {
   for (const node of found) {
     const button = document.createElement('button')
     button.type = 'button'
-    button.textContent = node.title || node.name
+    button.textContent = node.title || node.name || ''
     // The same colour the box carries in the graph, so a step through the pane
     // and the box it lands on are recognisably the same thing.
     const kind = kindOf[node.address]
@@ -722,6 +946,7 @@ function neighbours(side) {
 }
 
 
+/** @type {string | null} */
 let selected = null
 
 /**
@@ -731,6 +956,9 @@ let selected = null
  * Read after the pane's own visibility is settled, since a box the pane now
  * covers and a box it no longer covers give opposite answers from the same
  * geometry.
+ *
+ * @param {HTMLElement} box
+ * @returns {boolean}
  */
 function isVisible(box) {
   const rect = box.getBoundingClientRect()
@@ -747,17 +975,20 @@ function isVisible(box) {
  *
  * The one place selection changes, so a click on the graph and a step through
  * the pane leave the page in the same state. Nothing else writes to `selected`.
+ *
+ * @param {string | null} address
+ * @returns {void}
  */
 function show(address) {
   selected = address
   const lit = selected ? litFrom(selected) : null
-  for (const el of grid.querySelectorAll('[data-address]')) {
+  for (const el of allOf(grid, '[data-address]')) {
     // Three states, not two. Lighting the chain says which nodes are involved
     // and says nothing about which one a reader picked, so the one they picked
     // gets the full colour and the chain around it a little less.
     el.classList.toggle('chosen', el.dataset.address === selected)
-    el.classList.toggle('lit', !!lit && lit.has(el.dataset.address))
-    el.classList.toggle('dim', !!lit && !lit.has(el.dataset.address))
+    el.classList.toggle('lit', !!lit && lit.has(el.dataset.address ?? ''))
+    el.classList.toggle('dim', !!lit && !lit.has(el.dataset.address ?? ''))
   }
   // The lit wires move to a layer above the boxes, and only those. A wire
   // behind a box is what keeps the drawing readable at rest; a lit one is the
@@ -765,7 +996,7 @@ function show(address) {
   // following it.
   litWires.innerHTML = ''
   for (const path of wires.querySelectorAll('path')) {
-    const on = !!lit && lit.has(path.dataset.from) && lit.has(path.dataset.to)
+    const on = !!lit && lit.has(path.dataset.from ?? '') && lit.has(path.dataset.to ?? '')
     path.classList.toggle('lit', on)
     if (on) litWires.appendChild(path.cloneNode())
   }
@@ -807,6 +1038,8 @@ function rememberSelection() {
  * clicking three of them, both arrive here. Selecting only when the address
  * differs from what is already selected is what keeps this from answering the
  * hash it just wrote.
+ *
+ * @returns {void}
  */
 function followHash() {
   const asked = decodeURIComponent(location.hash.slice(1))
@@ -822,6 +1055,9 @@ function followHash() {
  *
  * Stepping through the pane never does: a reader following the chain named a
  * different node, and the one they came from is not it.
+ *
+ * @param {string | null} address
+ * @returns {void}
  */
 const toggle = (address) => show(address === selected ? null : address)
 
@@ -838,15 +1074,17 @@ const toggle = (address) => show(address === selected ? null : address)
  *
  * Written into the page rather than logged, so a person who does ask and a
  * script that asks see the same number.
+ *
+ * @returns {void}
  */
 function measure() {
   const before = overlaps()
   const after = settle()
-  const el = document.getElementById('crossings')
-  el.textContent = after
-  el.dataset.before = before
+  const el = need('crossings')
+  el.textContent = String(after)
+  el.dataset.before = String(before)
   el.dataset.bySpan = JSON.stringify(overlapsBySpan())
-  el.dataset.collisions = collisions()
+  el.dataset.collisions = String(collisions())
 }
 
 /**
@@ -859,9 +1097,11 @@ function measure() {
  * Switching one off leaves it out of the drawing entirely rather than fading
  * it. A box nobody wants to read is still a box in the way, and the wires that
  * reached it go with it, since a wire to nothing is a line to nowhere.
+ *
+ * @returns {void}
  */
 function buildFilters() {
-  const box = document.getElementById('filters')
+  const box = need('filters')
   // Emptied before rebuilding, because mount runs again whenever the corpus
   // moves under a watching page, and appending would leave one row of chips per
   // redraw.
@@ -883,7 +1123,7 @@ function buildFilters() {
       render()
       draw()
       // A selection whose kind just went away stops being a selection.
-      show(selected && hidden.has(kindOf[selected]) ? null : selected)
+      show(selected && hidden.has(kindOf[selected] ?? '') ? null : selected)
     })
     box.appendChild(chip)
   }
@@ -895,6 +1135,9 @@ function buildFilters() {
  * Everything specific arrives here: which ranks exist, which edges join what,
  * which bands hold a stripe, and how to describe one address for the pane. What
  * happens after is the same whatever answered those.
+ *
+ * @param {Model} model
+ * @returns {void}
  */
 function mount(model) {
   ranks = model.ranks
@@ -921,12 +1164,12 @@ function mount(model) {
    * one gains a kind. Even lightness and chroma keep them level against each
    * other, and readable whichever way the reader's theme runs.
    */
-  const kinds = [...new Set(ranks.flatMap((rank) => rank.items.map((item) => item.kind)).filter(Boolean))]
+  const kinds = /** @type {string[]} */ ([...new Set(ranks.flatMap((rank) => rank.items.map((item) => item.kind)).filter(Boolean))])
   kinds.forEach((kind, at) => {
     kindColour[kind] = `oklch(66% 0.19 ${Math.round((360 * at) / kinds.length)})`
   })
   for (const rank of ranks) for (const item of rank.items) {
-    kindOf[item.address] = item.kind
+    kindOf[item.address] = item.kind ?? ''
     addressByHash[hashOf(item.address)] = item.address
   }
 
@@ -946,7 +1189,7 @@ function mount(model) {
   // The same spread for relations, which the pane groups by. A relation and a
   // kind answer different questions in different places, so they take their
   // colours from separate wheels rather than sharing one and colliding.
-  const rels = [...new Set(links.map((link) => link.rel).filter(Boolean))]
+  const rels = /** @type {string[]} */ ([...new Set(links.map((link) => link.rel).filter(Boolean))])
   rels.forEach((rel, at) => {
     relColour[rel] = `oklch(68% 0.21 ${Math.round((360 * at) / rels.length + 20)})`
   })
@@ -962,10 +1205,11 @@ function mount(model) {
   if (!listening) {
     listening = true
     grid.addEventListener('click', (event) => {
-      const box = event.target.closest('[data-address]')
-      toggle(box && box.dataset.address)
+      const target = /** @type {HTMLElement | null} */ (event.target)
+      const box = target?.closest('[data-address]')
+      toggle(box instanceof HTMLElement ? (box.dataset.address ?? null) : null)
     })
-    document.getElementById('pane-close').addEventListener('click', () => show(null))
+    need('pane-close').addEventListener('click', () => show(null))
     addEventListener('resize', draw)
     addEventListener('hashchange', followHash)
   }

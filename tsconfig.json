@@ -33,11 +33,16 @@
     // editor/language-plugin.ts). Without this, resolving the specifier is as
     // far as it goes — TypeScript refuses to open a .js file for type
     // information at all, so the import is "implicitly any" under strict.
-    // This lets it infer real types from the plain JS instead. checkJs stays
-    // off: a type="module" block runs in a browser and is not written
-    // against this config, so it should contribute types to an importer
-    // without being linted by it.
-    "allowJs": true
+    // This lets it infer real types from the plain JS instead.
+    "allowJs": true,
+    // Every .js file this config ever sees is one of the *.element.js files
+    // named in include below — nothing else matches that glob, so this
+    // checks exactly those six and nothing wider. checkJs used to stay off,
+    // with each file opting in for itself via its own `// @ts-check`
+    // pragma; three had it and three did not, so half the browser code ran
+    // unchecked with nothing saying so. One switch checking all six removes
+    // the pragma as something to remember to add.
+    "checkJs": true
   },
   // Only src/. The other 2,042 lines of this project live inside
   // <script type="mycelium/*"> blocks in docs/, which the TypeScript compiler
