@@ -468,10 +468,7 @@
     if (type === "case") {
       requireArgs([args._[1], "<file>"])
       const path = `${DIR}/${args._[1]}`
-      const root = rootOf(fs.get(path))
-      if (root.tagName.toLowerCase() !== "notebook-experiment") {
-        throw new Error(`${args._[1]} is not an experiment, so it holds no cases`)
-      }
+      const root = experimentAt(fs, path, args._[1])
       const one = await attachCase(fs, args, cli, path, root)
       const result = await cli.validate(root, path)
       if (!result.ok) throw new Error(result.errors.join("\n"))
@@ -1040,6 +1037,26 @@
   }
 
   /**
+   * The experiment an address names, or a sentence saying why it is not one.
+   *
+   * Four commands reach a case and every one of them can be pointed at
+   * something that holds none. Saying which of the two reasons applies is the
+   * difference between an error somebody can act on and advice that refuses
+   * when they take it.
+   */
+  function experimentAt(fs, path, name) {
+    if (!fs.exists(path)) {
+      throw new Error(`no entry named ${name} — run mycelium notebook list to see them`)
+    }
+    const root = rootOf(fs.get(path))
+    const type = root.tagName.toLowerCase().slice("notebook-".length)
+    if (type !== "experiment") {
+      throw new Error(`${name} is a ${type}, and only an experiment holds cases`)
+    }
+    return root
+  }
+
+  /**
    * Every case in an entry, or the one an address names.
    *
    * A bare filename means all of them, and file#id means that one. The same
@@ -1049,7 +1066,7 @@
   function casesIn(fs, target) {
     const [name, id] = target.split("#")
     const path = `${DIR}/${name}`
-    const root = rootOf(fs.get(path))
+    const root = experimentAt(fs, path, name)
     const found = Array.from(root.querySelectorAll(":scope > notebook-case"))
     if (!found.length) throw new Error(`${name} holds no cases; add one with notebook add case`)
     if (!id) return { path, root, cases: found }
