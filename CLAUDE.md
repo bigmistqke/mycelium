@@ -56,6 +56,7 @@ pnpm mycelium notebook list [entries|edges]
 pnpm mycelium notebook tags
 pnpm mycelium notebook run <file> [--record]
 pnpm mycelium notebook generate graph [--out <path>] [--base [<href>]]
+pnpm mycelium notebook generate graph --watch [--port N] [--open]
 ```
 (Run from the repository root — pnpm resolves `mycelium` from the root
 `package.json` regardless of which subdirectory the shell is in.)
