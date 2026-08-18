@@ -15,14 +15,19 @@ canon-axiom, canon-specification {
 canon-axiom > canon-title,
 canon-specification > canon-title {
   display: block;
+  font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   margin-bottom: 0.35rem;
 }
 
 /* An axiom's title is the principle itself, so it reads as a statement
-   standing on its own rather than as a heading over something else. */
+   standing on its own rather than as a heading over something else — the
+   body face and an italic, not the mono every other title in the corpus
+   carries. */
 canon-axiom > canon-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
   font-style: italic;
 }
 
@@ -74,6 +79,8 @@ canon-behaviour::before {
 
 canon-behaviour > canon-title {
   display: block;
+  font-family: var(--font-mono);
+  font-weight: 600;
 }
 
 /* An id is what a test cites, so it belongs on screen next to the
@@ -82,7 +89,7 @@ canon-behaviour::after {
   content: "#" attr(id);
   display: block;
   margin-top: 0.25rem;
-  font-family: var(--mono, monospace);
+  font-family: var(--font-mono, monospace);
   font-size: 0.8rem;
   color: var(--muted);
 }
@@ -100,7 +107,7 @@ canon-axiom > a[data-rel]::before,
 canon-specification > a[data-rel]::before {
   content: attr(data-rel) " → ";
   color: var(--muted);
-  font-family: var(--mono, monospace);
+  font-family: var(--font-mono, monospace);
   font-size: 0.8rem;
 }
 

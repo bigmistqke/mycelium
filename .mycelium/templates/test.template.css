@@ -8,7 +8,8 @@ test-doc {
 
 test-doc > test-title {
   display: block;
-  font-size: 1.6rem;
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
   font-weight: 600;
   margin: 0 0 0.25rem;
 }
@@ -39,7 +40,7 @@ test-name {
    writes the word; nothing else has to stay in step with it. */
 test-status {
   display: inline-block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.06em;
   padding: 0.15rem 0.5rem;
@@ -74,7 +75,7 @@ test-message {
   border-radius: 6px;
   background: var(--code-bg);
   color: var(--fail);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 0.85rem;
   white-space: pre-wrap;
 }
@@ -86,7 +87,7 @@ test-fixture {
 
 .test-summary {
   display: block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 0.85rem;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;

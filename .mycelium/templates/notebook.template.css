@@ -36,7 +36,7 @@ notebook-direction::before { content: "direction — from wanting the work elsew
 notebook-research::before { content: "research — from someone else"; }
 notebook-experiment::before { content: "experiment — from running something"; }
 
-notebook-title { display: block; font-weight: 700; font-size: 1.4rem; margin-bottom: 0.5rem; }
+notebook-title { display: block; font-family: var(--font-mono); font-weight: 700; font-size: 1.3rem; margin-bottom: 0.5rem; }
 
 /* A tag reads as a chip rather than a line, since an entry carries several and
    they are names rather than sentences. */
@@ -84,7 +84,7 @@ notebook-reading {
   padding: 0.6rem 0.9rem;
   border-left: 3px solid var(--accent);
   background: var(--bg);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   white-space: pre-wrap;
 }
 notebook-reading::before {

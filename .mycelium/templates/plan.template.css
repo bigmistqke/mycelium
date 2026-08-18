@@ -15,8 +15,9 @@ plan-doc, plan-task, plan-step, plan-check {
 plan-task, plan-step, plan-check { margin-left: 1.5rem; }
 plan-doc > plan-title, plan-task > plan-title, plan-step > plan-title {
   display: block;
+  font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   margin-bottom: 0.5rem;
 }
 plan-doc > plan-status, plan-task > plan-status, plan-step > plan-status, plan-doc > plan-date {
@@ -34,7 +35,7 @@ plan-task > plan-files, plan-task > plan-interfaces, plan-step > plan-detail {
 }
 plan-check > plan-check-command {
   display: block;
-  font-family: monospace;
+  font-family: var(--font-mono);
   margin-top: 0.5rem;
 }
 plan-check > plan-check-success, plan-check > plan-check-output {

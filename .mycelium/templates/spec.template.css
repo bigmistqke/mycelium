@@ -11,7 +11,7 @@ spec-doc {
   background: var(--code-bg);
   margin: 1.25rem 0;
 }
-spec-doc > spec-title { display: block; font-weight: 700; font-size: 1.5rem; margin-bottom: 0.35rem; }
+spec-doc > spec-title { display: block; font-family: var(--font-mono); font-weight: 700; font-size: 1.4rem; margin-bottom: 0.35rem; }
 spec-doc > spec-status, spec-doc > spec-date { display: inline-block; margin-right: 1rem; color: var(--muted); font-size: 0.9rem; }
 spec-doc > spec-status::before { content: "status: "; }
 spec-doc > spec-date::before { content: "date: "; }

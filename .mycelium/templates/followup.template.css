@@ -15,7 +15,7 @@ followup-item {
   background: var(--code-bg);
   margin: 0.75rem 0;
 }
-followup-item > followup-title { display: block; font-weight: 600; font-size: 1.1rem; }
+followup-item > followup-title { display: block; font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
 followup-item > followup-at,
 followup-item > followup-when { display: block; margin-top: 0.4rem; font-size: 0.9rem; color: var(--muted); }
 followup-item > followup-at::before,

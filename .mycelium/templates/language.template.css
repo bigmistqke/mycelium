@@ -15,15 +15,16 @@ language-term, language-rule {
 language-term > language-title,
 language-rule > language-title {
   display: block;
+  font-family: var(--font-mono);
   font-weight: 700;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   margin-bottom: 0.35rem;
 }
 
 /* A term's headword is the word itself, so it reads as a dictionary entry
-   rather than as a sentence. A rule's title is a sentence and stays in the
-   body face. */
-language-term > language-title { font-family: var(--mono, ui-monospace, monospace); }
+   in the mono every other title in the corpus carries. A rule's title is a
+   sentence, so it stays in the body face rather than following that. */
+language-rule > language-title { font-family: var(--font-serif); font-weight: 600; }
 
 language-term > language-part-of-speech,
 language-term > language-status,
