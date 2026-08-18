@@ -509,6 +509,9 @@
     for (const value of many(args.prompt)) {
       add1("notebook-prompt", value === "-" ? await cli.readStdin() : value)
     }
+    if (args.detail !== undefined) {
+      add1("notebook-detail", args.detail === "-" ? await cli.readStdin() : args.detail, true)
+    }
     if (type === "experiment") add1("notebook-question", args.question)
 
     const result = await cli.validate(root, path)

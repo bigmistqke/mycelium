@@ -11,6 +11,27 @@
   <notebook-title>A cold start needs more information, not less; brevity is for a session that already knows what to ask</notebook-title>
   <notebook-tag>harness</notebook-tag>
   <notebook-prompt>1.i think ...this is too little information for a new session. mycelium --help is probably better, giving overview over all its commands. i wanted the introduction to give more information, not less. 2. a new agent should have all the tools to get started by having this initial prompt</notebook-prompt>
+  <notebook-detail><p>Bare <code>mycelium</code> shipped a sparse view first: a purpose and a
+count per family, three lines telling a reader where to go next. The
+reasoning behind it was real — <a href="./correct-at-the-point-of-the-mistake.direction.html">upfront
+documentation competes with the task and loses</a>, and this session's own
+SessionStart dump had proven exactly that earlier the same day. Direct
+feedback overturned it within the hour: the sparse version was too little,
+and the fix was to make bare <code>mycelium</code> and <code>--help</code>
+print the same enriched thing again.</p>
+<p>Both readings are correct, and they answer different questions. A session
+already mid-task has something to ask about, so a rule pointing at a
+narrower command beats a page competing for attention. A session at its
+first moment has nothing to ask about yet, so there is no narrower question
+to point it toward.</p>
+<p>Completeness at that one moment is what lets a question form at all.
+Brevity serves someone already oriented. A cold start needs orientation, and
+orientation is exactly what brevity cuts.</p>
+<p>Nothing here retires the earlier finding. It narrows it: competing with
+the task means competing with a task that already exists. At the true cold
+start, before any command has run, there is no task yet for anything to
+compete with.</p>
+</notebook-detail>
   <a data-rel="contradicts" href="./correct-at-the-point-of-the-mistake.direction.html">narrows it rather than replacing it: the claim only holds once a task exists to compete with</a>
 </notebook-principle>
 </body></html>

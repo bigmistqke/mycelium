@@ -11,6 +11,22 @@
   <notebook-title>A conflict-free merge-tree still needs a manual check when two branches touch the same file</notebook-title>
   <notebook-tag>harness</notebook-tag>
   <notebook-prompt>now add a node to the notebook, so i can see its hmr in action</notebook-prompt>
+  <notebook-detail><p>A worktree branch and main had both rewritten the same template file, one
+adding a live-watching server to <code>generate</code>, the other replacing
+every family's authoring commands. <code>git merge-tree</code> reported zero
+conflicts before either side landed, which sounds like clearance to merge
+blind.</p>
+<p>It wasn't proof of a correct merge, only proof of no overlapping lines. A
+line-based three-way merge can auto-resolve without a marker while still
+producing something semantically broken, if two branches edit different
+regions of a function that depend on each other. So the check that actually
+mattered was reading both diffs against their common ancestor and confirming
+they touched genuinely disjoint parts of the file — the live-graph work lived
+entirely inside <code>generate</code>, the authoring-command work lived
+entirely outside it.</p>
+<p>Zero conflict markers is a necessary signal and not a sufficient one. The
+sufficient one is reading what each side actually changed.</p>
+</notebook-detail>
   <a data-rel="supports" href="./sandbox-symlinks-reach-the-real-corpus.practice.html">another case where a passing check wasn't proof of a correct result</a>
 </notebook-practice>
 </body></html>
