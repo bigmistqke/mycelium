@@ -35,6 +35,34 @@ const kindOf = {}
 const relColour = {}
 /** Kinds a reader has switched off. Empty means everything shows. */
 const hidden = new Set()
+/** Whether the page listeners are already on, since mount can run more than once. */
+let listening = false
+
+/**
+ * Which kinds a reader has switched off, kept in the address bar.
+ *
+ * This lived only in the set above, which survives a remount and not a reload —
+ * and the page reloads whenever the drawing's own code changes. The address bar
+ * survives both. It also makes a filtered view a link somebody can paste, the
+ * same way the selected node in the hash already is.
+ *
+ * A query rather than the hash, because the hash already names the selection
+ * and `measure` already reads a query. Written through replaceState, since
+ * assigning to location.search would navigate away instead.
+ */
+function readFilters() {
+  hidden.clear()
+  const asked = new URLSearchParams(location.search).get('hide')
+  for (const kind of (asked ?? '').split(',')) if (kind) hidden.add(kind)
+}
+
+function rememberFilters() {
+  const query = new URLSearchParams(location.search)
+  if (hidden.size) query.set('hide', [...hidden].join(','))
+  else query.delete('hide')
+  const search = query.toString()
+  history.replaceState(null, '', location.pathname + (search ? '?' + search : '') + location.hash)
+}
 /**
  * Every address, under the shorter name the address bar shows.
  *
@@ -834,16 +862,24 @@ function measure() {
  */
 function buildFilters() {
   const box = document.getElementById('filters')
+  // Emptied before rebuilding, because mount runs again whenever the corpus
+  // moves under a watching page, and appending would leave one row of chips per
+  // redraw.
+  box.textContent = ''
   for (const kind of Object.keys(kindColour)) {
     const chip = document.createElement('button')
     chip.type = 'button'
     chip.className = 'chip'
     chip.textContent = kind
     chip.style.setProperty('--wire', kindColour[kind])
+    // What the address bar asked for, so a pasted link and a redrawn page both
+    // open showing what the reader chose.
+    chip.classList.toggle('off', hidden.has(kind))
     chip.addEventListener('click', () => {
       if (hidden.has(kind)) hidden.delete(kind)
       else hidden.add(kind)
       chip.classList.toggle('off', hidden.has(kind))
+      rememberFilters()
       render()
       draw()
       // A selection whose kind just went away stops being a selection.
@@ -868,6 +904,14 @@ function mount(model) {
   litFrom = model.litFrom
   impactFor = model.impactFor ?? (() => '')
   if (model.sidesFor) sidesFor = model.sidesFor
+
+  // Emptied rather than written over, because a watching page mounts again on
+  // every change and a key left behind names a node the new drawing does not
+  // contain. The filters read back from the address bar instead, since those
+  // are the reader's and not the corpus's.
+  for (const map of [kindColour, kindOf, addressByHash, relColour])
+    for (const key of Object.keys(map)) delete map[key]
+  readFilters()
 
   /**
    * One hue per kind, spread evenly around the wheel.
@@ -912,17 +956,26 @@ function mount(model) {
   buildFilters()
   grid.style.gridTemplateColumns = 'repeat(' + ranks.length + ', minmax(160px, 1fr))'
 
-  grid.addEventListener('click', (event) => {
-    const box = event.target.closest('[data-address]')
-    toggle(box && box.dataset.address)
-  })
-  document.getElementById('pane-close').addEventListener('click', () => show(null))
+  // Registered once however many times mount runs. Registering twice makes one
+  // click toggle twice and net to nothing, which reads as a page that has
+  // stopped responding rather than as a page listening too well.
+  if (!listening) {
+    listening = true
+    grid.addEventListener('click', (event) => {
+      const box = event.target.closest('[data-address]')
+      toggle(box && box.dataset.address)
+    })
+    document.getElementById('pane-close').addEventListener('click', () => show(null))
+    addEventListener('resize', draw)
+    addEventListener('hashchange', followHash)
+  }
 
   draw()
+  // The stat is already gone by the second mount, so both steps ask rather than
+  // assume. Reaching through a removed element threw, and it threw after the
+  // drawing had gone up, which makes a working page look like a broken one.
   if (location.search.includes('measure')) measure()
-  else document.getElementById('crossings').closest('.stat').remove()
-  addEventListener('resize', draw)
-  addEventListener('hashchange', followHash)
+  else document.getElementById('crossings')?.closest('.stat')?.remove()
   followHash()
 }
 
