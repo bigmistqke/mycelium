@@ -34,7 +34,7 @@ project ran.</p>
 <p>A fourth section lists what the artefacts could not settle. That section is the
 one worth arguing with, because the author of this project is alive and can
 correct it, which is the whole reason for choosing this subject.</p>
-<h2>1. The constituents</h2>
+<h2>The constituents</h2>
 <p>repl turns a set of files into object URLs a browser can execute. A caller hands
 it a <code>readFile</code> function and a map of file extensions to transforms. It
 hands back <code>get(path)</code>, which returns a URL, and keeps that URL current
@@ -164,7 +164,7 @@ transform.</p>
 <p>So one call for an entry file pulls its whole import graph through the pipeline,
 and Solid's dependency tracking is what makes that a graph rather than a loop.
 Editing one file invalidates only the URLs that read it.</p>
-<h2>2. The principles</h2>
+<h2>The principles</h2>
 <p>Six principles hold in the current code. Each one appears below with what
 enforces it and where it came from.</p>
 <h3>The caller supplies the compiler</h3>
@@ -215,7 +215,7 @@ browser entirely, and the three test files cover only these free-standing pieces
 a string, so the extension that wraps them differs by one import.</p>
 <p>The browser version throws a message naming the worker version when the globals
 are missing, which is the seam documenting itself.</p>
-<h2>3. How the principles changed</h2>
+<h2>How the principles changed</h2>
 <p>The project grew for eighteen months and then removed most of itself in a
 single commit. File count peaked at 55 on 2024-09-24 and line count at 8,397 two
 days later. Four months on, one commit deleted 15,875 lines and left 17 files
@@ -330,7 +330,7 @@ utility files, added a circular-import check to the lint script, wrote the first
 real tests, and added <code>getModuleDependencies</code>. The test suite is 1,176
 lines against 1,749 lines of source, and every test targets a free-standing
 utility rather than the core.</p>
-<h2>4. What the artefacts could not say</h2>
+<h2>What the artefacts could not say</h2>
 <p>The history explains removals far better than it explains arrivals. Three of
 the four abandoned principles left without a stated reason, while the one detailed
 message in the project explains a design that a failure elsewhere forced. These
