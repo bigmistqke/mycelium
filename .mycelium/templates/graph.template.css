@@ -6,20 +6,24 @@
 
      So five steps of ink, each a solid colour mixed toward the page, and a
      hairline weaker than any of them. Full strength is currentColor itself and
-     needs no name; the scale starts one step under it. */
+     needs no name; the scale starts one step under it.
+
+     Mixed toward --bg rather than the system's own Canvas, and currentColor
+     toward --fg, so the drawing sits in the same violet-tinted world every
+     other page in the corpus does — this page reads tokens.css, never
+     document.css, so nothing here fights a document's own body width or
+     heading rules the way it once had to. */
   :root { color-scheme: light dark;
-          --ink-1: color-mix(in oklab, currentColor 84%, Canvas);
-          --ink-2: color-mix(in oklab, currentColor 68%, Canvas);
-          --ink-3: color-mix(in oklab, currentColor 48%, Canvas);
-          --ink-4: color-mix(in oklab, currentColor 30%, Canvas);
-          --line: color-mix(in oklab, currentColor 22%, Canvas);
-          --thumb: color-mix(in oklab, currentColor 32%, Canvas);
+          --ink-1: color-mix(in oklab, currentColor 84%, var(--bg));
+          --ink-2: color-mix(in oklab, currentColor 68%, var(--bg));
+          --ink-3: color-mix(in oklab, currentColor 48%, var(--bg));
+          --ink-4: color-mix(in oklab, currentColor 30%, var(--bg));
+          --line: color-mix(in oklab, currentColor 22%, var(--bg));
+          --thumb: color-mix(in oklab, currentColor 32%, var(--bg));
           --pane-h: min(32rem, calc(100vh - 12rem)); --pane-w: min(27rem, calc(100vw - 2.5rem)); }
-  /* The pane floats over the bottom right corner rather than taking a band of
-     the page, so a wide graph keeps its full height. It covers whatever is
-     under it, which the grid answers by carrying the pane's own height as
-     padding: there is always somewhere to scroll a box clear. */
-  body { margin: 0; font: 13px/1.45 ui-sans-serif, system-ui, sans-serif;
+  body { margin: 0;
+         background: var(--bg); color: var(--fg);
+         font-family: var(--font-mono); font-size: 13px; line-height: 1.45;
          height: 100vh; display: flex; flex-direction: column; }
   #grid { flex: 1; min-height: 0; overflow: auto; padding-bottom: calc(var(--pane-h) + 3rem); }
   /* A column, so the relations can sit against the bottom edge however short
@@ -29,7 +33,7 @@
           display: flex; flex-direction: column;
           width: var(--pane-w); height: var(--pane-h); overflow: auto;
           border: 1px solid var(--line); border-radius: 6px; padding: 1rem 1.25rem;
-          background: Canvas; }
+          background: var(--code-bg); }
   #pane > * { flex: none; }
   #pane[hidden] { display: none; }
   #pane h2 { font-size: .95rem; margin: 0 0 .3rem; padding-right: 2rem; }
@@ -45,6 +49,10 @@
   /* No measure of its own. The pane sets the width, and a second one in ch
      wraps the text short of the edge, which reads as a line break somebody
      typed rather than one the layout chose. */
+  /* This is the entry's own prose, pulled in whole from its detail field, so
+     it reads in the same body face it does on its own page rather than the
+     mono the rest of this drawing is set in. */
+  #pane-detail { font-family: var(--font-serif); }
   #pane-detail p { margin: 0 0 .6rem; }
   #pane-detail .doc { white-space: pre-wrap; }
   /* An experiment reads as a report, and these name its four parts. Small and
@@ -56,6 +64,7 @@
      header uppercases and the code inside would inherit that and shout. */
   #pane-detail .section,
   #pane-detail details.section-fold > summary {
+                          font-family: var(--font-mono);
                           font-size: .68rem; font-weight: 600;
                           text-transform: uppercase; letter-spacing: .09em;
                           color: var(--ink-3); border-top: 1px solid var(--line);
@@ -66,7 +75,7 @@
   #pane-detail .question { font-size: 1.05em; color: var(--ink-1); }
   /* What the script last returned. Code type, since it is output rather than
      prose, and boxed so a reader can see where the machine stopped talking. */
-  #pane-detail .reading { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  #pane-detail .reading { font-family: var(--font-mono);
                           font-size: .92em; white-space: pre-wrap;
                           border-left: 3px solid var(--line); padding: .1rem 0 .1rem .8rem; }
   /* Quoted the way prose quotes, since it is prose somebody else wrote. */
@@ -77,8 +86,8 @@
                             border-left: 3px solid var(--line); color: var(--ink-2);
                             white-space: pre-line; font-style: italic; }
   #pane-detail details { margin-top: .5rem; }
-  #pane-detail summary { cursor: pointer; color: var(--ink-3); }
-  #pane-detail pre { overflow-x: auto; border: 1px solid var(--line);
+  #pane-detail summary { font-family: var(--font-mono); cursor: pointer; color: var(--ink-3); }
+  #pane-detail pre { font-family: var(--font-mono); overflow-x: auto; border: 1px solid var(--line);
                      border-radius: 4px; padding: .6rem .75rem; margin: .5rem 0 0; }
   /* Shiki writes both themes into one tree and picks with a variable, so the
      page follows the reader's own setting rather than choosing for them. */
@@ -157,7 +166,7 @@
   .chip { font: inherit; font-size: .7rem; text-transform: lowercase; letter-spacing: .06em;
           padding: .1rem .5rem; border-radius: 999px; cursor: pointer;
           background: none; color: var(--ink-1);
-          border: 1px solid color-mix(in oklab, var(--wire) 55%, Canvas); }
+          border: 1px solid color-mix(in oklab, var(--wire) 55%, var(--bg)); }
   .chip:hover { color: inherit; border-color: var(--wire); }
   .chip.off { color: var(--ink-4); border-color: var(--line); }
   .counts b { font-weight: 600; }
@@ -199,14 +208,14 @@
      solid colour rather than a faded one — nothing here is see-through, and a
      wire crossing another does not blend with it. Lighting one takes it to full
      strength, which is the whole of the difference a reader is looking for. */
-  #wires path[data-rel] { stroke: color-mix(in oklab, var(--wire) 40%, Canvas); }
+  #wires path[data-rel] { stroke: color-mix(in oklab, var(--wire) 40%, var(--bg)); }
   #wires path[data-rel].lit, #wires-lit path[data-rel] { stroke: var(--wire); }
   #wires-lit path:not([data-rel]) { stroke: currentColor; }
   /* The headings follow the reader down their columns, over a backdrop that
      spans the whole row. Sticking each heading on its own leaves the column
      gaps uncovered, and boxes scroll up through them. */
-  .headband { position: sticky; top: 0; z-index: 4; align-self: stretch; background: Canvas; }
-  .rank { position: sticky; top: 0; z-index: 5; background: Canvas; }
+  .headband { position: sticky; top: 0; z-index: 4; align-self: stretch; background: var(--bg); }
+  .rank { position: sticky; top: 0; z-index: 5; background: var(--bg); }
   /* Scrolling something into view has to clear the headings, which cover the
      top of the graph and would otherwise hide whatever just got selected. */
   [data-address] { scroll-margin-top: 3.4rem; }
@@ -222,12 +231,12 @@
   h3.selectable:hover { color: var(--ink-2); }
   h3.lit { color: inherit; font-weight: 600; }
   h3.dim { color: var(--ink-4); }
-  .node.file { font-family: ui-monospace, monospace; font-size: .72rem; }
+  .node.file { font-family: var(--font-mono); font-size: .72rem; }
   /* Opaque, which is what actually puts a box in front of a wire. Sitting on a
      higher layer does nothing while the box is transparent: the wire is behind
      it and still shows straight through. */
   .node { border: 1px solid var(--line); border-radius: 5px; padding: .4rem .55rem;
-          margin-bottom: .35rem; cursor: pointer; position: relative; background: Canvas;
+          margin-bottom: .35rem; cursor: pointer; position: relative; background: var(--bg);
           z-index: 1; }
   /* Centring a box means centring its scroll-margin box, so the margin below and
      right of it stands for what the pane covers. Without this a selected box
@@ -246,7 +255,7 @@
      though they were in front. Mixing towards the page instead keeps the box
      solid and only the ink recedes. */
   .node.dim { color: var(--ink-4); border-color: var(--line); }
-  .node[data-kind].dim { border-color: color-mix(in oklab, var(--wire) 22%, Canvas); }
+  .node[data-kind].dim { border-color: color-mix(in oklab, var(--wire) 22%, var(--bg)); }
   /* The kind shows in the border rather than the words. A title tinted per kind
      costs contrast on the one thing every box exists to say, and the border
      carries the same signal at the edge of the box where it competes with
@@ -255,7 +264,7 @@
      letting anything through it. A box at rest says which kind it is quietly;
      the wire leaving it and the pane beside it carry the same colour at full
      strength. */
-  .node[data-kind] { border-color: color-mix(in oklab, var(--wire) 55%, Canvas); }
+  .node[data-kind] { border-color: color-mix(in oklab, var(--wire) 55%, var(--bg)); }
   .node[data-kind]:hover, .node[data-kind].lit { border-color: var(--wire); }
   .node[data-kind].chosen { border-color: var(--wire);
                             box-shadow: inset 0 0 0 1px var(--wire), 0 0 12px var(--wire); }

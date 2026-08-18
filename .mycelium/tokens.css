@@ -1,0 +1,50 @@
+/* The corpus's shared palette and type families, and nothing about how a
+   document uses them. Every page — a document reading document.css through
+   theme.css, or a generated page like the graph drawings that wants the same
+   colours and fonts but none of a document's own body/heading rules — reads
+   this one file for what "the housestyle" actually is. */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
+
+:root {
+  color-scheme: light dark;
+  --bg: #fbfaff;
+  --fg: #1c1a22;
+  --muted: #6e6879;
+  --border: #e3dfec;
+  --code-bg: #f4f2fa;
+  --accent: #6f39d1;
+  --pass: #1a7f37;
+  --fail: #cf222e;
+  --scrollbar: #cdc7d8;
+  --scrollbar-hover: #a79fbb;
+
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-serif: 'Newsreader', Georgia, Cambria, 'Times New Roman', Times, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131019;
+    --fg: #e9e5f2;
+    --muted: #a39dae;
+    --border: #2e2938;
+    --code-bg: #1c1824;
+    --accent: #b48dff;
+    --pass: #4ade80;
+    --fail: #ff6b6b;
+    --scrollbar: #423c4e;
+    --scrollbar-hover: #5c5468;
+  }
+}
+* { box-sizing: border-box; }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-corner { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-hover); }

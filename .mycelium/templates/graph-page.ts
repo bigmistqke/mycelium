@@ -61,6 +61,22 @@ export function templateFile(name: string): string {
 }
 
 /**
+ * The corpus's shared palette and type families, read once so the graph
+ * page's ink levels and box text can be defined relative to the same
+ * --bg/--fg/--font-mono/--font-serif tokens every other page in the corpus
+ * uses, rather than the system Canvas/CanvasText colors and a sans-serif
+ * this page used to pick on its own.
+ *
+ * tokens.css rather than document.css or theme.css (which now just
+ * re-exports document.css): this page wants the housestyle's colours and
+ * fonts, never a document's own body width or heading rules, which is
+ * exactly the split those two files exist to make.
+ */
+function tokensFile(): string {
+  return readFileSync(join(here, "..", "tokens.css"), "utf8")
+}
+
+/**
  * Where one of this project's own files sits, without reading it.
  *
  * A server watching for changes needs an absolute path to hand to
@@ -87,6 +103,7 @@ export function graphPage(page: GraphPage): string {
 <title>${page.title}</title>
 ${page.base ?? ""}
 <style id="graph-style">
+${tokensFile()}
 ${templateFile("graph.template.css")}
 </style>
 </head>
