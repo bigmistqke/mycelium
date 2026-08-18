@@ -9,5 +9,16 @@
 <body>
 <notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
   <notebook-title>Parsers are an acceptable dependency here — replace the JSDoc --help regex with acorn</notebook-title>
+  <notebook-detail><p>The command line's own <code>--help</code> read a script for its doc
+comments with a regular expression matching <code>export function name</code>
+literally. An async command or an arrow-function export lost its
+<code>--help</code> text with no error, silently — nothing said the flag
+had gone missing, since a regex has no way to notice what it never matched.</p>
+<p>The fix swaps the regex for a real parse with acorn: walk the script's
+top-level exports and match each one to its nearest preceding block comment
+by source position, rather than by one fixed text shape. A parser reading
+structure catches every export, where a hand-written pattern needs somebody
+to name each new shape one at a time.</p>
+</notebook-detail>
 </notebook-direction>
 </body></html>

@@ -9,6 +9,18 @@
 <body>
 <notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
   <notebook-title>Autofix apply mode: a --diff/--dry-run flag, defaulting to overwriting the file in place</notebook-title>
+  <notebook-detail><p>Two options sat open on how <code>autofix</code> should apply a fix:
+write it in place by default and offer <code>--diff</code> to preview
+first, or the reverse. The apply-mode option won, matching the convention
+every other command in this project already follows — writing in place
+with no confirmation step.</p>
+<p><code>autofix</code> now applies a fix once it passes the violated
+rule's own check, and <code>--diff</code> prints the proposed rewrite
+instead of writing it. A separate question stayed open rather than folding
+into this one: whether a fix inside a corpus document should route through
+that family's own <code>update</code> command rather than writing the file
+directly.</p>
+</notebook-detail>
   <a data-rel="depends_on" href="./autofix-apply-by-default.direction.html">the option this decision adopted</a>
 </notebook-direction>
 </body></html>

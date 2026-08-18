@@ -10,6 +10,17 @@
 <notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
   <notebook-title>Rename crawl to validate, quiet+colorized output, exclude template self-test fixtures from audits</notebook-title>
   <notebook-prompt>the whole audit thingy is a bit... eh -&gt; maybe it should become a &lt;script type="mycelium/validate"/&gt; [... then, after ruling out custom script types and JSON-attribute expectations:] yeah let's go with that [excluding docs/templates/*.template.html from audit input] -&gt; also rename crawl.ts to validate.ts</notebook-prompt>
+  <notebook-detail><p><code>pnpm crawl</code> was memorable for what the tool does
+internally — walk the tree — but not for what running it actually asks:
+validate the graph. The rename was total rather than an alias: the file,
+the package script, and every living reference to the old name, including
+two source comments.</p>
+<p>Every mention inside a frozen spec, a past plan, or an old knowledge node
+stayed exactly as it stood, on the same convention this project already
+followed for every other past decision — a historical record of what held
+true the day somebody wrote it, not a live reference owing anybody an
+update.</p>
+</notebook-detail>
   <a data-rel="leads_to" href="../specs/2026-07-24-mycelium-validate-rename.spec.html">led to the design spec for the audit-scoping fix, quiet colorized output, and the rename</a>
 </notebook-practice>
 </body></html>

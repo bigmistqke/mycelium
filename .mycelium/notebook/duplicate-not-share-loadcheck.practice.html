@@ -9,6 +9,17 @@
 <body>
 <notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
   <notebook-title>Duplicate loadModule/loadCheck rather than share it, once runtime.js's whole reason for existing was one five-line function</notebook-title>
+  <notebook-detail><p><code>loadModule</code>/<code>loadCheck</code> was a five-line
+<code>data:</code> URL import wrapper shared across two contexts — three
+Node modules and one browser page — through a whole shared file, a
+<code>globalThis</code> attachment, a script tag, and its own type
+declarations. That is more machinery than what the function itself carries.</p>
+<p>The fix moved the Node side into <code>utils.ts</code> as a real, typed
+export, and duplicated the same five lines directly inline at the one
+browser call site instead of routing the browser through the shared file
+too. Sharing five lines across a boundary that only one side can import
+cleanly costs more than writing the five lines twice.</p>
+</notebook-detail>
   <a data-rel="elaborates" href="./reverse-runtime-to-globalthis.direction.html">answers a narrower question than that decision did -- not how to share across Node/browser without CORS, but whether a five-line function with two call sites needs sharing machinery at all</a>
 </notebook-practice>
 </body></html>

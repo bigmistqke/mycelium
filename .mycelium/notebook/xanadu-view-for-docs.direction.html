@@ -10,6 +10,21 @@
 <notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
   <notebook-title>Explore a Xanadu-style (transpointing-windows) view of the v4/docs web</notebook-title>
   <notebook-prompt>we recently added a generate-command to the knowledge-template in v4 -&gt; cool stuff! another thing i was thinking off: maybe we need something like xanadu: a view that displays the web -&gt; just exploration/discussion here</notebook-prompt>
+  <notebook-detail><p>A design conversation explored a different way to browse a documentation
+directory: instead of laying every document out as an abstract diagram,
+open the real documents side by side and draw visible lines between the
+specific links that connect them — the way Ted Nelson's Xanadu project
+displayed connections between documents rather than between abstract
+boxes.</p>
+<p>The discussion settled several pieces: isolating each opened document
+visually with the browser's shadow DOM rather than an iframe, so a script
+can measure exactly where a link sits and draw a connector to it; keeping
+each document's doctype and character encoding while dropping its html,
+head and body tags, since a browser reconstructs those automatically; and
+where the tool's own code should live — a new file under a commands
+folder, since the engine stays small and this tool would carry a lot of
+presentation logic despite reading generic data.</p>
+</notebook-detail>
   <a data-rel="leads_to" href="./transpointing-windows-not-graph-diagram.direction.html">led to favoring a canvas of real panels over a precomputed graph diagram</a>
 </notebook-direction>
 </body></html>

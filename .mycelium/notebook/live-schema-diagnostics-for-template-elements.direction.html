@@ -10,5 +10,17 @@
 <notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
   <notebook-title>Give template elements live editor diagnostics based on their own schema</notebook-title>
   <notebook-prompt>something like that yes -&gt; like language support for template-elements and their schema -&gt; also their attributes and the like, but also their structure</notebook-prompt>
+  <notebook-detail><p>Raised as a goal in the earlier knowledge graph: give a template
+element live editor diagnostics against its own schema, flagging a missing
+required child or a structural problem directly in an open document rather
+than only when <code>validate</code> runs separately. In the words that
+raised it: <q>like language support for template-elements and their
+schema, also their attributes and the like, but also their
+structure.</q></p>
+<p>Nothing here decided how, and nothing has built it. The schema vocabulary
+this would diagnose against — required, repeatable, pattern, enum on a
+placeholder — already exists in <code>template.template.html</code>, so
+what is missing is a live reader rather than a schema to read.</p>
+</notebook-detail>
 </notebook-direction>
 </body></html>

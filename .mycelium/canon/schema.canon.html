@@ -489,6 +489,7 @@
         const node = (rel: string) => parseHTML(`<body>
           <notebook-practice>
             <notebook-title>A thought</notebook-title>
+            <notebook-detail><p>Enough to satisfy the required field this case is not testing.</p></notebook-detail>
             <a data-rel="${rel}" href="./elsewhere.html">an edge</a>
           </notebook-practice>
         </body>`).document.querySelector("notebook-practice")!

@@ -79,6 +79,7 @@ path before asking for the href.</p>
         const done = sandbox.mycelium(
           "notebook", "practice", "add",
           "--title", "Already dated",
+          "--detail", "<p>Content for a fixture the date check should refuse before this matters.</p>",
           "--file", "2026-08-06-already-dated",
         )
         assert(!done.ok, "a slug carrying a date was accepted")
@@ -102,7 +103,12 @@ path before asking for the href.</p>
       import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const make = (type: string, slug: string) => {
-          const done = sandbox.mycelium("notebook", type, "add", "--title", slug, "--file", slug)
+          const done = sandbox.mycelium(
+            "notebook", type, "add",
+            "--title", slug,
+            "--detail", "<p>Enough to satisfy the required field this case is not testing.</p>",
+            "--file", slug,
+          )
           assert(done.ok, `add ${type} failed: ${done.stderr || done.stdout}`)
           return `${slug}.${type}.html`
         }
@@ -188,6 +194,7 @@ path before asking for the href.</p>
         const made = sandbox.mycelium(
           "notebook", "practice", "add",
           "--title", "The templates exist",
+          "--detail", "<p>Every family here has one, whether a command builds it or not.</p>",
           "--file", "templates-exist",
         )
         assert(made.ok, `add failed: ${made.stderr || made.stdout}`)
@@ -357,7 +364,8 @@ export default async function ({ assert, sandbox }: TestContext) {
     assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
   }
   run("notebook", "practice", "add", "--file", "a-thing-somebody-noticed",
-    "--title", "Something somebody noticed before the rule existed.")
+    "--title", "Something somebody noticed before the rule existed.",
+    "--detail", "<p>What the ground pushed back with, on the day somebody noticed it.</p>")
   run("canon", "axiom", "add", "--canon", "sample", "--id", "a-principle",
     "--title", "A principle that came from somewhere.",
     "--detail", "<p>Reasoning, so the axiom validates.</p>")
@@ -392,6 +400,7 @@ export default async function ({ assert, sandbox }: TestContext) {
         const named = sandbox.mycelium(
           "notebook", "principle", "add",
           "--title", "A rule the type-named command wrote",
+          "--detail", "<p>Written by the command this case is checking, not by hand.</p>",
           "--file", "written-by-the-type-named-command",
         )
         assert(named.ok, `the type-named command failed: ${(named.stderr + named.stdout).trim()}`)

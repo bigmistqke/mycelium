@@ -9,5 +9,17 @@
 <body>
 <notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
   <notebook-title>Review found plan check dropped stderr on the passing path; fixed by switching execSync to spawnSync</notebook-title>
+  <notebook-detail><p><code>execSync</code>'s return value on success is documented to carry
+only stdout, never stderr, regardless of what its own stdio option says.
+A plan check matching its expected text against combined stdout and stderr
+only actually worked on the failing path, where the thrown error object
+happens to carry both streams.</p>
+<p>A passing check whose confirming text went to stderr — common for a CLI
+that reports success there — was silently missed and wrongly reported
+FAIL. The fix replaces <code>execSync</code> with <code>spawnSync</code>,
+which never throws on a nonzero exit and always exposes stdout and stderr
+as separate properties on both the passing and the failing path, removing
+the need for a try/catch entirely.</p>
+</notebook-detail>
 </notebook-practice>
 </body></html>
