@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Does a figure edge descend as far in pixels as it does in grid rows?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+<link rel="stylesheet" href="../templates/figure.template.css">
+<script src="../templates/figure.element.js"></script>
+<script src="../templates/experiment.element.js"></script>
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>Does a figure edge descend as far in pixels as it does in grid rows?</notebook-title>
+  <notebook-tag>figure</notebook-tag>
+  <notebook-tag>measurement</notebook-tag>
+  <notebook-question>A drawing's edges are checked by counting grid rows, since the validator computes no layout. What does the same edge measure in a page, where it has a size?</notebook-question>
+  <notebook-fixture>
+    <figure-graph data-columns="3">
+      <figure-node id="one" data-at="1,1">one</figure-node>
+      <figure-node id="two" data-at="1,3">two</figure-node>
+      <figure-node id="three" data-at="2,2">three</figure-node>
+      <figure-edge from="one" to="three"></figure-edge>
+    </figure-graph>
+  </notebook-fixture>
+  <script type="text/mycelium-experiment">
+  const graph = fixture.querySelector("figure-graph")
+  await settle(graph)
+  const box = graph.getBoundingClientRect()
+  const path = graph.querySelector("svg path")
+  if (!path) return `no connector drawn; the graph is ${Math.round(box.width)} by ${Math.round(box.height)}`
+  const wire = path.getBBox()
+  const nodes = Array.from(graph.querySelectorAll("figure-node")).map((el) => {
+    const r = el.getBoundingClientRect()
+    return `${el.id}@${el.dataset.at} ${Math.round(r.top - box.top)}`
+  })
+  return `the graph is ${Math.round(box.width)} by ${Math.round(box.height)}; ` +
+    `the wire drops ${Math.round(wire.height)}px over ${Math.round(wire.width)}px; ` +
+    `node tops: ${nodes.join(", ")}`
+
+</script>
+  <notebook-reading>the graph is 662 by 170; the wire drops 8px over 8px; node tops: one@1,1 25, two@1,3 25, three@2,2 107</notebook-reading>
+  <notebook-detail><p>The corpus checks a figure's edges by counting grid rows, because the
+validator parses with a library computing no layout and every rectangle it
+measures comes back zero. So the audit can say an edge runs downward and cannot
+say how far. This is the first probe to ask the second question, and it exists
+because a probe can now run in a page.</p>
+<p>The first reading disagrees with the drawing. Its two nodes sit eighty-two
+pixels apart from top to top, and the connector's own bounding box reports a
+drop of eight. A wire joining them has to cross that gap, so one of the two
+numbers describes something other than the wire a reader sees.</p>
+<p>Three readings could explain it and this cannot separate them. The path may
+carry its own coordinate space, so its box measures units rather than pixels.
+The selector may have found a marker instead of the connector. Or the drawing
+may settle after the probe stops waiting, leaving a measurement of a wire that
+had not finished moving.</p>
+<p>Leaving the disagreement recorded is the point rather than a shortcoming. A
+probe is allowed to be inconclusive, and the next run has something to argue
+with — which is more than the corpus had about its own drawings an hour
+ago.</p>
+</notebook-detail>
+</notebook-experiment>
+</body></html>

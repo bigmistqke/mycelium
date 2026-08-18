@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: An experiment may run in a page, so a drawing can answer for itself</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>An experiment may run in a page, so a drawing can answer for itself</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-08-18</spec-date>
+  <spec-problem>
+<p>A probe runs under Node and reads documents with a parser computing no
+layout, so every rectangle it measures is zero. The figure family is therefore
+the one subsystem nothing can ask a question about. Whether a label overlaps a
+box, how many wires cross, whether a drawing got worse since last week: each of
+those has an answer, and no experiment can reach it.</p>
+<p>The tests already crossed this line. A canon behaviour carrying a browser
+case opens in headless Chrome, renders its fixture and reports what it found,
+and the figure family holds a dozen of them. So the corpus can already assert
+that a label stays inside a figure, and cannot measure by how much.</p>
+<p>Assertion and measurement want different things, which is why the test
+family does not close this. A check knows the answer it expects and fails when
+the page disagrees. A probe has no expectation, records what it read, and finds
+its meaning in disagreeing with its own last reading.</p>
+</spec-problem>
+  <spec-design>
+<p>An experiment gains a second runtime, and the script type is the only thing
+choosing between them. A <code>mycelium/experiment</code> script keeps running
+under Node against the read-only corpus view. A
+<code>text/mycelium-experiment</code> script runs in a page, and takes no
+prefix, since that prefix marks a file the editor treats as TypeScript and a
+type annotation would fail only once the page loaded.</p>
+<p>A browser probe is an async function body handed <code>fixture</code> and
+<code>settle</code>, and it returns its reading rather than asserting anything.
+The fixture is a new optional field holding whatever the probe measures, which
+mirrors the fixture a browser test case already carries. Returning rather than
+throwing is the whole difference between the two, and it is the difference
+between a check and a probe.</p>
+<p>The runner goes in the page, the way every other browser behaviour here
+does. <code>experiment.element.js</code> runs the script on load and writes
+what it returned into the reading field, so opening the document in a browser
+shows the measurement rather than nothing. Whoever drives the page afterwards
+reads the same element, and no second harness exists to keep in step with the
+first.</p>
+<p><code>notebook run</code> chooses the runner by reading the script type, and
+gains <code>--show</code> and <code>--port</code> for the browser path. Both
+paths end the same way: the command prints the reading, says so when it differs
+from the recorded one, and <code>--record</code> accepts the new value. Nothing
+about recording changes, because a reading is a reading whichever runtime
+produced it.</p>
+<p>Two audits carry the arrangement. A document holding a browser probe loads
+the runner, because a page without it renders a fixture and measures nothing
+while the command waits for a value that never arrives. A document may not hold
+both kinds, which is the rule a test document already follows and for the same
+reason: one document, one runtime.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Sharing the settle helper between the two runners stays undone. Both files
+are classic scripts, because a document opens over file:// and a module script
+fails the origin check there, so neither can import the other and a third
+script defining a global is worse than twenty duplicated lines. A followup
+carries the condition that would change it.</p>
+<p>Nothing here runs during validate. A probe stays allowed to be
+inconclusive, and a browser probe is the kind most likely to be.</p>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>

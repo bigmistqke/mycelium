@@ -106,6 +106,7 @@
     <notebook-tag repeatable></notebook-tag>
     <notebook-prompt repeatable></notebook-prompt>
     <notebook-question required></notebook-question>
+    <notebook-fixture markup></notebook-fixture>
     <script></script>
     <notebook-reading></notebook-reading>
     <notebook-detail markup></notebook-detail>
@@ -234,10 +235,72 @@
   Each command's own <code>/** &hellip; */</code> comment is its only documentation, so
   <code>mycelium notebook --help</code> and this page can never drift apart.
 </p>
+<h2>A probe that runs in a page</h2>
+<p>
+  A <code>text/mycelium-experiment</code> script runs in the document rather than under Node, which is
+  the only place a drawing has a size. Two audits carry the arrangement, and both check what a
+  document cannot say about itself.
+</p>
+<script type="mycelium/audit" data-audits="experiment-documents-load-the-runner" data-touches="notebook-experiment">
+  import type { AuditFs } from "mycelium/api"
+
+  /**
+   * Every entry holding a browser probe loads experiment.element.js, so
+   * something in the page runs it.
+   *
+   * Without the runner the page renders its fixture and measures nothing. A
+   * person sees a document that looks finished and holds last week's reading,
+   * and the command waits out its whole deadline for a value that never
+   * arrives.
+   *
+   * An entry whose probe runs under Node is exempt and needs to be. Nothing
+   * opens it in a browser, so a page runner in it would be dead weight that
+   * also never runs.
+   *
+   * Matches on the filename rather than the path, since how deep a document
+   * sits decides how many steps up it writes.
+   */
+  export default async function (fs: AuditFs) {
+    const violations = []
+    for (const path of fs.list(`${fs.docsDir}/notebook`, { ext: ".html" })) {
+      const doc = fs.parse(path)
+      if (!doc.querySelector('script[type="text/mycelium-experiment"]')) continue
+      const loaded = Array.from(doc.querySelectorAll("script[src]"))
+        .some((el) => (el.getAttribute("src") ?? "").endsWith("experiment.element.js"))
+      if (loaded) continue
+      violations.push(`${path}: a browser probe with nothing in the page to run it`)
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+<script type="mycelium/audit" data-audits="an-experiment-picks-one-runtime" data-touches="notebook-experiment">
+  import type { AuditFs } from "mycelium/api"
+
+  /**
+   * No entry holds both a Node probe and a browser one.
+   *
+   * The script type is the only thing choosing a runtime, so two of them in one
+   * document leaves the choice to whichever the command looks for first. A test
+   * document follows the same rule for the same reason, and one document
+   * answering one question needs one instrument anyway.
+   */
+  export default async function (fs: AuditFs) {
+    const violations = []
+    for (const path of fs.list(`${fs.docsDir}/notebook`, { ext: ".html" })) {
+      const doc = fs.parse(path)
+      if (!doc.querySelector('script[type="mycelium/experiment"]')) continue
+      if (!doc.querySelector('script[type="text/mycelium-experiment"]')) continue
+      violations.push(`${path}: a probe declaring two runtimes, so nothing decides which one answers`)
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
 <script type="mycelium/command">
   import type { CommandContext } from "mycelium/api"
   import { declaredOrder, placeField } from "mycelium/shared"
   import { CORPUS_DIR, corpusView, loadModule } from "mycelium/utils"
+  import { withBrowser } from "mycelium/webdriver"
   import { extractGraph } from "mycelium/extract-graph"
   import { BLOCK_TAGS } from "mycelium/language-prose"
   import { graphPage, templateFile } from "mycelium/graph-page"
@@ -363,7 +426,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title></title>
 <link rel="stylesheet" href="../theme.css">
-<link rel="stylesheet" href="../templates/notebook.template.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">${args.browser === undefined ? "" : `\n<script src="../templates/experiment.element.js"><\/script>`}
 </head>
 <body>
 
@@ -393,12 +456,20 @@
     if (type === "experiment") {
       add1("notebook-question", args.question)
       const script = doc.createElement("script")
-      script.setAttribute("type", "mycelium/experiment")
+      // The script type decides which runner opens it, and a browser probe
+      // takes no mycelium/ prefix: that prefix marks a file the editor treats
+      // as TypeScript, and an annotation would fail only once the page loaded.
+      script.setAttribute("type", args.browser === undefined ? "mycelium/experiment" : "text/mycelium-experiment")
       // A placeholder that throws is what an author gets for saying nothing,
       // and it is a real answer: the question comes first and a red run is an
       // honest report that nothing has measured it yet.
-      script.textContent = args.script === undefined
+      // A node probe exports a module and a browser probe is a function
+      // body, so the placeholder that throws has to come in both shapes.
+      const empty = args.browser === undefined
         ? "\n  export default function ({ fs }) {\n    throw new Error('this experiment has no code yet')\n  }\n"
+        : "\n  throw new Error('this experiment has no code yet')\n"
+      script.textContent = args.script === undefined
+        ? empty
         : `\n${args.script === "-" ? await cli.readStdin() : args.script}\n`
       placeField(root, script, order)
     }
@@ -782,6 +853,54 @@
   }
 
   /**
+   * A probe under Node, reading the corpus and reaching above it.
+   *
+   * Not the filesystem this command writes through. A probe able to create a
+   * document edits the thing it is measuring, and this command commits whatever
+   * the script touched, so the reading would describe a corpus the reading
+   * itself changed. The view an audit gets reads and reaches above the
+   * documents, which is what a probe wanted from it anyway.
+   */
+  async function runUnderNode(fs, path, script) {
+    const mod = await loadModule(resolve(fs.root, path), script)
+    if (typeof mod.default !== "function") throw new Error("this experiment exports no default function")
+    return String(await mod.default({ fs: corpusView(dirname(fs.root), basename(fs.root)) }))
+  }
+
+  /**
+   * A probe in a page, which is the only place a drawing has a size.
+   *
+   * The document runs its own probe, because experiment.element.js sits in the
+   * page and writes what the probe returned into the reading. This waits for
+   * that element to say it finished and reads the same value a person opening
+   * the page would see, so no second harness exists to keep in step.
+   */
+  async function runInAPage(fs, path, args) {
+    const full = resolve(fs.root, path)
+    let found
+    await withBrowser(
+      { root: resolve(fs.root, ".."), show: args.show !== undefined, port: Number(args.port ?? 9515) },
+      async (call) => {
+        await call("POST", "/url", { url: pathToFileURL(full).href })
+        await call("POST", "/timeouts", { script: Number(args.timeout ?? 30000) })
+        found = await call("POST", "/execute/async", {
+          script: `const done = arguments[arguments.length - 1]
+            const tick = () => {
+              const el = document.querySelector("notebook-experiment > notebook-reading")
+              const state = el && el.getAttribute("data-state")
+              if (state !== "done" && state !== "failed") return setTimeout(tick, 50)
+              done({ state: state, reading: el.textContent })
+            }
+            tick()`,
+          args: [],
+        })
+      },
+    )
+    if (found.state === "failed") throw new Error(`the probe failed in the page — ${found.reading}`)
+    return found.reading
+  }
+
+  /**
    * Run an experiment's script and print what it returns.
    *
    *   mycelium notebook run <file> [--record]
@@ -799,18 +918,16 @@
     const path = `${DIR}/${args._[0]}`
     const doc = fs.get(path)
     const root = rootOf(doc)
-    const script = root.querySelector('script[type="mycelium/experiment"]')
-    if (!script) throw new Error(`${args._[0]} carries no mycelium/experiment script`)
+    // The script type is the only thing choosing a runtime, which is the
+    // arrangement a test case already follows. Nothing else in the document
+    // says where it runs, so nothing else can disagree about it.
+    const node = root.querySelector('script[type="mycelium/experiment"]')
+    const page = root.querySelector('script[type="text/mycelium-experiment"]')
+    if (!node && !page) throw new Error(`${args._[0]} carries no experiment script`)
 
-    const mod = await loadModule(resolve(fs.root, path), script)
-    if (typeof mod.default !== "function") throw new Error("this experiment exports no default function")
-
-    // Not the filesystem this command writes through. A probe that can create a
-    // document edits the thing it is measuring, and this command commits
-    // whatever the script touched, so the reading would describe a corpus the
-    // reading itself changed. The view an audit gets reads and reaches above
-    // the documents, which is what a probe wanted from it anyway.
-    const reading = String(await mod.default({ fs: corpusView(dirname(fs.root), basename(fs.root)) }))
+    const reading = node
+      ? await runUnderNode(fs, path, node)
+      : await runInAPage(fs, path, args)
 
     const before = root.querySelector("notebook-reading")?.textContent?.trim()
     console.log(reading)
