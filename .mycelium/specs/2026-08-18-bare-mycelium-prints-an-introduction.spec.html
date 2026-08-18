@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Bare mycelium prints a derived introduction instead of the raw roster</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Bare mycelium prints a derived introduction instead of the raw roster</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-08-18</spec-date>
+  <spec-problem>
+<p>Bare <code>mycelium</code> and <code>mycelium --help</code> print the same
+thing: every family, every command, every audit. That page grew across this
+session from roughly six thousand to over ten thousand characters as five
+families gained commands, and it says nothing about what a family is for or
+how much of the corpus it holds. A session meeting this project reads the
+whole roster or reads nothing, and the evidence from this session is that it
+reads the whole roster and still reaches for <code>ls</code> and
+<code>sed</code> anyway.</p>
+<p>The SessionStart hook already proves the shape works: a session reads a
+short derived message at its own start, and a long one competes with the
+task and loses. <code>--help</code> is asked for, so its length is not the
+problem there. Bare <code>mycelium</code> is not asked for anything in
+particular, and answering it with the same wall wastes the one thing a bare
+invocation is good for.</p>
+</spec-problem>
+  <spec-design>
+<p>Bare <code>mycelium</code> seeds a corpus if none exists, exactly as
+today, then prints a derived introduction instead of the roster.
+<code>--help</code> keeps printing the roster and the audits, since asking
+for help is asking for the whole list.</p>
+<p>The introduction has three parts. A first line states what the project
+holds true, taken from the corpus's own root axiom rather than written here a
+second time. Then one line per host, sorted by how many documents conform to
+it: its id, a count, and its declared purpose. Then three lines saying how to
+read one entry, one family, or the whole roster.</p>
+<p>Every part is derived from what already exists. The purpose comes from
+<code>template-host</code>, which every host now declares. The count comes
+from walking the corpus once and tallying <code>data-conforms-to</code>
+against each host's own filename, the same signal <code>explore list</code>
+already uses — nothing here names a family, so a twelfth one counts itself
+without an edit. A host holding no instances still gets a line, with a dash
+instead of a number, because a command host with nothing to count is a fact
+about it rather than an omission.</p>
+<p>The purpose is not shortened. A followup already states why: a title that
+gets truncated is a title whose length limit failed at its one job, so the
+introduction's own line width has to fit a whole purpose rather than the
+other way round.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>No new command name. An earlier draft of this considered
+<code>mycelium about</code>, and dropped it: an agent's reflex is the bare
+name or <code>--help</code>, never a command it has to already know exists,
+so a second command would repeat the exact failure this design answers.</p>
+<p><code>mycelium &lt;family&gt;</code> with no verb already prints that
+family's own commands in full, unchanged by this. Nothing here duplicates
+it.</p>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>

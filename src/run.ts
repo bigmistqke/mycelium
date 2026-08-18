@@ -542,6 +542,84 @@ function readCommands(source: string): { name: string; summary: string }[] {
 // by hand; printRoster reads it straight off the same command scripts the
 // engine runs.
 //
+// What bare `mycelium` prints, instead of the roster --help asks for. Nothing
+// here duplicates a fact the corpus already holds. The opening line is the
+// corpus's own first root axiom. A host's purpose comes from the
+// template-host it now declares, and a count comes from walking
+// data-conforms-to the same way explore list does.
+//
+// A document declaring a template of its own is documentation about a type
+// rather than a claim, so it is skipped here exactly as it is everywhere else
+// that reads data-conforms-to — a template file's own template-host included.
+//
+// Sorted by count, because a session meeting this project for the first time
+// wants to know where the corpus actually lives before it wants the family
+// that happens to sort first alphabetically.
+function printIntro(docsDir: string, stream: (line: string) => void) {
+  const opening = firstRootAxiomTitle(docsDir)
+  const sentence = opening ? opening[0].toLowerCase() + opening.slice(1).replace(/\.$/, "") : "the documents are the source of truth"
+  stream(`mycelium — ${sentence}.`)
+  stream("Reach one through a command, never by hand.")
+  stream("")
+
+  const hosts = walkHtmlFiles(docsDir)
+    .filter((file) => TEMPLATE_FILE_SUFFIXES.some((suffix) => file.endsWith(`.${suffix}`)))
+    .map((file) => ({
+      id: basename(file).replace(/\.(template|command)\.html$/, ""),
+      file,
+      purpose: hostPurpose(file),
+      count: 0,
+    }))
+  const byId = new Map(hosts.map((host) => [host.id, host]))
+
+  for (const file of walkHtmlFiles(docsDir)) {
+    const { document } = parseHTML(readFileSync(file, "utf8"))
+    if (document.querySelector("template[id]")) continue
+    const seen = new Set<string>()
+    for (const el of Array.from(document.querySelectorAll("[data-conforms-to]"))) {
+      const conformsTo = el.getAttribute("data-conforms-to") ?? ""
+      const id = basename(conformsTo).replace(/\.(template|command)\.html.*$/, "")
+      seen.add(id)
+    }
+    for (const id of seen) {
+      const host = byId.get(id)
+      if (host) host.count++
+    }
+  }
+
+  const width = Math.max(...hosts.map((host) => host.id.length))
+  for (const host of hosts.sort((a, b) => b.count - a.count)) {
+    const count = host.count ? String(host.count).padStart(4) : "   -"
+    stream(`${host.id.padEnd(width + 2)}${count}  ${host.purpose || "(carries no template-purpose yet)"}`)
+  }
+
+  stream("")
+  stream("read one entry   mycelium notebook show <slug>")
+  stream("one family       mycelium <family> --help          its types, fields, and commands")
+  stream("every command    mycelium --help")
+}
+
+// The corpus's own claim about itself, read fresh rather than repeated in a
+// string the corpus does not own. The root canon declares its axioms in
+// document order, and the first one is the closest thing this project has
+// to an opening sentence.
+function firstRootAxiomTitle(docsDir: string): string | null {
+  const path = join(docsDir, "canon", "root.canon.html")
+  if (!existsSync(path)) return null
+  const { document } = parseHTML(readFileSync(path, "utf8"))
+  const title = document.querySelector("canon-axiom > canon-title")
+  return title?.textContent?.trim() || null
+}
+
+// A host's own description of itself, declared once and read here rather than
+// written a second time. Purpose is not shortened: a title that gets
+// truncated is a title whose own length limit failed at its one job.
+function hostPurpose(file: string): string {
+  const { document } = parseHTML(readFileSync(file, "utf8"))
+  const purpose = document.querySelector("template-host > template-purpose")
+  return purpose?.textContent?.replace(/\s+/g, " ").trim() ?? ""
+}
+
 // A file is a command host only if its name ends in one of
 // TEMPLATE_FILE_SUFFIXES, the same rule findTemplateFile uses to resolve an
 // <id>. That matters beyond consistency: specs and plans QUOTE command
@@ -689,8 +767,13 @@ async function main() {
 
   // `mycelium` with nothing after it is a command rather than a mistake, so it
   // goes to stdout and exits zero the way an asked-for `--help` does. It makes
-  // sure a corpus exists, then prints the roster of what that corpus can do.
-  // Running it twice does the second half only.
+  // sure a corpus exists, then introduces what that corpus holds. Running it
+  // twice does the second half only.
+  //
+  // --help prints the full roster instead, because asking for help is asking
+  // for the whole list. --help is asked for something specific, and the bare
+  // name is not asked for anything. A wall of every command and every audit
+  // is the wrong answer to a question nobody posed.
   //
   // More may attach here later. Whatever does belongs on the same footing:
   // something a person wants when they type the bare name, and safe to repeat.
@@ -700,8 +783,12 @@ async function main() {
       out(`No corpus here yet. Run \`mycelium\` with nothing after it to write one into ${CORPUS_DIR}/.`)
       process.exit(0)
     }
-    printRoster(docsDir, out)
-    printAudits(docsDir, out)
+    if (id === "--help" || id === "-h") {
+      printRoster(docsDir, out)
+      printAudits(docsDir, out)
+    } else {
+      printIntro(docsDir, out)
+    }
     process.exit(0)
   }
 
