@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Can an address say what a new child is, without anybody naming its type?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>Can an address say what a new child is, without anybody naming its type?</notebook-title>
+  <notebook-tag>schema</notebook-tag>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-prompt>i wonder what is a good cli pattern for this type of stuff.</notebook-prompt>
+  <notebook-question>A command addressing a parent could derive what kind of child to build from the schema. How often would the schema be unable to decide?</notebook-question>
+  <notebook-case id="what-the-schema-declares" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how many declared types nest another, and how many nest more than one kind</notebook-lens>
+    <script type="mycelium/experiment">
+export default function ({ fs }) {
+  // A placeholder naming a type is how one type nests another, and the schema
+  // vocabulary calls that conforms-to. Reading the templates rather than the
+  // instances is the point: this asks what the corpus could hold, not what it
+  // happens to hold today.
+  const nests = new Map()
+  for (const path of fs.list(`${fs.docsDir}/templates`, { ext: ".html" })) {
+    for (const declared of fs.parse(path).querySelectorAll("template[id]")) {
+      const root = declared.content?.firstElementChild ?? declared.firstElementChild
+      if (!root) continue
+      const kinds = new Set()
+      for (const child of Array.from(root.children)) {
+        const names = child.getAttribute("conforms-to")
+        if (names) kinds.add(names.replace(/^#/, ""))
+      }
+      if (kinds.size) nests.set(declared.getAttribute("id"), [...kinds])
+    }
+  }
+  const ambiguous = [...nests].filter(([, kinds]) => kinds.length > 1)
+  return `${nests.size} declared types nest another; ` +
+    `${nests.size - ambiguous.length} nest exactly one kind, so an address alone decides what a new child is; ` +
+    `${ambiguous.length} nest more than one (${ambiguous.map(([id, k]) => `${id}: ${k.join(" ")}`).join(", ")})`
+}
+
+</script>
+    <notebook-reading data-on="2026-08-18">8 declared types nest another; 5 nest exactly one kind, so an address alone decides what a new child is; 3 nest more than one (canon-specification: canon-references canon-behaviour, canon-behaviour: canon-references canon-behaviour, figure-graph: figure-node figure-edge)</notebook-reading>
+  </notebook-case>
+</notebook-experiment>
+</body></html>

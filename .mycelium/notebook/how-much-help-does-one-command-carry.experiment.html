@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How much help does one command carry when it serves five types?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>How much help does one command carry when it serves five types?</notebook-title>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-tag>measurement</notebook-tag>
+  <notebook-prompt>maybe we could make a command for each type in notebook -&gt; so it becomes mycelium notebook experiment ...</notebook-prompt>
+  <notebook-question>Does a command serving several types carry more documentation than one serving a single type, and by how much?</notebook-question>
+  <notebook-case id="lines-per-command" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how many lines of doc comment each command in the corpus carries</notebook-lens>
+    <script type="mycelium/experiment">
+export default function ({ fs }) {
+  // Every host, and every exported command in it, measured by the comment the
+  // roster reads. A command's doc comment is its only documentation, so its
+  // length is how much a reader has to hold to use one thing.
+  const sizes = []
+  for (const dir of ["templates", "commands"]) {
+    for (const path of fs.list(`${fs.docsDir}/${dir}`, { ext: ".html" })) {
+      const match = /([a-z-]+)\.(template|command)\.html$/.exec(path)
+      if (!match) continue
+      const source = fs.parse(path).querySelector('script[type="mycelium/command"]')?.textContent ?? ""
+      for (const found of source.matchAll(/\/\*\*([\s\S]*?)\*\/\s*export\s+(?:async\s+)?function\s+(\w+)/g)) {
+        sizes.push({ at: `${match[1]} ${found[2]}`, lines: found[1].trim().split("\n").length })
+      }
+    }
+  }
+  sizes.sort((a, b) => b.lines - a.lines)
+  const total = sizes.reduce((sum, one) => sum + one.lines, 0)
+  const median = sizes[Math.floor(sizes.length / 2)].lines
+  const top = sizes.slice(0, 4).map((one) => `${one.at} ${one.lines}`).join(", ")
+  return `${sizes.length} documented commands, ${total} lines of doc comment between them; ` +
+    `the median carries ${median}; the longest are ${top}`
+}
+
+</script>
+    <notebook-reading data-on="2026-08-18">45 documented commands, 1920 lines of doc comment between them; the median carries 23; the longest are comments check 283, canon test 218, notebook run 139, validate runValidate 136</notebook-reading>
+  </notebook-case>
+  <notebook-case id="against-the-median" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how far the notebook's own add stands above the median, and what else stands with it</notebook-lens>
+    <script type="mycelium/experiment">
+export default function ({ fs }) {
+  // The same measure as the other case, asked of one command. add builds five
+  // types and a case from one doc comment, so if serving several things costs
+  // documentation, this is where the cost shows.
+  const sizes = new Map()
+  for (const dir of ["templates", "commands"]) {
+    for (const path of fs.list(`${fs.docsDir}/${dir}`, { ext: ".html" })) {
+      const match = /([a-z-]+)\.(template|command)\.html$/.exec(path)
+      if (!match) continue
+      const source = fs.parse(path).querySelector('script[type="mycelium/command"]')?.textContent ?? ""
+      for (const found of source.matchAll(/\/\*\*([\s\S]*?)\*\/\s*export\s+(?:async\s+)?function\s+(\w+)/g)) {
+        sizes.set(`${match[1]} ${found[2]}`, found[1].trim().split("\n").length)
+      }
+    }
+  }
+  const all = [...sizes.values()].sort((a, b) => a - b)
+  const median = all[Math.floor(all.length / 2)]
+  const add = sizes.get("notebook add")
+  // Anything at three times the median is carrying more than one job, whatever
+  // its name says. Naming them beside the count is what separates a command
+  // serving several types from one that is merely wordy.
+  const heavy = [...sizes].filter(([, n]) => n >= median * 3).sort((a, b) => b[1] - a[1])
+  return `notebook add carries ${add} lines of help against a median of ${median}. ` +
+    `${heavy.length} commands sit at three times the median or worse. ` +
+    `They are ${heavy.map(([at, n]) => `${at} ${n}`).join(", ")}.`
+}
+
+</script>
+    <notebook-reading data-on="2026-08-18">notebook add carries 127 lines of help against a median of 23. 7 commands sit at three times the median or worse. They are comments check 283, canon test 218, notebook run 139, validate runValidate 136, notebook add 127, notebook show 106, notebook generate 75.</notebook-reading>
+  </notebook-case>
+</notebook-experiment>
+</body></html>
