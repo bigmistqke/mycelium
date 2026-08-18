@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Does the schema already say how many commands a family needs?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>Does the schema already say how many commands a family needs?</notebook-title>
+  <notebook-tag>schema</notebook-tag>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-prompt>maybe as a general rule it could be that with notebook we create different file-types, so we need different sub-commands to deal with the specific structured content. if a template creates its own type (like spec) there is no need to do spec spec add, we can do spec add -&gt; wdyt of this convention.</notebook-prompt>
+  <notebook-question>A family gives each type its own sub-command when the types differ. Does what a type declares already say which types differ, so nobody has to judge it?</notebook-question>
+  <notebook-case id="types-by-shape" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how many distinct field shapes each family declares, against how many types it has</notebook-lens>
+    <script type="mycelium/experiment">
+export default function ({ fs }) {
+  // Two types are one shape when they declare the same fields, required the
+  // same way. That is the whole comparison: a command exists to fill fields,
+  // so types filling the same fields want the same command.
+  const families = new Map()
+  for (const path of fs.list(`${fs.docsDir}/templates`, { ext: ".html" })) {
+    const family = /([a-z-]+)\.template\.html$/.exec(path)?.[1]
+    if (!family) continue
+    for (const declared of fs.parse(path).querySelectorAll("template[id]")) {
+      const root = declared.content?.firstElementChild ?? declared.firstElementChild
+      if (!root) continue
+      const shape = Array.from(root.children)
+        .map((child) => `${child.tagName.toLowerCase()}${child.hasAttribute("required") ? "!" : ""}`)
+        .join(" ")
+      if (!families.has(family)) families.set(family, new Map())
+      const shapes = families.get(family)
+      if (!shapes.has(shape)) shapes.set(shape, [])
+      shapes.get(shape).push(declared.getAttribute("id"))
+    }
+  }
+
+  const rows = [...families]
+    .map(([family, shapes]) => ({ family, types: [...shapes.values()].flat().length, shapes: shapes.size }))
+    .filter((row) => row.types)
+    .sort((a, b) => b.types - a.types)
+  const merged = rows.filter((row) => row.shapes < row.types)
+  return `${rows.map((r) => `${r.family} ${r.types}/${r.shapes}`).join(", ")}. ` +
+    `${merged.length} families declare types sharing a shape, so a type count overstates the commands they need.`
+}
+
+</script>
+    <notebook-reading data-on="2026-08-18">notebook 6/3, canon 4/4, plan 4/4, figure 3/2, language 3/3, followup 1/1, spec 1/1, template 1/1. 2 families declare types sharing a shape, so a type count overstates the commands they need.</notebook-reading>
+  </notebook-case>
+  <notebook-conclusion><p>Counting types overstates it, and counting shapes lands where argument had
+already arrived. The notebook declares six types and three shapes, because its
+four inward types declare exactly the same fields and only an experiment and a
+case differ. So the family needs three authoring surfaces rather than six, and
+the three are the ones a separate conversation reasoned its way to.</p>
+<p>Where the two counts agree, the rule says nothing new and costs nothing. The
+canon, the plan family and the language each declare a distinct shape per type,
+so each of them wants a command per type and each currently overloads one
+command instead.</p>
+<p>Figures are the honest exception. A node and an edge declare the same shape,
+so the count merges them, and nothing authors either by command because both get
+written straight into the document that draws them. A rule about how many
+commands a family needs says nothing useful about a family that needs none.</p>
+</notebook-conclusion>
+</notebook-experiment>
+</body></html>
