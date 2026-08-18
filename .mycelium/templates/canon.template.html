@@ -552,7 +552,7 @@
   import { spawn, spawnSync, execFileSync } from "node:child_process"
   import { CORPUS_DIR, loadModule } from "mycelium/utils"
   import { ELEMENT, chromePath, sleep, withBrowser } from "mycelium/webdriver"
-  import { graphPage, templateFile } from "mycelium/graph-page"
+  import { graphPage, namedScripts } from "mycelium/graph-page"
   import { pathToFileURL } from "node:url"
 
   const TYPES = ['axiom', 'specification']
@@ -1454,7 +1454,7 @@
     <b>${data.behaviours.filter(b => b.check).length}</b> checks &middot;
     <b>${data.specifications.length}</b> subsystems &middot;
     <b>${data.code.filter(d => d.cites.length > 1).length}</b> declarations answering more than one claim`,
-      scripts: ['graph.element.js', 'chain.element.js'].map(templateFile),
+      scripts: namedScripts(['graph.element.js', 'chain.element.js']),
     })
 
     if (args.out) {

@@ -314,7 +314,7 @@
   import { withBrowser } from "mycelium/webdriver"
   import { extractGraph } from "mycelium/extract-graph"
   import { BLOCK_TAGS } from "mycelium/language-prose"
-  import { graphPage, templateFile } from "mycelium/graph-page"
+  import { graphPage, namedScripts } from "mycelium/graph-page"
   import { tmpdir } from "node:os"
   import { basename, dirname, join, resolve, resolve as resolvePath } from "node:path"
   import { pathToFileURL } from "node:url"
@@ -1222,7 +1222,7 @@
     const base = args.base === undefined ? ""
       : `<base href="${args.base === "true" ? pathToFileURL(corpusRoot + "/").href : args.base}">`
 
-    const page = graphPage({ ...GRAPH_PAGE, scripts: GRAPH_PAGE.scripts.map(templateFile), data, counts, base })
+    const page = graphPage({ ...GRAPH_PAGE, scripts: namedScripts(GRAPH_PAGE.scripts), data, counts, base })
 
     const out = args.out
       ? resolvePath(CORPUS_DIR, args.out)
