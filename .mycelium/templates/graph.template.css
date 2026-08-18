@@ -254,9 +254,8 @@
      it, so a dimmed box turns see-through and the wires behind it read as
      though they were in front. Mixing towards the page instead keeps the box
      solid and only the ink recedes. */
-  .node.dim { color: var(--ink-4); border-color: var(--line); }
-  .node.dim .title { color: var(--ink-4); }
-  .node[data-kind].dim { border-color: color-mix(in oklab, var(--wire) 22%, var(--bg)); }
+  .node.dim { border-color: var(--line); }
+  .node[data-kind].dim { border-color: color-mix(in oklab, var(--wire) 15%, var(--bg)); }
   /* The kind shows in the border rather than the words. A title tinted per kind
      costs contrast on the one thing every box exists to say, and the border
      carries the same signal at the edge of the box where it competes with
@@ -275,6 +274,11 @@
      scale keeps a box's title legible without needing to be the brightest
      thing on the screen. */
   .node .title { color: var(--ink-1); }
+  /* ink-4 faded a dimmed title past reading; ink-1 (the default above)
+     erased the difference between dimmed and lit entirely. ink-3 is the
+     same middle step .reach and every rank/group heading already use for
+     "present, quieter than what's lit." */
+  .node.dim .title { color: var(--ink-3); }
 
   .node a { color: inherit; text-decoration: none; }
   .node a:hover { text-decoration: underline; }
