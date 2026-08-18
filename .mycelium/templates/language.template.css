@@ -24,7 +24,7 @@ language-rule > language-title {
 /* A term's headword is the word itself, so it reads as a dictionary entry
    in the mono every other title in the corpus carries. A rule's title is a
    sentence, so it stays in the body face rather than following that. */
-language-rule > language-title { font-family: var(--font-serif); font-weight: 600; }
+language-rule > language-title { font-family: var(--font-serif); font-weight: 500; }
 
 language-term > language-part-of-speech,
 language-term > language-status,

@@ -27,7 +27,7 @@ canon-specification > canon-title {
    carries. */
 canon-axiom > canon-title {
   font-family: var(--font-serif);
-  font-weight: 600;
+  font-weight: 500;
   font-style: italic;
 }
 
