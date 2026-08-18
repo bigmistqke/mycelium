@@ -43,5 +43,30 @@ export default function ({ fs }) {
 </script>
     <notebook-reading data-on="2026-08-18">8 declared types nest another; 5 nest exactly one kind, so an address alone decides what a new child is; 3 nest more than one (canon-specification: canon-references canon-behaviour, canon-behaviour: canon-references canon-behaviour, figure-graph: figure-node figure-edge)</notebook-reading>
   </notebook-case>
+  <notebook-case id="axioms-per-behaviour" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how many behaviours rest on more than one axiom</notebook-lens>
+    <script type="mycelium/experiment">
+export default function ({ fs }) {
+  // The schema lets a behaviour repeat its depends_on, so composition is
+  // already allowed. Whether anybody writes one is a different question, and
+  // an unexercised permission says nothing about whether the idea works.
+  const counts = []
+  for (const path of fs.list(`${fs.docsDir}/canon`, { ext: ".html" })) {
+    for (const claim of fs.parse(path).querySelectorAll("canon-behaviour[id]")) {
+      const up = Array.from(claim.children).filter(
+        (child) => child.tagName.toLowerCase() === "a" && child.getAttribute("data-rel") === "depends_on",
+      )
+      counts.push(up.length)
+    }
+  }
+  const none = counts.filter((n) => n === 0).length
+  const one = counts.filter((n) => n === 1).length
+  const many = counts.filter((n) => n > 1).length
+  return `${counts.length} behaviours: ${none} rest on nothing directly, ${one} on one claim, ${many} on more than one.`
+}
+
+</script>
+    <notebook-reading data-on="2026-08-18">102 behaviours: 1 rest on nothing directly, 101 on one claim, 0 on more than one.</notebook-reading>
+  </notebook-case>
 </notebook-experiment>
 </body></html>
