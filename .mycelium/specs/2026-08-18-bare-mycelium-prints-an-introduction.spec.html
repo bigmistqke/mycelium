@@ -2,62 +2,60 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Spec: Bare mycelium prints a derived introduction instead of the raw roster</title>
+<title>Spec: Bare mycelium and --help both print an enriched roster</title>
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="../templates/spec.template.css">
 </head>
 <body>
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
-  <spec-title>Bare mycelium prints a derived introduction instead of the raw roster</spec-title>
+  <spec-title>Bare mycelium and --help both print an enriched roster</spec-title>
   <spec-status>approved</spec-status>
   <spec-date>2026-08-18</spec-date>
   <spec-problem>
-<p>Bare <code>mycelium</code> and <code>mycelium --help</code> print the same
-thing: every family, every command, every audit. That page grew across this
-session from roughly six thousand to over ten thousand characters as five
-families gained commands, and it says nothing about what a family is for or
-how much of the corpus it holds. A session meeting this project reads the
-whole roster or reads nothing, and the evidence from this session is that it
-reads the whole roster and still reaches for <code>ls</code> and
-<code>sed</code> anyway.</p>
-<p>The SessionStart hook already proves the shape works: a session reads a
-short derived message at its own start, and a long one competes with the
-task and loses. <code>--help</code> is asked for, so its length is not the
-problem there. Bare <code>mycelium</code> is not asked for anything in
-particular, and answering it with the same wall wastes the one thing a bare
-invocation is good for.</p>
+<p>Bare <code>mycelium</code> and <code>mycelium --help</code> used to print
+the same thing: every family, every command, every audit, with no purpose
+and no sense of how much of the corpus lived where. That page grew across
+this session from roughly six thousand to over ten thousand characters as
+five families gained commands.</p>
+<p>A first attempt split the two. Bare <code>mycelium</code> would print a
+short line per family — its purpose and how many documents conformed to
+it — on the theory that a bare invocation asks for nothing in particular, so
+a wall of every command answers a question nobody posed. Direct feedback
+overturned that: a session meeting the corpus for the first time needs more
+information at that moment, not less, since it has nothing yet to ask a
+narrower question about. Shortening the one screen a new session gets traded
+completeness for brevity at exactly the point completeness mattered most.</p>
 </spec-problem>
   <spec-design>
-<p>Bare <code>mycelium</code> seeds a corpus if none exists, exactly as
-today, then prints a derived introduction instead of the roster.
-<code>--help</code> keeps printing the roster and the audits, since asking
-for help is asking for the whole list.</p>
-<p>The introduction has three parts. A first line states what the project
-holds true, taken from the corpus's own root axiom rather than written here a
-second time. Then one line per host, sorted by how many documents conform to
-it: its id, a count, and its declared purpose. Then three lines saying how to
-read one entry, one family, or the whole roster.</p>
-<p>Every part is derived from what already exists. The purpose comes from
-<code>template-host</code>, which every host now declares. The count comes
-from walking the corpus once and tallying <code>data-conforms-to</code>
-against each host's own filename, the same signal <code>explore list</code>
-already uses — nothing here names a family, so a twelfth one counts itself
-without an edit. A host holding no instances still gets a line, with a dash
-instead of a number, because a command host with nothing to count is a fact
-about it rather than an omission.</p>
+<p>Bare <code>mycelium</code> and <code>--help</code> print the same thing
+again, and that thing now carries what the short-lived split version had
+plus what the original roster had. Nothing is removed to make room: a host's
+line carries its id, how many documents conform to it, its file, its
+declared purpose, and every command it exports with that command's own
+summary — all four in one place instead of split across two commands.</p>
+<p>The opening line is the corpus's own first root axiom, read fresh rather
+than repeated here a second time. A host's purpose comes from the
+template-host it now declares. A count comes from walking
+<code>data-conforms-to</code> the same way <code>explore list</code>
+already does — nothing here names a family, so a twelfth one counts and
+lists itself without an edit.</p>
+<p>Sorted alphabetically, the way the roster always was, since this is now a
+reference a reader scans by name rather than a first impression read once
+top to bottom. A host with no commands still gets a purpose line, since a
+family that authors nothing by command — figure, whose author writes nodes
+and edges straight into the document that draws them — is a fact worth
+stating rather than a reason to disappear from the listing.</p>
 <p>The purpose is not shortened. A followup already states why: a title that
-gets truncated is a title whose length limit failed at its one job, so the
-introduction's own line width has to fit a whole purpose rather than the
-other way round.</p>
+gets truncated is a title whose length limit failed at its one job, so a
+host's line is as wide as its purpose needs.</p>
 </spec-design>
   <spec-out-of-scope>
-<p>No new command name. An earlier draft of this considered
-<code>mycelium about</code>, and dropped it: an agent's reflex is the bare
-name or <code>--help</code>, never a command it has to already know exists,
-so a second command would repeat the exact failure this design answers.</p>
-<p><code>mycelium &lt;family&gt;</code> with no verb already prints that
-family's own commands in full, unchanged by this. Nothing here duplicates
-it.</p>
+<p>No new command name. <code>mycelium about</code> was considered and
+dropped for the same reason across both versions of this design: an agent's
+reflex is the bare name or <code>--help</code>, never a command it has to
+already know exists.</p>
+<p><code>mycelium &lt;family&gt;</code> with no verb still prints that one
+family's own commands in full, unchanged by this.</p>
 </spec-out-of-scope>
 </spec-doc>
 </body></html>

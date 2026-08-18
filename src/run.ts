@@ -542,63 +542,6 @@ function readCommands(source: string): { name: string; summary: string }[] {
 // by hand; printRoster reads it straight off the same command scripts the
 // engine runs.
 //
-// What bare `mycelium` prints, instead of the roster --help asks for. Nothing
-// here duplicates a fact the corpus already holds. The opening line is the
-// corpus's own first root axiom. A host's purpose comes from the
-// template-host it now declares, and a count comes from walking
-// data-conforms-to the same way explore list does.
-//
-// A document declaring a template of its own is documentation about a type
-// rather than a claim, so it is skipped here exactly as it is everywhere else
-// that reads data-conforms-to — a template file's own template-host included.
-//
-// Sorted by count, because a session meeting this project for the first time
-// wants to know where the corpus actually lives before it wants the family
-// that happens to sort first alphabetically.
-function printIntro(docsDir: string, stream: (line: string) => void) {
-  const opening = firstRootAxiomTitle(docsDir)
-  const sentence = opening ? opening[0].toLowerCase() + opening.slice(1).replace(/\.$/, "") : "the documents are the source of truth"
-  stream(`mycelium — ${sentence}.`)
-  stream("Reach one through a command, never by hand.")
-  stream("")
-
-  const hosts = walkHtmlFiles(docsDir)
-    .filter((file) => TEMPLATE_FILE_SUFFIXES.some((suffix) => file.endsWith(`.${suffix}`)))
-    .map((file) => ({
-      id: basename(file).replace(/\.(template|command)\.html$/, ""),
-      file,
-      purpose: hostPurpose(file),
-      count: 0,
-    }))
-  const byId = new Map(hosts.map((host) => [host.id, host]))
-
-  for (const file of walkHtmlFiles(docsDir)) {
-    const { document } = parseHTML(readFileSync(file, "utf8"))
-    if (document.querySelector("template[id]")) continue
-    const seen = new Set<string>()
-    for (const el of Array.from(document.querySelectorAll("[data-conforms-to]"))) {
-      const conformsTo = el.getAttribute("data-conforms-to") ?? ""
-      const id = basename(conformsTo).replace(/\.(template|command)\.html.*$/, "")
-      seen.add(id)
-    }
-    for (const id of seen) {
-      const host = byId.get(id)
-      if (host) host.count++
-    }
-  }
-
-  const width = Math.max(...hosts.map((host) => host.id.length))
-  for (const host of hosts.sort((a, b) => b.count - a.count)) {
-    const count = host.count ? String(host.count).padStart(4) : "   -"
-    stream(`${host.id.padEnd(width + 2)}${count}  ${host.purpose || "(carries no template-purpose yet)"}`)
-  }
-
-  stream("")
-  stream("read one entry   mycelium notebook show <slug>")
-  stream("one family       mycelium <family> --help          its types, fields, and commands")
-  stream("every command    mycelium --help")
-}
-
 // The corpus's own claim about itself, read fresh rather than repeated in a
 // string the corpus does not own. The root canon declares its axioms in
 // document order, and the first one is the closest thing this project has
@@ -620,25 +563,69 @@ function hostPurpose(file: string): string {
   return purpose?.textContent?.replace(/\s+/g, " ").trim() ?? ""
 }
 
+// How many documents conform to each host, walked once for every host at
+// once. A document declaring a template of its own is documentation about a
+// type rather than a claim, so it is skipped here exactly as it is
+// everywhere else that reads data-conforms-to — a template file's own
+// template-host included.
+function countInstancesPerHost(docsDir: string, hostIds: string[]): Map<string, number> {
+  const counts = new Map(hostIds.map((id) => [id, 0]))
+  for (const file of walkHtmlFiles(docsDir)) {
+    const { document } = parseHTML(readFileSync(file, "utf8"))
+    if (document.querySelector("template[id]")) continue
+    const seen = new Set<string>()
+    for (const el of Array.from(document.querySelectorAll("[data-conforms-to]"))) {
+      const conformsTo = el.getAttribute("data-conforms-to") ?? ""
+      seen.add(basename(conformsTo).replace(/\.(template|command)\.html.*$/, ""))
+    }
+    for (const id of seen) if (counts.has(id)) counts.set(id, (counts.get(id) ?? 0) + 1)
+  }
+  return counts
+}
+
 // A file is a command host only if its name ends in one of
 // TEMPLATE_FILE_SUFFIXES, the same rule findTemplateFile uses to resolve an
 // <id>. That matters beyond consistency: specs and plans QUOTE command
 // scripts in escaped code blocks. A scan that went looking for the
 // <script> tag alone would find a dozen frozen copies of older versions of
 // these same commands and list them as real.
+//
+// Everything this prints is derived rather than repeated. The opening line
+// is the corpus's own first root axiom. A host's purpose comes from the
+// template-host it now declares. A count comes from walking data-conforms-to
+// the same way explore list does.
+//
+// A session meeting this project should leave this one screen able to name
+// every family, what each is for, how much of the corpus lives there, and
+// every command it can run. Not a teaser it then has to spend a second
+// command finding the rest of.
 function printRoster(docsDir: string, stream: (line: string) => void) {
+  const opening = firstRootAxiomTitle(docsDir)
+  const sentence = opening ? opening[0].toLowerCase() + opening.slice(1).replace(/\.$/, "") : "the documents are the source of truth"
+  stream(`mycelium — ${sentence}.`)
+  stream("")
   stream("usage: mycelium <id> <command> [args…]")
   stream("       mycelium <id> --help          every flag and caveat for one family")
   stream("")
 
   const hosts = walkHtmlFiles(docsDir)
     .filter((file) => TEMPLATE_FILE_SUFFIXES.some((suffix) => file.endsWith(`.${suffix}`)))
-    .sort()
+    .map((file) => ({ id: basename(file).replace(/\.(template|command)\.html$/, ""), file }))
+    .sort((a, b) => a.id.localeCompare(b.id))
+  const counts = countInstancesPerHost(docsDir, hosts.map((host) => host.id))
 
-  for (const file of hosts) {
+  for (const { id, file } of hosts) {
     const { document } = parseHTML(readFileSync(file, "utf8"))
+    const count = counts.get(id) ?? 0
+    stream(`${id}  ${count ? `${count} docs` : "no docs"}  (${relativePath(docsDir, file)})`)
+    const purpose = hostPurpose(file)
+    if (purpose) stream(`  ${purpose}`)
+
     const script = document.querySelector('script[type="mycelium/command"]')
-    if (!script) continue
+    if (!script) {
+      stream("")
+      continue
+    }
 
     // A host this function cannot read is a real problem, but it is not
     // this function's problem. The roster's job is to be a complete index
@@ -648,14 +635,16 @@ function printRoster(docsDir: string, stream: (line: string) => void) {
     try {
       commands = readCommands(script.textContent ?? "")
     } catch (err) {
-      stream(`${basename(file)}  (unreadable: ${(err as Error).message})`)
+      stream(`  (unreadable: ${(err as Error).message})`)
       stream("")
       continue
     }
-    if (commands.length === 0) continue
+    if (commands.length === 0) {
+      stream("")
+      continue
+    }
 
-    const id = basename(file).replace(/\.(template|command)\.html$/, "")
-    stream(`${id}  (${relativePath(docsDir, file)})`)
+    stream("")
     const width = Math.max(...commands.map((c) => c.name.length))
     for (const { name, summary } of commands) stream(`  ${name.padEnd(width + 2)}${summary}`.trimEnd())
     stream("")
@@ -767,13 +756,14 @@ async function main() {
 
   // `mycelium` with nothing after it is a command rather than a mistake, so it
   // goes to stdout and exits zero the way an asked-for `--help` does. It makes
-  // sure a corpus exists, then introduces what that corpus holds. Running it
+  // sure a corpus exists, then prints the same thing --help does. Running it
   // twice does the second half only.
   //
-  // --help prints the full roster instead, because asking for help is asking
-  // for the whole list. --help is asked for something specific, and the bare
-  // name is not asked for anything. A wall of every command and every audit
-  // is the wrong answer to a question nobody posed.
+  // A shorter version used to print here instead, on the theory that a bare
+  // invocation asks for nothing in particular and a wall of every command
+  // answers a question nobody posed. A session meeting the corpus cold needs
+  // the opposite: everything it takes to get started, in the one screen it is
+  // handed before a task exists to make it ask for anything narrower.
   //
   // More may attach here later. Whatever does belongs on the same footing:
   // something a person wants when they type the bare name, and safe to repeat.
@@ -783,12 +773,8 @@ async function main() {
       out(`No corpus here yet. Run \`mycelium\` with nothing after it to write one into ${CORPUS_DIR}/.`)
       process.exit(0)
     }
-    if (id === "--help" || id === "-h") {
-      printRoster(docsDir, out)
-      printAudits(docsDir, out)
-    } else {
-      printIntro(docsDir, out)
-    }
+    printRoster(docsDir, out)
+    printAudits(docsDir, out)
     process.exit(0)
   }
 
