@@ -138,4 +138,29 @@ prose to do the rest.</p>
   <canon-references><a href="../notebook/how-many-hosts-say-what-they-are-for.experiment.html">sixteen labels for six concepts</a><a href="../notebook/agent-must-remember-is-a-defect.principle.html">a rule somebody must remember is already a defect</a><a href="../notebook/evidence-for-the-harness-reframe.practice.html">prose decayed where a mechanism held</a><a href="../notebook/hand-copied-command-list-reads-as-absence.practice.html">a hand-maintained copy drifts silently</a></canon-references>
   <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">the general rule this narrows: when to reach for a declaration at all</a>
 </canon-axiom>
+<canon-axiom id="one-way-to-do-a-thing" data-conforms-to="../templates/canon.template.html#canon-axiom">
+  <canon-title>There is one way to do a thing, so a second way is a bug in one of them.</canon-title>
+  <canon-detail><p>Two ways of reaching the same result are not redundancy, they are a
+disagreement waiting to happen. One drifts while the other is maintained, or
+both are maintained and drift from each other, and a reader who tries the wrong
+one first has no way to tell it is the wrong one — it works, right up until it
+does not.</p>
+<p>This ruled out an alias this session nearly built. A convention that let a
+type-named command and its overloaded predecessor coexist would have made
+<code>notebook add principle</code> and <code>notebook principle add</code>
+both plausible, and only a rule remembered by whoever wrote either one would
+have kept them from drifting. Removing the old shape instead of aliasing it was
+this axiom, applied before it had a name.</p>
+<p>It narrows nothing on its own; it multiplies with whatever else applies. <a href="#a-declaration-is-the-whole-contract">what a template declares is the
+whole contract</a> says a flag outside that contract does not belong on a
+command. Neither claim alone forces a single authoring surface per type: the
+contract permits two commands with identical flags, and having one way permits
+a single command overloaded across five types. Only holding both at once rules
+out every shape except the one each family now has.</p>
+<p>The cost is real. A second way sometimes exists for a good reason — an
+escape hatch, a faster path for the common case — and this axiom says that
+reason has to be named and kept, not left to accumulate as an unexamined
+convenience.</p>
+</canon-detail>
+</canon-axiom>
 </body></html>
