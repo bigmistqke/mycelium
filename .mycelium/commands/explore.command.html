@@ -196,7 +196,7 @@
       ? `<a href="DESIGN.html">${escapeHtml(titleOf(design.doc))}</a> is the project's own first node, and the fuller argument behind everything else on this page.`
       : ""
 
-    const toc = `<nav class="toc">
+    const toc = `<nav>
   <ul>
     <li><a href="#drawings">drawings</a></li>
     ${sortedFamilies.map((family) => `<li><a href="#${sectionId(family.name)}">${escapeHtml(family.name)}</a></li>`).join("\n    ")}
@@ -208,9 +208,6 @@
       ? ""
       : `<base href="${args.base === "true" ? pathToFileURL(resolvePath(fs.root) + "/").href : args.base}">`
 
-    // theme.css sets every colour this reaches for as a custom property, and
-    // declares no <nav> of its own — every other page in the corpus is prose
-    // with no jump list, so this is the one page that needs one.
     const page = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -219,36 +216,6 @@
 <title>mycelium</title>
 ${base}
 <link rel="stylesheet" href="theme.css">
-<style>
-  nav.toc {
-    margin: 1.5rem 0 2.5rem;
-    padding: 0.9rem 1.1rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--code-bg);
-  }
-  nav.toc ul {
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0;
-  }
-  nav.toc a {
-    display: inline-block;
-    padding: 0.2rem 0.7rem;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    color: var(--fg);
-    text-decoration: none;
-    font-size: 0.85rem;
-  }
-  nav.toc a:hover, nav.toc a:focus-visible {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-</style>
 </head>
 <body>
 <h1>mycelium</h1>
