@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A corpus index that lists every file and links every generated graph</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A corpus index that lists every file and links every generated graph</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-18</spec-date>
+  <spec-problem>
+<p>
+  The published site shows one page: <code>deploy-pages.yml</code> writes the notebook graph straight to
+  <code>index.html</code> via <code>mycelium notebook generate graph --out index.html</code>. A visitor
+  lands on that drawing and nothing else, even though every document under <code>.mycelium/</code> is
+  already its own static page with resolvable relative links — the corpus has been a website since
+  <a href="../DESIGN.html">DESIGN.html</a> said so.
+</p>
+<p>
+  Two generators already exist and only one runs in CI. <code>canon generate chain --out &lt;path&gt;</code>
+  draws the axiom-to-declaration chain the same way <code>notebook generate graph</code> draws the
+  notebook, but nothing in the workflow calls it, so the chain page is unreachable from the published
+  site. Neither generator's output links back to a page listing what else the corpus holds — a reader
+  who does not already know the directory layout has no way to find a spec, a followup, or a canon
+  subsystem from the front page.
+</p>
+</spec-problem>
+  <spec-design>
+<p>
+  A new command, <code>mycelium explore generate index [--out &lt;path&gt;] [--base [&lt;href&gt;]]</code>,
+  mirrors the signature <code>notebook generate graph</code> and <code>canon generate chain</code>
+  already use. It writes one page: a list of every file the corpus holds, grouped by the family that
+  governs it, plus links to the two drawings and a short line about the project.
+</p>
+<p>
+  Grouping stays protocol-only, the way the rest of <code>explore.command.html</code> already reads the
+  corpus. <code>explore list</code> already walks every element carrying <code>data-conforms-to</code>,
+  skipping a template's own worked examples via <code>declaresATemplate</code>; <code>generate index</code>
+  reuses that same walk. Each instance's <code>data-conforms-to</code> names a template file and a
+  fragment — stripping the fragment gives the template that instance's document belongs to, and grouping
+  by that template file is grouping by family with no family-specific code anywhere in the command.
+</p>
+<p>
+  Every <code>templates/&lt;family&gt;.template.html</code> and <code>commands/&lt;name&gt;.command.html</code>
+  already carries a <code>&lt;template-host&gt;</code> — <code>&lt;template-purpose&gt;</code> is a
+  required one-line description of what the family is for, and <code>&lt;template-design&gt;</code> holds
+  one or more <code>&lt;a href&gt;</code> to the specs behind it, already checked by
+  <code>every-link-resolves</code>. The section for a family reads both straight off its own template
+  file: the purpose becomes the section's one-line description, and the design links become "read the
+  spec" links beside it. Nothing new gets written to describe a family a second time.
+</p>
+<p>
+  Under that, the section lists every file whose instances grouped into it — one line per file, not per
+  instance, since a canon subsystem or a notebook entry is a file a reader opens, and what conforms
+  inside it is this command's own bookkeeping. The link text is the file's own <code>&lt;title&gt;</code>,
+  which every document already carries for its browser tab. A file with no <code>data-conforms-to</code>
+  element at all and no <code>template[id]</code> of its own — today only <code>DESIGN.html</code> — is
+  not part of any family section; its title and a short quote from it becomes the page's own "about"
+  line, so the index says what the project is without restating <code>DESIGN.html</code>'s argument a
+  second time.
+</p>
+<p>
+  Two links sit above the family sections rather than inside one: the notebook graph and the chain graph,
+  each now written to its own file — <code>notebook.html</code> and <code>chain.html</code> — instead of
+  one of them claiming <code>index.html</code> for itself. <code>deploy-pages.yml</code> gains two
+  <code>generate</code> steps alongside the one it already runs, and its existing
+  "Build the index" step becomes <code>explore generate index --out index.html</code>. The workflow
+  already uploads the whole <code>.mycelium/</code> directory, so no step beyond the three generate calls
+  changes.
+</p>
+<p>
+  All three generated files stay out of git, the way <code>index.html</code> already does — a local
+  <code>--out</code> run is for looking, and the committed corpus holds nothing that resolves a link into
+  them, so <code>every-link-resolves</code> has nothing to check there.
+</p>
+</spec-design>
+  <spec-open-questions>
+<p>
+  Whether the notebook and chain pages should link back to the index once it exists, the way a
+  <code>&lt;base&gt;</code>-resolved page already links into individual documents. Today neither one
+  carries any navigation back out. Left for whoever builds this to decide once the index page's own
+  layout is in front of them.
+</p>
+</spec-open-questions>
+</spec-doc>
+</body></html>

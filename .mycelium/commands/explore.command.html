@@ -35,6 +35,12 @@
 <script type="mycelium/command">
   import type { CommandContext } from "mycelium/api"
   import { declaresATemplate } from "mycelium/shared"
+  import { resolveHref } from "mycelium/canon-citations"
+  import { writeFileSync, mkdtempSync } from "node:fs"
+  import { tmpdir } from "node:os"
+  import { join, resolve as resolvePath } from "node:path"
+  import { pathToFileURL } from "node:url"
+
   /**
    * List every data-conforms-to instance across the whole corpus,
    * regardless of which family it belongs to.
@@ -70,6 +76,172 @@
         console.log(`${path}\t${tag}\t${conformsTo}`)
       }
     }
+  }
+
+  /**
+   * A host is a template or command file describing a family, found the
+   * same way every-host-says-what-it-is already finds one: the
+   * &lt;template-host&gt; element every such file carries, whether or not it
+   * also declares a schema. A file conforming to nothing at all — today
+   * only DESIGN.html — is neither a host nor content, and generate treats
+   * it as the page's own "about" line instead.
+   */
+  function isHost(doc: Document): boolean {
+    return doc.querySelector("template-host[data-conforms-to]") !== null
+  }
+
+  const titleOf = (doc: Document) => (doc.querySelector("title")?.textContent ?? "").trim()
+
+  const escapeHtml = (text: string) =>
+    text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+
+  interface FamilySection {
+    path: string
+    name: string
+    purpose: string
+    specs: { href: string; label: string }[]
+    files: Map<string, string>
+  }
+
+  /**
+   * A landing page for the published site: what the corpus holds, grouped by
+   * the family that governs it, with the two drawings linked above the list.
+   * A table of contents up top jumps straight to a family, since the
+   * notebook section alone runs to hundreds of entries.
+   *
+   *   mycelium explore generate index [--out &lt;path&gt;] [--base [&lt;href&gt;]]
+   *
+   * Every templates/*.template.html and commands/*.command.html file already
+   * carries a &lt;template-host&gt;: a one-line &lt;template-purpose&gt; and the
+   * &lt;template-design&gt; links to the specs behind it. A family's section on
+   * this page reads both straight off its own file, so nothing here
+   * describes a family a second time.
+   *
+   * The rest of the corpus sorts under those sections the same way
+   * explore list already finds it: every element carrying data-conforms-to,
+   * however deeply it sits, with the fragment stripped off to find which
+   * family's file it belongs to. One line per file, not per instance — a
+   * canon subsystem holding forty axioms is one document a reader opens,
+   * and what conforms inside it is this command's own bookkeeping.
+   *
+   * --out and --base behave exactly as they do for notebook generate graph and
+   * canon generate chain. --out writes there, relative to the corpus or
+   * absolute. A page written outside the corpus needs --base to resolve the
+   * links it carries back in.
+   */
+  export function generate({ fs, args }: CommandContext) {
+    const kind = args._[0]
+    if (kind !== "index") throw new Error(`unknown generate kind "${kind}" — expected "index"`)
+
+    const GENERATED = new Set(["index.html", "notebook.html", "chain.html"])
+    const documents = fs.list(".").filter(({ path }) => !GENERATED.has(path))
+
+    const families = new Map<string, FamilySection>()
+    for (const { path, doc } of documents) {
+      if (!isHost(doc)) continue
+      const purpose = (doc.querySelector("template-host template-purpose")?.textContent ?? "").trim()
+      const specs = Array.from(doc.querySelectorAll("template-host template-design a")).map((a) => ({
+        href: resolveHref(path, a.getAttribute("href") ?? ""),
+        label: (a.textContent ?? "").trim(),
+      }))
+      const name = path.split("/").pop()!.replace(/\.(template|command)\.html$/, "")
+      families.set(path, { path, name, purpose, specs, files: new Map() })
+    }
+
+    const other = new Map<string, string>()
+    let design: { doc: Document } | undefined
+    for (const { path, doc } of documents) {
+      if (isHost(doc)) continue
+      if (path === "DESIGN.html") { design = { doc }; continue }
+      const conforming = Array.from(doc.querySelectorAll("[data-conforms-to]"))
+      if (!conforming.length) { other.set(path, titleOf(doc) || path); continue }
+      for (const el of conforming) {
+        const templatePath = resolveHref(path, el.getAttribute("data-conforms-to") ?? "").split("#")[0]
+        families.get(templatePath)?.files.set(path, titleOf(doc) || path)
+      }
+    }
+
+    const sectionId = (name: string) => `family-${name.replace(/[^a-z0-9]+/gi, "-")}`
+
+    const section = (family: FamilySection) => {
+      const specLinks = family.specs
+        .map((spec) => `<a href="${escapeHtml(spec.href)}">${escapeHtml(spec.label)}</a>`)
+        .join(", ")
+      const files = [...family.files].sort(([, left], [, right]) => left.localeCompare(right))
+      const fileLinks = files
+        .map(([path, title]) => `<li><a href="${escapeHtml(path)}">${escapeHtml(title)}</a></li>`)
+        .join("\n    ")
+      return `<section id="${sectionId(family.name)}">
+  <h3>${escapeHtml(family.name)}</h3>
+  <p>${escapeHtml(family.purpose)}${specLinks ? ` &mdash; ${specLinks}` : ""}</p>
+  ${files.length ? `<ul>\n    ${fileLinks}\n  </ul>` : "<p><i>no files yet</i></p>"}
+</section>`
+    }
+
+    const sortedFamilies = [...families.values()].sort((left, right) => left.path.localeCompare(right.path))
+    const sections = sortedFamilies.map(section).join("\n")
+
+    const otherSection = other.size
+      ? `<section id="other">
+  <h3>other</h3>
+  <ul>
+    ${[...other].sort(([, left], [, right]) => left.localeCompare(right))
+      .map(([path, title]) => `<li><a href="${escapeHtml(path)}">${escapeHtml(title)}</a></li>`)
+      .join("\n    ")}
+  </ul>
+</section>`
+      : ""
+
+    const about = design
+      ? `<a href="DESIGN.html">${escapeHtml(titleOf(design.doc))}</a> is the project's own first node, and the fuller argument behind everything else on this page.`
+      : ""
+
+    const toc = `<nav>
+  <ul>
+    <li><a href="#drawings">drawings</a></li>
+    ${sortedFamilies.map((family) => `<li><a href="#${sectionId(family.name)}">${escapeHtml(family.name)}</a></li>`).join("\n    ")}
+    ${other.size ? `<li><a href="#other">other</a></li>` : ""}
+  </ul>
+</nav>`
+
+    const base = args.base === undefined
+      ? ""
+      : `<base href="${args.base === "true" ? pathToFileURL(resolvePath(fs.root) + "/").href : args.base}">`
+
+    const page = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mycelium</title>
+${base}
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<h1>mycelium</h1>
+<p>${about}</p>
+${toc}
+<h2 id="drawings">Drawings</h2>
+<ul>
+  <li><a href="notebook.html">The notebook</a> &mdash; every entry, ranked by the day it arrived.</li>
+  <li><a href="chain.html">The canon chain</a> &mdash; every axiom's reach, from claim to declaration.</li>
+</ul>
+<h2>The corpus</h2>
+${sections}
+${otherSection}
+</body>
+</html>
+`
+
+    if (args.out) {
+      const out = resolvePath(fs.root, args.out as string)
+      writeFileSync(out, page)
+      console.log(`wrote    ${out}`)
+      return
+    }
+    const out = join(mkdtempSync(join(tmpdir(), "mycelium-index-")), "index.html")
+    writeFileSync(out, page)
+    console.log(pathToFileURL(out).href)
   }
 </script>
 

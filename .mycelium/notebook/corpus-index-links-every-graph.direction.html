@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>An index page should list what the corpus holds and link out to every generated graph, not just the notebook one</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>An index page should list what the corpus holds and link out to every generated graph, not just the notebook one</notebook-title>
+  <notebook-tag>site</notebook-tag>
+  <notebook-tag>explore</notebook-tag>
+  <notebook-detail>Right now <code>deploy-pages.yml</code> writes the notebook graph straight to <code>index.html</code>
+(<code>pnpm mycelium notebook generate graph --out index.html</code>), so the published site is one
+graph. The canon family already has its own generator (<code>canon generate chain --out &lt;path&gt;</code>)
+that nothing in CI ever runs.
+<p>
+The explore family (<code>explore.command.html</code>) is already the home for whole-corpus,
+protocol-only commands. <code>explore list</code> walks every <code>data-conforms-to</code> instance
+regardless of family, which makes it the likely home for a new command that builds a landing page: one
+section per family, read straight off each family's own <code>&lt;template-purpose&gt;</code> and
+<code>&lt;template-design&gt;</code> spec links, listing every file that belongs to it. The CI workflow
+would generate all three pages and write the landing page to <code>index.html</code> instead of the
+notebook graph.
+</p>
+<p>
+Settled into <a data-rel="specifies" href="../specs/2026-08-18-corpus-index.spec.html">a spec</a>.
+</p>
+</notebook-detail>
+</notebook-direction>
+</body></html>

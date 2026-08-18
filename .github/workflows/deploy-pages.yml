@@ -1,9 +1,9 @@
-name: Publish the knowledge graph
+name: Publish the corpus
 
 # The docs tree is already a website: every node, spec, plan and template is a
 # standalone HTML document linking to its neighbours by relative path. Nothing
-# needs building. The one generated file is the index — a rendered view of the
-# graph whose nodes link back into the documents.
+# needs building. Three files are generated: the two drawings, and an index
+# that lists every family and links both of them.
 on:
   push:
     branches: [main]
@@ -64,8 +64,14 @@ jobs:
       - name: Run the browser tests
         run: pnpm mycelium canon test
 
+      - name: Build the notebook graph
+        run: pnpm mycelium notebook generate graph --out notebook.html
+
+      - name: Build the canon chain
+        run: pnpm mycelium canon generate chain --out chain.html
+
       - name: Build the index
-        run: pnpm mycelium notebook generate graph --out index.html
+        run: pnpm mycelium explore generate index --out index.html
 
       - uses: actions/configure-pages@v6
 
