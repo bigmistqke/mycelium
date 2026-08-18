@@ -13,73 +13,77 @@
   <notebook-tag>measurement</notebook-tag>
   <notebook-prompt>i think we should differentiate between observation and reflection in the notebook -&gt; you are currently using it again more as a worklog type thing, which is getting material daily observations mixed with philosophical drivers. i'm not sure what's the added value of these type of observations over git commits.</notebook-prompt>
   <notebook-question>How many entries that came from thinking does anything later reach, and do the three types split them where reach could not?</notebook-question>
-  <script type="mycelium/experiment">
+  <notebook-case id="merged" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>every reading this probe takes, merged into one string until somebody splits them apart</notebook-lens>
+    <script type="mycelium/experiment">
 export default function ({ fs }) {
-  // The question underneath: can the corpus tell a note about today's defect
-  // from a rule that outlives it? One type carried both when this first ran,
-  // so nothing could sort them and the answer had to come from some other
-  // signal.
-  //
-  // Three types carry them now, which is the answer arriving as a change to the
-  // corpus rather than as a number. The reading stays pointed at the same
-  // entries so the old one still compares, and it reports the split the retype
-  // produced beside it.
-  //
-  // Reach is the signal this tried first. An entry another entry links to, or
-  // an axiom names as its source, went on being useful after the day somebody
-  // wrote it, and nothing reaches a note about a defect once somebody fixes the
-  // defect.
-  //
-  // The opening word of a title is the other, borrowed whole from the
-  // experiment that counts rule-shaped titles, weakness included: one word
-  // carries most of it, so this is a floor rather than a count.
-  const RULE = /^(A|An|Every|Nothing|Only|Derive|Link|Information|Reach)\b/
-  const INWARD = ["notebook-principle", "notebook-practice", "notebook-direction"]
-  const reached = new Set()
-  const grounds = new Set()
-  const entries = []
-  const byType = {}
+    // The question underneath: can the corpus tell a note about today's defect
+    // from a rule that outlives it? One type carried both when this first ran,
+    // so nothing could sort them and the answer had to come from some other
+    // signal.
+    //
+    // Three types carry them now, which is the answer arriving as a change to the
+    // corpus rather than as a number. The reading stays pointed at the same
+    // entries so the old one still compares, and it reports the split the retype
+    // produced beside it.
+    //
+    // Reach is the signal this tried first. An entry another entry links to, or
+    // an axiom names as its source, went on being useful after the day somebody
+    // wrote it, and nothing reaches a note about a defect once somebody fixes the
+    // defect.
+    //
+    // The opening word of a title is the other, borrowed whole from the
+    // experiment that counts rule-shaped titles, weakness included: one word
+    // carries most of it, so this is a floor rather than a count.
+    const RULE = /^(A|An|Every|Nothing|Only|Derive|Link|Information|Reach)\b/
+    const INWARD = ["notebook-principle", "notebook-practice", "notebook-direction"]
+    const reached = new Set()
+    const grounds = new Set()
+    const entries = []
+    const byType = {}
 
-  for (const path of fs.list(`${fs.docsDir}/notebook`, { ext: ".html" })) {
-    const doc = fs.parse(path)
-    const entry = doc.querySelector("[data-conforms-to]")
-    if (!entry) continue
-    const name = path.split("/").pop()
-    const type = entry.tagName.toLowerCase()
-    if (INWARD.includes(type)) {
-      byType[type] = (byType[type] ?? 0) + 1
-      entries.push({ name, rule: RULE.test(entry.querySelector("notebook-title")?.textContent?.trim() ?? "") })
+    for (const path of fs.list(`${fs.docsDir}/notebook`, { ext: ".html" })) {
+      const doc = fs.parse(path)
+      const entry = doc.querySelector("[data-conforms-to]")
+      if (!entry) continue
+      const name = path.split("/").pop()
+      const type = entry.tagName.toLowerCase()
+      if (INWARD.includes(type)) {
+        byType[type] = (byType[type] ?? 0) + 1
+        entries.push({ name, rule: RULE.test(entry.querySelector("notebook-title")?.textContent?.trim() ?? "") })
+      }
+      // An entry pointing at itself would count as its own reader, which is the
+      // one edge the corpus permits and this reading must not believe.
+      for (const a of doc.querySelectorAll("a[data-rel][href]")) {
+        const href = a.getAttribute("href").split("/").pop()
+        if (href !== name) reached.add(href)
+      }
     }
-    // An entry pointing at itself would count as its own reader, which is the
-    // one edge the corpus permits and this reading must not believe.
-    for (const a of doc.querySelectorAll("a[data-rel][href]")) {
-      const href = a.getAttribute("href").split("/").pop()
-      if (href !== name) reached.add(href)
-    }
-  }
 
-  // An axiom naming its source is the strongest reach there is: the entry
-  // stopped being a note and became something the project holds true.
-  for (const path of fs.list(`${fs.docsDir}/canon`, { ext: ".html" })) {
-    const doc = fs.parse(path)
-    for (const a of doc.querySelectorAll("canon-references > a[href]")) {
-      grounds.add(a.getAttribute("href").split("/").pop())
+    // An axiom naming its source is the strongest reach there is: the entry
+    // stopped being a note and became something the project holds true.
+    for (const path of fs.list(`${fs.docsDir}/canon`, { ext: ".html" })) {
+      const doc = fs.parse(path)
+      for (const a of doc.querySelectorAll("canon-references > a[href]")) {
+        grounds.add(a.getAttribute("href").split("/").pop())
+      }
     }
-  }
 
-  const held = entries.filter((one) => grounds.has(one.name))
-  const seen = entries.filter((one) => reached.has(one.name) || grounds.has(one.name))
-  const alone = entries.filter((one) => !reached.has(one.name) && !grounds.has(one.name))
-  // The share of rule-shaped titles on each side. If reach tracked durability
-  // these two numbers would pull apart, with the rules on the reached side.
-  const share = (group) => `${Math.round(group.filter((one) => one.rule).length / group.length * 100)}%`
-  const split = INWARD.map((type) => `${byType[type] ?? 0} ${type.replace("notebook-", "")}`).join(", ")
-  return `${entries.length} entries from thinking (${split}): ${held.length} an axiom rests on, ` +
-    `${seen.length - held.length} another entry links to, ${alone.length} nothing reaches. ` +
-    `Rule-shaped titles: ${share(seen)} of the reached, ${share(alone)} of the rest`
+    const held = entries.filter((one) => grounds.has(one.name))
+    const seen = entries.filter((one) => reached.has(one.name) || grounds.has(one.name))
+    const alone = entries.filter((one) => !reached.has(one.name) && !grounds.has(one.name))
+    // The share of rule-shaped titles on each side. If reach tracked durability
+    // these two numbers would pull apart, with the rules on the reached side.
+    const share = (group) => `${Math.round(group.filter((one) => one.rule).length / group.length * 100)}%`
+    const split = INWARD.map((type) => `${byType[type] ?? 0} ${type.replace("notebook-", "")}`).join(", ")
+    return `${entries.length} entries from thinking (${split}): ${held.length} an axiom rests on, ` +
+      `${seen.length - held.length} another entry links to, ${alone.length} nothing reaches. ` +
+      `Rule-shaped titles: ${share(seen)} of the reached, ${share(alone)} of the rest`
 }
 </script>
-  <notebook-reading>349 entries from thinking (158 principle, 101 practice, 90 direction): 25 an axiom rests on, 188 another entry links to, 136 nothing reaches. Rule-shaped titles: 20% of the reached, 35% of the rest</notebook-reading>
+    <notebook-reading data-on="2026-08-18">351 entries from thinking (158 principle, 102 practice, 91 direction): 25 an axiom rests on, 188 another entry links to, 138 nothing reaches. Rule-shaped titles: 20% of the reached, 34% of the rest</notebook-reading>
+    <notebook-reading data-on="2026-08-18">349 entries from thinking (158 principle, 101 practice, 90 direction): 25 an axiom rests on, 188 another entry links to, 136 nothing reaches. Rule-shaped titles: 20% of the reached, 35% of the rest</notebook-reading>
+  </notebook-case>
   <notebook-detail><p>The reading answers a narrower question than it looks like it answers. All 338
 entries entered <code>docs/notebook</code> in one commit on 2026-08-10, when the
 graph moved over from the family that held it before. So reach here measures how

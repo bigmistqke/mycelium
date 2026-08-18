@@ -15,31 +15,34 @@
   <notebook-tag>figure</notebook-tag>
   <notebook-tag>measurement</notebook-tag>
   <notebook-question>A drawing's edges are checked by counting grid rows, since the validator computes no layout. What does the same edge measure in a page, where it has a size?</notebook-question>
-  <notebook-fixture>
-    <figure-graph data-columns="3">
-      <figure-node id="one" data-at="1,1">one</figure-node>
-      <figure-node id="two" data-at="1,3">two</figure-node>
-      <figure-node id="three" data-at="2,2">three</figure-node>
-      <figure-edge from="one" to="three"></figure-edge>
-    </figure-graph>
-  </notebook-fixture>
-  <script type="text/mycelium-experiment">
-  const graph = fixture.querySelector("figure-graph")
-  await settle(graph)
-  const box = graph.getBoundingClientRect()
-  const path = graph.querySelector("svg path")
-  if (!path) return `no connector drawn; the graph is ${Math.round(box.width)} by ${Math.round(box.height)}`
-  const wire = path.getBBox()
-  const nodes = Array.from(graph.querySelectorAll("figure-node")).map((el) => {
-    const r = el.getBoundingClientRect()
-    return `${el.id}@${el.dataset.at} ${Math.round(r.top - box.top)}`
-  })
-  return `the graph is ${Math.round(box.width)} by ${Math.round(box.height)}; ` +
-    `the wire drops ${Math.round(wire.height)}px over ${Math.round(wire.width)}px; ` +
-    `node tops: ${nodes.join(", ")}`
+  <notebook-case id="merged" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>every reading this probe takes, merged into one string until somebody splits them apart</notebook-lens>
+    <notebook-fixture>
+      <figure-graph data-columns="3">
+        <figure-node id="one" data-at="1,1">one</figure-node>
+        <figure-node id="two" data-at="1,3">two</figure-node>
+        <figure-node id="three" data-at="2,2">three</figure-node>
+        <figure-edge from="one" to="three"></figure-edge>
+      </figure-graph>
+    </notebook-fixture>
+    <script type="text/mycelium-experiment">
+    const graph = fixture.querySelector("figure-graph")
+    await settle(graph)
+    const box = graph.getBoundingClientRect()
+    const path = graph.querySelector("svg path")
+    if (!path) return `no connector drawn; the graph is ${Math.round(box.width)} by ${Math.round(box.height)}`
+    const wire = path.getBBox()
+    const nodes = Array.from(graph.querySelectorAll("figure-node")).map((el) => {
+      const r = el.getBoundingClientRect()
+      return `${el.id}@${el.dataset.at} ${Math.round(r.top - box.top)}`
+    })
+    return `the graph is ${Math.round(box.width)} by ${Math.round(box.height)}; ` +
+      `the wire drops ${Math.round(wire.height)}px over ${Math.round(wire.width)}px; ` +
+      `node tops: ${nodes.join(", ")}`
 
 </script>
-  <notebook-reading>the graph is 662 by 170; the wire drops 8px over 8px; node tops: one@1,1 25, two@1,3 25, three@2,2 107</notebook-reading>
+    <notebook-reading data-on="2026-08-18">the graph is 662 by 170; the wire drops 8px over 8px; node tops: one@1,1 25, two@1,3 25, three@2,2 107</notebook-reading>
+  </notebook-case>
   <notebook-detail><p>The corpus checks a figure's edges by counting grid rows, because the
 validator parses with a library computing no layout and every rectangle it
 measures comes back zero. So the audit can say an edge runs downward and cannot

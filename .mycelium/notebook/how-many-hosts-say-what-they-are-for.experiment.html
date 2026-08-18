@@ -13,49 +13,71 @@
   <notebook-tag>measurement</notebook-tag>
   <notebook-prompt>this is probably better yes. more structured. maybe we should structure this in template.template.html?</notebook-prompt>
   <notebook-question>How many host files declare a purpose in their opening markup, and how many of those purposes point at something a reader cannot open?</notebook-question>
-  <script type="mycelium/experiment">
+  <notebook-case id="merged" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>every reading this probe takes, merged into one string until somebody splits them apart</notebook-lens>
+    <script type="mycelium/experiment">
 export default function ({ fs }) {
-  // The filename decides what a host is, the same way the audit does. Asking
-  // which files declare a type instead would catch a design document showing
-  // one as an example.
-  const hosts = []
-  for (const dir of ["templates", "commands"]) {
-    for (const path of fs.list(`${fs.docsDir}/${dir}`, { ext: ".html" })) {
-      const doc = fs.parse(path)
-      if (/\.(template|command)\.html$/.test(path)) hosts.push({ path, doc })
+    // The filename decides what a host is, the same way the audit does. Asking
+    // which files declare a type instead would catch a design document showing
+    // one as an example.
+    const hosts = []
+    for (const dir of ["templates", "commands"]) {
+      for (const path of fs.list(`${fs.docsDir}/${dir}`, { ext: ".html" })) {
+        const doc = fs.parse(path)
+        if (/\.(template|command)\.html$/.test(path)) hosts.push({ path, doc })
+      }
     }
-  }
 
-  // Two readings, because this field changed shape. A declared purpose is the
-  // structure that replaced the convention, and a bolded label is what the
-  // convention looked like. Counting both is what shows the migration draining
-  // rather than a number falling for no visible reason.
-  const declared = new Map()
-  let convention = 0
-  for (const { path, doc } of hosts) {
-    const purpose = doc.querySelector("template-host[data-conforms-to] > template-purpose")
-    const text = (purpose?.textContent ?? "").replace(/\s+/g, " ").trim()
-    if (text) declared.set(path, text)
-    for (const label of doc.querySelectorAll(".meta b")) {
-      if ((label.textContent ?? "").trim() === "Purpose:") { convention++; break }
+    // Two readings, because this field changed shape. A declared purpose is the
+    // structure that replaced the convention, and a bolded label is what the
+    // convention looked like. Counting both is what shows the migration draining
+    // rather than a number falling for no visible reason.
+    const declared = new Map()
+    let convention = 0
+    for (const { path, doc } of hosts) {
+      const purpose = doc.querySelector("template-host[data-conforms-to] > template-purpose")
+      const text = (purpose?.textContent ?? "").replace(/\s+/g, " ").trim()
+      if (text) declared.set(path, text)
+      for (const label of doc.querySelectorAll(".meta b")) {
+        if ((label.textContent ?? "").trim() === "Purpose:") { convention++; break }
+      }
     }
-  }
 
-  // A purpose naming a version nobody can check out sends a reader nowhere.
-  // Two did, describing their family in terms of a corpus deleted months
-  // earlier, and no check caught it while the field was prose in a div.
-  const UNREACHABLE = /\bv[0-9]\b|#[0-9]+\b|\bdeciduous\b/
-  const dangling = [...declared].filter(([, text]) => UNREACHABLE.test(text)).map(([path]) => path)
-  const silent = hosts.filter(({ path }) => !declared.has(path)).map(({ path }) => path)
-  const list = (paths) => (paths.length ? paths.join(", ") : "none")
+    // A purpose naming a version nobody can check out sends a reader nowhere.
+    // Two did, describing their family in terms of a corpus deleted months
+    // earlier, and no check caught it while the field was prose in a div.
+    const UNREACHABLE = /\bv[0-9]\b|#[0-9]+\b|\bdeciduous\b/
+    const dangling = [...declared].filter(([, text]) => UNREACHABLE.test(text)).map(([path]) => path)
+    const silent = hosts.filter(({ path }) => !declared.has(path)).map(({ path }) => path)
+    const list = (paths) => (paths.length ? paths.join(", ") : "none")
 
-  return `${declared.size} of ${hosts.length} hosts declare what they are for; ` +
-    `${convention} still say it as an unchecked label; ` +
-    `${silent.length} silent (${list(silent)}); ` +
-    `${dangling.length} pointing somewhere a reader cannot open (${list(dangling)})`
+    return `${declared.size} of ${hosts.length} hosts declare what they are for; ` +
+      `${convention} still say it as an unchecked label; ` +
+      `${silent.length} silent (${list(silent)}); ` +
+      `${dangling.length} pointing somewhere a reader cannot open (${list(dangling)})`
 }
 </script>
-  <notebook-reading>11 of 11 hosts declare what they are for; 0 still say it as an unchecked label; 0 silent (none); 0 pointing somewhere a reader cannot open (none)</notebook-reading>
+    <notebook-reading data-on="2026-08-18">11 of 11 hosts declare what they are for; 0 still say it as an unchecked label; 0 silent (none); 0 pointing somewhere a reader cannot open (none)</notebook-reading>
+  </notebook-case>
+  <notebook-case id="names-its-design" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how many hosts carry a design link a reader can open</notebook-lens>
+    <script type="mycelium/experiment">
+export default function ({ fs }) {
+  let hosts = 0, linked = 0
+  for (const dir of ["templates", "commands"]) {
+    for (const path of fs.list(`${fs.docsDir}/${dir}`, { ext: ".html" })) {
+      if (!/\.(template|command)\.html$/.test(path)) continue
+      hosts++
+      if (fs.parse(path).querySelector("template-host > template-design a[href]")) linked++
+    }
+  }
+  return `${linked} of ${hosts} hosts name the design that shaped them`
+}
+
+</script>
+    <notebook-reading data-on="2026-08-18">8 of 11 hosts name the design that shaped them</notebook-reading>
+    <notebook-conclusion data-on="2026-08-18"><p>Three hosts name no design, and all three are command hosts rather than families. A command that answers for the whole corpus may genuinely have no single spec behind it, so this reads as a shape rather than a debt.</p></notebook-conclusion>
+  </notebook-case>
   <notebook-detail><p>A proposal to declare a family's purpose in markup met a convention already
 doing the job badly. Nearly every host opened with a bolded
 <code>Purpose:</code> label inside a meta block, which somebody wrote by hand

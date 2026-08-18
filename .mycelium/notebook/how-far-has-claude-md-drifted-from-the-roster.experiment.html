@@ -14,49 +14,52 @@
   <notebook-tag>corpus</notebook-tag>
   <notebook-prompt>maybe we should remove the CLAUDE.md stuff -&gt; derivation &gt; state synchronization</notebook-prompt>
   <notebook-question>How many commands does CLAUDE.md name, how many does the corpus export, and how much of the file is a copy of something a command already prints?</notebook-question>
-  <script type="mycelium/experiment">
+  <notebook-case id="merged" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>every reading this probe takes, merged into one string until somebody splits them apart</notebook-lens>
+    <script type="mycelium/experiment">
 export default function ({ fs }) {
-  // What the corpus exports, read the way the roster reads it: every exported
-  // function in a host's command script, with the host's own id in front. No
-  // list of families appears here, so a twelfth one counts itself.
-  const real = new Set()
-  for (const dir of ["templates", "commands"]) {
-    for (const path of fs.list(`${fs.docsDir}/${dir}`, { ext: ".html" })) {
-      const match = /([a-z-]+)\.(template|command)\.html$/.exec(path)
-      if (!match) continue
-      const source = fs.parse(path).querySelector('script[type="mycelium/command"]')?.textContent ?? ""
-      for (const found of source.matchAll(/export\s+(?:async\s+)?function\s+(\w+)/g)) {
-        real.add(`${match[1]} ${found[1]}`)
+    // What the corpus exports, read the way the roster reads it: every exported
+    // function in a host's command script, with the host's own id in front. No
+    // list of families appears here, so a twelfth one counts itself.
+    const real = new Set()
+    for (const dir of ["templates", "commands"]) {
+      for (const path of fs.list(`${fs.docsDir}/${dir}`, { ext: ".html" })) {
+        const match = /([a-z-]+)\.(template|command)\.html$/.exec(path)
+        if (!match) continue
+        const source = fs.parse(path).querySelector('script[type="mycelium/command"]')?.textContent ?? ""
+        for (const found of source.matchAll(/export\s+(?:async\s+)?function\s+(\w+)/g)) {
+          real.add(`${match[1]} ${found[1]}`)
+        }
       }
     }
-  }
 
-  // What the file claims, taken only from its fenced blocks. Prose naming a
-  // command in passing is a reference; a block is where somebody copies an
-  // interface, and copying is the thing under question.
-  const text = fs.read("CLAUDE.md")
-  const lines = text.split("\n")
-  let fenced = 0, open = false
-  const named = new Set()
-  for (const line of lines) {
-    if (line.startsWith("```")) { open = !open; continue }
-    if (!open) continue
-    fenced++
-    for (const found of line.matchAll(/mycelium (?:run )?([a-z-]+) ([a-z-]+)/g)) {
-      named.add(`${found[1]} ${found[2]}`)
+    // What the file claims, taken only from its fenced blocks. Prose naming a
+    // command in passing is a reference; a block is where somebody copies an
+    // interface, and copying is the thing under question.
+    const text = fs.read("CLAUDE.md")
+    const lines = text.split("\n")
+    let fenced = 0, open = false
+    const named = new Set()
+    for (const line of lines) {
+      if (line.startsWith("```")) { open = !open; continue }
+      if (!open) continue
+      fenced++
+      for (const found of line.matchAll(/mycelium (?:run )?([a-z-]+) ([a-z-]+)/g)) {
+        named.add(`${found[1]} ${found[2]}`)
+      }
     }
-  }
 
-  const stale = [...named].filter((one) => !real.has(one)).sort()
-  const missing = [...real].filter((one) => !named.has(one)).sort()
-  return `the corpus exports ${real.size} commands and the file names ${named.size}; ` +
-    `${stale.length} named that do not exist (${stale.join(", ") || "none"}); ` +
-    `${missing.length} exist that it never names; ` +
-    `${fenced} of ${lines.length} lines sit inside a fenced block`
+    const stale = [...named].filter((one) => !real.has(one)).sort()
+    const missing = [...real].filter((one) => !named.has(one)).sort()
+    return `the corpus exports ${real.size} commands and the file names ${named.size}; ` +
+      `${stale.length} named that do not exist (${stale.join(", ") || "none"}); ` +
+      `${missing.length} exist that it never names; ` +
+      `${fenced} of ${lines.length} lines sit inside a fenced block`
 }
 
 </script>
-  <notebook-reading>the corpus exports 46 commands and the file names 23; 0 named that do not exist (none); 23 exist that it never names; 48 of 499 lines sit inside a fenced block</notebook-reading>
+    <notebook-reading data-on="2026-08-18">the corpus exports 46 commands and the file names 23; 0 named that do not exist (none); 23 exist that it never names; 48 of 499 lines sit inside a fenced block</notebook-reading>
+  </notebook-case>
   <notebook-detail><p>The file governing how an agent works here lists commands in fenced blocks
 and warns that a person maintains them by hand. It names twenty-three of the
 forty-six the corpus exports. Nothing it names has gone away, so the drift runs

@@ -106,12 +106,20 @@
     <notebook-tag repeatable></notebook-tag>
     <notebook-prompt repeatable></notebook-prompt>
     <notebook-question required></notebook-question>
-    <notebook-fixture markup></notebook-fixture>
-    <script></script>
-    <notebook-reading></notebook-reading>
+    <notebook-case repeatable conforms-to="#notebook-case"></notebook-case>
+    <notebook-conclusion markup></notebook-conclusion>
     <notebook-detail markup></notebook-detail>
     <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </notebook-experiment>
+</template>
+<template id="notebook-case">
+  <notebook-case id="^[a-z][a-z0-9]*(-[a-z0-9]*[a-z][a-z0-9]*)*$">
+    <notebook-lens required></notebook-lens>
+    <notebook-fixture markup></notebook-fixture>
+    <script required></script>
+    <notebook-reading repeatable data-on="^\d{4}-\d{2}-\d{2}$"></notebook-reading>
+    <notebook-conclusion repeatable markup data-on="^\d{4}-\d{2}-\d{2}$"></notebook-conclusion>
+  </notebook-case>
 </template>
 <pre><code>&lt;notebook-practice&gt;
   &lt;notebook-title&gt;&hellip;&lt;/notebook-title&gt;
@@ -220,12 +228,15 @@
     <notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
       <notebook-title>How many entries does the notebook hold?</notebook-title>
       <notebook-question>How many entries does the notebook hold?</notebook-question>
-      <script type="mycelium/experiment">
-        export default function ({ fs }) {
-          return `${Array.from(fs.list('notebook')).length} entries`
-        }
-      </script>
-      <notebook-reading>0 entries</notebook-reading>
+      <notebook-case id="counting-the-files" data-conforms-to="../templates/notebook.template.html#notebook-case">
+        <notebook-lens>how many documents the family directory holds</notebook-lens>
+        <script type="mycelium/experiment">
+          export default function ({ fs }) {
+            return `${fs.list(`${fs.docsDir}/notebook`, { ext: '.html' }).length} entries`
+          }
+        </script>
+        <notebook-reading data-on="2026-08-18">0 entries</notebook-reading>
+      </notebook-case>
     </notebook-experiment>
   </div>
 </div>
@@ -298,7 +309,7 @@
 
 <script type="mycelium/command">
   import type { CommandContext } from "mycelium/api"
-  import { declaredOrder, placeField } from "mycelium/shared"
+  import { declaredOrder, placeField, todayDate } from "mycelium/shared"
   import { CORPUS_DIR, corpusView, loadModule } from "mycelium/utils"
   import { withBrowser } from "mycelium/webdriver"
   import { extractGraph } from "mycelium/extract-graph"
@@ -347,27 +358,56 @@
   /** Every value a flag carries, since a tag and a prompt both repeat. */
   const many = (value) => (value === undefined ? [] : Array.isArray(value) ? value : [value])
 
+  /** A name made out of a sentence, the way a filename already comes from a title. */
+  const slugFor = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+
+  /**
+   * Build a case and hang it on an experiment.
+   *
+   * A case is its script, so nothing can edit one afterwards. Both callers
+   * arrive here: adding a case to an entry that has some, and creating an
+   * entry whose first case comes with it.
+   */
+  async function attachCase(fs, args, cli, path, root) {
+    requireArgs([args.lens, "--lens"], [args.script, "--script"])
+    const id = args.id ?? slugFor(args.lens)
+    if (root.querySelector(`:scope > notebook-case[id="${id}"]`)) {
+      throw new Error(`this entry already holds a case with id "${id}"`)
+    }
+
+    const doc = fs.get(path)
+    const one = doc.createElement("notebook-case")
+    one.setAttribute("id", id)
+    one.setAttribute("data-conforms-to", "../templates/notebook.template.html#notebook-case")
+    const lens = doc.createElement("notebook-lens")
+    lens.textContent = args.lens
+    one.appendChild(lens)
+    const script = doc.createElement("script")
+    // The script type decides which runner opens it, and a browser probe takes
+    // no mycelium/ prefix: that prefix marks a file the editor treats as
+    // TypeScript, and an annotation would fail only once the page loaded.
+    script.setAttribute("type", args.browser === undefined ? "mycelium/experiment" : "text/mycelium-experiment")
+    script.textContent = `\n${args.script === "-" ? await cli.readStdin() : args.script}\n`
+    one.appendChild(script)
+
+    placeField(root, one, declaredOrder(fs.get("templates/notebook.template.html"), root.tagName.toLowerCase()))
+    return one
+  }
+
   function rootOf(doc) {
     return doc.querySelector("[data-conforms-to]")
   }
 
   /**
-   * Create a notebook entry.
+   * Create a notebook entry, or hang another case on an experiment.
    *
    *   mycelium notebook add <principle|practice|direction|research|experiment>
    *     --title "…" [--tag NAME]… [--prompt "…" | --prompt -]
    *     [--detail "…" | --detail -] [--question "…"] [--file <slug>]
-   *     [--script "…" | --script -]
+   *     [--script "…" | --script - --lens "…"] [--browser]
    *
-   * --script replaces an experiment's probe, leaves every other field alone,
-   * and runs what it wrote. Asking for it on an entry carrying no probe fails
-   * rather than inventing one.
-   *
-   * The new reading records without --record, because a reading belongs to the
-   * instrument that produced it. Replacing the script voids the number before
-   * it, which measured something the document no longer asks. run keeps
-   * --record for the other case, where the instrument has not changed and a
-   * reading that moved is the corpus moving.
+   *   mycelium notebook add case <file> --lens "…"
+   *     --script "…" | --script - [--id <slug>] [--browser]
    *
    * The type says where the knowledge came from: research from someone else,
    * experiment from running something, and the other three from thinking. A
@@ -392,37 +432,61 @@
    * summary. Pass --prompt - to read one from stdin.
    *
    * --question is required for an experiment and meaningless on the other
-   * two. --script carries the probe, reading from stdin on -, and omitting it
-   * leaves a placeholder that throws. Both answers are real: a question with
-   * nothing measuring it yet is a document worth writing, and a red run says
-   * so honestly.
+   * two, and it is the question the whole document asks.
    *
-   * Passing a script runs it, prints what it said, and records that as the
-   * reading, so asking costs one command rather than two. A probe reads and
-   * cannot write, which is what makes running one a safe side effect, and a
-   * probe that throws leaves the document behind and reports rather than
-   * failing the command.
+   * --script builds that experiment's first case, so one question with one
+   * probe still costs one command. It needs --lens beside it, since a case
+   * says what it looks through and takes its id from that. Omit both and the
+   * document arrives with no case, which is a real answer: a question nothing
+   * has measured yet is worth writing down.
    *
-   * The script used to go in by hand, on the ground that code does not fit on
-   * a flag. It does not, which is why this reads stdin rather than an
-   * argument, the same way canon add behaviour takes a check. Every experiment
-   * written under the old rule got its answer somewhere else first and then
-   * came back as a log, because editing markup mid-thought loses to a
-   * throwaway script every time.
+   * add case hangs another case on an experiment that already exists, the way
+   * canon add behaviour hangs one on a specification. Reach for it on the
+   * second lens. A probe measuring two things wants two cases, because merging
+   * their answers into one sentence is the thing the readings-kept-apart
+   * principle says not to do, and every experiment here did it.
    *
-   * Refining is the half that matters, and update carries --script for it.
-   * A probe earns its keep by running, disagreeing with its last reading, and
-   * running again.
+   * --id overrides the id derived from the lens, and is worth passing whenever
+   * the lens is a sentence and the slug that falls out of it reads as one.
+   *
+   * --browser writes a case that runs in a page rather than under Node. A
+   * browser probe takes no mycelium/ prefix: that prefix marks a file the
+   * editor treats as TypeScript, and an annotation would fail only once the
+   * page loaded.
+   *
+   * Writing a probe runs it and records what came back, which is safe because
+   * a probe reads and cannot write. One that throws leaves the document behind
+   * and reports, since a probe is allowed to be inconclusive.
    */
   export async function add({ fs, args, cli }: CommandContext) {
     const type = args._[0]
-    requireArgs([type, "<type>"], [args.title, "--title"])
-    if (!TYPES.includes(type)) throw new Error(`unknown type "${type}"; expected one of ${TYPES.join(", ")}`)
+    requireArgs([type, "<type>"])
+
+    // A case attaches to an entry that already exists, the way a behaviour
+    // attaches to a specification. So it takes a filename where a type takes a
+    // title, and it lands here rather than in a command of its own.
+    if (type === "case") {
+      requireArgs([args._[1], "<file>"])
+      const path = `${DIR}/${args._[1]}`
+      const root = rootOf(fs.get(path))
+      if (root.tagName.toLowerCase() !== "notebook-experiment") {
+        throw new Error(`${args._[1]} is not an experiment, so it holds no cases`)
+      }
+      const one = await attachCase(fs, args, cli, path, root)
+      const result = await cli.validate(root, path)
+      if (!result.ok) throw new Error(result.errors.join("\n"))
+      fs.commit()
+      await readCase(fs, args, path, one, declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case"))
+      return
+    }
+
+    requireArgs([args.title, "--title"])
+    if (!TYPES.includes(type)) throw new Error(`unknown type "${type}"; expected one of ${TYPES.join(", ")}, or case`)
     if (type === "experiment" && !args.question) {
       throw new Error("an experiment needs --question: the thing its script answers")
     }
 
-    const slug = args.file ?? args.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    const slug = args.file ?? slugFor(args.title)
     if (/^\d{4}-\d{2}-\d{2}-/.test(slug)) {
       throw new Error(
         `--file takes a slug with no date on it; an entry carries no date. Pass --file ${slug.slice(11)}.`
@@ -465,62 +529,74 @@
     for (const value of many(args.prompt)) {
       add1("notebook-prompt", value === "-" ? await cli.readStdin() : value)
     }
-    if (type === "experiment") {
-      add1("notebook-question", args.question)
-      const script = doc.createElement("script")
-      // The script type decides which runner opens it, and a browser probe
-      // takes no mycelium/ prefix: that prefix marks a file the editor treats
-      // as TypeScript, and an annotation would fail only once the page loaded.
-      script.setAttribute("type", args.browser === undefined ? "mycelium/experiment" : "text/mycelium-experiment")
-      // A placeholder that throws is what an author gets for saying nothing,
-      // and it is a real answer: the question comes first and a red run is an
-      // honest report that nothing has measured it yet.
-      // A node probe exports a module and a browser probe is a function
-      // body, so the placeholder that throws has to come in both shapes.
-      const empty = args.browser === undefined
-        ? "\n  export default function ({ fs }) {\n    throw new Error('this experiment has no code yet')\n  }\n"
-        : "\n  throw new Error('this experiment has no code yet')\n"
-      script.textContent = args.script === undefined
-        ? empty
-        : `\n${args.script === "-" ? await cli.readStdin() : args.script}\n`
-      placeField(root, script, order)
-    }
-    if (args.detail !== undefined) {
-      add1("notebook-detail", args.detail === "-" ? await cli.readStdin() : args.detail, true)
-    }
+    if (type === "experiment") add1("notebook-question", args.question)
 
     const result = await cli.validate(root, path)
     if (!result.ok) throw new Error(result.errors.join("\n"))
 
-    // Writing a probe runs it, because asking is why somebody wrote one. The
+    // A script given here builds the entry's first case, so asking one question
+    // with one probe still costs one command. Writing a probe runs it, and the
     // document reaches disk first: a script becomes a module addressed by its
     // own file, and the loader reads that file rather than this element.
-    if (args.script !== undefined && root.querySelector("script")) {
-      fs.commit()
-      await measure(fs, args, path, { record: true, compare: false })
+    if (type === "experiment" && args.script !== undefined) {
+      const one = await attachCase(fs, args, cli, path, root)
       const after = await cli.validate(root, path)
       if (!after.ok) throw new Error(after.errors.join("\n"))
+      fs.commit()
+      await readCase(fs, args, path, one, declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case"))
     }
   }
 
   /**
-   * Update fields on an existing entry.
+   * Update fields on an existing entry, or conclude one of its cases.
    *
    *   mycelium notebook update <file> [--title "…"] [--question "…"]
-   *     [--detail "…" | --detail - | --detail ""] [--reading "…"]
-   *     [--tag NAME]… [--prompt "…"]…
-   *     [--script "…" | --script -]
+   *     [--detail "…" | --detail - | --detail ""] [--tag NAME]…
+   *     [--prompt "…"]… [--conclusion "…" | --conclusion -]
+   *
+   *   mycelium notebook update <file>#<id> --conclusion "…" | --conclusion -
    *
    * An omitted flag leaves its field untouched and an empty value clears it,
    * which is the rule every family here follows. --tag and --prompt repeat,
    * and each one appends rather than replacing, since an entry gathers both
    * over months.
    *
-   * --reading records what a run last produced. Prefer `run --record`, which
-   * gets the value from the script rather than from whoever is typing.
+   * --conclusion on an entry answers the question that entry asks. The detail
+   * holds everything else: why a probe is shaped this way, what it cannot
+   * separate, what it cost. On a case address it appends a dated conclusion
+   * instead, saying what somebody made of the reading above it, and several
+   * accumulate the way the readings under them do.
+   *
+   * Nothing updates a case's script, and no flag offers to. A case is its
+   * script, so a changed script is a different case and the readings under the
+   * old one measured something nobody asks about any more. Delete the case and
+   * add another: two deliberate commands, with the loss printed by the first.
+   *
+   * Nothing hand-writes a reading either. A run records one when it moves,
+   * which takes the value from the instrument rather than from whoever is
+   * typing.
    */
   export async function update({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], "<file>"])
+
+    // A case takes a conclusion and nothing else. Saying what a reading meant
+    // is commentary and leaves the instrument alone, so it does not make a
+    // different case the way editing the script would.
+    if (args._[0].includes("#")) {
+      requireArgs([args.conclusion, "--conclusion"])
+      const { path: at, cases } = casesIn(fs, args._[0])
+      const one = cases[0]
+      const said = fs.get(at).createElement("notebook-conclusion")
+      said.setAttribute("data-on", todayDate())
+      said.innerHTML = args.conclusion === "-" ? await cli.readStdin() : args.conclusion
+      const first = one.querySelector("notebook-conclusion")
+      if (first) one.insertBefore(said, first)
+      else placeField(one, said, declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case"))
+      const checked = await cli.validate(one, at)
+      if (!checked.ok) throw new Error(checked.errors.join("\n"))
+      return
+    }
+
     const path = `${DIR}/${args._[0]}`
     const doc = fs.get(path)
     const root = rootOf(doc)
@@ -551,9 +627,14 @@
       if (head) head.textContent = args.title
     }
     single("notebook-question", args.question)
-    single("notebook-reading", args.reading)
     if (args.detail !== undefined) {
       single("notebook-detail", args.detail === "-" ? await cli.readStdin() : args.detail, true)
+    }
+    // The document's own conclusion answers the question the document asks,
+    // and the detail holds everything else: why the probe is shaped this way,
+    // what it cannot separate, what it cost.
+    if (args.conclusion !== undefined) {
+      single("notebook-conclusion", args.conclusion === "-" ? await cli.readStdin() : args.conclusion, true)
     }
     for (const name of ["tag", "prompt"]) {
       for (const value of many(args[name])) {
@@ -563,28 +644,17 @@
       }
     }
 
-    // Replacing the script is what lets somebody write a probe before it can
-    // answer anything. A first attempt measures the wrong thing, the reading
-    // says so, and the second attempt costs one command rather than an edit to
-    // markup somewhere else.
+    // Nothing edits a case. A case is its script, so a changed script is a
+    // different case and the readings under the old one measured something
+    // nobody asks about any more. Deleting one and adding another costs two
+    // deliberate commands and shows the loss in the output of the first.
     if (args.script !== undefined) {
-      const existing = root.querySelector('script[type="mycelium/experiment"]')
-      if (!existing) throw new Error(`${args._[0]} is not an experiment, so it carries no script`)
-      existing.textContent = `\n${args.script === "-" ? await cli.readStdin() : args.script}\n`
+      throw new Error("nothing updates a case; delete it with notebook del <file>#<id> and add another")
     }
 
     const result = await cli.validate(root, path)
     if (!result.ok) throw new Error(result.errors.join("\n"))
 
-    // Writing a probe runs it, because asking is why somebody wrote one. The
-    // document reaches disk first: a script becomes a module addressed by its
-    // own file, and the loader reads that file rather than this element.
-    if (args.script !== undefined && root.querySelector("script")) {
-      fs.commit()
-      await measure(fs, args, path, { record: true, compare: false })
-      const after = await cli.validate(root, path)
-      if (!after.ok) throw new Error(after.errors.join("\n"))
-    }
   }
 
   /**
@@ -648,6 +718,23 @@
   export function del({ fs, args }: CommandContext) {
     requireArgs([args._[0], "<file>"])
     const target = args._[0]
+
+    // file#id drops one case, and the readings under it go with it. They
+    // measured what that script measured, so leaving them beside a different
+    // instrument would be the drift this design exists to make impossible.
+    if (target.includes("#")) {
+      const { cases } = casesIn(fs, target)
+      const one = cases[0]
+      for (const reading of Array.from(one.querySelectorAll("notebook-reading"))) {
+        console.log(`dropped  reading ${reading.getAttribute("data-on")}  ${(reading.textContent ?? "").trim()}`)
+      }
+      for (const said of Array.from(one.querySelectorAll("notebook-conclusion"))) {
+        console.log(`dropped  conclusion ${said.getAttribute("data-on")}`)
+      }
+      one.remove()
+      console.log(`deleted  ${target}`)
+      return
+    }
     let removed = 0
     for (const { path, doc } of fs.list(DIR)) {
       if (path === `${DIR}/${target}`) continue
@@ -820,7 +907,37 @@
     }
 
     section("question", text("notebook-question"))
-    section("reading", text("notebook-reading"))
+
+    // A case at a time, because the whole point of holding several is that
+    // their readings stay apart. Printing them merged here would undo in the
+    // reader what the document went to some trouble to keep separate.
+    for (const one of Array.from(root.querySelectorAll(":scope > notebook-case"))) {
+      const id = one.getAttribute("id")
+      console.log(`\ncase  ${id}  ${one.querySelector("notebook-lens")?.textContent?.trim() ?? ""}`)
+      for (const reading of Array.from(one.querySelectorAll(":scope > notebook-reading"))) {
+        console.log(`  ${reading.getAttribute("data-on")}  ${(reading.textContent ?? "").trim()}`)
+      }
+      for (const said of Array.from(one.querySelectorAll(":scope > notebook-conclusion"))) {
+        console.log(`\n  concluded ${said.getAttribute("data-on")}`)
+        for (const line of blockLines(said)) console.log(`    ${line}`)
+      }
+      const probe = one.querySelector(":scope > script")?.textContent
+      if (probe?.trim()) {
+        const lines = probe.replace(/^\n/, "").trimEnd().split("\n")
+        const shared = Math.min(...lines.filter((line) => line.trim()).map((line) => line.match(/^ */)[0].length))
+        console.log("\n  instrument")
+        for (const line of lines) console.log(`    ${line.slice(shared)}`)
+      }
+    }
+
+    const said = root.querySelector(":scope > notebook-conclusion")
+    if (said) {
+      const body = blockLines(said)
+      if (body.length) {
+        console.log("\nconclusion")
+        for (const line of body) console.log(`  ${line}`)
+      }
+    }
 
     const detail = root.querySelector("notebook-detail")
     if (detail) {
@@ -829,17 +946,6 @@
         console.log("\ndetail")
         for (const line of body) console.log(`  ${line}`)
       }
-    }
-
-    const script = root.querySelector('script[type="mycelium/experiment"]')?.textContent
-    if (script?.trim()) {
-      // Strip the indentation the file gave the whole block, and no more. A
-      // fixed count would flatten the script's own nesting in any entry whose
-      // indentation differs from the entry this command grew up beside.
-      const lines = script.replace(/^\n/, "").trimEnd().split("\n")
-      const shared = Math.min(...lines.filter((line) => line.trim()).map((line) => line.match(/^ */)[0].length))
-      console.log("\ninstrument")
-      for (const line of lines) console.log(`  ${line.slice(shared)}`)
     }
 
     const edges = Array.from(root.querySelectorAll(":scope > a[data-rel]"))
@@ -907,7 +1013,7 @@
    * that element to say it finished and reads the same value a person opening
    * the page would see, so no second harness exists to keep in step.
    */
-  async function runInAPage(fs, path, args) {
+  async function runInAPage(fs, path, args, id) {
     const full = resolve(fs.root, path)
     let found
     await withBrowser(
@@ -917,14 +1023,15 @@
         await call("POST", "/timeouts", { script: Number(args.timeout ?? 30000) })
         found = await call("POST", "/execute/async", {
           script: `const done = arguments[arguments.length - 1]
+            const id = arguments[0]
             const tick = () => {
-              const el = document.querySelector("notebook-experiment > notebook-reading")
-              const state = el && el.getAttribute("data-state")
+              const one = document.querySelector('notebook-case[id="' + id + '"]')
+              const state = one && one.getAttribute("data-state")
               if (state !== "done" && state !== "failed") return setTimeout(tick, 50)
-              done({ state: state, reading: el.textContent })
+              done({ state: state, reading: one.getAttribute("data-reading") })
             }
             tick()`,
-          args: [],
+          args: [id],
         })
       },
     )
@@ -933,74 +1040,82 @@
   }
 
   /**
-   * Run an entry's probe, print what it said, and record it when asked.
+   * Every case in an entry, or the one an address names.
    *
-   * Three callers want this and want slightly different things from it. Writing
-   * a probe records what it says, because the reading belongs to the
-   * instrument: a new script has nothing earlier to disagree with, and a
-   * replaced one voids the number before it, which measured something the
-   * document no longer asks.
-   *
-   * Running an unchanged probe is the other case, and there a reading that
-   * moved is the corpus moving. That is the finding this type exists for, so
-   * accepting it stays deliberate and compare says to show the difference.
-   *
-   * A probe that throws leaves the document behind and says so. Nothing here
-   * fails the command: the document is what the command promised, and a broken
-   * probe is a reading somebody needs to read rather than a reason to write
-   * nothing.
+   * A bare filename means all of them, and file#id means that one. The same
+   * form addresses a canon claim, so a reader who has written one citation
+   * already knows how to reach a case.
    */
-  async function measure(fs, args, path, { record, compare }) {
-    const doc = fs.get(path)
-    const root = rootOf(doc)
-    // The script type is the only thing choosing a runtime, which is the
-    // arrangement a test case already follows. Nothing else in the document
-    // says where it runs, so nothing else can disagree about it.
-    const node = root.querySelector('script[type="mycelium/experiment"]')
-    const page = root.querySelector('script[type="text/mycelium-experiment"]')
-    if (!node && !page) throw new Error(`${path.replace(/^.*\//, "")} carries no experiment script`)
-
-    let reading
-    try {
-      reading = node ? await runUnderNode(fs, path, node) : await runInAPage(fs, path, args)
-    } catch (err) {
-      console.log(`the probe did not answer — ${err.message}`)
-      return
-    }
-
-    const before = root.querySelector("notebook-reading")?.textContent?.trim()
-    console.log(reading)
-    if (compare && before !== undefined && before !== reading) {
-      console.log(`\nwas   ${before}\nnow   ${reading}\n\nthe corpus moved; --record accepts the new reading`)
-    }
-    if (!record) return
-
-    const order = declaredOrder(fs.get("templates/notebook.template.html"), root.tagName.toLowerCase())
-    const existing = root.querySelector("notebook-reading")
-    if (existing) existing.textContent = reading
-    else {
-      const el = doc.createElement("notebook-reading")
-      el.textContent = reading
-      placeField(root, el, order)
-    }
+  function casesIn(fs, target) {
+    const [name, id] = target.split("#")
+    const path = `${DIR}/${name}`
+    const root = rootOf(fs.get(path))
+    const found = Array.from(root.querySelectorAll(":scope > notebook-case"))
+    if (!found.length) throw new Error(`${name} holds no cases; add one with notebook add case`)
+    if (!id) return { path, root, cases: found }
+    const one = found.find((el) => el.getAttribute("id") === id)
+    if (!one) throw new Error(`${name} holds no case with id "${id}"`)
+    return { path, root, cases: [one] }
   }
 
   /**
-   * Run an experiment's script and print what it returns.
+   * Run one case and print what it said, recording a reading that moved.
    *
-   *   mycelium notebook run <file> [--record]
+   * A reading appends only when the value changes, so the series records
+   * movements rather than runs. A probe reproducing its last answer leaves
+   * nothing behind, and what stays is exactly the disagreement this type
+   * exists to notice.
    *
-   * This never runs during validate, and nothing here can fail a build. A
-   * probe is allowed to be inconclusive, which is what separates it from the
-   * check a canon behaviour carries.
+   * A probe that throws leaves the document behind and says so. Nothing here
+   * fails the command: a probe is allowed to be inconclusive, and a broken one
+   * is a reading somebody needs to read rather than a reason to write nothing.
+   */
+  async function readCase(fs, args, path, one, order) {
+    const id = one.getAttribute("id")
+    const lens = one.querySelector("notebook-lens")?.textContent?.trim() ?? ""
+    const node = one.querySelector('script[type="mycelium/experiment"]')
+    const page = one.querySelector('script[type="text/mycelium-experiment"]')
+    console.log(`\n${id}  ${lens}`)
+
+    let reading
+    try {
+      reading = node ? await runUnderNode(fs, path, node) : await runInAPage(fs, path, args, id)
+    } catch (err) {
+      console.log(`  the probe did not answer — ${err.message}`)
+      return
+    }
+
+    const latest = one.querySelector("notebook-reading")?.textContent?.trim()
+    console.log(`  ${reading}`)
+    if (latest === reading) return console.log("  unchanged, so nothing recorded")
+    if (latest !== undefined) console.log(`  was  ${latest}`)
+
+    const el = fs.get(path).createElement("notebook-reading")
+    el.setAttribute("data-on", todayDate())
+    el.textContent = reading
+    // Newest first, so a reader meets the current answer before its history.
+    if (latest !== undefined) one.insertBefore(el, one.querySelector("notebook-reading"))
+    else placeField(one, el, order)
+  }
+
+  /**
+   * Run an entry's cases and print what each one said.
    *
-   * --record writes the result into notebook-reading, so the next run has
-   * something to disagree with. That disagreement is the finding: a red check
-   * means the code broke, and a changed reading means the corpus moved.
+   *   mycelium notebook run <file>[#<id>] [--show] [--port N]
+   *
+   * Every case, or the one an address names. Nothing here runs during
+   * validate, and nothing here can fail a build: a probe is allowed to be
+   * inconclusive, which is what separates it from the check a canon behaviour
+   * carries.
+   *
+   * A reading records when it moves and only then, so no flag asks for it. The
+   * disagreement is the finding, and keeping it means keeping both numbers.
    */
   export async function run({ fs, args }: CommandContext) {
     requireArgs([args._[0], "<file>"])
-    await measure(fs, args, `${DIR}/${args._[0]}`, { record: args.record !== undefined, compare: true })
+    const { path, root, cases } = casesIn(fs, args._[0])
+    const order = declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case")
+    for (const one of cases) await readCase(fs, args, path, one, order)
   }
 
   /**

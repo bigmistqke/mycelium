@@ -47,35 +47,33 @@
   }
 
   /**
-   * Where a reading lands, made if the document carries none yet.
+   * Puts a reading at the top of its case, where the newest one belongs.
    *
-   * A document holds the reading its last run recorded, and that value is stale
-   * the moment this page opens. Clearing it before the probe runs keeps a
-   * reader from taking the old number for the new one.
+   * The page writes the reading in the shape the file would hold it, dated
+   * today, so what a person sees here is what recording it would keep. Nothing
+   * saves it: the command reads the answer back and writes the document.
    *
-   * @param {Element} entry
-   * @returns {Element}
+   * @param {Element} one
+   * @param {string} value
+   * @returns {void}
    */
-  function readingIn(entry) {
-    var found = entry.querySelector("notebook-reading")
-    if (!found) {
-      found = document.createElement("notebook-reading")
-      var script = entry.querySelector("script")
-      if (script && script.nextSibling) entry.insertBefore(found, script.nextSibling)
-      else entry.appendChild(found)
-    }
-    return found
+  function show(one, value) {
+    var el = document.createElement("notebook-reading")
+    el.setAttribute("data-on", new Date().toISOString().slice(0, 10))
+    el.textContent = value
+    var first = one.querySelector("notebook-reading")
+    if (first) one.insertBefore(el, first)
+    else one.appendChild(el)
   }
 
-  function run() {
-    var entry = document.querySelector("notebook-experiment")
-    if (!entry) return
-    var script = entry.querySelector(':scope > script[type="text/mycelium-experiment"]')
+  /**
+   * @param {Element} one
+   * @returns {void}
+   */
+  function runCase(one) {
+    var script = one.querySelector(':scope > script[type="text/mycelium-experiment"]')
     if (!script) return
-
-    var reading = readingIn(entry)
-    reading.textContent = "…"
-    reading.setAttribute("data-state", "running")
+    one.setAttribute("data-state", "running")
 
     var made
     try {
@@ -87,25 +85,34 @@
         '"use strict";return (async function () {\n' + (script.textContent || "") + "\n})()",
       )
     } catch (err) {
-      reading.textContent = "the probe did not parse — " + (err && err.message)
-      reading.setAttribute("data-state", "failed")
+      one.setAttribute("data-reading", "the probe did not parse — " + (err && err.message))
+      one.setAttribute("data-state", "failed")
       return
     }
 
-    var fixture = entry.querySelector("notebook-fixture")
+    var fixture = one.querySelector("notebook-fixture")
     Promise.resolve()
       .then(function () { return made(fixture, settle) })
       .then(function (value) {
         // A probe returning nothing measured nothing, and saying so beats
         // recording the word undefined as though it were a finding.
         if (value === undefined) throw new Error("the probe returned no reading")
-        reading.textContent = String(value)
-        reading.setAttribute("data-state", "done")
+        one.setAttribute("data-reading", String(value))
+        show(one, String(value))
+        one.setAttribute("data-state", "done")
       })
       .catch(function (err) {
-        reading.textContent = String((err && err.message) || err)
-        reading.setAttribute("data-state", "failed")
+        one.setAttribute("data-reading", String((err && err.message) || err))
+        one.setAttribute("data-state", "failed")
       })
+  }
+
+  function run() {
+    // Every case runs, because the command may ask for any one of them and the
+    // page has no way to know which. They are probes: each one reads and none
+    // of them writes, so running the others costs time and nothing else.
+    var cases = document.querySelectorAll("notebook-experiment > notebook-case")
+    for (var i = 0; i < cases.length; i++) runCase(cases[i])
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run)
