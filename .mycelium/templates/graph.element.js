@@ -80,7 +80,6 @@
  * @property {string} [title]
  * @property {string} [name]
  * @property {string} [kind]
- * @property {boolean} [file]
  * @property {string} [prompt]
  * @property {string} [question]
  * @property {string} [snippet]

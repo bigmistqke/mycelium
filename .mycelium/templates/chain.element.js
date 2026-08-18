@@ -4,8 +4,66 @@
 //
 // Everything after that — the columns, the wires, the pane, the measuring —
 // belongs to graph.element.js, which knows none of this.
+//
+// @ts-check
+"use strict"
+{
 
-const data = JSON.parse(document.getElementById('chain').textContent)
+/**
+ * @typedef {object} ChainAxiom
+ * @property {string} address
+ * @property {string} title
+ * @property {string} detail
+ * @property {string} canon
+ * @property {string[]} narrows
+ * @property {number} depth
+ * @property {number} behaviours
+ */
+
+/**
+ * @typedef {object} ChainSpecification
+ * @property {string} address
+ * @property {string} title
+ * @property {string} detail
+ * @property {string} canon
+ * @property {string[]} specifies
+ */
+
+/**
+ * @typedef {object} ChainBehaviour
+ * @property {string} address
+ * @property {string} title
+ * @property {string} detail
+ * @property {string} kind
+ * @property {string} specification
+ * @property {string[]} refines
+ * @property {string | null} parent
+ * @property {string} check
+ * @property {string} fixture
+ */
+
+/**
+ * @typedef {object} ChainCode
+ * @property {string} address
+ * @property {string} file
+ * @property {string} name
+ * @property {string} kind
+ * @property {string} doc
+ * @property {string} snippet
+ * @property {string[]} cites
+ */
+
+/**
+ * @typedef {object} ChainData
+ * @property {ChainAxiom[]} axioms
+ * @property {ChainSpecification[]} specifications
+ * @property {ChainBehaviour[]} behaviours
+ * @property {ChainCode[]} code
+ * @property {Record<string, string[]>} reach
+ * @property {Record<string, string[]>} above
+ */
+
+const data = /** @type {ChainData} */ (JSON.parse(/** @type {string} */ (document.getElementById('chain')?.textContent)))
 
 /**
  * Which subsystem an address belongs to, read off the canon document holding
@@ -16,10 +74,13 @@ const data = JSON.parse(document.getElementById('chain').textContent)
  * in the implementation column. Nothing could tell that figure, the figure
  * layout engine and templates/figure.element.js are one subsystem, so the bands
  * never lined up and the edges between them crossed everything in the way.
+ *
+ * @param {string} address
+ * @returns {string}
  */
 function subsystemOf(address) {
   const file = address.split('#')[0]
-  return file.endsWith('.canon.html') ? file.split('/').pop().replace('.canon.html', '') : ''
+  return file.endsWith('.canon.html') ? (file.split('/').pop() ?? '').replace('.canon.html', '') : ''
 }
 
 /**
@@ -28,9 +89,10 @@ function subsystemOf(address) {
  * A declaration sits in a source file and belongs to the subsystem that took
  * responsibility for it.
  */
+/** @type {Record<string, string>} */
 const subsystemOfFile = {}
-for (const s of data.specifications)
-  for (const f of s.specifies) subsystemOfFile[f] = subsystemOf(s.address)
+for (const specification of data.specifications)
+  for (const file of specification.specifies) subsystemOfFile[file] = subsystemOf(specification.address)
 
 /**
  * Ranks, left to right.
@@ -39,19 +101,20 @@ for (const s of data.specifications)
  * narrowing another lands right of it and that edge crosses a column like every
  * other edge rather than doubling back inside one.
  */
-const axiomDepth = Math.max(0, ...data.axioms.map(a => a.depth))
+const axiomDepth = Math.max(0, ...data.axioms.map(axiom => axiom.depth))
+/** @type {Rank[]} */
 const ranks = []
-for (let d = 0; d <= axiomDepth; d++)
+for (let depth = 0; depth <= axiomDepth; depth++)
   // Only the first axiom column carries the heading. The ones after it hold
   // axioms too, narrower ones, and naming that again says nothing a reader
   // cannot see from the edges arriving into them.
-  ranks.push({ name: d === 0 ? 'axioms' : '', items: data.axioms.filter(a => a.depth === d)
-    .map(a => ({ address: a.address, title: a.title, group: a.canon, kind: 'axiom',
-                 subsystem: subsystemOf(a.address),
-                 reach: a.behaviours, counts: 'behaviours beneath this, at any depth' })) })
+  ranks.push({ name: depth === 0 ? 'axioms' : '', items: data.axioms.filter(axiom => axiom.depth === depth)
+    .map(axiom => ({ address: axiom.address, title: axiom.title, group: axiom.canon, kind: 'axiom',
+                 subsystem: subsystemOf(axiom.address),
+                 reach: axiom.behaviours, counts: 'behaviours beneath this, at any depth' })) })
 
-const specTitle = Object.fromEntries(data.specifications.map(s => [s.address, s.title]))
-const behaviourAt = new Map(data.behaviours.map(b => [b.address, b]))
+const specificationTitle = Object.fromEntries(data.specifications.map(specification => [specification.address, specification.title]))
+const behaviourAt = new Map(data.behaviours.map(behaviour => [behaviour.address, behaviour]))
 
 /**
  * How many claims a claim sits inside.
@@ -61,9 +124,13 @@ const behaviourAt = new Map(data.behaviours.map(b => [b.address, b]))
  * same reason: a narrower thing belongs one column right of the thing it
  * narrows, and then its edge crosses a column like every other edge instead of
  * doubling back inside one.
+ *
+ * @param {ChainBehaviour} behaviour
+ * @returns {number}
  */
 function behaviourDepth(behaviour) {
   let depth = 0
+  /** @type {ChainBehaviour | undefined} */
   let at = behaviour
   while (at && at.parent) { depth++; at = behaviourAt.get(at.parent) }
   return depth
@@ -71,12 +138,13 @@ function behaviourDepth(behaviour) {
 
 const depths = data.behaviours.map(behaviourDepth)
 const behaviourDepthMax = Math.max(0, ...depths)
-for (let d = 0; d <= behaviourDepthMax; d++)
-  ranks.push({ name: d === 0 ? 'behaviours' : '', items: data.behaviours
-    .filter((b, i) => depths[i] === d)
-    .map(b => ({ address: b.address, title: b.title, group: specTitle[b.specification] || 'unspecified',
-                 kind: b.check ? 'behaviour' : 'behaviour, proved beneath',
-                 subsystem: subsystemOf(b.specification), groupOf: b.specification })) })
+for (let depth = 0; depth <= behaviourDepthMax; depth++)
+  ranks.push({ name: depth === 0 ? 'behaviours' : '', items: data.behaviours
+    .filter((behaviour, index) => depths[index] === depth)
+    .map(behaviour => ({ address: behaviour.address, title: behaviour.title,
+                 group: specificationTitle[behaviour.specification] || 'unspecified',
+                 kind: behaviour.check ? 'behaviour' : 'behaviour, proved beneath',
+                 subsystem: subsystemOf(behaviour.specification), groupOf: behaviour.specification })) })
 
 /**
  * One box per cited declaration, grouped by the file holding it. A file
@@ -84,8 +152,10 @@ for (let d = 0; d <= behaviourDepthMax; d++)
  * naming a file with no claims in it is worth seeing rather than hiding.
  *
  * @behaviour canon/chain.canon.html#the-rank-shows-a-cited-declaration
+ * @param {string} file
+ * @returns {string}
  */
-const shortFile = (f) => f.replace(/^docs\//, '')
+const shortFile = (file) => file.replace(/^docs\//, '')
 
 /**
  * How many claims a declaration answers, shown only when it answers more than
@@ -99,26 +169,31 @@ const shortFile = (f) => f.replace(/^docs\//, '')
  * and the only interesting value is the one above the target.
  *
  * @behaviour canon/chain.canon.html#a-declaration-carrying-several-claims-says-how-many
+ * @param {ChainCode} code
+ * @returns {number | undefined}
  */
-const claimsOf = (d) => d.cites.length > 1 ? d.cites.length : undefined
+const claimsOf = (code) => code.cites.length > 1 ? code.cites.length : undefined
 
-const declarations = data.code.map(d =>
-  ({ address: d.address, title: d.name, group: shortFile(d.file), reach: claimsOf(d),
-     kind: d.kind || 'declaration', counts: 'claims this one declaration answers',
-     subsystem: subsystemOfFile[d.file] ?? '', code: d }))
-const cited = new Set(data.code.map(d => d.file))
-for (const s of data.specifications)
-  for (const f of s.specifies)
-    if (!cited.has(f)) declarations.push({ address: f, title: shortFile(f), group: shortFile(f),
-                                           subsystem: subsystemOfFile[f] ?? '', file: true })
+/** @type {Item[]} */
+const declarations = data.code.map(code =>
+  ({ address: code.address, title: code.name, group: shortFile(code.file), reach: claimsOf(code),
+     kind: code.kind || 'declaration', counts: 'claims this one declaration answers',
+     subsystem: subsystemOfFile[code.file] ?? '' }))
+const cited = new Set(data.code.map(code => code.file))
+for (const specification of data.specifications)
+  for (const file of specification.specifies)
+    if (!cited.has(file)) declarations.push({ address: file, title: shortFile(file), group: shortFile(file),
+                                           subsystem: subsystemOfFile[file] ?? '', file: true })
 ranks.push({ name: 'implementation', items: declarations })
 
 /** What each item points at, which is the direction the corpus stores. */
+/** @type {Record<string, string[]>} */
 const parentsOf = {}
-for (const a of data.axioms) parentsOf[a.address] = a.narrows
-for (const b of data.behaviours) parentsOf[b.address] = b.refines
-for (const s of data.specifications) for (const f of s.specifies) parentsOf[f] = [s.address]
-for (const d of data.code) parentsOf[d.address] = d.cites
+for (const axiom of data.axioms) parentsOf[axiom.address] = axiom.narrows
+for (const behaviour of data.behaviours) parentsOf[behaviour.address] = behaviour.refines
+for (const specification of data.specifications)
+  for (const file of specification.specifies) parentsOf[file] = [specification.address]
+for (const code of data.code) parentsOf[code.address] = code.cites
 
 /**
  * The order subsystems keep in every rank, so one occupies the same band across
@@ -132,9 +207,9 @@ for (const d of data.code) parentsOf[d.address] = d.cites
  * subsystem, so the edges leaving them fan across the whole page whatever this
  * does; from the middle the furthest of them reaches half as far.
  */
-const bands = [...new Set(data.axioms.map(a => subsystemOf(a.address)).filter(s => s && s !== 'root'))]
-for (const s of data.specifications) {
-  const name = subsystemOf(s.address)
+const bands = [...new Set(data.axioms.map(axiom => subsystemOf(axiom.address)).filter(subsystem => subsystem && subsystem !== 'root'))]
+for (const specification of data.specifications) {
+  const name = subsystemOf(specification.address)
   if (name && !bands.includes(name)) bands.push(name)
 }
 bands.splice(Math.floor(bands.length / 2), 0, 'root')
@@ -144,25 +219,31 @@ bands.splice(Math.floor(bands.length / 2), 0, 'root')
  *
  * The page holds each rank as its own list, so this asks all of them rather
  * than keeping a fifth index that could disagree with the four.
+ *
+ * @param {string} address
+ * @returns {GraphNode | undefined}
  */
 function nodeAt(address) {
-  return data.axioms.find(a => a.address === address)
-    || data.behaviours.find(b => b.address === address)
-    || data.specifications.find(s => s.address === address)
-    || data.code.find(d => d.address === address)
+  return data.axioms.find(axiom => axiom.address === address)
+    || data.behaviours.find(behaviour => behaviour.address === address)
+    || data.specifications.find(specification => specification.address === address)
+    || data.code.find(code => code.address === address)
 }
 
 /**
  * Selecting anything lights the whole chain it belongs to, above and below.
  *
  * A specification has no chain of its own, so it stands for its behaviours.
+ *
+ * @param {string} address
+ * @returns {Set<string>}
  */
 function litFrom(address) {
-  const spec = data.specifications.find(s => s.address === address)
-  if (!spec) return new Set([address, ...(data.reach[address] || []), ...(data.above[address] || [])])
-  const lit = new Set([address, ...spec.specifies])
-  for (const b of data.behaviours.filter(b => b.specification === address))
-    for (const a of [b.address, ...(data.reach[b.address] || []), ...(data.above[b.address] || [])]) lit.add(a)
+  const specification = data.specifications.find(specification => specification.address === address)
+  if (!specification) return new Set([address, ...(data.reach[address] || []), ...(data.above[address] || [])])
+  const lit = new Set([address, ...specification.specifies])
+  for (const behaviour of data.behaviours.filter(behaviour => behaviour.specification === address))
+    for (const reached of [behaviour.address, ...(data.reach[behaviour.address] || []), ...(data.above[behaviour.address] || [])]) lit.add(reached)
   return lit
 }
 
@@ -172,10 +253,13 @@ function litFrom(address) {
  *
  * Silent when it agrees with the one step the pane lists beneath it, since a
  * line repeating the list under it earns nothing.
+ *
+ * @param {string} address
+ * @returns {string}
  */
 function impactFor(address) {
-  const reached = (data.reach[address] || []).filter(a => behaviourAt.has(a)).length
-  const steps = Object.entries(parentsOf).filter(([, ps]) => (ps || []).includes(address)).length
+  const reached = (data.reach[address] || []).filter(candidate => behaviourAt.has(candidate)).length
+  const steps = Object.entries(parentsOf).filter(([, parents]) => (parents || []).includes(address)).length
   return reached > steps ? `impacts ${reached} behaviours` : ''
 }
 
@@ -185,13 +269,19 @@ function impactFor(address) {
  * A claim narrows an axiom, a claim holds a narrower claim, a specification
  * names a file, and a declaration answers a claim. All four run upward and
  * nothing distinguished them on the page.
+ *
+ * @param {string} from
+ * @returns {string}
  */
 const kindOfEdge = (from) =>
-  data.code.some(d => d.address === from) ? 'answers'
-  : data.behaviours.some(b => b.address === from) ? 'narrows'
+  data.code.some(code => code.address === from) ? 'answers'
+  : data.behaviours.some(behaviour => behaviour.address === from) ? 'narrows'
   : 'specifies'
 
+/** @type {DrawnEdge[]} */
 const drawnEdges = Object.entries(parentsOf)
-  .flatMap(([child, parents]) => (parents || []).map(parent => ({ from: child, to: parent, rel: kindOfEdge(child) })))
+  .flatMap(([child, parents]) => parents.map(parent => ({ from: child, to: parent, rel: kindOfEdge(child) })))
 
 mountGraph({ ranks, parentsOf, edges: drawnEdges, bands, nodeAt, litFrom, impactFor })
+
+}

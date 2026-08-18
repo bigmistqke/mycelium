@@ -9,9 +9,39 @@
 // leave four fifths of the edges doubling back inside a column, which is the
 // fault columns exist to remove. Days are the outer axis, and a day's own nodes
 // rank into sub-columns inside it.
+//
+// @ts-check
+"use strict"
+{
 
-const notebook = JSON.parse(document.getElementById('notebook').textContent)
-const nodeById = new Map(notebook.nodes.map(n => [n.address, n]))
+/**
+ * @typedef {object} NotebookNode
+ * @property {string} address
+ * @property {string} title
+ * @property {string} kind
+ * @property {string} prompt
+ * @property {string} detail
+ * @property {string} [question]
+ * @property {string} [reading]
+ * @property {string} [snippet]
+ */
+
+/**
+ * @typedef {object} NotebookEdge
+ * @property {string} from
+ * @property {string} to
+ * @property {string} rel
+ */
+
+/**
+ * @typedef {object} NotebookData
+ * @property {NotebookNode[]} nodes
+ * @property {NotebookEdge[]} edges
+ * @property {Record<string, string>} arrived
+ */
+
+const notebook = /** @type {NotebookData} */ (JSON.parse(/** @type {string} */ (document.getElementById('notebook')?.textContent)))
+const nodeById = new Map(notebook.nodes.map(node => [node.address, node]))
 
 /**
  * What each node sits downstream of.
@@ -21,6 +51,7 @@ const nodeById = new Map(notebook.nodes.map(n => [n.address, n]))
  * outcome, so the goal is what the outcome came out of. Reading every edge the
  * same way would put an outcome to the left of the goal that produced it.
  */
+/** @type {Record<string, string[]>} */
 const parentsOf = {}
 for (const node of notebook.nodes) parentsOf[node.address] = []
 for (const edge of notebook.edges) {
@@ -35,9 +66,12 @@ for (const edge of notebook.edges) {
  * be a second copy of something git already answers, and the first thing to go
  * stale. What the column shows is therefore when a thought turned up, not when
  * somebody last edited the page it lives on.
+ *
+ * @param {string} address
+ * @returns {string}
  */
 const dayOf = (address) => (notebook.arrived[address] ?? '').slice(0, 10)
-const days = [...new Set(notebook.nodes.map(n => dayOf(n.address)))].sort()
+const days = [...new Set(notebook.nodes.map(node => dayOf(node.address)))].sort()
 
 /**
  * How deep a node sits inside its own day.
@@ -51,16 +85,21 @@ const days = [...new Set(notebook.nodes.map(n => dayOf(n.address)))].sort()
  * candidate and the counts rule it out. One type held 224 of 565 entries when
  * somebody last counted, so its column would carry two fifths of the graph and
  * reach everywhere.
+ *
+ * @param {string} address
+ * @param {Set<string>} [seen]
+ * @returns {number}
  */
 function depthWithinDay(address, seen = new Set()) {
   if (seen.has(address)) return 0
   seen.add(address)
   const day = dayOf(address)
-  const inside = (parentsOf[address] || []).filter(p => nodeById.has(p) && dayOf(p) === day)
+  const inside = (parentsOf[address] || []).filter(parent => nodeById.has(parent) && dayOf(parent) === day)
   if (!inside.length) return 0
-  return 1 + Math.max(...inside.map(p => depthWithinDay(p, seen)))
+  return 1 + Math.max(...inside.map(parent => depthWithinDay(parent, seen)))
 }
 
+/** @type {Record<string, number>} */
 const depth = {}
 for (const node of notebook.nodes) depth[node.address] = depthWithinDay(node.address)
 
@@ -70,6 +109,9 @@ for (const node of notebook.nodes) depth[node.address] = depthWithinDay(node.add
  * Git holds the moment a file arrived, which survives a clone because it is
  * history rather than a fact about a filesystem. Nodes added in one commit
  * share a moment, so this orders in clusters, and a commit is a unit of work.
+ *
+ * @param {string} address
+ * @returns {string}
  */
 const arrived = (address) => notebook.arrived[address] ?? ''
 
@@ -79,19 +121,21 @@ const arrived = (address) => notebook.arrived[address] ?? ''
  * The columns after it hold the same day, and repeating the date says nothing a
  * reader cannot see from the edges arriving into them.
  */
+/** @type {Rank[]} */
 const ranks = []
 for (const day of days) {
-  const inDay = notebook.nodes.filter(n => dayOf(n.address) === day)
-  const deepest = Math.max(0, ...inDay.map(n => depth[n.address]))
-  for (let d = 0; d <= deepest; d++) {
+  const inDay = notebook.nodes.filter(node => dayOf(node.address) === day)
+  const deepest = Math.max(0, ...inDay.map(node => depth[node.address]))
+  for (let column = 0; column <= deepest; column++) {
     const items = inDay
-      .filter(n => depth[n.address] === d)
-      .sort((a, b) => arrived(a.address).localeCompare(arrived(b.address)))
-      .map(n => ({ address: n.address, title: n.title, kind: n.kind, group: n.kind, subsystem: '' }))
-    if (items.length) ranks.push({ name: d === 0 ? day : '', items })
+      .filter(node => depth[node.address] === column)
+      .sort((left, right) => arrived(left.address).localeCompare(arrived(right.address)))
+      .map(node => ({ address: node.address, title: node.title, kind: node.kind, group: node.kind, subsystem: '' }))
+    if (items.length) ranks.push({ name: column === 0 ? day : '', items })
   }
 }
 
+/** @type {Record<string, string[]>} */
 const childrenOf = {}
 for (const [child, parents] of Object.entries(parentsOf))
   for (const parent of parents) (childrenOf[parent] ??= []).push(child)
@@ -103,15 +147,22 @@ for (const [child, parents] of Object.entries(parentsOf))
  * The set of what it found is also what keeps a cycle from walking forever, and
  * this graph has them: contradicts and alternative_to join two nodes without
  * either sitting above the other.
+ *
+ * @param {string} address
+ * @param {Record<string, string[]>} edges
+ * @returns {Set<string>}
  */
 function walk(address, edges) {
   const found = new Set()
+  /** @type {string[]} */
   const queue = [address]
   while (queue.length) {
-    for (const next of edges[queue.pop()] || []) {
-      if (found.has(next)) continue
-      found.add(next)
-      queue.push(next)
+    const next = queue.pop()
+    if (next === undefined) continue
+    for (const neighbour of edges[next] || []) {
+      if (found.has(neighbour)) continue
+      found.add(neighbour)
+      queue.push(neighbour)
     }
   }
   return found
@@ -132,6 +183,7 @@ function walk(address, edges) {
  * `alternative_to` reads the same both ways and sits on the left twice, since
  * neither of two alternatives rests on the other.
  */
+/** @type {Record<string, { out: [string, number], in: [string, number] }>} */
 const RELATIONS = {
   depends_on: { out: ['depends on', 0], in: ['depended on by', 1] },
   supports: { out: ['supports', 0], in: ['supported by', 1] },
@@ -148,12 +200,23 @@ const RELATIONS = {
  *
  * Outgoing groups come first within a column, since a node's own edges are what
  * it says and the incoming ones are what everything else said about it.
+ *
+ * @param {string} address
+ * @returns {Side[]}
  */
 function sidesFor(address) {
+  /** @type {Map<string, { rel: string, column: number, addresses: string[] }>} */
   const groups = new Map()
+  /**
+   * @param {[string, number]} reading
+   * @param {string} rel
+   * @param {string} target
+   * @returns {void}
+   */
   const add = ([title, column], rel, target) => {
-    if (!groups.has(title)) groups.set(title, { rel, column, addresses: [] })
-    groups.get(title).addresses.push(target)
+    const group = groups.get(title) ?? { rel, column, addresses: [] }
+    group.addresses.push(target)
+    groups.set(title, group)
   }
   for (const edge of notebook.edges) {
     const reading = RELATIONS[edge.rel] ?? { out: [edge.rel, 0], in: [edge.rel, 1] }
@@ -163,14 +226,26 @@ function sidesFor(address) {
   return [...groups].map(([title, side]) => ({ title, ...side }))
 }
 
+/**
+ * @param {string} address
+ * @returns {GraphNode | undefined}
+ */
 const nodeAt = (address) => nodeById.get(address)
+
+/**
+ * @param {string} address
+ * @returns {Set<string>}
+ */
 const litFrom = (address) => new Set([address, ...walk(address, parentsOf), ...walk(address, childrenOf)])
 
 // Drawn as the corpus stores them, so an arrowhead lands where somebody wrote
 // it. Ranking reverses leads_to and drawing must not: a goal leads to its
 // outcome, and the arrow saying so is the whole content of that edge.
+/** @type {DrawnEdge[]} */
 const drawnEdges = notebook.edges
-  .filter(e => nodeById.has(e.from) && nodeById.has(e.to))
-  .map(e => ({ from: e.from, to: e.to, rel: e.rel }))
+  .filter(edge => nodeById.has(edge.from) && nodeById.has(edge.to))
+  .map(edge => ({ from: edge.from, to: edge.to, rel: edge.rel }))
 
 mountGraph({ ranks, parentsOf, edges: drawnEdges, bands: [], nodeAt, litFrom, sidesFor })
+
+}
