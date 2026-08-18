@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How far does the notebook reach out of itself?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>How far does the notebook reach out of itself?</notebook-title>
+  <notebook-tag>notebook</notebook-tag>
+  <notebook-tag>corpus</notebook-tag>
+  <notebook-tag>measurement</notebook-tag>
+  <notebook-prompt>i wonder how you would use it</notebook-prompt>
+  <notebook-question>How many notebook entries link to anything outside the notebook, and how many name a file of source code?</notebook-question>
+  <script type="mycelium/experiment">
+export default function ({ fs }) {
+  // Every entry links two stylesheets from its head, so a naive count of
+  // outbound hrefs says every entry reaches outside and means nothing. The
+  // script drops those two and counts what remains, which is the only reading
+  // that separates an entry pointing somewhere from an entry wearing a theme.
+  const CHROME = /(theme|[a-z-]+\.template)\.css$/
+  let entries = 0, outward = 0, inward = 0, naming = 0
+  const families = new Map()
+
+  for (const { doc } of fs.list("notebook")) {
+    entries++
+    let leaves = false
+    for (const anchor of doc.querySelectorAll("a[href]")) {
+      const href = anchor.getAttribute("href") ?? ""
+      if (href.startsWith("./")) { inward++; continue }
+      if (!href.startsWith("../") || CHROME.test(href)) continue
+      leaves = true
+      const family = href.slice(3).split("/")[0].replace(/#.*/, "")
+      families.set(family, (families.get(family) ?? 0) + 1)
+    }
+    if (leaves) outward++
+
+    // A second question, and prose answers it rather than links. An entry
+    // naming validate.ts in a code element knows which file it is about, even
+    // where nothing turned that into an href somebody can follow.
+    const body = doc.querySelector("[data-conforms-to]")
+    const prose = body?.textContent ?? ""
+    if (/\b[a-z][a-z0-9.-]*\.(ts|element\.js)\b/.test(prose)) naming++
+  }
+
+  const spread = [...families.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([family, count]) => `${family} ${count}`)
+    .join(", ")
+  return `${outward} of ${entries} entries link outside the notebook ` +
+    `(${spread}); ${naming} name a source file in prose; ` +
+    `${inward} link(s), prose and edge alike, stay inside`
+}
+</script>
+  <notebook-reading>45 of 398 entries link outside the notebook (specs 16, templates 10, canon 8, DESIGN.html 6, language 5, commands 3, reports 2, plans 1); 27 name a source file in prose; 568 link(s), prose and edge alike, stay inside</notebook-reading>
+  <notebook-detail><p>An agent meets this corpus from the code, not from a list. It opens a source
+file to do a task, and the entry worth reading is the one explaining why that
+file looks the way it does. The count says almost nothing carries that address:
+a handful of entries name a source file at all, and the rest describe the
+project without ever saying which part.</p>
+<p>The followup family already solved this, and solved it the other way round.
+Its required <code>--at</code> takes a repository path, so an item waits in
+front of whoever next opens that file, and nobody reads a list to find it. The
+notebook has no equivalent, so an entry waits for somebody to guess its
+filename.</p>
+<p>The inward count dwarfs the outward one, which reads two ways and the script
+cannot separate them. A corpus this self-referential either thinks carefully
+about its own material or talks mostly to itself. Both look identical from
+here, and a reader has to open the entries to tell.</p>
+</notebook-detail>
+</notebook-experiment>
+</body></html>

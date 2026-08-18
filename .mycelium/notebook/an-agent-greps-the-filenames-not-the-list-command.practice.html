@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>An agent reports a gap that a neighbouring family already filled</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>An agent reports a gap that a neighbouring family already filled</notebook-title>
+  <notebook-tag>notebook</notebook-tag>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-prompt>mmmm... from what you write the problem seems you don't make use of the existing commands yet. they are designed to prevent markup clutter</notebook-prompt>
+  <notebook-detail><p>Asked what the project should do about queryability, an agent searched the
+corpus for what it already held. It ran <code>ls | grep -Ei
+'quer|search|embed|scale|index'</code> over the notebook directory, got 68
+filenames back in one call, and found the two entries carrying the whole answer
+among them. It never ran <code>notebook list</code>, which prints every entry as
+type, title and path with no markup at all.</p>
+<p>The agent then stripped tags with <code>sed</code> to read what it found, and
+reported the markup as a problem the project should solve. Somebody had to point
+out that the commands exist to prevent exactly that. The family one directory
+over ships <code>language show</code> for this, and documents why reading stays
+loose where writing stays strict.</p>
+<p>Only the notebook's own <code>show</code> is genuinely missing, which is one
+command rather than a missing capability. An agent measures a gap from what it
+happened to run, so an unused command reads to it exactly like an absent one.
+Nothing in the corpus can correct that, because nothing in it knows what
+somebody tried.</p>
+<p>The roster is not the fix either. A SessionStart hook printed every family
+and every command before the agent typed anything, and it reached for the shell
+regardless. Knowing a command exists and reaching for it are different events,
+and only the second one shows up in the work.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./how-far-does-the-notebook-reach-out-of-itself.experiment.html">why an agent has to guess a filename: nothing addresses an entry from the code</a>
+  <a data-rel="depends_on" href="./query-interface-design.principle.html">the query interface, met by the consumer it was designed for</a>
+</notebook-practice>
+</body></html>
