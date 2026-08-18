@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How many required flags never reach the help a reader prints?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>How many required flags never reach the help a reader prints?</notebook-title>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-tag>measurement</notebook-tag>
+  <notebook-prompt>(which demands --check, undocumented in the help -&gt; did u add the documentation?</notebook-prompt>
+  <notebook-question>How many flags does a command insist on, and how many of those does its own doc comment never mention?</notebook-question>
+  <script type="mycelium/experiment">
+export default function ({ fs }) {
+  // Every host, found the way the engine finds one. A command's insistence and
+  // a command's documentation both live in the same script, which is what makes
+  // the gap between them measurable at all.
+  const gaps = []
+  let insisted = 0
+
+  for (const dir of ["templates", "commands"]) {
+    for (const path of fs.list(`${fs.docsDir}/${dir}`, { ext: ".html" })) {
+      const doc = fs.parse(path)
+      if (!/\.(template|command)\.html$/.test(path)) continue
+      const source = doc.querySelector('script[type="mycelium/command"]')?.textContent ?? ""
+
+      // A doc comment ends where its command begins, so pairing the two means
+      // walking the exported functions in order and taking the comment above
+      // each. TypeScript reads only the last block before a declaration, and
+      // this reads the same one for the same reason.
+      for (const match of source.matchAll(/\/\*\*([\s\S]*?)\*\/\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)/g)) {
+        const [, comment, name] = match
+        // Where the body ends is guesswork on a regular expression, so this
+        // takes the text up to whichever comes first: the next doc comment, or
+        // the end of the script.
+        const body = source.slice(match.index + match[0].length)
+        const stop = body.indexOf("/**")
+        const scope = stop === -1 ? body : body.slice(0, stop)
+
+        for (const flag of scope.matchAll(/\[\s*args\.\w+\s*,\s*'(--[\w-]+)'\s*\]/g)) {
+          insisted++
+          if (!comment.includes(flag[1])) gaps.push(`${name} ${flag[1]}`)
+        }
+      }
+    }
+  }
+
+  return `${insisted} flags are insisted on across the command line; ` +
+    `${gaps.length} never reach the help their own command prints` +
+    (gaps.length ? ` (${gaps.join(", ")})` : "")
+}
+</script>
+  <notebook-reading>19 flags are insisted on across the command line; 0 never reach the help their own command prints</notebook-reading>
+</notebook-experiment>
+</body></html>

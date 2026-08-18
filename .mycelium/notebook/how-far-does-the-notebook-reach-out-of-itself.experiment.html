@@ -24,7 +24,8 @@ export default function ({ fs }) {
   let entries = 0, outward = 0, inward = 0, naming = 0
   const families = new Map()
 
-  for (const { doc } of fs.list("notebook")) {
+  for (const path of fs.list(`${fs.docsDir}/notebook`, { ext: ".html" })) {
+    const doc = fs.parse(path)
     entries++
     let leaves = false
     for (const anchor of doc.querySelectorAll("a[href]")) {
@@ -54,7 +55,7 @@ export default function ({ fs }) {
     `${inward} link(s), prose and edge alike, stay inside`
 }
 </script>
-  <notebook-reading>45 of 398 entries link outside the notebook (specs 16, templates 10, canon 8, DESIGN.html 6, language 5, commands 3, reports 2, plans 1); 27 name a source file in prose; 568 link(s), prose and edge alike, stay inside</notebook-reading>
+  <notebook-reading>45 of 403 entries link outside the notebook (specs 16, templates 10, canon 8, DESIGN.html 6, language 5, commands 3, reports 2, plans 1); 27 name a source file in prose; 574 link(s), prose and edge alike, stay inside</notebook-reading>
   <notebook-detail><p>An agent meets this corpus from the code, not from a list. It opens a source
 file to do a task, and the entry worth reading is the one explaining why that
 file looks the way it does. The count says almost nothing carries that address:

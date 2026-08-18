@@ -237,12 +237,12 @@
 <script type="mycelium/command">
   import type { CommandContext } from "mycelium/api"
   import { declaredOrder, placeField } from "mycelium/shared"
-  import { CORPUS_DIR, loadModule } from "mycelium/utils"
+  import { CORPUS_DIR, corpusView, loadModule } from "mycelium/utils"
   import { extractGraph } from "mycelium/extract-graph"
   import { BLOCK_TAGS } from "mycelium/language-prose"
   import { graphPage, templateFile } from "mycelium/graph-page"
   import { tmpdir } from "node:os"
-  import { join, resolve, resolve as resolvePath } from "node:path"
+  import { basename, dirname, join, resolve, resolve as resolvePath } from "node:path"
   import { pathToFileURL } from "node:url"
   import { execFileSync } from "node:child_process"
 
@@ -294,6 +294,11 @@
    *   mycelium notebook add <principle|practice|direction|research|experiment>
    *     --title "…" [--tag NAME]… [--prompt "…" | --prompt -]
    *     [--detail "…" | --detail -] [--question "…"] [--file <slug>]
+   *     [--script "…" | --script -]
+   *
+   * --script replaces an experiment's probe and leaves every other field
+   * alone, so the write-run-refine loop costs two commands. Asking for it on
+   * an entry carrying no probe fails rather than inventing one.
    *
    * The type says where the knowledge came from: research from someone else,
    * experiment from running something, and the other three from thinking. A
@@ -318,8 +323,21 @@
    * summary. Pass --prompt - to read one from stdin.
    *
    * --question is required for an experiment and meaningless on the other
-   * two. The script itself is markup, so add leaves a placeholder and the
-   * script goes in by hand — a probe is code, and code does not fit on a flag.
+   * two. --script carries the probe, reading from stdin on -, and omitting it
+   * leaves a placeholder that throws. Both answers are real: a question with
+   * nothing measuring it yet is a document worth writing, and a red run says
+   * so honestly.
+   *
+   * The script used to go in by hand, on the ground that code does not fit on
+   * a flag. It does not, which is why this reads stdin rather than an
+   * argument, the same way canon add behaviour takes a check. Every experiment
+   * written under the old rule got its answer somewhere else first and then
+   * came back as a log, because editing markup mid-thought loses to a
+   * throwaway script every time.
+   *
+   * Refining is the half that matters, and update carries --script for it.
+   * A probe earns its keep by running, disagreeing with its last reading, and
+   * running again.
    */
   export async function add({ fs, args, cli }: CommandContext) {
     const type = args._[0]
@@ -376,7 +394,12 @@
       add1("notebook-question", args.question)
       const script = doc.createElement("script")
       script.setAttribute("type", "mycelium/experiment")
-      script.textContent = "\n  export default function ({ fs }) {\n    throw new Error('this experiment has no code yet')\n  }\n"
+      // A placeholder that throws is what an author gets for saying nothing,
+      // and it is a real answer: the question comes first and a red run is an
+      // honest report that nothing has measured it yet.
+      script.textContent = args.script === undefined
+        ? "\n  export default function ({ fs }) {\n    throw new Error('this experiment has no code yet')\n  }\n"
+        : `\n${args.script === "-" ? await cli.readStdin() : args.script}\n`
       placeField(root, script, order)
     }
     if (args.detail !== undefined) {
@@ -393,6 +416,7 @@
    *   mycelium notebook update <file> [--title "…"] [--question "…"]
    *     [--detail "…" | --detail - | --detail ""] [--reading "…"]
    *     [--tag NAME]… [--prompt "…"]…
+   *     [--script "…" | --script -]
    *
    * An omitted flag leaves its field untouched and an empty value clears it,
    * which is the rule every family here follows. --tag and --prompt repeat,
@@ -444,6 +468,16 @@
         el.textContent = value === "-" ? await cli.readStdin() : value
         placeField(root, el, order)
       }
+    }
+
+    // Replacing the script is what lets somebody write a probe before it can
+    // answer anything. A first attempt measures the wrong thing, the reading
+    // says so, and the second attempt costs one command rather than an edit to
+    // markup somewhere else.
+    if (args.script !== undefined) {
+      const existing = root.querySelector('script[type="mycelium/experiment"]')
+      if (!existing) throw new Error(`${args._[0]} is not an experiment, so it carries no script`)
+      existing.textContent = `\n${args.script === "-" ? await cli.readStdin() : args.script}\n`
     }
 
     const result = await cli.validate(root, path)
@@ -770,7 +804,13 @@
 
     const mod = await loadModule(resolve(fs.root, path), script)
     if (typeof mod.default !== "function") throw new Error("this experiment exports no default function")
-    const reading = String(await mod.default({ fs }))
+
+    // Not the filesystem this command writes through. A probe that can create a
+    // document edits the thing it is measuring, and this command commits
+    // whatever the script touched, so the reading would describe a corpus the
+    // reading itself changed. The view an audit gets reads and reaches above
+    // the documents, which is what a probe wanted from it anyway.
+    const reading = String(await mod.default({ fs: corpusView(dirname(fs.root), basename(fs.root)) }))
 
     const before = root.querySelector("notebook-reading")?.textContent?.trim()
     console.log(reading)

@@ -20,7 +20,8 @@ export default function ({ fs }) {
   // one as an example.
   const hosts = []
   for (const dir of ["templates", "commands"]) {
-    for (const { path, doc } of fs.list(dir)) {
+    for (const path of fs.list(`${fs.docsDir}/${dir}`, { ext: ".html" })) {
+      const doc = fs.parse(path)
       if (/\.(template|command)\.html$/.test(path)) hosts.push({ path, doc })
     }
   }

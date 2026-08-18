@@ -42,7 +42,7 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext, Corpus, ValidateEnv, ValidateReport } from "mycelium/api"
-  import { parseHTML, walkFiles, loadCheck, loadGenericValidator } from "mycelium/utils"
+  import { corpusView, parseHTML, loadCheck, loadGenericValidator } from "mycelium/utils"
   import { existsSync, readFileSync } from "node:fs"
   import { styleText } from "node:util"
   import { dirname, resolve as resolvePath } from "node:path"
@@ -100,39 +100,11 @@
    * @behaviour canon/validate.canon.html#an-audit-reaches-outside-docs
    */
   function realCorpus(root: string, docsDir: string, cache: Map<string, Document>): Corpus {
-    return {
-      root,
-      docsDir,
-      list(dir = ".", options = {}) {
-        // A directory that does not exist holds no files, which is an answer
-        // rather than an error. An audit asking about a family that has no
-        // entries yet should get an empty list, not a thrown call.
-        const full = resolvePath(root, dir)
-        if (!existsSync(full)) return []
-        return walkFiles(full)
-          .filter((file) => !options.ext || file.endsWith(options.ext))
-          .map((file) => relative(root, file))
-      },
-      read(path) {
-        return readFileSync(resolvePath(root, path), "utf8")
-      },
-      exists(path) {
-        return existsSync(resolvePath(root, path))
-      },
-      // Shares the cache with the parse the instance pass already did, so an
-      // audit reading every document costs nothing extra, and three audits
-      // reading every document cost nothing extra three times.
-      parse(path) {
-        const full = resolvePath(root, path)
-        let doc = cache.get(full)
-        if (!doc) {
-          const { document } = parseHTML(readFileSync(full, "utf8"))
-          doc = document as unknown as Document
-          cache.set(full, doc)
-        }
-        return doc
-      },
-    }
+    // The view itself is shared, because a probe in the notebook family wants
+    // exactly this and building it twice would let the two drift. What stays
+    // here is the claim: validate is what hands an audit a corpus reaching
+    // above the documents.
+    return corpusView(root, docsDir, cache)
   }
 
   // Everything a real run reaches outside itself. A case builds a different one

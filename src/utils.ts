@@ -1,6 +1,7 @@
-import { readdirSync, readFileSync, statSync } from "node:fs"
-import { dirname, join, resolve as resolvePath } from "node:path"
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
+import { dirname, join, relative, resolve as resolvePath } from "node:path"
 import { pathToFileURL } from "node:url"
+import type { Corpus } from "./api.ts"
 import { Window } from "happy-dom"
 import { parse as parse5Parse } from "parse5"
 
@@ -193,4 +194,50 @@ export async function readStdin(): Promise<string> {
   const chunks: Buffer[] = []
   for await (const chunk of process.stdin) chunks.push(chunk)
   return Buffer.concat(chunks).toString("utf8")
+}
+
+/**
+ * A read-only view of a project, rooted one level above its corpus.
+ *
+ * Two callers want the same thing for the same reason. A rule about language
+ * covers a comment in a source file as much as prose in a document, so an
+ * audit has to reach past the corpus to say so. A probe hits that wall the
+ * moment it asks about src/. Building the view twice would leave a probe
+ * measuring a project the audits cannot see.
+ *
+ * Nothing here parses until somebody asks. Listing answers with paths, so
+ * filtering by name costs a string comparison rather than a document, and the
+ * cache makes a second reader of the same file free.
+ */
+export function corpusView(root: string, docsDir: string, cache = new Map<string, Document>()): Corpus {
+  return {
+    root,
+    docsDir,
+    list(dir = ".", options: { ext?: string } = {}) {
+      // A directory that does not exist holds no files, which is an answer
+      // rather than an error. Asking about a family with no entries yet gets
+      // an empty list, not a thrown call.
+      const full = resolvePath(root, dir)
+      if (!existsSync(full)) return []
+      return walkFiles(full)
+        .filter((file) => !options.ext || file.endsWith(options.ext))
+        .map((file) => relative(root, file))
+    },
+    read(path: string) {
+      return readFileSync(resolvePath(root, path), "utf8")
+    },
+    exists(path: string) {
+      return existsSync(resolvePath(root, path))
+    },
+    parse(path: string) {
+      const full = resolvePath(root, path)
+      let doc = cache.get(full)
+      if (!doc) {
+        const { document } = parseHTML(readFileSync(full, "utf8"))
+        doc = document as unknown as Document
+        cache.set(full, doc)
+      }
+      return doc
+    },
+  }
 }

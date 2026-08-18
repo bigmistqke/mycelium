@@ -19,7 +19,8 @@ export default function ({ fs }) {
   const RULE = /^(A|An|Every|Nothing|Only|Derive|Link|Information|Reach)\b/
   let rules = 0, total = 0
   const opening = {}
-  for (const { doc } of fs.list("notebook")) {
+  for (const path of fs.list(`${fs.docsDir}/notebook`, { ext: ".html" })) {
+    const doc = fs.parse(path)
     const title = doc.querySelector("notebook-title")?.textContent?.trim() ?? ""
     if (!title) continue
     total++
@@ -35,7 +36,7 @@ export default function ({ fs }) {
   return `${rules} of ${total} titles open like a rule (${spread})`
 }
 </script>
-  <notebook-reading>81 of 384 titles open like a rule (A 58, An 6, Derive 6, Every 5, Reach 2, Link 2, Information 1, Only 1)</notebook-reading>
+  <notebook-reading>90 of 403 titles open like a rule (A 65, An 8, Derive 6, Every 5, Reach 2, Link 2, Information 1, Only 1)</notebook-reading>
   <notebook-detail><p>The question outlived the family it first asked about. This counted
 <code>docs/knowledge</code> until that directory retired on 2026-08-10, and the
 script then failed outright rather than returning a stale number. Pointing it at

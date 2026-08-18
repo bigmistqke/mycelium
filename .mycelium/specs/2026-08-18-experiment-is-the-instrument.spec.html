@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: An experiment is the instrument, so its script arrives on a flag and its view is read-only</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>An experiment is the instrument, so its script arrives on a flag and its view is read-only</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-08-18</spec-date>
+  <spec-problem>
+<p>The notebook's own template says to write an experiment before knowing the
+answer, because running the script is how the answer arrives. Every experiment
+in the corpus went the other way. Somebody answered the question in a throwaway
+script, then wrote a document that re-derives the same number, which is the log
+the type exists to replace.</p>
+<p>The loop causes it. <code>add</code> writes a placeholder that throws and
+tells the author the script goes in by hand, so every iteration means editing
+markup with another throwaway script. Answering the question elsewhere is
+simply faster, and the faster path wins every time somebody is mid-thought.</p>
+<p>The canon family drew the opposite conclusion from the same premise. Its
+<code>add behaviour</code> says a script does not fit on a flag and then reads
+one from standard input, which is what makes writing a check part of writing
+the claim. Two families, one problem, and only one of them solved it.</p>
+<p>What the script then gets is thin. An experiment holds the corpus writer, so
+it parses every document to list a directory, reads no raw text, reaches no file
+outside the corpus, and can create and delete documents in the tree it is
+measuring. An audit already has the view a probe wants, and a probe cannot
+reach it.</p>
+</spec-problem>
+  <spec-design>
+<p><code>notebook add experiment</code> gains <code>--script</code>, and
+<code>notebook update</code> gains it too. Both read from standard input on
+<code>-</code>, the way <code>--detail</code> already does and the way
+<code>canon add behaviour --check</code> already does. The flag stays optional
+on <code>add</code>, so the placeholder that throws remains available to
+whoever wants the document first and the script second.</p>
+<p>Refining is the half that matters. An experiment earns its keep by running,
+disagreeing, and running again, so <code>update --script -</code> replaces the
+script in place and leaves every other field alone. That turns the write-run
+loop into two commands and removes the reason to explore anywhere else.</p>
+<p>The context becomes the read-only view an audit already gets.
+<code>list</code> takes a directory and an extension and answers with paths, so
+filtering by name costs nothing and no document parses until something asks.
+<code>read</code> returns raw text and <code>parse</code> returns a document,
+and both reach above the corpus, which is how a probe can finally say something
+about a source file.</p>
+<p>One implementation serves both callers. The validate command builds this
+view today inside its own file, so it moves to the shared helpers both hosts
+already import, and the audit path keeps its parse cache by handing one in.
+Building a second view for probes would be the copy that drifts from the one
+audits use.</p>
+<p>Dropping create and delete is the point rather than a side effect. A probe
+that writes to the corpus it measures is a command wearing the wrong name, and
+the run command commits whatever the script touched. Every experiment in the
+corpus only ever listed, so the migration is mechanical: a loop over paths, and
+a parse where the document is wanted.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Browser experiments wait. The figure engine is the case that needs one,
+since the validator parses with a library computing no layout and every
+rectangle it measures is zero, so no probe can say anything about a drawing
+today. Nothing about the node half blocks that, and the runner it needs already
+exists for browser test cases.</p>
+<p>Running the command line from inside a probe waits too. Watching what a
+command does is a real question, and handing a probe the ability to run one
+against the real corpus reintroduces the write it just lost.</p>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>

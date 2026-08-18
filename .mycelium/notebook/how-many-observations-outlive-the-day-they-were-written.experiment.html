@@ -40,7 +40,8 @@ export default function ({ fs }) {
   const entries = []
   const byType = {}
 
-  for (const { path, doc } of fs.list("notebook")) {
+  for (const path of fs.list(`${fs.docsDir}/notebook`, { ext: ".html" })) {
+    const doc = fs.parse(path)
     const entry = doc.querySelector("[data-conforms-to]")
     if (!entry) continue
     const name = path.split("/").pop()
@@ -59,7 +60,8 @@ export default function ({ fs }) {
 
   // An axiom naming its source is the strongest reach there is: the entry
   // stopped being a note and became something the project holds true.
-  for (const { doc } of fs.list("canon")) {
+  for (const path of fs.list(`${fs.docsDir}/canon`, { ext: ".html" })) {
+    const doc = fs.parse(path)
     for (const a of doc.querySelectorAll("canon-references > a[href]")) {
       grounds.add(a.getAttribute("href").split("/").pop())
     }
@@ -77,7 +79,7 @@ export default function ({ fs }) {
     `Rule-shaped titles: ${share(seen)} of the reached, ${share(alone)} of the rest`
 }
 </script>
-  <notebook-reading>338 entries from thinking (156 principle, 94 practice, 88 direction): 23 an axiom rests on, 182 another entry links to, 133 nothing reaches. Rule-shaped titles: 19% of the reached, 34% of the rest</notebook-reading>
+  <notebook-reading>349 entries from thinking (158 principle, 101 practice, 90 direction): 25 an axiom rests on, 188 another entry links to, 136 nothing reaches. Rule-shaped titles: 20% of the reached, 35% of the rest</notebook-reading>
   <notebook-detail><p>The reading answers a narrower question than it looks like it answers. All 338
 entries entered <code>docs/notebook</code> in one commit on 2026-08-10, when the
 graph moved over from the family that held it before. So reach here measures how

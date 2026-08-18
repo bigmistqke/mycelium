@@ -721,6 +721,7 @@
    *   mycelium canon add specification --canon <name> --id <slug> --title "…"
    *
    *   mycelium canon add behaviour --canon <name> --id <slug> --title "…"
+   *     --check "…" | --check - [--browser]
    *
    * Everything lands in canon/<name>.canon.html, one document per subsystem
    * holding that subsystem's own axioms and the specification its behaviours
@@ -754,6 +755,17 @@
    * A behaviour lands in the specification its canon document already holds, so
    * add one before adding behaviours. --title is the claim, in one
    * falsifiable sentence.
+   *
+   * --check is required rather than optional, because a behaviour arrives with
+   * the check that falsifies it. A claim nothing can falsify is prose, and this
+   * command is the last place able to insist on that: once the file exists, a
+   * missing check becomes somebody else's problem to notice. The same argument
+   * as an axiom's required detail, one rung down.
+   *
+   * --check reads from stdin the way --detail does, since a script does not fit
+   * on a flag. --browser picks the runtime. The script type it writes decides
+   * which runner opens the case: without the flag a case runs in a sandbox
+   * tree under Node, and with it a case runs in a page.
    *
    * --id is what a test cites, so it is required. Its pattern rejects any
    * segment made only of digits, because a number rots the first time someone
@@ -842,17 +854,10 @@
 `
   }
 
-  // A behaviour arrives with the check that falsifies it, which is why --check
-  // is required rather than optional. A claim nothing can falsify is prose, and
-  // this command is the last place able to insist on that: once the file
-  // exists, a missing check is somebody else's problem to notice.
-  //
-  // The same argument as an axiom's required detail, one rung down. That field
-  // was optional and the first eleven axioms used it zero times.
-  //
-  // --check reads from stdin, the way --detail does, since a script does not
-  // fit on a flag. --browser picks the runtime, and the script type is the only
-  // thing that decides which runner opens it.
+  // Why --check is required, and what --browser switches, belong to add's own
+  // doc comment, because that is the copy mycelium canon --help prints. Both
+  // lived here instead until somebody hit the missing flag as an error and went
+  // looking for the reason it existed.
   async function addBehaviour({ fs, args, cli }) {
     requireArgs([args.canon, '--canon'], [args.id, '--id'], [args.title, '--title'], [args.check, '--check'])
     const path = canonPathFor(args.canon)

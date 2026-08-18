@@ -19,7 +19,8 @@ export default function ({ fs }) {
   // is a sandbox fixture rather than something the project claims. A spec
   // counted seventeen axioms that way while fifteen existed.
   let axioms = 0, grounded = 0, links = 0, fixtures = 0
-  for (const { doc } of fs.list("canon")) {
+  for (const path of fs.list(`${fs.docsDir}/canon`, { ext: ".html" })) {
+    const doc = fs.parse(path)
     for (const axiom of doc.querySelectorAll("canon-axiom[data-conforms-to]")) {
       axioms++
       const refs = Array.from(axiom.children)
@@ -36,7 +37,7 @@ export default function ({ fs }) {
     `a text count would say ${axioms + fixtures}, counting ${fixtures} sandbox fixture(s)`
 }
 </script>
-  <notebook-reading>13 of 15 axioms name a source, over 23 link(s); a text count would say 17, counting 2 sandbox fixture(s)</notebook-reading>
+  <notebook-reading>14 of 16 axioms name a source, over 27 link(s); a text count would say 18, counting 2 sandbox fixture(s)</notebook-reading>
   <notebook-detail><p>This exists so no document has to write the number down. CLAUDE.md once
 claimed a field that nothing had built, and the fix was to point at a script
 rather than at a sentence somebody maintains by hand.</p>

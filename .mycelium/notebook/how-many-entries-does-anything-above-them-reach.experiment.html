@@ -21,16 +21,15 @@ export default function ({ fs }) {
   // rests on. Nothing but its own filename carries an entry neither one reaches,
   // which is what leaves a flat list as the only way to find it again.
   const entries = new Set()
-  for (const { path } of fs.list("notebook")) {
-    entries.add(path.replace(/^notebook\//, ""))
+  for (const path of fs.list(`${fs.docsDir}/notebook`, { ext: ".html" })) {
+    entries.add(path.replace(/^.*\//, ""))
   }
 
   const reached = { canon: new Set(), specs: new Set() }
   for (const family of ["canon", "specs"]) {
-    for (const { doc } of fs.list(family)) {
-      for (const anchor of doc.querySelectorAll("a[href]")) {
-        const href = anchor.getAttribute("href")
-        const match = /(?:^|\/)notebook\/([^#"]+)/.exec(href)
+    for (const path of fs.list(`${fs.docsDir}/${family}`, { ext: ".html" })) {
+      for (const anchor of fs.parse(path).querySelectorAll("a[href]")) {
+        const match = /(?:^|\/)notebook\/([^#"]+)/.exec(anchor.getAttribute("href") ?? "")
         if (match && entries.has(match[1])) reached[family].add(match[1])
       }
     }
@@ -41,16 +40,17 @@ export default function ({ fs }) {
   // one. An entry citing another entry says the two belong together; it does
   // not say anything above them holds either.
   let inbound = 0
-  for (const { doc } of fs.list("notebook")) {
-    inbound += doc.querySelectorAll("[data-rel][href]").length
+  for (const path of fs.list(`${fs.docsDir}/notebook`, { ext: ".html" })) {
+    inbound += fs.parse(path).querySelectorAll("[data-rel][href]").length
   }
 
   return `${both.size} of ${entries.size} entries are cited from above ` +
     `(${reached.canon.size} by canon, ${reached.specs.size} by a spec); ` +
     `${entries.size - both.size} float, under ${inbound} notebook-internal edge(s)`
 }
+
 </script>
-  <notebook-reading>60 of 397 entries are cited from above (23 by canon, 39 by a spec); 337 float, under 437 notebook-internal edge(s)</notebook-reading>
+  <notebook-reading>63 of 403 entries are cited from above (26 by canon, 39 by a spec); 340 float, under 443 notebook-internal edge(s)</notebook-reading>
   <notebook-detail><p>The count answers a different question from the one that prompted it.
 Somebody asked how to query a corpus that keeps growing, weighing embeddings
 against a graph database. This script asks first whether anything sits above the
