@@ -387,6 +387,12 @@ class Filesystem {
       .map((path) => ({ path, doc: this.get(path) }))
   }
 
+  // Calling this twice writes nothing the second time, which is what lets a
+  // command flush partway through. A probe becomes a module addressed by its
+  // own file and the loader reads that file, so a command creating an
+  // experiment has to put it on disk before it can run one. Without this, the
+  // engine's own commit afterwards would rewrite every file and log every line
+  // again, and a second pass over a deleted document would throw.
   commit(): string[] {
     const written: string[] = []
     for (const [full, entry] of this.#touched) {
@@ -394,6 +400,7 @@ class Filesystem {
       if ("deleted" in entry) {
         unlinkSync(full)
         console.log(`deleted  ${label}`)
+        this.#touched.delete(full)
         continue
       }
       indentRootChildren(entry.doc)
@@ -403,6 +410,9 @@ class Filesystem {
       writeFileSync(full, "<!DOCTYPE html>\n" + html + "\n")
       console.log(`wrote    ${label}`)
       written.push(full)
+      // What is on disk is now the original, so a later pass compares against
+      // it rather than against what this document said before the command ran.
+      entry.original = html
     }
     return written
   }

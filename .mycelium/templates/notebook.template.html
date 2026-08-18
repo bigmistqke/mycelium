@@ -359,9 +359,15 @@
    *     [--detail "…" | --detail -] [--question "…"] [--file <slug>]
    *     [--script "…" | --script -]
    *
-   * --script replaces an experiment's probe and leaves every other field
-   * alone, so the write-run-refine loop costs two commands. Asking for it on
-   * an entry carrying no probe fails rather than inventing one.
+   * --script replaces an experiment's probe, leaves every other field alone,
+   * and runs what it wrote. Asking for it on an entry carrying no probe fails
+   * rather than inventing one.
+   *
+   * The new reading records without --record, because a reading belongs to the
+   * instrument that produced it. Replacing the script voids the number before
+   * it, which measured something the document no longer asks. run keeps
+   * --record for the other case, where the instrument has not changed and a
+   * reading that moved is the corpus moving.
    *
    * The type says where the knowledge came from: research from someone else,
    * experiment from running something, and the other three from thinking. A
@@ -390,6 +396,12 @@
    * leaves a placeholder that throws. Both answers are real: a question with
    * nothing measuring it yet is a document worth writing, and a red run says
    * so honestly.
+   *
+   * Passing a script runs it, prints what it said, and records that as the
+   * reading, so asking costs one command rather than two. A probe reads and
+   * cannot write, which is what makes running one a safe side effect, and a
+   * probe that throws leaves the document behind and reports rather than
+   * failing the command.
    *
    * The script used to go in by hand, on the ground that code does not fit on
    * a flag. It does not, which is why this reads stdin rather than an
@@ -479,6 +491,16 @@
 
     const result = await cli.validate(root, path)
     if (!result.ok) throw new Error(result.errors.join("\n"))
+
+    // Writing a probe runs it, because asking is why somebody wrote one. The
+    // document reaches disk first: a script becomes a module addressed by its
+    // own file, and the loader reads that file rather than this element.
+    if (args.script !== undefined && root.querySelector("script")) {
+      fs.commit()
+      await measure(fs, args, path, { record: true, compare: false })
+      const after = await cli.validate(root, path)
+      if (!after.ok) throw new Error(after.errors.join("\n"))
+    }
   }
 
   /**
@@ -553,6 +575,16 @@
 
     const result = await cli.validate(root, path)
     if (!result.ok) throw new Error(result.errors.join("\n"))
+
+    // Writing a probe runs it, because asking is why somebody wrote one. The
+    // document reaches disk first: a script becomes a module addressed by its
+    // own file, and the loader reads that file rather than this element.
+    if (args.script !== undefined && root.querySelector("script")) {
+      fs.commit()
+      await measure(fs, args, path, { record: true, compare: false })
+      const after = await cli.validate(root, path)
+      if (!after.ok) throw new Error(after.errors.join("\n"))
+    }
   }
 
   /**
@@ -901,6 +933,59 @@
   }
 
   /**
+   * Run an entry's probe, print what it said, and record it when asked.
+   *
+   * Three callers want this and want slightly different things from it. Writing
+   * a probe records what it says, because the reading belongs to the
+   * instrument: a new script has nothing earlier to disagree with, and a
+   * replaced one voids the number before it, which measured something the
+   * document no longer asks.
+   *
+   * Running an unchanged probe is the other case, and there a reading that
+   * moved is the corpus moving. That is the finding this type exists for, so
+   * accepting it stays deliberate and compare says to show the difference.
+   *
+   * A probe that throws leaves the document behind and says so. Nothing here
+   * fails the command: the document is what the command promised, and a broken
+   * probe is a reading somebody needs to read rather than a reason to write
+   * nothing.
+   */
+  async function measure(fs, args, path, { record, compare }) {
+    const doc = fs.get(path)
+    const root = rootOf(doc)
+    // The script type is the only thing choosing a runtime, which is the
+    // arrangement a test case already follows. Nothing else in the document
+    // says where it runs, so nothing else can disagree about it.
+    const node = root.querySelector('script[type="mycelium/experiment"]')
+    const page = root.querySelector('script[type="text/mycelium-experiment"]')
+    if (!node && !page) throw new Error(`${path.replace(/^.*\//, "")} carries no experiment script`)
+
+    let reading
+    try {
+      reading = node ? await runUnderNode(fs, path, node) : await runInAPage(fs, path, args)
+    } catch (err) {
+      console.log(`the probe did not answer — ${err.message}`)
+      return
+    }
+
+    const before = root.querySelector("notebook-reading")?.textContent?.trim()
+    console.log(reading)
+    if (compare && before !== undefined && before !== reading) {
+      console.log(`\nwas   ${before}\nnow   ${reading}\n\nthe corpus moved; --record accepts the new reading`)
+    }
+    if (!record) return
+
+    const order = declaredOrder(fs.get("templates/notebook.template.html"), root.tagName.toLowerCase())
+    const existing = root.querySelector("notebook-reading")
+    if (existing) existing.textContent = reading
+    else {
+      const el = doc.createElement("notebook-reading")
+      el.textContent = reading
+      placeField(root, el, order)
+    }
+  }
+
+  /**
    * Run an experiment's script and print what it returns.
    *
    *   mycelium notebook run <file> [--record]
@@ -915,35 +1000,7 @@
    */
   export async function run({ fs, args }: CommandContext) {
     requireArgs([args._[0], "<file>"])
-    const path = `${DIR}/${args._[0]}`
-    const doc = fs.get(path)
-    const root = rootOf(doc)
-    // The script type is the only thing choosing a runtime, which is the
-    // arrangement a test case already follows. Nothing else in the document
-    // says where it runs, so nothing else can disagree about it.
-    const node = root.querySelector('script[type="mycelium/experiment"]')
-    const page = root.querySelector('script[type="text/mycelium-experiment"]')
-    if (!node && !page) throw new Error(`${args._[0]} carries no experiment script`)
-
-    const reading = node
-      ? await runUnderNode(fs, path, node)
-      : await runInAPage(fs, path, args)
-
-    const before = root.querySelector("notebook-reading")?.textContent?.trim()
-    console.log(reading)
-    if (before !== undefined && before !== reading) {
-      console.log(`\nwas   ${before}\nnow   ${reading}\n\nthe corpus moved; --record accepts the new reading`)
-    }
-    if (args.record) {
-      const order = declaredOrder(fs.get("templates/notebook.template.html"), root.tagName.toLowerCase())
-      const existing = root.querySelector("notebook-reading")
-      if (existing) existing.textContent = reading
-      else {
-        const el = doc.createElement("notebook-reading")
-        el.textContent = reading
-        placeField(root, el, order)
-      }
-    }
+    await measure(fs, args, `${DIR}/${args._[0]}`, { record: args.record !== undefined, compare: true })
   }
 
   /**

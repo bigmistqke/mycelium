@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Writing a probe runs it, because the reading belongs to the instrument</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Writing a probe runs it, because the reading belongs to the instrument</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-08-18</spec-date>
+  <spec-problem>
+<p>Writing a probe and learning what it says are two commands. Somebody pipes a
+script in, then types a second line to run it, and every refinement costs the
+pair again. The gap is small and it falls in exactly the place that decides
+whether the probe gets written at all, since the alternative is a throwaway
+script that answers the question in one step.</p>
+<p>The corpus already paid for this once. Every experiment written before the
+script arrived on a flag got its answer somewhere else first and came back as a
+log. Halving the friction and leaving a second command in the way repeats the
+same bet at a smaller stake.</p>
+<p>Running as a side effect used to be unsafe, which is why nothing did it. A
+probe held the filesystem its command wrote through, so running one could
+create documents and the command would commit them. That changed when the probe
+became read-only, and the reason not to run it went with it.</p>
+</spec-problem>
+  <spec-design>
+<p>Passing a script runs it. <code>add</code> with <code>--script</code> writes
+the document, runs the probe, prints the reading and records it, and
+<code>update --script</code> does the same. Omitting the flag still leaves the
+placeholder that throws, and that document runs nothing, because a question
+with no instrument has nothing to measure yet.</p>
+<p>Recording follows one rule: the reading belongs to the instrument. A new
+script has no earlier reading to disagree with, and a replaced script voids the
+one before it, because that number measured something the document no longer
+asks. So both paths record, and neither is overwriting a finding.</p>
+<p><code>run</code> keeps <code>--record</code> exactly as it is, and the same
+rule says why. There the instrument has not changed, so a reading that moved is
+the corpus moving, and that is the finding the type exists for. Accepting it
+stays a deliberate act rather than a side effect of asking.</p>
+<p>The document reaches disk before the probe loads, since a script becomes a
+module addressed by its own file and the loader reads that file. So a command
+flushes what it wrote, runs the probe, and lets the engine's own commit carry
+the reading. Committing twice has to stop rewriting what it already wrote,
+which is a fix worth making regardless: a second call currently writes every
+file again and would fail on a document it had already deleted.</p>
+<p>A failing probe leaves the document behind and says what went wrong. Nothing
+here exits non-zero, because the document is what the command promised and a
+probe is allowed to be inconclusive. A syntax error and a corpus that will not
+answer are both readings a person needs to see rather than a reason to write
+nothing.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>No flag turns the run off. A probe reads and cannot write, so the cost of
+running one is time, and the browser path spends the most of it by opening a
+page. Whoever writes a browser probe wants it opened, and whoever wants no run
+at all can leave the script out and add it later.</p>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>
