@@ -66,6 +66,18 @@
     else one.appendChild(el)
   }
 
+  // Copied from test.element.js's own reason(), for the same problem: err in
+  // a catch is unknown, and only Error carries a message worth reading over
+  // its own String() conversion.
+  /**
+   * @param {unknown} err
+   * @returns {string}
+   */
+  function reason(err) {
+    if (err instanceof Error) return err.message
+    return String(err)
+  }
+
   /**
    * @param {Element} one
    * @returns {void}
@@ -75,24 +87,25 @@
     if (!script) return
     one.setAttribute("data-state", "running")
 
+    /** @type {((fixture: Element | null, settleFn: (el?: Element | null, frames?: number) => Promise<Element>) => Promise<unknown>) | undefined} */
     var made
     try {
       // An async wrapper, so a probe awaits settle() without declaring
       // anything, and returns its reading with a plain return.
-      made = new Function(
+      made = /** @type {any} */ (new Function(
         "fixture",
         "settle",
         '"use strict";return (async function () {\n' + (script.textContent || "") + "\n})()",
-      )
+      ))
     } catch (err) {
-      one.setAttribute("data-reading", "the probe did not parse — " + (err && err.message))
+      one.setAttribute("data-reading", "the probe did not parse — " + reason(err))
       one.setAttribute("data-state", "failed")
       return
     }
 
     var fixture = one.querySelector("notebook-fixture")
     Promise.resolve()
-      .then(function () { return made(fixture, settle) })
+      .then(function () { return /** @type {NonNullable<typeof made>} */ (made)(fixture, settle) })
       .then(function (value) {
         // A probe returning nothing measured nothing, and saying so beats
         // recording the word undefined as though it were a finding.
@@ -102,7 +115,7 @@
         one.setAttribute("data-state", "done")
       })
       .catch(function (err) {
-        one.setAttribute("data-reading", String((err && err.message) || err))
+        one.setAttribute("data-reading", reason(err))
         one.setAttribute("data-state", "failed")
       })
   }
