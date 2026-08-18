@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: An experiment holds cases, and a case cannot be edited</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>An experiment holds cases, and a case cannot be edited</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-08-18</spec-date>
+  <spec-problem>
+<p>An experiment holds one script and one reading, so every probe asking more
+than one thing merges its answers into a sentence. Seven of the nine here join
+two to four findings behind a semicolon, and the other two use a full stop
+instead. Not one of them keeps its readings apart.</p>
+<p>The corpus already forbids this. A principle it has held since the earlier
+graph says to read something several times through lenses that differ, and then
+says plainly not to merge the results, because <q>the disagreement has to
+survive as disagreement</q>. The single slot makes merging the only option, so
+the design defeats a rule the project wrote down.</p>
+<p>One slot also destroys the comparison the type exists for. Six of the nine
+have already produced a second, different reading, and each one overwrote the
+first. A probe earns its keep by disagreeing with what it said last time, and
+nothing here keeps what it said last time.</p>
+<p>A rule could paper over that, and an earlier draft of this design proposed
+one: replacing a script clears the readings under it. That leaves the
+correctness of every reading depending on somebody remembering a rule, which is
+the arrangement this project replaces with structure wherever it can.</p>
+</spec-problem>
+  <spec-design>
+<p>An experiment holds cases, the way a specification holds behaviours. The
+document asks one question and carries the final conclusion. Each case names the
+lens it looks through, carries the script that looks, and holds the readings
+that came back.</p>
+<p>A case cannot be edited, and that is the whole design rather than a
+restriction on it. A case is its script, so changing the script makes a
+different case, and the readings under the old one measured something nobody is
+asking about any more. Prior art states the same identity for definitions: a
+thing is its content, so a rename is metadata and two identical things are one
+thing.</p>
+<p>So there is no way to update a case. Adding one appends, deleting one drops
+it with every reading and conclusion beneath it, and the delete prints what it
+discards the way deleting an entry already prints the edges it drops. Editing a
+script means deleting a case and adding another, which costs two deliberate
+commands and shows the loss in the output of the first.</p>
+<p>Readings repeat and carry the day they arrived, newest first. A run appends
+only when the value moved, so the series records movements rather than runs, and
+a probe reproducing its last answer leaves nothing behind. The series holds
+exactly the disagreement this type exists to notice.</p>
+<p>Conclusions repeat beside them and carry a day too, so a reader pairs one
+with the reading it followed. A reading is what the instrument said and a
+conclusion is what somebody made of it, which is the difference between a
+measurement and a finding. The document's own conclusion answers the question it
+asks, and the detail holds everything else: why the probe is shaped this way,
+what it cannot separate, what it cost.</p>
+<p>Creating an experiment with a script still costs one command. Passing a
+script and a lens together builds the first case, with an id derived from the
+lens the way an entry's slug already derives from its title. Cases are what
+somebody reaches for on the second lens, not a toll on the first.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Nothing detects a hand-edited script. A reading could carry a hash of the
+script that produced it, and an audit could recompute that and report a reading
+whose instrument has changed underneath it. It is the most faithful reading of
+identity-is-content and also the most likely to be more machinery than the
+problem deserves, so it waits for a case of it actually happening.</p>
+<p>No cap bounds the series. Nothing records a reading without somebody asking,
+so growth follows deliberate acts, and a cap invented before a probe has ever
+grown too long would be guessing at where too long is.</p>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>
