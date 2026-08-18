@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How many hosts say what they are for, and can a reader open what they cite?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>How many hosts say what they are for, and can a reader open what they cite?</notebook-title>
+  <notebook-tag>corpus</notebook-tag>
+  <notebook-tag>measurement</notebook-tag>
+  <notebook-prompt>this is probably better yes. more structured. maybe we should structure this in template.template.html?</notebook-prompt>
+  <notebook-question>How many host files declare a purpose in their opening markup, and how many of those purposes point at something a reader cannot open?</notebook-question>
+  <script type="mycelium/experiment">
+export default function ({ fs }) {
+  // A host is a file declaring commands, so the two directories holding one
+  // are the whole population. Nothing here reads a family name: a host says
+  // what it is for or it does not, and that answer is the same shape whichever
+  // family it belongs to.
+  const hosts = []
+  for (const dir of ["templates", "commands"]) {
+    for (const { path, doc } of fs.list(dir)) {
+      if (!/\.(template|command)\.html$/.test(path)) continue
+      if (!doc.querySelector('script[type="mycelium/command"]')) continue
+      hosts.push({ path, doc })
+    }
+  }
+
+  // The convention is a bolded label inside the opening meta block, which
+  // every host writes by hand and nothing checks. Reading it the way a reader
+  // sees it is the only way to find out how many actually keep it.
+  const purposes = new Map()
+  for (const { path, doc } of hosts) {
+    for (const label of doc.querySelectorAll(".meta b")) {
+      if ((label.textContent ?? "").trim() !== "Purpose:") continue
+      const text = (label.parentElement?.textContent ?? "").replace(/^\s*Purpose:\s*/, "")
+      purposes.set(path, text.replace(/\s+/g, " ").trim())
+      break
+    }
+  }
+
+  // A purpose naming a version nobody can check out, or a numbered node from a
+  // deleted database, sends a reader somewhere nothing exists. That is the
+  // failure the corpus already forbids everywhere a link can carry it, and
+  // prose in this field escapes the check because no link is involved.
+  const UNREACHABLE = /\bv[0-9]\b|#[0-9]+\b|\bdeciduous\b/
+  const dangling = [...purposes].filter(([, text]) => UNREACHABLE.test(text)).map(([path]) => path)
+  const silent = hosts.filter(({ path }) => !purposes.has(path)).map(({ path }) => path)
+
+  const list = (paths) => (paths.length ? paths.join(", ") : "none")
+  return `${purposes.size} of ${hosts.length} hosts say what they are for; ` +
+    `${silent.length} silent (${list(silent)}); ` +
+    `${dangling.length} pointing somewhere a reader cannot open (${list(dangling)})`
+}
+</script>
+  <notebook-reading>8 of 9 hosts say what they are for; 1 silent (templates/canon.template.html); 2 pointing somewhere a reader cannot open (templates/plan.template.html, templates/spec.template.html)</notebook-reading>
+  <notebook-detail><p>A proposal to declare a family's purpose in markup met a convention already
+doing it. Nearly every host opens with a bolded <code>Purpose:</code> label
+inside a meta block, written by hand, checked by nothing. The field exists, and
+what it lacks is a name and an audit.</p>
+<p>Two of the purposes send a reader to something that no longer exists,
+describing their family as the shape a document takes <q>when written as a v4
+node</q>. Version four is the earlier corpus, and nobody can open it. The rule
+against referring to what a reader cannot reach rides on links, so prose in an
+unnamed field slips past every check the corpus has.</p>
+<p>The silent one is the canon, which is the newest family and the one holding
+what the project claims to be true. A convention nobody has to keep gets kept
+least well by whoever arrives last, since the newcomer copies a skeleton rather
+than a habit.</p>
+<p>The population here is a host that declares commands, which leaves out the
+figure family and the schema vocabulary. Both have types and neither has a
+command, so a command reading these fields would pass over them. Whether that
+is right depends on whether the reader wants families or wants verbs.</p>
+</notebook-detail>
+</notebook-experiment>
+</body></html>
