@@ -468,8 +468,12 @@ function fillWhere(node) {
   const where = document.getElementById('pane-where')
   where.textContent = (node.kind || 'declaration') + ' in '
   const anchor = document.createElement('a')
-  anchor.href = node.address.replace(/^docs\//, '')
-  anchor.textContent = node.address.split('#')[0].replace(/^docs\//, '')
+  // The address already names the file relative to the corpus, which is what a
+  // published site serves and what a --base resolves against, so it doubles as
+  // its own href. Two `docs/` strippers used to sit here from when the corpus
+  // lived there; both had stopped matching anything long before anyone noticed.
+  anchor.href = node.address
+  anchor.textContent = node.address.split('#')[0]
   where.appendChild(anchor)
 }
 

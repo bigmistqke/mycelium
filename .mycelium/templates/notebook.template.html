@@ -1244,8 +1244,16 @@
     // An absolute path bakes one machine's home directory into the page, so
     // both ends go back to paths relative to the corpus, which is what a published
     // site serves. An address then doubles as its own href.
-    const docsRoot = resolvePath("./docs")
-    const rel = (p) => (p.startsWith(docsRoot + "/") ? p.slice(docsRoot.length + 1) : p)
+    //
+    // Named for the corpus rather than written out, because this said "./docs"
+    // for as long as the corpus lived there and went on saying it afterwards. A
+    // prefix that matches nothing strips nothing, so every address stayed
+    // absolute while every arrival date stayed corpus-relative. The two halves
+    // then never met, and all 410 entries collapsed into one nameless column.
+    // The counts line reported that as "1 days" and nobody read it. See
+    // ../notebook/a-guard-can-blame-the-wrong-cause.practice.html.
+    const corpusRoot = resolvePath(CORPUS_DIR)
+    const rel = (p) => (p.startsWith(corpusRoot + "/") ? p.slice(corpusRoot.length + 1) : p)
     const detail = detailHtml(documents, rel)
 
     // A slug is what survives. The migration out of docs/knowledge rewrote
@@ -1282,10 +1290,16 @@
 
     // A shallow clone answers this question wrongly rather than not at all. Its
     // boundary commit has no reachable parent, so git calls every file an
-    // addition by that one commit and every entry arrives on the same day. The
-    // page then stacks 383 entries in one column, which is what a CI checkout at
-    // the default depth of 1 published. Ask git what it is rather than reading
-    // the collapse off the dates, since a young corpus really can hold one day.
+    // addition by that one commit and every entry arrives on the same day. Ask
+    // git what it is rather than reading the collapse off the dates, since a
+    // young corpus really can hold one day.
+    //
+    // This guard went in against a real collapse it did not cause. The dates
+    // were fine and the addresses looking them up were not, so the drawing kept
+    // stacking every entry in one column with the guard sitting right here
+    // saying nothing. A shallow clone still collapses it, so this stays — but
+    // seeing one column is not evidence of one, and the counts line saying
+    // "1 days" is the thing to read.
     const shallow = execFileSync("git", ["rev-parse", "--is-shallow-repository"], {
       cwd: resolvePath(fs.root, ".."),
       encoding: "utf8",
@@ -1309,7 +1323,7 @@
     const days = new Set(drawn.map((n) => (arrived[n.address] ?? "").slice(0, 10)))
 
     const base = args.base === undefined ? ""
-      : `<base href="${args.base === "true" ? pathToFileURL(docsRoot + "/").href : args.base}">`
+      : `<base href="${args.base === "true" ? pathToFileURL(corpusRoot + "/").href : args.base}">`
 
     // The shared drawing goes first and the notebook's own ranking second,
     // since the second calls what the first defines.
@@ -1325,7 +1339,7 @@
     })
 
     const out = args.out
-      ? resolvePath("./docs", args.out)
+      ? resolvePath(CORPUS_DIR, args.out)
       : join(tmpdir(), `mycelium-notebook-${Date.now()}.html`)
     fs.create(rel(out), page)
     console.log(args.out ? out : pathToFileURL(out).href)
