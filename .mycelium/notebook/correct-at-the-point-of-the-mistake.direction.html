@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teach a command at the moment somebody reaches past it, not at session start</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Teach a command at the moment somebody reaches past it, not at session start</notebook-title>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-tag>notebook</notebook-tag>
+  <notebook-prompt>how can improve discoverability of the cli for new sessions? does claude provide a way to force a function to be called?</notebook-prompt>
+  <notebook-detail><p>Nothing makes an agent call a command. The harness offers the inverse
+instead, and the inverse sits in a better place: a hook running before a tool
+call can refuse it and hand the model a reason, so a shortcut fails with the
+name of the command that would have worked. Forcing the right call is
+unavailable, and blocking the wrong one arrives at the moment somebody makes
+it.</p>
+<p>This project already ran the other experiment and has the result. A hook
+prints every family, every command and every audit at session start, and an
+agent went through that wall, then searched the corpus with a directory listing
+and stripped the markup by hand. Upfront documentation competes with the task
+and loses, which is the finding
+<a href="./capture-cost-killed-rationale-systems.research.html">the entry on
+what killed earlier rationale systems</a> already carries as the most-cited
+thing here.</p>
+<p>The followup family solved the same problem and solved it well. Its
+<code>--at</code> is required, so an item waits in front of whoever next opens
+that file and nobody reads a list to find it. A hook before a tool call is
+<code>--at</code> pointed at an action rather than a file.</p>
+<p>Scope decides whether this helps or hurts. A refusal covering every read of
+the corpus teaches an agent to route around it through a language the matcher
+cannot see, and nobody consults
+<a href="./a-known-gate-teaches-people-to-ignore-it.principle.html">a gate that
+fails routinely</a>. Refuse the one shortcut this session actually took, let
+everything unrecognised through, and watch whether the refusal ever fires
+twice.</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./an-agent-greps-the-filenames-not-the-list-command.practice.html">the session this proposal answers, where a printed roster changed nothing</a>
+</notebook-direction>
+</body></html>
