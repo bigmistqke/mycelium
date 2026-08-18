@@ -8,16 +8,14 @@
 </head>
 <body>
 <h1>Template: canon-axiom, canon-specification</h1>
-<div class="meta">
-  <div><b>Node types:</b> <code>canon-axiom</code>, <code>canon-specification</code>,
-    with <code>canon-behaviour</code> nested inside the second</div>
-  <div><b>Instances:</b> <code>.mycelium/canon/&lt;subsystem&gt;.canon.html</code>, one document per
-    subsystem holding its own axioms and its specification, with
-    <code>root.canon.html</code> holding the axioms that govern everything</div>
-  <div><b>Design:</b>
-    <a href="../specs/2026-08-06-canon-template-html.spec.html">canon.template.html:
-    axioms, specifications, and a chain a checker can walk</a></div>
-</div>
+<template-host data-conforms-to="./template.template.html#template-host">
+  <template-purpose>what this project holds true and what it promises: axioms stating a rule that holds now, and specifications whose behaviours each cite the axiom they narrow</template-purpose>
+  <template-files>.mycelium/canon/&lt;subsystem&gt;.canon.html, one document per subsystem, with root.canon.html holding the axioms that govern everything</template-files>
+  <template-design>
+    <a href="../specs/2026-08-06-canon-template-html.spec.html">axioms, specifications, and a chain a checker can walk</a>
+    <a href="../specs/2026-08-08-behaviour-cites-its-axiom.spec.html">why a behaviour names the axiom it narrows</a>
+  </template-design>
+</template-host>
 <h2>Why this template exists</h2>
 <p>
   This project could say what shape a document takes and whether its prose obeys the rules. It could

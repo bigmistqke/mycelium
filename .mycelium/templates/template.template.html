@@ -7,17 +7,14 @@
 </head>
 <body>
 <h1>Templates: template.template.html — the schema vocabulary</h1>
-<div class="meta">
-  <div><b>Purpose:</b> documents the <code>required</code>/<code>pattern</code>/<code>enum</code> attribute
-    vocabulary that turns an existing <code>&lt;template id="…"&gt;</code> skeleton into a machine-readable
-    schema, and hosts the one generic validator function that reads it</div>
-  <div><b>Not a node type:</b> unlike <code>knowledge.template.html</code> or <code>spec.template.html</code>,
-    this file declares no <code>&lt;template id="…"&gt;</code> of its own and nothing conforms to it via
-    <code>data-conforms-to</code> — there are only ever a handful of <code>*.template.html</code> files,
-    hand-authored, never mixed, so the <code>.template.html</code> filename suffix is already sufficient
-    signal that a file follows this convention. Nothing here needs crawler enforcement.</div>
-  <div><b>Sibling of:</b> <code>knowledge.template.html</code>, <code>spec.template.html</code></div>
-</div>
+<template-host data-conforms-to="./template.template.html#template-host">
+  <template-purpose>the vocabulary a template writes its schema in, the generic validator reading that vocabulary, and the type every host uses to say what it is</template-purpose>
+  <template-files>every host: a .mycelium/templates/&lt;family&gt;.template.html or a .mycelium/commands/&lt;name&gt;.command.html</template-files>
+  <template-design>
+    <a href="../specs/2026-07-25-template-schema.spec.html">the schema vocabulary</a>
+    <a href="../specs/2026-08-18-host-declares-what-it-is.spec.html">why a host declares what it is instead of following a convention</a>
+  </template-design>
+</template-host>
 <h2>The vocabulary</h2>
 <p>
   Every type's <code>&lt;template id="…"&gt;</code> already contains one empty placeholder element per
@@ -151,6 +148,77 @@
     &lt;a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"&gt;&lt;/a&gt;
   &lt;/knowledge-goal&gt;
 &lt;/template&gt;</code></pre>
+<h2>What a host says about itself</h2>
+<p>
+  A host is a file declaring types, commands, or both, and every one of them opens by describing
+  itself. That description used to be a block of bolded labels, which nothing checked. Eleven hosts
+  wrote sixteen distinct labels between them, four of which named the same thing — the types a host
+  declares — under four different words.
+</p>
+<p>
+  So the description became a type, and the host conforms to it like any other instance. Three fields
+  earn a place, and each one resists derivation. A purpose says what the family is for, a files field
+  says where instances live, and a design field links the document that designed the family.
+</p>
+<p>
+  Nothing here restates what a reader can compute. The types a host declares already sit in its own
+  <code>&lt;template id&gt;</code> elements, and its commands already carry the doc comments the roster
+  reads. A field repeating either would be the second copy that produced four names for one concept.
+</p>
+<p>
+  Two of the three hold text and no markup, because a command prints them as single lines. The design
+  field holds anchors instead, so <code>every-link-resolves</code> opens each spec it names and a
+  design that moves away cannot sit there pointing at nothing.
+</p>
+<template id="template-host">
+  <template-host>
+    <template-purpose required></template-purpose>
+    <template-files></template-files>
+    <template-design>
+      <a required repeatable href=".+"></a>
+    </template-design>
+  </template-host>
+</template>
+<pre><code>&lt;template-host data-conforms-to="./template.template.html#template-host"&gt;
+  &lt;template-purpose&gt;&hellip; what this family is for &hellip;&lt;/template-purpose&gt;
+  &lt;template-files&gt;&hellip; where its instances live &hellip;&lt;/template-files&gt;
+  &lt;template-design&gt;&lt;a href="&hellip;"&gt;the spec for this family&lt;/a&gt;&lt;/template-design&gt;
+&lt;/template-host&gt;</code></pre>
+<p>
+  Presence needs an audit rather than a required attribute, and the reason is structural. The validator
+  checks the shape of an element it finds, and a document holding no conforming element is not an
+  instance at all, so every per-document check passes over it on the line looking the root up. Absence
+  across a population is the thing an audit says, which is why <code>grounded</code> is one too.
+</p>
+<script type="mycelium/audit" data-audits="every-host-says-what-it-is">
+  import type { AuditFs } from "mycelium/api"
+  /**
+   * Every host says what it is for.
+   *
+   * A host declares types, commands, or both, and a reader meeting one needs to
+   * know what family it opens before any of its fields mean anything. The
+   * canon went without a purpose for as long as the description was a
+   * convention, which is what an unchecked field costs on the file nobody
+   * copied.
+   *
+   * The filename decides the population, because that is what a host is: the
+   * engine finds one by looking for template.html or command.html and nothing
+   * else. Asking instead which files declare a type would catch a design
+   * document showing one as an example, which declares nothing and hosts
+   * nothing.
+   */
+  export default function (fs: AuditFs) {
+    const violations = []
+    for (const path of fs.list(fs.docsDir, { ext: '.html' })) {
+      if (!/\.(template|command)\.html$/.test(path)) continue
+      const doc = fs.parse(path)
+      if (doc.querySelector('template-host[data-conforms-to]')) continue
+      violations.push(`${path}: a host that never says what it is for`)
+    }
+    return { ok: violations.length === 0, violations }
+  }
+</script>
+
 <h2>Every link resolves</h2>
 <p>
   A reference is only worth writing if it can be followed. A dead link is worse than no link: it
@@ -258,9 +326,12 @@
     const violations = []
     for (const path of fs.list(fs.docsDir, { ext: '.html' })) {
       const doc = fs.parse(path)
-      // A document that declares a type is documentation about that type, and
-      // its prose is the point rather than stray content.
+      // A host is documentation about what it declares, and its prose is the
+      // point rather than stray content. Declaring commands earns the same
+      // pass as declaring a type: a command host carries a heading and an
+      // explanation for the same reason a template does.
       if (doc.querySelector('template[id]')) continue
+      if (doc.querySelector('script[type="mycelium/command"]')) continue
       const root = doc.querySelector('[data-conforms-to]')
       if (!root) continue
 

@@ -9,11 +9,11 @@
 <body>
 
 <h1>Commands: explore</h1>
+<template-host data-conforms-to="../templates/template.template.html#template-host">
+  <template-purpose>whole-corpus commands belonging to no single family, for a question needing to see the notebook, the specs and everything else at once</template-purpose>
+</template-host>
+
 <div class="meta">
-  <div><b>Purpose:</b> whole-corpus commands that don't belong to any one content family
-    &mdash; the same reason <code>knowledge generate graph</code> can't be it: that command deliberately
-    only ever looks inside <code>knowledge/</code>, and no single family's own <code>*.template.html</code>
-    is the right scope for something that needs to see knowledge/, specs/, and everything else at once.</div>
   <div><b>Not a template:</b> like <code>template.template.html</code>, this file declares no
     <code>&lt;template id="…"&gt;</code> and nothing conforms to it via <code>data-conforms-to</code> &mdash;
     unlike it, this one does have commands, which is exactly why it isn't named

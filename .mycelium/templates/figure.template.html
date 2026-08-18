@@ -8,15 +8,18 @@
 </head>
 <body>
 <h1>Template: figure-graph</h1>
+<template-host data-conforms-to="./template.template.html#template-host">
+  <template-purpose>a diagram that stays a document, with nodes and edges as elements a reader can read straight out of the markup while a stylesheet decides the look</template-purpose>
+  <template-files>inside whatever document draws one, since a figure illustrates its host rather than standing alone</template-files>
+  <template-design>
+    <a href="../specs/2026-08-06-figure-template-html.spec.html">the two forms this replaced, and what it still cannot do</a>
+  </template-design>
+</template-host>
+
 <div class="meta">
-  <div><b>Types:</b> <code>figure-graph</code>, <code>figure-node</code>, <code>figure-edge</code></div>
-  <div><b>Purpose:</b> a diagram that stays a document. Nodes and edges are elements, so a reader can
-    read the structure out of the markup and a stylesheet decides the look.</div>
   <div><b>Behaviour:</b> <code>./figure.element.js</code>, a classic script that registers the elements
     and draws the connectors</div>
   <div><b>Styling:</b> <code>./figure.template.css</code>, plus the shared <code>../theme.css</code></div>
-  <div><b>Design:</b> <a href="../specs/2026-08-06-figure-template-html.spec.html">the spec</a>, which
-    carries the two forms this replaced and what it still cannot do</div>
 </div>
 <h2>Why this template exists</h2>
 <p>

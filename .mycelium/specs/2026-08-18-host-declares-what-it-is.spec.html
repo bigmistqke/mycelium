@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A host declares what it is, instead of following a meta-block convention</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A host declares what it is, instead of following a meta-block convention</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-08-18</spec-date>
+  <spec-problem>
+<p>Every host in this corpus opens with a block of bolded labels describing
+itself, and nothing checks any of it. Across eleven hosts that block uses
+sixteen distinct labels for roughly six concepts. Four of them name the types a
+host declares — <q>Node types</q>, <q>Node type</q>, <q>Types</q> and
+<q>Instances</q> — and two more name the absence of any, as <q>Not a
+template</q> and <q>Not a node type</q>.</p>
+<p>The drift runs deeper than wording. Two hosts describe their family as the
+shape a document takes <q>when written as a v4 node</q>, naming a corpus that
+was deleted, so a reader following that description reaches nothing. The canon
+carries no purpose at all, which makes the newest family and the one holding
+what the project claims to be true the one family that never says what it is
+for. Four of the labels also say <q>node</q>, a word this project's own
+dictionary defines as a document in a knowledge graph that no longer
+exists.</p>
+<p>None of this can fail a build, because a bolded label inside a div is prose.
+The corpus checks a link, a field and a citation, and this block is none of
+them. A convention holds only as long as whoever arrives next copies the file
+they happened to open.</p>
+</spec-problem>
+  <spec-design>
+<p>The template family gains a type, and every host conforms to it.
+<code>template.template.html</code> declares
+<code>&lt;template id="template-host"&gt;</code>, so the file defining the
+schema vocabulary now also defines what a host says about itself. A host writes
+one <code>&lt;template-host&gt;</code> element carrying three fields, and the
+ordinary validator checks its shape the way it checks every other instance.</p>
+<p>Only three things earn a field, and each one resists derivation.
+<code>template-purpose</code> is required and says what the family is for, in
+prose a newcomer can read. <code>template-files</code> says where instances
+live, which no engine can compute because
+<code>a-family-owns-its-paths</code> gives that decision to the family.
+<code>template-design</code> links the spec that designed the family, and
+nothing derives a document's ancestry.</p>
+<p>Everything a reader could compute stays computed. The types a host declares
+already sit in its own <code>&lt;template id&gt;</code> elements, its commands
+already carry doc comments the roster reads, and its stylesheet already appears
+in the head of every instance. Restating any of those in a field would create
+the second copy <code>derive-do-not-maintain</code> forbids, which is how four
+labels came to name one concept in the first place.</p>
+<p>Presence needs an audit rather than a required attribute, and the reason is
+structural. The generic validator checks the shape of an element it finds, and
+a document holding no conforming element is not an instance, so every
+per-document check skips it on the line that looks the root up. Absence across
+a population is what an audit expresses, which is why
+<code>grounded</code> and <code>exhaustive</code> are audits too. The new one
+is <code>every-host-says-what-it-is</code>.</p>
+<p>One existing audit needs its exemption widened.
+<code>nothing-outside-the-type</code> already passes over a document declaring
+<code>template[id]</code>, on the stated ground that such a document is
+documentation about the type it declares. A command host declares commands and
+no type, so without the same exemption its heading and its prose would read as
+content sitting outside the new element. The condition widens to cover a
+document declaring either, which is the rationale it already carries applied to
+the other kind of host.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>The editorial labels stay as prose. <q>Sibling of</q>, <q>Styling</q>,
+<q>Why a document at all</q> and the rest address whoever maintains the file
+rather than whoever meets the family, and giving each one a field would
+structure the part nobody needed structured. A host keeps writing them in its
+body, where documentation about a type belongs.</p>
+<p>The command that reads these fields is a separate piece of work. This spec
+puts the field in place and checks it; what prints it comes after, and its name
+is still open.</p>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>

@@ -512,6 +512,81 @@
       }
     </script>
   </canon-behaviour>
-</canon-specification>
+  <canon-behaviour id="a-silent-host-fails" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A host that never says what it is for fails the corpus audit.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#structured-content-over-convention">the axiom this checks, one host at a time</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">      // The audit reads the filename, because that is what a host is. A design
+      // document showing a template element as an example declares nothing and
+      // hosts nothing, and an earlier population test caught one.
+      import type { TestContext } from "mycelium/api"
+      export default async function ({ assert, sandbox }: TestContext) {
+        // Not under commands/. The tree symlinks that directory and templates/
+        // straight at the real corpus, so a fixture written there edits the
+        // project rather than the sandbox.
+        //
+        // The tree carries the real templates and not the specs they cite, so
+        // validate never comes back clean here. What this asks is narrower and
+        // survives that: does the report name this file, for this reason.
+        sandbox.write("probe/quiet.command.html", [
+          '<!DOCTYPE html>',
+          '<html lang="en"><head><meta charset="UTF-8"><title>Commands: quiet</title></head>',
+          '<body>',
+          '<h1>Commands: quiet</h1>',
+          '<script type="mycelium/command">',
+          '  /** Say nothing at all. */',
+          '  export function nothing() {}',
+          '<\/script>',
+          '</body></html>',
+        ].join("\n"))
 
+        const done = sandbox.mycelium("validate")
+        assert(!done.ok, "a host that never says what it is for passed validate")
+        const report = done.stdout + done.stderr
+        assert(
+          report.includes("quiet.command.html: a host that never says what it is for"),
+          `the report never names the silent host: ${report.trim()}`,
+        )
+      }
+</script>
+  </canon-behaviour>
+  <canon-behaviour id="a-command-host-keeps-its-prose" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A command host keeps its heading and its prose beside the type it declares.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-document-is-read-by-a-person">why a host carries prose no field holds</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">      // nothing-outside-the-type used to pass over a document declaring a type,
+      // on the ground that such a document is documentation about it. A command
+      // host declares commands and no type, so it needed the same pass before it
+      // could carry a declaration at all.
+      import type { TestContext } from "mycelium/api"
+      export default async function ({ assert, sandbox }: TestContext) {
+        sandbox.write("probe/loud.command.html", [
+          '<!DOCTYPE html>',
+          '<html lang="en"><head><meta charset="UTF-8"><title>Commands: loud</title></head>',
+          '<body>',
+          '<template-host data-conforms-to="../templates/template.template.html#template-host">',
+          '  <template-purpose>say one thing, loudly</template-purpose>',
+          '</template-host>',
+          '<h1>Commands: loud</h1>',
+          '<p>A host explains itself to whoever opens it, and no field holds this.</p>',
+          '<script type="mycelium/command">',
+          '  /** Say one thing. */',
+          '  export function speak() {}',
+          '<\/script>',
+          '</body></html>',
+        ].join("\n"))
+
+        // Nothing here reads the exit code. The tree cites specs it does not
+        // carry, so validate fails whatever this file does, and the question is
+        // only whether anything complained about this one.
+        const done = sandbox.mycelium("validate")
+        const report = done.stdout + done.stderr
+        assert(
+          !report.includes("loud.command.html"),
+          `a command host carrying prose beside its declaration drew a complaint: ${report.trim()}`,
+        )
+      }
+</script>
+  </canon-behaviour>
+</canon-specification>
 </body></html>

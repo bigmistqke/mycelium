@@ -9,10 +9,11 @@
 <body>
 
 <h1>Commands: validate</h1>
+<template-host data-conforms-to="../templates/template.template.html#template-host">
+  <template-purpose>check every document against the template it declares conformance to, then run every audit the corpus declares; the gate everything else rests on</template-purpose>
+</template-host>
+
 <div class="meta">
-  <div><b>Purpose:</b> check every document in the corpus against the template it declares
-    conformance to, then run every cross-document audit the corpus declares. The gate the whole corpus
-    rests on, and the one command whose failure means something is wrong rather than missing.</div>
   <div><b>Not a template:</b> like <code>explore.command.html</code>, this file declares no
     <code>&lt;template id="…"&gt;</code> and nothing conforms to it. It has commands and no type, which is
     what the <code>.command.html</code> suffix means.</div>

@@ -8,15 +8,15 @@
 </head>
 <body>
 <h1>Template: spec-doc</h1>
+<template-host data-conforms-to="./template.template.html#template-host">
+  <template-purpose>the shape a design document takes here: the problem, the design answering it, and what that design deliberately leaves out</template-purpose>
+  <template-files>.mycelium/specs/&lt;date&gt;-&lt;topic&gt;.spec.html</template-files>
+  <template-design>
+    <a href="../specs/2026-07-24-mycelium-spec-authoring-commands.spec.html">the commands that write a spec, and the date this family carries</a>
+  </template-design>
+</template-host>
+
 <div class="meta">
-  <div><b>Node type:</b> <code>spec-doc</code></div>
-  <div><b>File naming:</b> this file is <code>spec.template.html</code>, named after the <code>spec-*</code>
-    family it defines, not the single <code>spec-doc</code> type — the same file can hold more
-    <code>spec-*</code> template entries later without being renamed. Documents that conform to
-    <code>spec-doc</code> are named <code>&lt;date&gt;-&lt;topic&gt;.spec.html</code></div>
-  <div><b>Purpose:</b> the shape a design/brainstorming document takes when written as a v4 node instead of Markdown</div>
-  <div><b>Sibling of:</b> <code>knowledge.template.html</code>, one file holding all six deciduous node-type
-    templates (<code>knowledge-goal</code> through <code>knowledge-observation</code>)</div>
   <div><b>Styling:</b> <code>./spec.template.css</code>, this family's own rendering rules, plus the shared
     <code>../theme.css</code> every document links</div>
 </div>

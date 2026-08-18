@@ -8,19 +8,16 @@
 </head>
 <body>
 <h1>Template: language-term, language-rule</h1>
+<template-host data-conforms-to="./template.template.html#template-host">
+  <template-purpose>this project's writing rules and its terms of art, held as documents, so the language every other family writes in is itself part of the corpus</template-purpose>
+  <template-files>.mycelium/language/terms/&lt;slug&gt;.term.html, .mycelium/language/rules/&lt;slug&gt;.rule.html and .mycelium/language/guides/&lt;slug&gt;.guide.html, with no date on any of them</template-files>
+  <template-design>
+    <a href="../specs/2026-07-31-language-template-html.spec.html">the language family</a>
+    <a href="../specs/2026-07-31-rules-carry-their-own-checks.spec.html">why a rule carries the check that enforces it</a>
+  </template-design>
+</template-host>
+
 <div class="meta">
-  <div><b>Node types:</b> <code>language-term</code>, <code>language-rule</code></div>
-  <div><b>File naming:</b> this file is <code>language.template.html</code>, named after the
-    <code>language-*</code> family rather than either type in it. Instances are
-    <code>../language/terms/&lt;slug&gt;.term.html</code> and
-    <code>../language/rules/&lt;slug&gt;.rule.html</code>, with <b>no date prefix</b> — see
-    below, this is the one place this family departs from its siblings</div>
-  <div><b>Purpose:</b> hold this project's writing rules and its terms of art as documents, so that
-    the language every other family writes in is itself part of the corpus</div>
-  <div><b>Sibling of:</b> <code>knowledge.template.html</code> (six types),
-    <code>spec.template.html</code> (one), <code>plan.template.html</code> (three)</div>
-  <div><b>Specified by:</b> <a data-rel="specifies" href="../specs/2026-07-31-language-template-html.spec.html">the
-    language family spec</a></div>
   <div><b>Styling:</b> <code>./language.template.css</code>, plus the shared
     <code>../theme.css</code> every document links</div>
 </div>

@@ -10,17 +10,15 @@
 <body>
 
 <h1>Templates: plan-*</h1>
+<template-host data-conforms-to="./template.template.html#template-host">
+  <template-purpose>the shape an implementation plan takes as a document here rather than as Markdown, with tasks and steps nested inside one plan</template-purpose>
+  <template-files>.mycelium/plans/&lt;date&gt;-&lt;topic&gt;.plan.html</template-files>
+  <template-design>
+    <a href="../specs/2026-07-25-plan-template-design.spec.html">the plan family</a>
+  </template-design>
+</template-host>
+
 <div class="meta">
-  <div><b>Node types:</b> <code>plan-doc</code>, <code>plan-task</code>, <code>plan-step</code>,
-    <code>plan-check</code> &mdash; four templates, one file, nested three deep, per the family-file
-    convention</div>
-  <div><b>File naming:</b> this file is <code>plan.template.html</code>, named after the <code>plan-*</code>
-    family it defines. Documents that conform to <code>plan-doc</code> are named
-    <code>&lt;date&gt;-&lt;topic&gt;.plan.html</code></div>
-  <div><b>Purpose:</b> the shape an implementation plan takes when written as a v4 node instead of the
-    <code>superpowers:writing-plans</code> skill's default Markdown &mdash; the same override
-    <code>spec.template.html</code> already made for <code>superpowers:brainstorming</code>'s spec output</div>
-  <div><b>Sibling of:</b> <code>knowledge.template.html</code>, <code>spec.template.html</code></div>
   <div><b>Styling:</b> <code>./plan.template.css</code>, this family's own rendering rules, plus the shared
     <code>../theme.css</code> every document links</div>
 </div>
