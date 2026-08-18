@@ -10,12 +10,18 @@ spec-doc {
   padding: 1.25rem 1.5rem;
   background: var(--code-bg);
   margin: 1.25rem 0;
+  counter-reset: spec-section;
 }
 spec-doc > spec-title { display: block; font-family: var(--font-mono); font-weight: 700; font-size: 1.4rem; margin-bottom: 0.35rem; }
 spec-doc > spec-status, spec-doc > spec-date { display: inline-block; margin-right: 1rem; color: var(--muted); font-size: 0.9rem; }
 spec-doc > spec-status::before { content: "status: "; }
 spec-doc > spec-date::before { content: "date: "; }
-spec-doc > spec-problem, spec-doc > spec-design, spec-doc > spec-out-of-scope, spec-doc > spec-open-questions { display: block; margin-top: 1.5rem; }
+/* A section only counts once it actually appears, since spec-out-of-scope
+   and spec-open-questions are both optional — a document with just problem
+   and design numbers "1." and "2." and stops there. */
+spec-doc > spec-problem, spec-doc > spec-design, spec-doc > spec-out-of-scope, spec-doc > spec-open-questions {
+  display: block; margin-top: 1.5rem; counter-increment: spec-section;
+}
 spec-doc > spec-problem::before, spec-doc > spec-design::before, spec-doc > spec-out-of-scope::before, spec-doc > spec-open-questions::before {
   display: block;
   color: var(--accent);
@@ -24,7 +30,7 @@ spec-doc > spec-problem::before, spec-doc > spec-design::before, spec-doc > spec
   letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
 }
-spec-doc > spec-problem::before { content: "problem"; }
-spec-doc > spec-design::before { content: "design"; }
-spec-doc > spec-out-of-scope::before { content: "out of scope"; }
-spec-doc > spec-open-questions::before { content: "open questions"; }
+spec-doc > spec-problem::before { content: counter(spec-section) ". problem"; }
+spec-doc > spec-design::before { content: counter(spec-section) ". design"; }
+spec-doc > spec-out-of-scope::before { content: counter(spec-section) ". out of scope"; }
+spec-doc > spec-open-questions::before { content: counter(spec-section) ". open questions"; }

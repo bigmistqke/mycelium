@@ -236,8 +236,8 @@
      higher layer does nothing while the box is transparent: the wire is behind
      it and still shows straight through. */
   .node { border: 1px solid var(--line); border-radius: 5px; padding: .4rem .55rem;
-          margin-bottom: .35rem; cursor: pointer; position: relative; background: var(--bg);
-          z-index: 1; }
+          margin-bottom: .35rem; cursor: pointer; position: relative; background: var(--code-bg);
+          overflow-wrap: anywhere; z-index: 1; }
   /* Centring a box means centring its scroll-margin box, so the margin below and
      right of it stands for what the pane covers. Without this a selected box
      lands dead centre and reads as pinned against the pane's edge, and a box in
@@ -255,6 +255,7 @@
      though they were in front. Mixing towards the page instead keeps the box
      solid and only the ink recedes. */
   .node.dim { color: var(--ink-4); border-color: var(--line); }
+  .node.dim .title { color: var(--ink-4); }
   .node[data-kind].dim { border-color: color-mix(in oklab, var(--wire) 22%, var(--bg)); }
   /* The kind shows in the border rather than the words. A title tinted per kind
      costs contrast on the one thing every box exists to say, and the border
@@ -269,6 +270,11 @@
   .node[data-kind].chosen { border-color: var(--wire);
                             box-shadow: inset 0 0 0 1px var(--wire), 0 0 12px var(--wire); }
   .node .reach { float: right; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  /* Full currentColor read as stark white in the dark theme once the box
+     stopped competing with a page-bright background. One step down the ink
+     scale keeps a box's title legible without needing to be the brightest
+     thing on the screen. */
+  .node .title { color: var(--ink-1); }
 
   .node a { color: inherit; text-decoration: none; }
   .node a:hover { text-decoration: underline; }

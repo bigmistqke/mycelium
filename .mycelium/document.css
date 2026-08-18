@@ -16,6 +16,7 @@ body {
   max-width: 700px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 6rem;
+  counter-reset: h2-counter;
 }
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-mono);
@@ -29,13 +30,21 @@ h1 {
   letter-spacing: -0.01em;
   margin-bottom: 0.25rem;
 }
+/* A section number before a heading is only worth showing where a document
+   actually has several sections to place in order — a spec's problem/design
+   split, a template's own walk through its reasoning. h2 counts and resets
+   an h3 counter under it; h1 stays bare, since a page has exactly one. */
 h2 {
   font-size: 1.05rem;
   margin-top: 3rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
+  counter-increment: h2-counter;
+  counter-reset: h3-counter;
 }
-h3 { font-size: 0.95rem; margin-top: 1.75rem; }
+h2::before { content: counter(h2-counter) '. '; color: var(--accent); }
+h3 { font-size: 0.95rem; margin-top: 1.75rem; counter-increment: h3-counter; }
+h3::before { content: counter(h2-counter) '.' counter(h3-counter) ' '; color: var(--accent); }
 h4 { font-size: 0.85rem; margin-top: 1.5rem; }
 p, li { color: var(--fg); }
 strong, b { font-weight: 500; }
