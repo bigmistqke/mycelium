@@ -171,10 +171,11 @@
       const fileLinks = files
         .map(([path, title]) => `<li><a href="${escapeHtml(path)}">${escapeHtml(title)}</a></li>`)
         .join("\n    ")
-      return `<section id="${sectionId(family.name)}">
-  <h3>${escapeHtml(family.name)}</h3>
+      const count = files.length ? `<span class="count">${files.length}</span>` : ""
+      return `<section class="family" id="${sectionId(family.name)}">
+  <h3>${escapeHtml(family.name)}${count}</h3>
   <p>${escapeHtml(family.purpose)}${specLinks ? ` &mdash; ${specLinks}` : ""}</p>
-  ${files.length ? `<ul>\n    ${fileLinks}\n  </ul>` : "<p><i>no files yet</i></p>"}
+  ${files.length ? `<ul>\n    ${fileLinks}\n  </ul>` : `<p class="empty">no files yet</p>`}
 </section>`
     }
 
@@ -182,8 +183,8 @@
     const sections = sortedFamilies.map(section).join("\n")
 
     const otherSection = other.size
-      ? `<section id="other">
-  <h3>other</h3>
+      ? `<section class="family" id="other">
+  <h3>other<span class="count">${other.size}</span></h3>
   <ul>
     ${[...other].sort(([, left], [, right]) => left.localeCompare(right))
       .map(([path, title]) => `<li><a href="${escapeHtml(path)}">${escapeHtml(title)}</a></li>`)
@@ -208,6 +209,75 @@
       ? ""
       : `<base href="${args.base === "true" ? pathToFileURL(resolvePath(fs.root) + "/").href : args.base}">`
 
+    // theme.css fits a single column of prose, which is right for a document
+    // and wrong for a directory: 12 sections, one of them several hundred
+    // lines long, read as one long scroll at 760px. Everything below is
+    // scoped to this page rather than added to theme.css, the same way the
+    // graph pages already carry their own stylesheet instead of stretching
+    // the shared one to fit a shape most pages never take.
+    const style = `<style>
+  body { max-width: 1040px; }
+  p.lede { font-size: 1.05rem; color: var(--muted); }
+  .drawings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+    list-style: none;
+    padding: 0;
+  }
+  .drawings a {
+    display: block;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .drawings a:hover { border-color: var(--accent); }
+  .drawings b { display: block; margin-bottom: 0.3rem; color: var(--accent); }
+  .drawings span { color: var(--muted); font-size: 0.9rem; }
+  .corpus {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.1rem;
+    align-items: start;
+  }
+  section.family {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.3rem;
+    background: var(--code-bg);
+  }
+  section.family h3 {
+    margin-top: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  section.family .count {
+    font-size: 0.75rem;
+    font-weight: normal;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.05rem 0.5rem;
+  }
+  section.family p { font-size: 0.92rem; color: var(--muted); }
+  section.family p a { color: var(--muted); }
+  section.family .empty { font-style: italic; }
+  section.family ul {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    max-height: 14rem;
+    overflow-y: auto;
+  }
+  section.family li { margin: 0.2rem 0; font-size: 0.9rem; }
+  section.family li a { text-decoration: none; }
+  section.family li a:hover { text-decoration: underline; }
+</style>`
+
     const page = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -216,19 +286,22 @@
 <title>mycelium</title>
 ${base}
 <link rel="stylesheet" href="theme.css">
+${style}
 </head>
 <body>
 <h1>mycelium</h1>
-<p>${about}</p>
+<p class="lede">${about}</p>
 ${toc}
 <h2 id="drawings">Drawings</h2>
-<ul>
-  <li><a href="notebook.html">The notebook</a> &mdash; every entry, ranked by the day it arrived.</li>
-  <li><a href="chain.html">The canon chain</a> &mdash; every axiom's reach, from claim to declaration.</li>
+<ul class="drawings">
+  <li><a href="notebook.html"><b>The notebook</b><span>every entry, ranked by the day it arrived</span></a></li>
+  <li><a href="chain.html"><b>The canon chain</b><span>every axiom's reach, from claim to declaration</span></a></li>
 </ul>
 <h2>The corpus</h2>
+<div class="corpus">
 ${sections}
 ${otherSection}
+</div>
 </body>
 </html>
 `
