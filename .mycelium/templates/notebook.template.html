@@ -458,27 +458,9 @@
    * a probe reads and cannot write. One that throws leaves the document behind
    * and reports, since a probe is allowed to be inconclusive.
    */
-  export async function add({ fs, args, cli }: CommandContext) {
-    const type = args._[0]
-    requireArgs([type, "<type>"])
-
-    // A case attaches to an entry that already exists, the way a behaviour
-    // attaches to a specification. So it takes a filename where a type takes a
-    // title, and it lands here rather than in a command of its own.
-    if (type === "case") {
-      requireArgs([args._[1], "<file>"])
-      const path = `${DIR}/${args._[1]}`
-      const root = experimentAt(fs, path, args._[1])
-      const one = await attachCase(fs, args, cli, path, root)
-      const result = await cli.validate(root, path)
-      if (!result.ok) throw new Error(result.errors.join("\n"))
-      fs.commit()
-      await readCase(fs, args, path, one, declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case"))
-      return
-    }
+  async function addEntry({ fs, args, cli }: CommandContext, type: string) {
 
     requireArgs([args.title, "--title"])
-    if (!TYPES.includes(type)) throw new Error(`unknown type "${type}"; expected one of ${TYPES.join(", ")}, or case`)
     if (type === "experiment" && !args.question) {
       throw new Error("an experiment needs --question: the thing its script answers")
     }
@@ -544,6 +526,198 @@
     }
   }
 
+  /** Where a verb finds the file it works on, one positional past its own name. */
+  const fileArg = (args, label) => {
+    requireArgs([args._[1], label])
+    return args._[1]
+  }
+
+  async function attachCaseTo({ fs, args, cli }: CommandContext) {
+    const name = fileArg(args, "<file>")
+    const path = `${DIR}/${name}`
+    const root = experimentAt(fs, path, name)
+    const one = await attachCase(fs, args, cli, path, root)
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join("\n"))
+    fs.commit()
+    await readCase(fs, args, path, one, declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case"))
+  }
+
+  function dropCase({ fs, args }: CommandContext) {
+    const target = fileArg(args, "<file>#<id>")
+    if (!target.includes("#")) throw new Error("del takes an address of the form <file>#<id>")
+    const { cases } = casesIn(fs, target)
+    const one = cases[0]
+    // The readings measured what that script measured and nothing else, so they
+    // go with it. Printing them is what makes deleting and adding an honest
+    // edit rather than a quiet loss.
+    for (const reading of Array.from(one.querySelectorAll("notebook-reading"))) {
+      console.log(`dropped  reading ${reading.getAttribute("data-on")}  ${(reading.textContent ?? "").trim()}`)
+    }
+    for (const said of Array.from(one.querySelectorAll("notebook-conclusion"))) {
+      console.log(`dropped  conclusion ${said.getAttribute("data-on")}`)
+    }
+    one.remove()
+    console.log(`deleted  ${target}`)
+  }
+
+  async function concludeCase({ fs, args, cli }: CommandContext) {
+    const target = fileArg(args, "<file>#<id>")
+    requireArgs([args.conclusion, "--conclusion"])
+    const { path, cases } = casesIn(fs, target)
+    const one = cases[0]
+    const said = fs.get(path).createElement("notebook-conclusion")
+    said.setAttribute("data-on", todayDate())
+    said.innerHTML = args.conclusion === "-" ? await cli.readStdin() : args.conclusion
+    const first = one.querySelector("notebook-conclusion")
+    if (first) one.insertBefore(said, first)
+    else placeField(one, said, declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case"))
+    const checked = await cli.validate(one, path)
+    if (!checked.ok) throw new Error(checked.errors.join("\n"))
+  }
+
+  async function runCases({ fs, args }: CommandContext) {
+    const target = fileArg(args, "<file>")
+    const { path, cases } = casesIn(fs, target)
+    const order = declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case")
+    for (const one of cases) await readCase(fs, args, path, one, order)
+  }
+
+  /**
+   * One verb, and a sentence naming it when somebody passes another.
+   *
+   * Every type command dispatches the same way, so a reader who has learnt one
+   * has learnt the rest. What differs between them is what the type declares,
+   * which is the whole reason they are separate commands.
+   */
+  async function byVerb(ctx, type, verbs) {
+    const verb = ctx.args._[0]
+    if (!verbs[verb]) {
+      throw new Error(
+        verb
+          ? `notebook ${type} has no "${verb}" verb; it takes ${Object.keys(verbs).join(", ")}`
+          : `notebook ${type} takes a verb: ${Object.keys(verbs).join(", ")}`,
+      )
+    }
+    return verbs[verb](ctx)
+  }
+
+  /**
+   * Create a principle: a rule somebody saw by stepping back over what accumulated.
+   *
+   *   mycelium notebook principle add --title "…" [--tag NAME]…
+   *     [--prompt "…" | --prompt -] [--detail "…" | --detail -] [--file <slug>]
+   *
+   * A principle outlives the file that taught it. An entry never changes type,
+   * because a thought that arrived one way did not arrive the other, so this
+   * decision is worth a moment before the command runs.
+   */
+  export async function principle(ctx: CommandContext) {
+    return byVerb(ctx, "principle", { add: (one) => addEntry(one, "principle") })
+  }
+
+  /**
+   * Create a practice: something the ground did when somebody leant on it.
+   *
+   *   mycelium notebook practice add --title "…" [--tag NAME]…
+   *     [--prompt "…" | --prompt -] [--detail "…" | --detail -] [--file <slug>]
+   *
+   * A fact about the terrain is a practice. That a parser reads only the last
+   * comment before a declaration is not a rule this project holds and says
+   * nothing about where the work should go, and hitting it is how anybody
+   * learns it.
+   */
+  export async function practice(ctx: CommandContext) {
+    return byVerb(ctx, "practice", { add: (one) => addEntry(one, "practice") })
+  }
+
+  /**
+   * Create a direction: a proposal, an intention, or a scope.
+   *
+   *   mycelium notebook direction add --title "…" [--tag NAME]…
+   *     [--prompt "…" | --prompt -] [--detail "…" | --detail -] [--file <slug>]
+   *
+   * Wanting the work somewhere it does not currently go. Something to come back
+   * to is not this, and belongs in the followup family, which drains where the
+   * notebook accumulates.
+   */
+  export async function direction(ctx: CommandContext) {
+    return byVerb(ctx, "direction", { add: (one) => addEntry(one, "direction") })
+  }
+
+  /**
+   * Create a research entry: prior art, external work, something read.
+   *
+   *   mycelium notebook research add --title "…" [--tag NAME]…
+   *     [--prompt "…" | --prompt -] [--detail "…" | --detail -] [--file <slug>]
+   *
+   * Knowledge that arrived from somebody else. An external source is wanted
+   * here, so long as the link is live: writing the href forces whoever cites it
+   * to open the target, which is the step that catches a wrong reference.
+   */
+  export async function research(ctx: CommandContext) {
+    return byVerb(ctx, "research", { add: (one) => addEntry(one, "research") })
+  }
+
+  /**
+   * Create an experiment, or run the cases in one.
+   *
+   *   mycelium notebook experiment add --title "…" --question "…"
+   *     [--lens "…" --script "…" | --script -] [--browser] [--tag NAME]…
+   *     [--prompt "…" | --prompt -] [--detail "…" | --detail -] [--file <slug>]
+   *
+   *   mycelium notebook experiment run <file>[#<id>] [--show] [--port N]
+   *
+   * Knowledge that arrives from running something. --question is what the whole
+   * document asks, and --lens with --script builds its first case, so one
+   * question with one probe still costs one command.
+   *
+   * Write the document before knowing the answer, because running the script is
+   * how the answer arrives. Every capture failure this project has recorded has
+   * the same shape: logging after the work competes with the work and loses.
+   *
+   * run takes every case, or the one an address names. Nothing here runs during
+   * validate and nothing here can fail a build, since a probe is allowed to be
+   * inconclusive. A reading records when it moves and only then.
+   */
+  export async function experiment(ctx: CommandContext) {
+    return byVerb(ctx, "experiment", {
+      add: (one) => addEntry(one, "experiment"),
+      run: (one) => runCases(one),
+    })
+  }
+
+  /**
+   * Add a case to an experiment, drop one, or say what a reading meant.
+   *
+   *   mycelium notebook case add <file> --lens "…"
+   *     --script "…" | --script - [--id <slug>] [--browser]
+   *
+   *   mycelium notebook case del <file>#<id>
+   *
+   *   mycelium notebook case conclude <file>#<id> --conclusion "…" | --conclusion -
+   *
+   * A case is one lens on the question its document asks, and several stay
+   * apart on purpose: merging their answers into one sentence is what the
+   * readings-kept-apart principle says not to do.
+   *
+   * Nothing updates a case. A case is its script, so a changed script is a
+   * different case. The readings under the old one measured something nobody
+   * asks about now. del prints every reading it discards, making deleting and
+   * adding an honest edit rather than a quiet loss.
+   *
+   * --id overrides the id derived from the lens, and is worth passing whenever
+   * the lens is a sentence and the slug falling out of it reads as one.
+   */
+  async function addCase(ctx: CommandContext) {
+    return byVerb(ctx, "case", {
+      add: (one) => attachCaseTo(one),
+      del: (one) => dropCase(one),
+      conclude: (one) => concludeCase(one),
+    })
+  }
+  export { addCase as case }
+
   /**
    * Update fields on an existing entry, or conclude one of its cases.
    *
@@ -575,24 +749,6 @@
    */
   export async function update({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], "<file>"])
-
-    // A case takes a conclusion and nothing else. Saying what a reading meant
-    // is commentary and leaves the instrument alone, so it does not make a
-    // different case the way editing the script would.
-    if (args._[0].includes("#")) {
-      requireArgs([args.conclusion, "--conclusion"])
-      const { path: at, cases } = casesIn(fs, args._[0])
-      const one = cases[0]
-      const said = fs.get(at).createElement("notebook-conclusion")
-      said.setAttribute("data-on", todayDate())
-      said.innerHTML = args.conclusion === "-" ? await cli.readStdin() : args.conclusion
-      const first = one.querySelector("notebook-conclusion")
-      if (first) one.insertBefore(said, first)
-      else placeField(one, said, declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case"))
-      const checked = await cli.validate(one, at)
-      if (!checked.ok) throw new Error(checked.errors.join("\n"))
-      return
-    }
 
     const path = `${DIR}/${args._[0]}`
     const doc = fs.get(path)
@@ -641,12 +797,11 @@
       }
     }
 
-    // Nothing edits a case. A case is its script, so a changed script is a
-    // different case and the readings under the old one measured something
-    // nobody asks about any more. Deleting one and adding another costs two
-    // deliberate commands and shows the loss in the output of the first.
+    // Nothing edits a case, and no flag here offers to. A case is its script,
+    // so a changed script is a different case and the readings under the old
+    // one measured something nobody asks about any more.
     if (args.script !== undefined) {
-      throw new Error("nothing updates a case; delete it with notebook del <file>#<id> and add another")
+      throw new Error("nothing updates a case; drop it with notebook case del <file>#<id> and add another")
     }
 
     const result = await cli.validate(root, path)
@@ -716,22 +871,6 @@
     requireArgs([args._[0], "<file>"])
     const target = args._[0]
 
-    // file#id drops one case, and the readings under it go with it. They
-    // measured what that script measured, so leaving them beside a different
-    // instrument would be the drift this design exists to make impossible.
-    if (target.includes("#")) {
-      const { cases } = casesIn(fs, target)
-      const one = cases[0]
-      for (const reading of Array.from(one.querySelectorAll("notebook-reading"))) {
-        console.log(`dropped  reading ${reading.getAttribute("data-on")}  ${(reading.textContent ?? "").trim()}`)
-      }
-      for (const said of Array.from(one.querySelectorAll("notebook-conclusion"))) {
-        console.log(`dropped  conclusion ${said.getAttribute("data-on")}`)
-      }
-      one.remove()
-      console.log(`deleted  ${target}`)
-      return
-    }
     let removed = 0
     for (const { path, doc } of fs.list(DIR)) {
       if (path === `${DIR}/${target}`) continue
@@ -1115,25 +1254,6 @@
     else placeField(one, el, order)
   }
 
-  /**
-   * Run an entry's cases and print what each one said.
-   *
-   *   mycelium notebook run <file>[#<id>] [--show] [--port N]
-   *
-   * Every case, or the one an address names. Nothing here runs during
-   * validate, and nothing here can fail a build: a probe is allowed to be
-   * inconclusive, which is what separates it from the check a canon behaviour
-   * carries.
-   *
-   * A reading records when it moves and only then, so no flag asks for it. The
-   * disagreement is the finding, and keeping it means keeping both numbers.
-   */
-  export async function run({ fs, args }: CommandContext) {
-    requireArgs([args._[0], "<file>"])
-    const { path, root, cases } = casesIn(fs, args._[0])
-    const order = declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case")
-    for (const one of cases) await readCase(fs, args, path, one, order)
-  }
 
   /**
    * An entry's own detail, with every relative link inside it made durable.

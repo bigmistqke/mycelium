@@ -440,6 +440,15 @@ function hasExportModifier(node: ts.Node): boolean {
 // correctly.
 function exportedFunctionNames(stmt: ts.Statement): string[] {
   if (ts.isFunctionDeclaration(stmt) && hasExportModifier(stmt) && stmt.name) return [stmt.name.text]
+  // `export { addCase as case }`. A family names its commands after the types
+  // it declares, and a type is free to be called something JavaScript reserves
+  // as a keyword. The alias is the name the command line uses, so the alias is
+  // the name the roster prints. Without this the command still works and no
+  // reader finds out it exists, which is the one failure this roster exists to
+  // prevent.
+  if (ts.isExportDeclaration(stmt) && stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
+    return stmt.exportClause.elements.map((element) => element.name.text)
+  }
   if (!ts.isVariableStatement(stmt) || !hasExportModifier(stmt)) return []
   return stmt.declarationList.declarations
     .filter((d) => ts.isIdentifier(d.name) && !!d.initializer && (ts.isFunctionExpression(d.initializer) || ts.isArrowFunction(d.initializer)))

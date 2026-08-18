@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A command specific to one type names that type before its verb</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A command specific to one type names that type before its verb</spec-title>
+  <spec-status>approved</spec-status>
+  <spec-date>2026-08-18</spec-date>
+  <spec-problem>
+<p>Every family here takes the type as an argument to a verb. A reader writes
+<code>canon add axiom</code>, <code>language add term</code>, <code>plan add
+doc</code> and <code>notebook add principle</code>, so one command builds three
+or five different things and its flags mean different things depending on which.
+The notebook's own help says a flag is <q>meaningless on the other two</q>, which
+is an apology printed where a contract should be.</p>
+<p>That overloading costs documentation the corpus can count. One command
+serving five types carries a hundred and twenty-seven lines of help against a
+median of twenty-three across the whole command line. A reader wanting one type
+reads all five, and an author adding a sixth edits prose belonging to the other
+five.</p>
+<p>It also leaves nowhere for a type that carries machinery of its own. An
+experiment runs, holds cases and takes conclusions, and none of that belongs to
+a principle. Hanging those verbs off the family put a case in the same
+positional slot as a provenance, which made the sentence describing that slot
+false.</p>
+</spec-problem>
+  <spec-design>
+<p>A command specific to one type names that type first, and its verb follows.
+<code>notebook principle add</code>, <code>canon axiom add</code>,
+<code>language term add</code>, <code>plan doc add</code>. The type stops being
+an argument and becomes the thing the command belongs to, so each command
+documents one shape and takes only the flags that shape declares.</p>
+<p>A family declaring one type names none, because there is nothing to choose
+between. <code>spec add</code> and <code>followup add</code> stay exactly as
+they are, and <code>spec spec add</code> would say the same word twice.</p>
+<p>A command working across every type of a family stays where it is.
+<code>notebook update</code>, <code>del</code>, <code>link</code>,
+<code>list</code> and <code>show</code> take a file, and the file already says
+which type it holds, so naming it again would be the second copy this project
+removes everywhere else. The type appears when nothing else can supply it,
+which is exactly when a command creates something.</p>
+<p>A type carrying its own machinery gets it under the same name. An experiment
+runs and a case is added, dropped and concluded, so those verbs sit under
+<code>notebook experiment</code> and <code>notebook case</code> rather than
+crowding the family. That also settles a name the language reserves: a case
+appears as an argument the shell passes, never as an identifier the source
+declares.</p>
+<p>This narrows <code>a-declaration-is-the-whole-contract</code>. If what a
+template declares is the whole contract, then a command asking for something
+the declaration does not say is outside it, and a flag meaningless for the type
+under construction is exactly that. The behaviour is the checkable half: no authoring
+command takes a type as an argument.</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>Nothing lands halfway. Four families change together, because a convention
+holding in three of them is a convention somebody has to remember rather than a
+rule they can rely on, and a check reporting the fourth as a standing finding is
+the gate people ignore.</p>
+<p>The figure family gains nothing and changes nothing. It declares types that
+no command authors, since a node and an edge get written into the document that
+draws them, so a rule about which command builds which type says nothing about
+it.</p>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>

@@ -66,7 +66,7 @@ path before asking for the href.</p>
     </script>
     </canon-behaviour>
     <canon-behaviour id="add-refuses-a-dated-slug" data-conforms-to="../templates/canon.template.html#canon-behaviour">
-      <canon-title>notebook add refuses a slug that already carries a date.</canon-title>
+      <canon-title>notebook refuses a slug that already carries a date.</canon-title>
       <a data-rel="depends_on" href="./root.canon.html#derive-do-not-maintain">refusing the hand-typed copy of a computed fact</a>
       <canon-verdict>PENDING</canon-verdict>
       <script type="mycelium/test">
@@ -77,7 +77,7 @@ path before asking for the href.</p>
       import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const done = sandbox.mycelium(
-          "notebook", "add", "practice",
+          "notebook", "practice", "add",
           "--title", "Already dated",
           "--file", "2026-08-06-already-dated",
         )
@@ -102,7 +102,7 @@ path before asking for the href.</p>
       import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const make = (type: string, slug: string) => {
-          const done = sandbox.mycelium("notebook", "add", type, "--title", slug, "--file", slug)
+          const done = sandbox.mycelium("notebook", type, "add", "--title", slug, "--file", slug)
           assert(done.ok, `add ${type} failed: ${done.stderr || done.stdout}`)
           return `${slug}.${type}.html`
         }
@@ -186,7 +186,7 @@ path before asking for the href.</p>
       import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const made = sandbox.mycelium(
-          "notebook", "add", "practice",
+          "notebook", "practice", "add",
           "--title", "The templates exist",
           "--file", "templates-exist",
         )
@@ -356,7 +356,7 @@ export default async function ({ assert, sandbox }: TestContext) {
     const done = sandbox.mycelium(...argv)
     assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
   }
-  run("notebook", "add", "practice", "--file", "a-thing-somebody-noticed",
+  run("notebook", "practice", "add", "--file", "a-thing-somebody-noticed",
     "--title", "Something somebody noticed before the rule existed.")
   run("canon", "add", "axiom", "--canon", "sample", "--id", "a-principle",
     "--title", "A principle that came from somewhere.",
@@ -376,6 +376,36 @@ export default async function ({ assert, sandbox }: TestContext) {
     `the container landed after the claim's own edge:\n${after}`,
   )
 }
+</script>
+  </canon-behaviour>
+  <canon-behaviour id="the-type-comes-before-the-verb" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>A command specific to one type names that type before its verb, and takes no type as an argument.</canon-title>
+    <a data-rel="depends_on" href="./root.canon.html#a-declaration-is-the-whole-contract">a flag meaningless for the type under construction sits outside the contract</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">      // Written before the four families moved, so this starts red on purpose.
+      // The shape it rejects is the one every family used: one verb building
+      // three or five different things, with flags meaning different things
+      // depending on which.
+      import type { TestContext } from "mycelium/api"
+      export default async function ({ assert, sandbox }: TestContext) {
+        const named = sandbox.mycelium(
+          "notebook", "principle", "add",
+          "--title", "A rule the type-named command wrote",
+          "--file", "written-by-the-type-named-command",
+        )
+        assert(named.ok, `the type-named command failed: ${(named.stderr + named.stdout).trim()}`)
+        assert(
+          sandbox.exists("notebook/written-by-the-type-named-command.principle.html"),
+          "the type-named command wrote nothing",
+        )
+
+        const overloaded = sandbox.mycelium(
+          "notebook", "add", "principle",
+          "--title", "A rule the overloaded command wrote",
+          "--file", "written-by-the-overloaded-command",
+        )
+        assert(!overloaded.ok, `a verb still takes a type as its argument: ${(overloaded.stdout + overloaded.stderr).trim().slice(0, 300)}`)
+      }
 </script>
   </canon-behaviour>
 </canon-specification>
