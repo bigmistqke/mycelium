@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deciduous's git-native cousin hive faked per-type shape onto one flat table with nodeTypeSupportsStatus()</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-research data-conforms-to="../templates/notebook.template.html#notebook-research">
+  <notebook-title>deciduous's git-native cousin hive faked per-type shape onto one flat table with nodeTypeSupportsStatus()</notebook-title>
+  <notebook-tag>design-history</notebook-tag>
+  <notebook-detail>deciduous specified six node types: goal, decision, option, action, outcome, observation. Of those, status only makes sense for goal, decision and action. hive, deciduous's git-native cousin, discovered this mid-build and had to bolt on a nodeTypeSupportsStatus() helper to fake per-type shape onto one flat SQL table. A per-type template makes this a non-problem: a goal template declares a status field, an observation template simply doesn't.</notebook-detail>
+</notebook-research>
+</body></html>

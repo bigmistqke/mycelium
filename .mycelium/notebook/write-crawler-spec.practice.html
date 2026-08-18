@@ -12,8 +12,8 @@
   <notebook-detail><p>The design spec for the mycelium crawler: a protocol-only engine that discovers templates, instances, and audits, with no built-in ontology.</p>
 <p>
   Corrected mid-brainstorm: the first draft had the crawler itself extracting "nodes" and "edges" from
-  <code>data-rel</code>, which is exactly the ontology <a href="../DESIGN.html">DESIGN.html</a> says the CLI
-  must never bake in. See the spec's "No built-in ontology" section for the resolved design. Also surfaced a
+  <code>data-rel</code>, which is exactly the ontology
+  <a href="./the-cli-has-no-built-in-ontology.principle.html">the CLI must never bake in</a>. See the spec's "No built-in ontology" section for the resolved design. Also surfaced a
   real bootstrapping bug in <code>require-action-node.sh</code> itself while writing this: the gate blocked
   writing the very node that would satisfy it, fixed via Bash since only Edit/Write are gated.
 </p>

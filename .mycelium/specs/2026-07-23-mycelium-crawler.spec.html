@@ -16,7 +16,7 @@
 
   <spec-problem>
     <p>
-      <a href="../DESIGN.html">DESIGN.html</a>'s roadmap deferred "build <code>mycelium run</code>" and "build
+      The original design's roadmap deferred "build <code>mycelium run</code>" and "build
       the crawler/index" until a real template series existed to test them against. That's now true &mdash;
       <code>knowledge.template.html</code> and <code>spec.template.html</code> exist, with real instances in
       <code>knowledge/</code>. The freshly-rewritten <code>CLAUDE.md</code> already names the resulting gap
@@ -55,7 +55,8 @@
 
     <h2>No built-in ontology</h2>
     <p>
-      <code>DESIGN.html</code> is explicit: "mycelium ships no notion of 'goal,' 'claim,' or 'test.' It
+      <a href="../notebook/the-cli-has-no-built-in-ontology.principle.html">The CLI has no built-in
+      ontology</a>: "mycelium ships no notion of 'goal,' 'claim,' or 'test.' It
       discovers vocabulary by reading whatever template documents a project has actually authored." The
       first draft of this design violated that without noticing &mdash; it planned to have the crawler itself
       extract "nodes" as <code>{id, type}</code> and "edges" from <code>&lt;a data-rel&gt;</code>, baking in

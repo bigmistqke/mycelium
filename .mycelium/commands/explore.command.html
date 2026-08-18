@@ -82,9 +82,7 @@
    * A host is a template or command file describing a family, found the
    * same way every-host-says-what-it-is already finds one: the
    * &lt;template-host&gt; element every such file carries, whether or not it
-   * also declares a schema. A file conforming to nothing at all — today
-   * only DESIGN.html — is neither a host nor content, and generate treats
-   * it as the page's own "about" line instead.
+   * also declares a schema.
    */
   function isHost(doc: Document): boolean {
     return doc.querySelector("template-host[data-conforms-to]") !== null
@@ -149,10 +147,8 @@
     }
 
     const other = new Map<string, string>()
-    let design: { doc: Document } | undefined
     for (const { path, doc } of documents) {
       if (isHost(doc)) continue
-      if (path === "DESIGN.html") { design = { doc }; continue }
       const conforming = Array.from(doc.querySelectorAll("[data-conforms-to]"))
       if (!conforming.length) { other.set(path, titleOf(doc) || path); continue }
       for (const el of conforming) {
@@ -193,9 +189,10 @@
 </section>`
       : ""
 
-    const about = design
-      ? `<a href="DESIGN.html">${escapeHtml(titleOf(design.doc))}</a> is the initial design document, and the fuller argument behind everything else on this page.`
-      : ""
+    const about = `mycelium keeps the thinking behind this codebase inside the codebase:
+      <a href="canon/root.canon.html">the axioms it holds true</a> now, the notebook below where that
+      thinking stays fluid before it hardens into one, and the specs, tests and followups connecting
+      the two.`
 
     const base = args.base === undefined
       ? ""

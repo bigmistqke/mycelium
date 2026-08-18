@@ -16,8 +16,7 @@
   The published site shows one page: <code>deploy-pages.yml</code> writes the notebook graph straight to
   <code>index.html</code> via <code>mycelium notebook generate graph --out index.html</code>. A visitor
   lands on that drawing and nothing else, even though every document under <code>.mycelium/</code> is
-  already its own static page with resolvable relative links — the corpus has been a website since
-  <a href="../DESIGN.html">DESIGN.html</a> said so.
+  already its own static page with resolvable relative links.
 </p>
 <p>
   Two generators already exist and only one runs in CI. <code>canon generate chain --out &lt;path&gt;</code>
@@ -32,8 +31,8 @@
 <p>
   A new command, <code>mycelium explore generate index [--out &lt;path&gt;] [--base [&lt;href&gt;]]</code>,
   mirrors the signature <code>notebook generate graph</code> and <code>canon generate chain</code>
-  already use. It writes one page: a list of every file the corpus holds, grouped by the family that
-  governs it, plus links to the two drawings and a short line about the project.
+  already use. It writes one page: a card grid of every file the corpus holds, grouped by the family that
+  governs it, plus the two drawings as feature cards above the grid.
 </p>
 <p>
   Grouping stays protocol-only, the way the rest of <code>explore.command.html</code> already reads the
@@ -48,33 +47,32 @@
   already carries a <code>&lt;template-host&gt;</code> — <code>&lt;template-purpose&gt;</code> is a
   required one-line description of what the family is for, and <code>&lt;template-design&gt;</code> holds
   one or more <code>&lt;a href&gt;</code> to the specs behind it, already checked by
-  <code>every-link-resolves</code>. The section for a family reads both straight off its own template
-  file: the purpose becomes the section's one-line description, and the design links become "read the
+  <code>every-link-resolves</code>. The card for a family reads both straight off its own template
+  file: the purpose becomes the card's one-line description, and the design links become "read the
   spec" links beside it. Nothing new gets written to describe a family a second time.
 </p>
 <p>
-  Under that, the section lists every file whose instances grouped into it — one line per file, not per
-  instance, since a canon subsystem or a notebook entry is a file a reader opens, and what conforms
-  inside it is this command's own bookkeeping. The link text is the file's own <code>&lt;title&gt;</code>,
-  which every document already carries for its browser tab. A file with no <code>data-conforms-to</code>
-  element at all and no <code>template[id]</code> of its own — today only <code>DESIGN.html</code> — is
-  not part of any family section; its title and a short quote from it becomes the page's own "about"
-  line, so the index says what the project is without restating <code>DESIGN.html</code>'s argument a
-  second time.
+  Under that, each card lists every file whose instances grouped into it, alongside a file-count badge —
+  one line per file, not per instance, since a canon subsystem or a notebook entry is a file a reader
+  opens, and what conforms inside it is this command's own bookkeeping. The link text is the file's own
+  <code>&lt;title&gt;</code>, which every document already carries for its browser tab. A card's own list
+  is capped and scrolls past 14rem, since the notebook family alone runs to several hundred entries. A
+  file with no <code>data-conforms-to</code> element at all and no <code>template[id]</code> of its own
+  falls into a final "other" card instead of being silently dropped.
 </p>
 <p>
-  Two links sit above the family sections rather than inside one: the notebook graph and the chain graph,
-  each now written to its own file — <code>notebook.html</code> and <code>chain.html</code> — instead of
-  one of them claiming <code>index.html</code> for itself. <code>deploy-pages.yml</code> gains two
-  <code>generate</code> steps alongside the one it already runs, and its existing
-  "Build the index" step becomes <code>explore generate index --out index.html</code>. The workflow
-  already uploads the whole <code>.mycelium/</code> directory, so no step beyond the three generate calls
-  changes.
+  Two links sit above the family cards as their own feature cards rather than inside the grid: the
+  notebook graph and the chain graph, each now written to its own file — <code>notebook.html</code> and
+  <code>chain.html</code> — instead of one of them claiming <code>index.html</code> for itself.
+  <code>deploy-pages.yml</code> gains two <code>generate</code> steps alongside the one it already runs,
+  and its existing "Build the index" step becomes <code>explore generate index --out index.html</code>.
+  The workflow already uploads the whole <code>.mycelium/</code> directory, so no step beyond the three
+  generate calls changes.
 </p>
 <p>
-  All three generated files stay out of git, the way <code>index.html</code> already does — a local
-  <code>--out</code> run is for looking, and the committed corpus holds nothing that resolves a link into
-  them, so <code>every-link-resolves</code> has nothing to check there.
+  All three generated files stay out of git, the way <code>index.html</code> already did before this
+  spec — a local <code>--out</code> run is for looking, and the committed corpus holds nothing that
+  resolves a link into them, so <code>every-link-resolves</code> has nothing to check there.
 </p>
 </spec-design>
   <spec-open-questions>
