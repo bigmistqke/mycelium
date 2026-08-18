@@ -13,6 +13,21 @@
   <notebook-tag>notebook</notebook-tag>
   <notebook-tag>paths</notebook-tag>
   <notebook-prompt>i want to be able to run the notebook graph with hmr whenever something updates within its data. maybe let's explore this in a worktree</notebook-prompt>
+  <notebook-detail><p>The corpus moved from <code>docs/</code> to <code>.mycelium/</code>, and
+two prefix strippers kept stripping the old prefix, in <code>generate</code>
+and in <code>fillWhere</code>. A prefix that matches nothing strips nothing,
+so neither one has matched anything since the move, and every node address
+the page carries has been an absolute filesystem path ever since.</p>
+<p>That stayed invisible locally, where a path under one's own home
+directory still opens in a browser. It stopped being invisible on the
+published site, where the pane's own "where" link and the permalink hash
+both read as <code>/home/runner/work/mycelium</code> — a path meaningful
+only on the machine that built the page.</p>
+<p>The fix names the corpus directory instead of writing the old path as a
+literal, the same rename discipline this project already argues for
+elsewhere. A stripper naming what it strips cannot go stale the way one
+spelling it out can.</p>
+</notebook-detail>
   <a data-rel="supports" href="./axiom-parse-do-not-pattern-match.direction.html">a rename that matched none of what it should have, producing a page rather than an error</a>
 </notebook-practice>
 </body></html>

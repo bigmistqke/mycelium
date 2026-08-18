@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The watching graph server exhausts a two gigabyte heap after roughly a dozen rebuilds</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>The watching graph server exhausts a two gigabyte heap after roughly a dozen rebuilds</notebook-title>
+  <notebook-tag>graph</notebook-tag>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-detail><p>The server behind <code>notebook generate graph --watch</code> ran for
+about sixteen minutes while a stream of edits to the notebook and its own
+template landed, each one triggering a redraw. It crashed with <q>JavaScript
+heap out of memory</q> after climbing past two gigabytes, having rebuilt on
+roughly a dozen file-change events over that stretch.</p>
+<p>Two gigabytes for a dozen redraws of one corpus is not a corpus problem —
+the whole notebook parses to a few megabytes. Something in the rebuild path
+holds onto what an earlier build allocated rather than releasing it, so each
+redraw's cost adds to the last one's instead of replacing it. A user
+watching the graph for longer than this session did would hit the same
+crash sooner, on any corpus, given enough edits.</p>
+<p>The fix needs the rebuild path read with this shape in mind — what a
+<code>build()</code> call retains after it returns, and whether the
+watcher's own closures over <code>touched</code>/<code>kindOf</code>
+accumulate anything across calls rather than resetting. Restarting the
+server is the only workaround right now.</p>
+</notebook-detail>
+</notebook-practice>
+</body></html>

@@ -13,6 +13,24 @@
   <notebook-tag>notebook</notebook-tag>
   <notebook-tag>gates</notebook-tag>
   <notebook-tag>paths</notebook-tag>
+  <notebook-detail><p>The notebook drawing partitions entries into columns by the day each one
+arrived, and had stopped doing that: all 410 entries sat in one nameless
+column, and the page's own counts line said "1 days". A shallow-clone guard
+already sat beside the code that computed arrival, warning that a shallow
+checkout collapses every date onto its one boundary commit.</p>
+<p>That guard was innocent. The real cause was a prefix stripper matching a
+<code>docs/</code> path the corpus had stopped using three renames earlier —
+a prefix that matches nothing strips nothing, so every address stayed
+absolute, the date lookup missed on every entry, and the empty string it
+fell back to sorted before every real date. The guard's own comment claimed
+the collapse anyway. Somebody wrote it against this exact symptom once and
+nobody revisited it once a second cause produced the same symptom.</p>
+<p>The guard stays, because a shallow clone really does collapse the
+drawing. What changed is what its comment is allowed to claim: a symptom
+correctly named and a cause correctly blamed are two different checks, and
+conflating them left this one sitting beside the bug it did not cause,
+saying nothing useful about it.</p>
+</notebook-detail>
   <a data-rel="depends_on" href="./a-rename-leaves-a-prefix-stripper-behind.practice.html">the stripper that cannot match, which is what actually collapses the columns</a>
 </notebook-practice>
 </body></html>

@@ -12,5 +12,17 @@
   <notebook-tag>performance</notebook-tag>
   <notebook-tag>commands</notebook-tag>
   <notebook-tag>graph</notebook-tag>
+  <notebook-detail><p>Redrawing a graph live while somebody works means running the drawing
+command again on every change. Measured against a one-shot run, roughly two
+of every three seconds a single invocation takes go to starting the process
+itself — loading the runtime, resolving imports, warming whatever the
+command needs before it does anything — and the remaining third is the
+actual work of building the page.</p>
+<p>A loop that re-invokes the command line on every change pays the startup
+cost on every iteration, so it spends two thirds of its total time
+re-learning what a command is rather than answering the question that
+changed. That is the argument for holding the process open and re-running
+only the drawing step inside it, instead of shelling out fresh each time.</p>
+</notebook-detail>
 </notebook-practice>
 </body></html>

@@ -12,5 +12,16 @@
   <notebook-tag>graph</notebook-tag>
   <notebook-tag>notebook</notebook-tag>
   <notebook-tag>git</notebook-tag>
+  <notebook-detail><p>Arrival comes from git: the commit that first added a path decides the day
+the drawing places an entry under. An entry nobody has committed yet has no
+such commit, so the lookup returns nothing and the drawing opens it in a
+nameless column at the far left.</p>
+<p>A one-shot drawing of an already-committed corpus never shows this seam,
+since by the time anyone runs it everything has a commit. A page that
+redraws itself while somebody works is watching the corpus mid-edit, which
+is exactly when an entry can exist on disk with no commit behind it yet —
+and that uncommitted entry is the one thing somebody redrawing the graph
+while they write is most likely watching for.</p>
+</notebook-detail>
 </notebook-practice>
 </body></html>
