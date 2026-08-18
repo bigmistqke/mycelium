@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A test sandbox symlinks templates and commands, so writing there edits the real corpus</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>A test sandbox symlinks templates and commands, so writing there edits the real corpus</notebook-title>
+  <notebook-tag>harness</notebook-tag>
+  <notebook-tag>canon</notebook-tag>
+  <notebook-detail><p>A sandbox builds a throwaway tree and links two directories into it rather
+than copying them. Both links point at the real corpus, so
+<code>sandbox.write("commands/quiet.command.html", …)</code> writes through one
+and lands in the project. Two fixture files sat in <code>.mycelium/commands/</code>
+afterwards, and the next <code>validate</code> failed on documents no commit had
+ever seen.</p>
+<p>The symlinks earn their place, and the comment beside them says why. A
+command hosted outside a family lives in that directory, and a tree without it
+can run an authoring command but not the check saying whether the result
+validates. Copying instead would leave a test running against a stale copy of
+the thing it tests.</p>
+<p>So the hazard belongs to writing rather than to linking. Every existing case
+writes under a directory the sandbox makes itself, which is why nothing found
+this until a case needed a fixture that was a host. Writing anywhere else is
+safe, and the fix was one path: <code>probe/</code> instead of
+<code>commands/</code>.</p>
+<p>Nothing catches this. The write succeeds, the case passes or fails on its own
+terms, and the damage shows up later as a corpus failing on a file nobody
+wrote.</p>
+</notebook-detail>
+  <a data-rel="supports" href="./correct-at-the-point-of-the-mistake.direction.html">a mistake nothing refuses, found only by the damage it left</a>
+</notebook-practice>
+</body></html>
