@@ -42,9 +42,9 @@ h2 {
   counter-increment: h2-counter;
   counter-reset: h3-counter;
 }
-h2::before { content: counter(h2-counter) '. '; color: var(--accent); }
+h2::before { content: counter(h2-counter) '. '; color: color-mix(in srgb, var(--muted) 55%, var(--bg)); }
 h3 { font-size: 0.95rem; margin-top: 1.75rem; counter-increment: h3-counter; }
-h3::before { content: counter(h2-counter) '.' counter(h3-counter) ' '; color: var(--accent); }
+h3::before { content: counter(h2-counter) '.' counter(h3-counter) ' '; color: color-mix(in srgb, var(--muted) 55%, var(--bg)); }
 h4 { font-size: 0.85rem; margin-top: 1.5rem; }
 p, li { color: var(--fg); }
 strong, b { font-weight: 500; }
