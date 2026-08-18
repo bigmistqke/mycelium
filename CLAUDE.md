@@ -47,14 +47,17 @@ should go, and the ground pushing back is exactly how somebody learns it.
 ### The commands
 
 ```bash
-pnpm mycelium notebook add <type> --title "…" [--tag NAME]… [--prompt "…" | --prompt -] [--detail "…" | --detail -] [--question "…"] [--file <slug>]
-pnpm mycelium notebook update <file> [--title "…"] [--tag NAME]… [--prompt "…"] [--detail "…" | --detail - | --detail ""] [--question "…"] [--reading "…"]
+pnpm mycelium notebook <principle|practice|direction|research> add --title "…" [--tag NAME]… [--prompt "…" | --prompt -] [--detail "…" | --detail -] [--file <slug>]
+pnpm mycelium notebook experiment add --title "…" --question "…" [--lens "…" --script "…" | --script -] [--browser] [--file <slug>]
+pnpm mycelium notebook experiment run <file>[#<id>]
+pnpm mycelium notebook case add <file> --lens "…" --script "…" | --script - [--id <slug>] [--browser]
+pnpm mycelium notebook case del <file>#<id>
+pnpm mycelium notebook update <file> [--title "…"] [--tag NAME]… [--prompt "…"] [--detail "…" | --detail - | --detail ""] [--conclusion "…" | --conclusion -]
 pnpm mycelium notebook link <from-file> <to-file> --rel <rel> --label "…"
 pnpm mycelium notebook unlink <from-file> <to-file> --rel <rel>
 pnpm mycelium notebook del <file>
 pnpm mycelium notebook list [entries|edges]
 pnpm mycelium notebook tags
-pnpm mycelium notebook run <file> [--record]
 pnpm mycelium notebook generate graph [--out <path>] [--base [<href>]]
 ```
 (Run from the repository root — pnpm resolves `mycelium` from the root
@@ -95,15 +98,40 @@ name reads as a link to it, and one matching nothing stays a word until
 somebody writes that page. `notebook tags` prints the vocabulary with counts,
 which is how a near-duplicate shows up as drift and a typo shows up alone.
 
-### An experiment carries its instrument
+### An experiment carries its instrument, in cases that cannot be edited
 
-`notebook run <file>` runs an experiment's `mycelium/experiment` script and
-prints what it returns. `--record` writes that into `notebook-reading`, so the
-next run has something to disagree with — and the disagreement is the finding.
-A red check means the code broke; a changed reading means the corpus moved.
+An experiment holds one or more cases, the way a specification holds
+behaviours. A case names the lens it looks through, carries the script that
+looks, and holds the readings that came back — dated, newest first, appended
+only when the value moves. Several cases stay apart on purpose: merging their
+answers into one sentence is what `several-readings-kept-apart.principle.html`
+says not to do, and every experiment written before cases existed did exactly
+that.
 
-Nothing here runs during `validate`. A probe that fails a build is a check with
-worse manners, and a probe is allowed to be inconclusive.
+`notebook experiment add --script - --lens "…"` builds the document and its
+first case in one command, and running it is automatic — passing a script runs
+it, prints the reading, and records it, so asking a question costs one command.
+`notebook case add <file> --lens "…" --script -` adds another lens to an
+experiment that already exists. `notebook experiment run <file>[#<id>]` runs
+every case, or the one an address names, and only appends a reading when it
+changed: an unchanged run says so and writes nothing.
+
+Nothing edits a case. A case is its script, so a changed script is a different
+case, and the readings under the old one measured something nobody asks about
+any more. `notebook case del <file>#<id>` prints every reading and conclusion
+it discards, and editing a probe means deleting one and adding another — two
+deliberate commands, with the loss visible in the first.
+
+A conclusion says what somebody made of a reading, and is not the same thing as
+the reading itself. `notebook case conclude <file>#<id> --conclusion "…"` adds
+one beside a case's readings; `notebook update <file> --conclusion "…"`
+answers the question the whole document asks.
+
+A case may run under Node or in a browser (`--browser`), since a probe that
+needs a rendered layout — measuring a figure, say — can't get one from a
+parser that computes no layout. Nothing here runs during `validate`. A probe
+that fails a build is a check with worse manners, and a probe is allowed to be
+inconclusive.
 
 Write the document before you know the answer, because running the script is
 how the answer arrives. Every capture failure this project has recorded has the
@@ -298,9 +326,10 @@ field nobody has to fill gets you. Full design:
 `.mycelium/specs/2026-08-08-behaviour-cites-its-axiom.spec.html`.
 
 ```bash
-pnpm mycelium canon add axiom --canon <name> --id <slug> --title "…" --detail "…" | --detail -
-pnpm mycelium canon add specification --canon <name> --id <slug> --title "…"
-pnpm mycelium canon add behaviour --canon <name> --id <slug> --title "…"
+pnpm mycelium canon axiom add --canon <name> --id <slug> --title "…" --detail "…" | --detail -
+pnpm mycelium canon specification add --canon <name> --id <slug> --title "…"
+pnpm mycelium canon behaviour add --canon <name> --id <slug> --title "…" --check "…" | --check -
+pnpm mycelium canon behaviour group --canon <name> --id <slug> --title "…" <child-id>…
 pnpm mycelium canon update <canon>#<id> [--title "…"] [--id <slug>] [--detail "…"]
 pnpm mycelium canon link <canon>#<id> <target> --rel <rel> --label "…"
 pnpm mycelium canon unlink <canon>#<id> <target> --rel <rel>
@@ -355,11 +384,11 @@ that genuinely does not apply.
 ### The core rule
 
 ```
-HIT something           -> pnpm mycelium notebook add practice ...
-STEP BACK AND SEE IT    -> pnpm mycelium notebook add principle ...
-WANT THE WORK ELSEWHERE -> pnpm mycelium notebook add direction ...
-READ SOMEBODY ELSE      -> pnpm mycelium notebook add research ...
-MEASURE something       -> pnpm mycelium notebook add experiment ...   (then run --record)
+HIT something           -> pnpm mycelium notebook practice add ...
+STEP BACK AND SEE IT    -> pnpm mycelium notebook principle add ...
+WANT THE WORK ELSEWHERE -> pnpm mycelium notebook direction add ...
+READ SOMEBODY ELSE      -> pnpm mycelium notebook research add ...
+MEASURE something       -> pnpm mycelium notebook experiment add ... --question "…" --lens "…" --script -
 CONNECT it              -> pnpm mycelium notebook link <from> <to> --rel ...
 SOMETHING FOR LATER     -> pnpm mycelium followup add --at <path> ...
 ```

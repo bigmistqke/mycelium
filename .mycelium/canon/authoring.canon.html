@@ -137,7 +137,7 @@ path before asking for the href.</p>
       import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const term = sandbox.mycelium(
-          "language", "add", "term",
+          "language", "term", "add",
           "--title", "drift",
           "--file", "drift",
           "--part-of-speech", "noun",
@@ -147,7 +147,7 @@ path before asking for the href.</p>
         assert(term.ok, `add term failed: ${term.stderr || term.stdout}`)
 
         const guide = sandbox.mycelium(
-          "language", "add", "guide",
+          "language", "guide", "add",
           "--title", "Say what a thing does",
           "--file", "say-what-it-does",
           "--pass", "the command writes the edge",
@@ -221,7 +221,7 @@ path before asking for the href.</p>
       import type { TestContext } from "mycelium/api"
       export default async function ({ assert, sandbox }: TestContext) {
         const done = sandbox.mycelium(
-          "canon", "add", "axiom",
+          "canon", "axiom", "add",
           "--canon", "sample",
           "--id", "a-principle",
           "--title", "A principle stated with nothing under it.",
@@ -285,11 +285,11 @@ path before asking for the href.</p>
           const done = sandbox.mycelium("canon", ...argv)
           assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
         }
-        add("add", "axiom", "--canon", "sample", "--id", "a-principle",
+        add("axiom", "add", "--canon", "sample", "--id", "a-principle",
           "--title", "A principle with something under it.",
           "--detail", "<p>Reasoning, so the axiom validates.</p>")
-        add("add", "specification", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
-        add("add", "behaviour", "--canon", "sample", "--id", "a-claim", "--title", "A claim the subsystem makes.",
+        add("specification", "add", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
+        add("behaviour", "add", "--canon", "sample", "--id", "a-claim", "--title", "A claim the subsystem makes.",
           "--check", "export default function ({ assert }) { assert(true) }")
         add("link", "sample#a-claim", "sample#a-principle", "--rel", "depends_on", "--label", "the axiom it refines")
 
@@ -322,14 +322,14 @@ export default async function ({ assert, sandbox }: TestContext) {
     const done = sandbox.mycelium("canon", ...argv)
     assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
   }
-  run("add", "axiom", "--canon", "sample", "--id", "a-principle",
+  run("axiom", "add", "--canon", "sample", "--id", "a-principle",
     "--title", "A principle with something under it.",
     "--detail", "<p>Reasoning, so the axiom validates.</p>")
-  run("add", "specification", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
-  run("add", "behaviour", "--canon", "sample", "--id", "a-narrow-claim",
+  run("specification", "add", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
+  run("behaviour", "add", "--canon", "sample", "--id", "a-narrow-claim",
     "--title", "A narrow claim.", "--check", "export default function () {}")
   run("link", "sample#a-narrow-claim", "sample#a-principle", "--rel", "depends_on", "--label", "the axiom it refines")
-  run("group", "--canon", "sample", "--id", "a-broad-claim",
+  run("behaviour", "group", "--canon", "sample", "--id", "a-broad-claim",
     "--title", "A claim the narrow one makes up.", "a-narrow-claim")
   run("link", "sample#a-broad-claim", "sample#a-principle", "--rel", "depends_on", "--label", "the axiom it refines")
 
@@ -358,7 +358,7 @@ export default async function ({ assert, sandbox }: TestContext) {
   }
   run("notebook", "practice", "add", "--file", "a-thing-somebody-noticed",
     "--title", "Something somebody noticed before the rule existed.")
-  run("canon", "add", "axiom", "--canon", "sample", "--id", "a-principle",
+  run("canon", "axiom", "add", "--canon", "sample", "--id", "a-principle",
     "--title", "A principle that came from somewhere.",
     "--detail", "<p>Reasoning, so the axiom validates.</p>")
   run("canon", "link", "sample#a-principle", "sample#a-principle",

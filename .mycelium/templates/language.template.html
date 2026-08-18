@@ -440,54 +440,94 @@
   }
 
   /**
-   * Create a new language-term, language-rule or language-guide file.
+   * One verb, and a sentence naming it when somebody passes another.
    *
-   *   mycelium language add term --title "…" --file <slug>
-   *     --part-of-speech noun|verb|adjective|adverb|phrase
-   *     --status approved|rejected --meaning "…" [--detail "…" | --detail -]
+   * Every type command dispatches the same way, so learning one is learning
+   * the rest. What differs between them is what the type declares, which is
+   * the whole reason they are separate commands.
+   */
+  async function byVerb(ctx, type, verbs) {
+    const verb = ctx.args._[0]
+    if (!verbs[verb]) {
+      throw new Error(
+        verb
+          ? `language ${type} has no "${verb}" verb; it takes ${Object.keys(verbs).join(', ')}`
+          : `language ${type} takes a verb: ${Object.keys(verbs).join(', ')}`,
+      )
+    }
+    return verbs[verb](ctx)
+  }
+
+  /**
+   * Create a term: a word this project uses with one fixed meaning.
    *
-   *   mycelium language add rule --title "…" --file <slug>
-   *     --pass "…" --fail "…" --check - [--detail "…"]
+   *   mycelium language term add --title "…" --file <slug>
+   *     --part-of-speech noun|verb|adjective|adverb|phrase --meaning "…"
+   *     [--avoid "…"] [--detail "…" | --detail -]
    *
-   *   mycelium language add guide --title "…" --file <slug>
-   *     --pass "…" --fail "…" [--detail "…" | --detail -]
+   * --title is the word itself and --meaning is one sentence. A term exists so
+   * a meaning cannot drift, which is why both are required and why neither
+   * takes a paragraph.
    *
-   * The command writes to language/terms/<slug>.term.html or
-   * language/rules/<slug>.rule.html. There is NO date prefix and no --date
-   * flag, unlike knowledge add and spec add: an entry here is not an event and
-   * does not belong to an exploration, and you look up entries by their word.
-   * So --file is the whole name, and the command rejects a slug carrying a date
-   * — not because it would acquire a second one, but because it would assert
-   * that the word dates from that day.
+   * --avoid names the word this one replaces, and that is what lets a rule
+   * check nobody wrote the other one. A term with nothing to avoid is still
+   * worth writing, since fixing a meaning is the point and displacing a word is
+   * a bonus.
+   */
+  export async function term(ctx: CommandContext) {
+    return byVerb(ctx, 'term', { add: (one) => addEntry(one, 'term') })
+  }
+
+  /**
+   * Create a rule: a constraint on writing that carries a check.
    *
-   * For a term, --title is the word itself and --meaning is one sentence. For a
-   * rule, --title is the rule in one line and --pass/--fail are the two
-   * examples that pin it down; both are required, because every reader reads a
+   *   mycelium language rule add --title "…" --file <slug>
+   *     --pass "…" --fail "…" [--detail "…" | --detail -] --validates <scope>
+   *
+   * --title states the rule in one line, and --pass and --fail are the two
+   * examples pinning it down. Both are required, because every reader reads a
    * rule without them differently.
    *
-   * --pass, --fail and --detail are free-form markup. Pass any of them as "-"
-   * to read that one from stdin, for anything longer than a line. Only one flag
-   * may use "-" per invocation, since there is only one stdin; asking for two
-   * is an error rather than a silent empty field.
-   *
-   * The command rejects a flag belonging to the other type (--pass on a term,
-   * --meaning on a rule) by name. The command would otherwise silently ignore
-   * it, since add writes only the fields its own type declares, and the entry
-   * appears correct with the flag's content nowhere.
-   *
-   * A rejected term should point at its replacement, which is a separate step:
-   * mycelium language link <slug>.term.html <other>.term.html --rel
-   * alternative_to.
-   *
-   * The command validates the built node against its own type before writing
-   * anything, so the command rejects a missing required field, a value outside
-   * an enum, or a field belonging to the other type, and no file appears.
+   * The check goes in by hand, since code does not fit on a flag. A title is an
+   * aspiration and a check is the contract, and the two can differ by a lot: one
+   * rule here matches far less than its title suggests and another rejects more.
    */
-  export async function add({ fs, args, cli }: CommandContext) {
-    const type = args._[0]
-    if (!TYPES.includes(type)) {
-      throw new Error(`<type> must be one of ${TYPES.join('|')}, got "${type ?? '(nothing)'}"`)
-    }
+  export async function rule(ctx: CommandContext) {
+    return byVerb(ctx, 'rule', { add: (one) => addEntry(one, 'rule') })
+  }
+
+  /**
+   * Create a guide: a constraint on writing that carries no check.
+   *
+   *   mycelium language guide add --title "…" --file <slug>
+   *     --pass "…" --fail "…" [--detail "…" | --detail -] --validates <scope>
+   *
+   * Stated and not enforced, which is the whole distinction from a rule. The
+   * script's presence decides which of the two an entry is, so nothing declares
+   * it separately and nothing can disagree about it.
+   *
+   * A guide is where a constraint goes when nothing can check it, rather than
+   * where one waits while somebody gets round to checking it.
+   */
+  export async function guide(ctx: CommandContext) {
+    return byVerb(ctx, 'guide', { add: (one) => addEntry(one, 'guide') })
+  }
+
+  // What every language entry shares, with the three type commands above
+  // deciding which one gets built. Nothing here reaches the roster, because the
+  // roster reads exports and this is the builder they all call.
+  //
+  // There is no date prefix and no --date flag, unlike spec add. An entry here
+  // is not an event and does not belong to an exploration, and a reader looks
+  // one up by its word. So --file is the whole name, and a slug carrying a date
+  // is refused: not because it would acquire a second one, but because it would
+  // assert that the word dates from that day.
+  //
+  // --pass, --fail and --detail take free-form markup. Any one of them may be
+  // "-" to read from stdin, for anything longer than a line. Only one flag may
+  // use "-" per invocation, since there is only one stdin, and asking for two
+  // is an error rather than a silent empty field.
+  async function addEntry({ fs, args, cli }: CommandContext, type: string) {
     requireArgs([args.file, '--file'])
 
     const dated = /^(\d{4}-\d{2}-\d{2})-(.+)$/.exec(args.file)

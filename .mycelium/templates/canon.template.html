@@ -712,79 +712,111 @@
   }
 
   /**
-   * Create a new canon-axiom or canon-specification, or add a behaviour to a
-   * specification that already exists.
+   * One verb, and a sentence naming it when somebody passes another.
    *
-   *   mycelium canon add axiom --canon <name> --id <slug> --title "…"
+   * Every type command dispatches the same way, so learning one is learning the
+   * rest. What differs between them is what the type declares, which is the
+   * whole reason they are separate commands.
+   */
+  async function byVerb(ctx, type, verbs) {
+    const verb = ctx.args._[0]
+    if (!verbs[verb]) {
+      throw new Error(
+        verb
+          ? `canon ${type} has no "${verb}" verb; it takes ${Object.keys(verbs).join(', ')}`
+          : `canon ${type} takes a verb: ${Object.keys(verbs).join(', ')}`,
+      )
+    }
+    return verbs[verb](ctx)
+  }
+
+  /**
+   * Create an axiom: a rule the project holds, with the reasoning under it.
+   *
+   *   mycelium canon axiom add --canon <name> --id <slug> --title "…"
    *     --detail "…" | --detail -
    *
-   *   mycelium canon add specification --canon <name> --id <slug> --title "…"
+   * --title is the principle itself and --detail is the reasoning, and both are
+   * required. One line compresses hard, and the first eleven axioms here all
+   * reached a reader with everything but the rule missing: what it rules out,
+   * what it cost to learn, which cheaper rule it beat.
    *
-   *   mycelium canon add behaviour --canon <name> --id <slug> --title "…"
+   * An axiom carries no date and no confidence. It states what holds now, and
+   * how it came to hold belongs to a notebook entry, which is dated and carries
+   * the prompt behind it.
+   *
+   * Where it belongs follows from who cites it. One cited from more than one
+   * subsystem goes in root, and one cited only by its own subsystem lives with
+   * it. Use move when that changes, since a claim whose home is wrong is a
+   * different problem from a claim that is wrong.
+   */
+  export async function axiom(ctx: CommandContext) {
+    return byVerb(ctx, 'axiom', { add: (one) => addClaim(one, 'axiom') })
+  }
+
+  /**
+   * Create a specification: the subsystem a set of behaviours answers for.
+   *
+   *   mycelium canon specification add --canon <name> --id <slug> --title "…"
+   *
+   * --title names the subsystem. There is no --detail, because each kind of
+   * content that is not a behaviour already has a family and a detail field is
+   * the hole all of them go through.
+   *
+   * A specification carries only specifies, pointing at the code it answers
+   * for. A subsystem is a grouping of files, so nothing contradicts one and
+   * nothing derives one from a principle either.
+   */
+  export async function specification(ctx: CommandContext) {
+    return byVerb(ctx, 'specification', { add: (one) => addClaim(one, 'specification') })
+  }
+
+  /**
+   * Create a behaviour, or gather existing ones under a new one.
+   *
+   *   mycelium canon behaviour add --canon <name> --id <slug> --title "…"
    *     --check "…" | --check - [--browser]
    *
-   * Everything lands in canon/<name>.canon.html, one document per subsystem
-   * holding that subsystem's own axioms and the specification its behaviours
-   * belong to. root.canon.html holds the axioms governing everything, which the
-   * subsystem ones narrow.
-   *
-   * A subsystem's axioms sit beside the behaviours refining them because the set
-   * that shaped one subsystem says nothing about the others. A flat list of all
-   * of them buries the few that do govern everything, and makes an axiom about
-   * drawing read as a peer of an axiom about documents.
-   *
-   * No date prefix and no --date flag, unlike knowledge add and spec add. These
-   * describe what holds now: an axiom that stops being true gets revised or
-   * retired, and a specification that no longer matches the system is a bug in
-   * one of the two.
-   *
-   * For an axiom, --title is the principle itself and --detail is the reasoning
-   * under it, and both are required. One line compresses hard, and the first
-   * eleven axioms here all reached a reader with everything but the rule
-   * missing: what it rules out, what it cost to learn, which cheaper rule it
-   * beat. A field nobody has to fill is a field nobody fills.
-   *
-   * How far to trust an axiom is still not a field here: a knowledge node
-   * records the decision that established or revised it, dated and carrying the
-   * prompt behind it, so the history lives where history lives.
-   *
-   * For a specification, --title names the subsystem. There is no --detail: each
-   * kind of content that is not a behaviour already has a family, and a detail
-   * field is the hole all of them go through.
+   *   mycelium canon behaviour group --canon <name> --id <slug> --title "…"
+   *     <child-id>…
    *
    * A behaviour lands in the specification its canon document already holds, so
-   * add one before adding behaviours. --title is the claim, in one
+   * add a specification before adding behaviours. --title is the claim, in one
    * falsifiable sentence.
    *
-   * --check is required rather than optional, because a behaviour arrives with
-   * the check that falsifies it. A claim nothing can falsify is prose, and this
-   * command is the last place able to insist on that: once the file exists, a
-   * missing check becomes somebody else's problem to notice. The same argument
-   * as an axiom's required detail, one rung down.
+   * --check is required, because a behaviour arrives with the check that
+   * falsifies it. A claim nothing can falsify is prose, and this command is the
+   * last place able to insist on that. It reads from stdin on -, since a script
+   * does not fit on a flag, and --browser picks the runtime.
    *
-   * --check reads from stdin the way --detail does, since a script does not fit
-   * on a flag. --browser picks the runtime. The script type it writes decides
-   * which runner opens the case: without the flag a case runs in a sandbox
-   * tree under Node, and with it a case runs in a page.
+   * group builds a claim above the children it names, and insists on no check
+   * of its own: a claim proved by the claims beneath it has none to give. Every
+   * id survives the move, so a citation from a comment or another claim still
+   * resolves.
    *
-   * --id is what a test cites, so it is required. Its pattern rejects any
-   * segment made only of digits, because a number rots the first time someone
-   * inserts a behaviour above it.
-   *
-   * A specification's links to its axioms and to the files it describes are a
-   * separate step: mycelium canon link <file> <target> --rel depends_on.
-   *
-   * The command validates what it built against its own type before writing, so
-   * a missing required field or a malformed id fails and no file appears.
-   *
-   * @behaviour canon/authoring.canon.html#an-axiom-needs-its-reasoning
+   * --id is what a test cites, so it is required. Its pattern rejects a segment
+   * made only of digits, because a number rots the first time somebody inserts
+   * a behaviour above it.
    */
-  export async function add({ fs, args, cli }: CommandContext) {
-    const type = args._[0]
-    if (type === 'behaviour') return addBehaviour({ fs, args, cli })
-    if (!TYPES.includes(type)) {
-      throw new Error(`<type> must be one of ${[...TYPES, 'behaviour'].join('|')}, got "${type ?? '(nothing)'}"`)
-    }
+  export async function behaviour(ctx: CommandContext) {
+    return byVerb(ctx, 'behaviour', {
+      add: (one) => addBehaviour(one),
+      group: (one) => groupBehaviours(one),
+    })
+  }
+
+  // What an axiom and a specification share, with the two type commands above
+  // deciding which one gets built. Everything lands in canon/<name>.canon.html,
+  // one document per subsystem holding that subsystem's own axioms and the
+  // specification its behaviours belong to.
+  //
+  // A subsystem's axioms sit beside the behaviours refining them, because the
+  // set that shaped one subsystem says nothing about the others. A flat list of
+  // all of them buries the few that do govern everything.
+  //
+  // The command validates what it built against its own type before writing, so
+  // a missing required field or a malformed id fails and no file appears.
+  async function addClaim({ fs, args, cli }: CommandContext, type: string) {
     requireArgs([args.canon, '--canon'], [args.id, '--id'])
     primeFieldOrder(fs)
     // Named here rather than left to the schema, which would report a missing
@@ -986,32 +1018,17 @@
    * Moving a specification carries its behaviours with it, since a behaviour
    * addresses through the document holding it.
    */
-  /**
-   * Gather existing behaviours under a new one that generalises them.
-   *
-   *   mycelium canon group --canon <name> --id <slug> --title "…"
-   *     <child-id> [<child-id>…]
-   *
-   * A grouping is a move rather than an addition, which is why add cannot make
-   * one. add builds a leaf and insists on the check that falsifies it. A claim
-   * proved by the claims beneath it has no check of its own to give.
-   *
-   * The new claim lands where the first child sat, and each child moves inside
-   * it in the order named. Every id survives, so a citation from a comment or
-   * from another claim still resolves — the tree changed and no address did.
-   *
-   * A child keeps the axiom it already names. The parent needs its own, which
-   * is a separate link, the same way a specification names what it describes
-   * after add has built it.
-   *
-   * The title has to be a claim. A heading naming a topic passes every check
-   * here and states nothing, which is what fifteen test-document titles were
-   * doing before this existed.
-   */
-  export async function group({ fs, args, cli }: CommandContext) {
+  // The new claim lands where the first child sat, and each child moves inside
+  // it in the order named. Every id survives, so a citation from a comment or
+  // from another claim still resolves: the tree changed and no address did.
+  //
+  // A child keeps the axiom it already names, and the parent needs its own,
+  // which is a separate link. The title has to be a claim: a heading naming a
+  // topic passes every check here and states nothing.
+  async function groupBehaviours({ fs, args, cli }: CommandContext) {
     requireArgs([args.canon, '--canon'], [args.id, '--id'], [args.title, '--title'])
     primeFieldOrder(fs)
-    const children = args._
+    const children = args._.slice(1)
     if (!children.length) throw new Error('name at least one behaviour to gather')
 
     const path = canonPathFor(args.canon)

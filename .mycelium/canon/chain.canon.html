@@ -252,14 +252,14 @@ export default async function ({ assert, sandbox }: TestContext) {
     const done = sandbox.mycelium("canon", ...argv)
     assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
   }
-  run("add", "axiom", "--canon", "sample", "--id", "a-principle",
+  run("axiom", "add", "--canon", "sample", "--id", "a-principle",
     "--title", "A principle with something under it.",
     "--detail", "<p>Reasoning, so the axiom validates.</p>")
-  run("add", "specification", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
-  run("add", "behaviour", "--canon", "sample", "--id", "a-narrow-claim",
+  run("specification", "add", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
+  run("behaviour", "add", "--canon", "sample", "--id", "a-narrow-claim",
     "--title", "A narrow claim.", "--check", "export default function () {}")
   run("link", "sample#a-narrow-claim", "sample#a-principle", "--rel", "depends_on", "--label", "the axiom it refines")
-  run("group", "--canon", "sample", "--id", "a-broad-claim",
+  run("behaviour", "group", "--canon", "sample", "--id", "a-broad-claim",
     "--title", "A claim the narrow one makes up.", "a-narrow-claim")
 
   const done = sandbox.mycelium("canon", "test", "sample")
@@ -288,14 +288,14 @@ export default async function ({ assert, sandbox }: TestContext) {
     const done = sandbox.mycelium("canon", ...argv)
     assert(done.ok, `${argv.join(" ")} failed: ${(done.stderr || done.stdout).trim()}`)
   }
-  run("add", "axiom", "--canon", "sample", "--id", "a-principle",
+  run("axiom", "add", "--canon", "sample", "--id", "a-principle",
     "--title", "A principle with something under it.",
     "--detail", "<p>Reasoning, so the axiom validates.</p>")
-  run("add", "specification", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
-  run("add", "behaviour", "--canon", "sample", "--id", "a-narrow-claim",
+  run("specification", "add", "--canon", "sample", "--id", "a-subsystem", "--title", "a sample subsystem")
+  run("behaviour", "add", "--canon", "sample", "--id", "a-narrow-claim",
     "--title", "A narrow claim.", "--browser", "--check", "assert(true)")
   run("link", "sample#a-narrow-claim", "sample#a-principle", "--rel", "depends_on", "--label", "the axiom it refines")
-  run("group", "--canon", "sample", "--id", "a-broad-claim",
+  run("behaviour", "group", "--canon", "sample", "--id", "a-broad-claim",
     "--title", "A claim the narrow one makes up.", "a-narrow-claim")
 
   const page = sandbox.read("canon/sample.canon.html")

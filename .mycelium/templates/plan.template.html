@@ -609,64 +609,71 @@
     return (node?.textContent ?? "").trim().replace(/\s+/g, " ")
   }
 
+
   /**
-   * Create a new plan-doc/plan-task/plan-step.
+   * One verb, and a sentence naming it when somebody passes another.
    *
-   *   mycelium plan add doc --title "…" --file <topic> --goal "…"
-   *     --architecture "…" [--status rejected] [--date YYYY-MM-DD]
-   *     [--tech-stack "…"] [--global-constraints "…"]
-   *   mycelium plan add task <file> --title "…" --files "…"
-   *     [--interfaces "…"] [--status rejected]
-   *   mycelium plan add step <file> <task-id> --title "…"
-   *     [--detail "…" | --detail -] [--check-command "…"]
-   *     [--expected-success true|false] [--expected-output "…"]
-   *
-   * doc: --file is required and becomes
-   * .mycelium/plans/<today's-date>-<topic>.plan.html.
-   *
-   * --status is NOT a progress flag. Progress on a doc or a task is
-   * derived from the steps below it and never stored, so the only value
-   * this accepts is "rejected" — the one state no arrangement of steps
-   * can imply. Omit it unless you are abandoning the work.
+   * Every type command dispatches the same way, so learning one is learning the
+   * rest. What differs between them is what the type declares, which is the
+   * whole reason they are separate commands.
    */
-  export async function add({ fs, args, cli }: CommandContext) {
-    const kind = args._[0]
-    if (kind === "doc") return addDoc({ fs, args, cli })
-    if (kind === "task") return addTask({ fs, args, cli })
-    if (kind === "step") return addStep({ fs, args, cli })
-    throw new Error(`unknown add kind "${kind}" — expected "doc", "task", or "step"`)
+  async function byVerb(ctx, type, verbs) {
+    const verb = ctx.args._[0]
+    if (!verbs[verb]) {
+      throw new Error(
+        verb
+          ? `plan ${type} has no "${verb}" verb; it takes ${Object.keys(verbs).join(", ")}`
+          : `plan ${type} takes a verb: ${Object.keys(verbs).join(", ")}`,
+      )
+    }
+    return verbs[verb](ctx)
   }
 
   /**
-   * Update fields on an existing plan-doc/plan-task/plan-step.
+   * Create or change a plan document: the whole of one plan.
    *
-   *   mycelium plan update doc <file> [--title "…"] [--status …]
-   *     [--goal "…"] [--architecture "…"] [--tech-stack "…"]
-   *     [--global-constraints "…"]
-   *   mycelium plan update task <file> <task-id> [--title]
-   *     [--status] [--files] [--interfaces]
-   *   mycelium plan update step <file> <step-id> [--title]
-   *     [--status pending|completed] [--detail "…" | --detail -]
-   *     [--check-command "…"] [--expected-success true|false]
-   *     [--expected-output "…"]
+   *   mycelium plan doc add --title "…" --file <topic> --goal "…"
+   *     --architecture "…" [--tech-stack "…"] [--global-constraints "…"]
    *
-   * doc/task: per-flag upsert/clear-on-empty-string convention, same as every
-   * other update in this project.
+   *   mycelium plan doc update <file> [--title "…"] [--status …] [--goal "…"]
    *
-   * step: same per-flag convention for title/status/detail. --check-command ""
-   * removes the whole nested plan-check. --check-command with a non-empty value
-   * upserts plan-check-command, creating the plan-check wrapper first if none
-   * exists yet. --expected-success/--expected-output upsert their own fields
-   * within an existing (or just-created) plan-check. Passing either one when no
-   * plan-check exists and --check-command wasn't also given is an error.
+   * The document holds the goal and the architecture, and the tasks beneath it
+   * hold the work. A plan's filename carries a date, unlike a notebook entry,
+   * because a plan belongs to the moment somebody made it.
    */
-  export async function update({ fs, args, cli }: CommandContext) {
-    const kind = args._[0]
-    if (kind === "doc") return updateDoc({ fs, args, cli })
-    if (kind === "task") return updateTask({ fs, args, cli })
-    if (kind === "step") return updateStep({ fs, args, cli })
-    throw new Error(`unknown update kind "${kind}" — expected "doc", "task", or "step"`)
+  export async function doc(ctx: CommandContext) {
+    return byVerb(ctx, "doc", { add: addDoc, update: updateDoc })
   }
+
+  /**
+   * Create or change a task: one unit of work inside a plan.
+   *
+   *   mycelium plan task add <file> --title "…" --files "…" [--interfaces "…"]
+   *
+   *   mycelium plan task update <file> <task-id> [--title "…"] [--status …]
+   *
+   * --files names what the task touches, which is what lets a reader see
+   * whether two tasks collide before either starts.
+   */
+  export async function task(ctx: CommandContext) {
+    return byVerb(ctx, "task", { add: addTask, update: updateTask })
+  }
+
+  /**
+   * Create or change a step: one move inside a task.
+   *
+   *   mycelium plan step add <file> <task-id> --title "…" [--detail "…"]
+   *     [--check-command "…"] [--check-success "…"]
+   *
+   *   mycelium plan step update <file> <step-id> [--title "…"] [--status …]
+   *
+   * A step may carry the command that proves it, so progress gets derived from
+   * what passes rather than declared by whoever last touched the file.
+   */
+  export async function step(ctx: CommandContext) {
+    return byVerb(ctx, "step", { add: addStep, update: updateStep })
+  }
+
 </script>
 
 </body>
