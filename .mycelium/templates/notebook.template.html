@@ -530,10 +530,10 @@
     }
   }
 
-  /** Where a verb finds the file it works on, one positional past its own name. */
+  /** Where a verb finds the file it works on: the positional byVerb leaves behind. */
   const fileArg = (args, label) => {
-    requireArgs([args._[1], label])
-    return args._[1]
+    requireArgs([args._[0], label])
+    return args._[0]
   }
 
   async function attachCaseTo({ fs, args, cli }: CommandContext) {
@@ -587,12 +587,39 @@
     for (const one of cases) await readCase(fs, args, path, one, order)
   }
 
+  // A single field that replaces itself, unlike a case's own conclusions,
+  // which repeat because each one answers to a different reading. The whole
+  // document asks one question, so it needs one answer at a time.
+  async function concludeExperiment({ fs, args, cli }: CommandContext) {
+    const name = fileArg(args, "<file>")
+    requireArgs([args.conclusion, "--conclusion"])
+    const path = `${DIR}/${name}`
+    const doc = fs.get(path)
+    const root = experimentAt(fs, path, name)
+    const order = declaredOrder(fs.get("templates/notebook.template.html"), "notebook-experiment")
+    const text = args.conclusion === "-" ? await cli.readStdin() : args.conclusion
+    const existing = root.querySelector(":scope > notebook-conclusion")
+    if (text === "") existing?.remove()
+    else if (existing) existing.innerHTML = text
+    else {
+      const el = doc.createElement("notebook-conclusion")
+      el.innerHTML = text
+      placeField(root, el, order)
+    }
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join("\n"))
+  }
+
   /**
    * One verb, and a sentence naming it when somebody passes another.
    *
    * Every type command dispatches the same way, so a reader who has learnt one
    * has learnt the rest. What differs between them is what the type declares,
    * which is the whole reason they are separate commands.
+   *
+   * Shifts the positional the verb itself consumed off the front, so a handler
+   * — leaf or another byVerb nested one level deeper, the way case sits under
+   * experiment — always finds its own first argument at the same place.
    */
   async function byVerb(ctx, type, verbs) {
     const verb = ctx.args._[0]
@@ -603,7 +630,7 @@
           : `notebook ${type} takes a verb: ${Object.keys(verbs).join(", ")}`,
       )
     }
-    return verbs[verb](ctx)
+    return verbs[verb]({ ...ctx, args: { ...ctx.args, _: ctx.args._.slice(1) } })
   }
 
   /**
@@ -664,7 +691,8 @@
   }
 
   /**
-   * Create an experiment, or run the cases in one.
+   * Create an experiment, run its cases, answer its question, or work on one
+   * case at a time.
    *
    *   mycelium notebook experiment add --title "…" --question "…"
    *     [--lens "…" --script "…" | --script -] [--browser] [--tag NAME]…
@@ -672,84 +700,66 @@
    *
    *   mycelium notebook experiment run <file>[#<id>] [--show] [--port N]
    *
-   * Knowledge that arrives from running something. --question is what the whole
-   * document asks, and --lens with --script builds its first case, so one
-   * question with one probe still costs one command.
+   *   mycelium notebook experiment conclude <file> --conclusion "…" | --conclusion -
    *
-   * Write the document before knowing the answer, because running the script is
-   * how the answer arrives. Every capture failure this project has recorded has
-   * the same shape: logging after the work competes with the work and loses.
+   *   mycelium notebook experiment case add <file> --lens "…"
+   *     --script "…" | --script - [--id <slug>] [--browser]
    *
-   * run takes every case, or the one an address names. Nothing here runs during
-   * validate and nothing here can fail a build, since a probe is allowed to be
-   * inconclusive. A reading records when it moves and only then.
+   *   mycelium notebook experiment case del <file>#<id>
+   *
+   *   mycelium notebook experiment case conclude <file>#<id>
+   *     --conclusion "…" | --conclusion -
+   *
+   * --question is what the whole document asks. --lens with --script builds
+   * the first case, so one question with one probe still costs one command.
+   * A probe is allowed to be inconclusive: nothing here runs during
+   * validate.
+   *
+   * case lives only under experiment: the other four types have no readings
+   * to attach one to. Several cases stay apart on purpose, per
+   * readings-kept-apart — a second lens gets its own case rather than
+   * merging into one answer. Nothing updates a case; delete and add instead.
+   * del prints every reading it drops. --id overrides the id derived from
+   * --lens.
+   *
+   * conclude sets the document's own answer, and replaces it rather than
+   * accumulating. case conclude instead appends a dated line under one
+   * case's readings, and those do accumulate.
+   *
+   * run takes every case, or the one an address names, and records a reading
+   * only when it moves.
    */
   export async function experiment(ctx: CommandContext) {
     return byVerb(ctx, "experiment", {
       add: (one) => addEntry(one, "experiment"),
       run: (one) => runCases(one),
+      conclude: (one) => concludeExperiment(one),
+      case: (one) =>
+        byVerb(one, "case", {
+          add: (two) => attachCaseTo(two),
+          del: (two) => dropCase(two),
+          conclude: (two) => concludeCase(two),
+        }),
     })
   }
 
   /**
-   * Add a case to an experiment, drop one, or say what a reading meant.
+   * Update fields on an existing entry.
    *
-   *   mycelium notebook case add <file> --lens "…"
-   *     --script "…" | --script - [--id <slug>] [--browser]
+   *   mycelium notebook update <file> [--title "…"]
+   *     [--detail "…" | --detail - | --detail ""] [--tag NAME]… [--prompt "…"]…
    *
-   *   mycelium notebook case del <file>#<id>
-   *
-   *   mycelium notebook case conclude <file>#<id> --conclusion "…" | --conclusion -
-   *
-   * A case is one lens on the question its document asks, and several stay
-   * apart on purpose: merging their answers into one sentence is what the
-   * readings-kept-apart principle says not to do.
-   *
-   * Nothing updates a case. A case is its script, so a changed script is a
-   * different case. The readings under the old one measured something nobody
-   * asks about now. del prints every reading it discards, making deleting and
-   * adding an honest edit rather than a quiet loss.
-   *
-   * --id overrides the id derived from the lens, and is worth passing whenever
-   * the lens is a sentence and the slug falling out of it reads as one.
-   */
-  async function addCase(ctx: CommandContext) {
-    return byVerb(ctx, "case", {
-      add: (one) => attachCaseTo(one),
-      del: (one) => dropCase(one),
-      conclude: (one) => concludeCase(one),
-    })
-  }
-  export { addCase as case }
-
-  /**
-   * Update fields on an existing entry, or conclude one of its cases.
-   *
-   *   mycelium notebook update <file> [--title "…"] [--question "…"]
-   *     [--detail "…" | --detail - | --detail ""] [--tag NAME]…
-   *     [--prompt "…"]… [--conclusion "…" | --conclusion -]
-   *
-   *   mycelium notebook update <file>#<id> --conclusion "…" | --conclusion -
+   * Every flag here is valid for every type this family holds, which is what
+   * keeps this the one command that reaches all five. --question,
+   * --conclusion and a case's own script live under experiment instead. None
+   * of the three means anything on a principle, a practice, a direction, or a
+   * research entry, and a flag meaningless for the type it would land on does
+   * not belong on the command building that type.
    *
    * An omitted flag leaves its field untouched and an empty value clears it,
    * which is the rule every family here follows. --tag and --prompt repeat,
    * and each one appends rather than replacing, since an entry gathers both
    * over months.
-   *
-   * --conclusion on an entry answers the question that entry asks. The detail
-   * holds everything else: why a probe is shaped this way, what it cannot
-   * separate, what it cost. On a case address it appends a dated conclusion
-   * instead, saying what somebody made of the reading above it, and several
-   * accumulate the way the readings under them do.
-   *
-   * Nothing updates a case's script, and no flag offers to. A case is its
-   * script, so a changed script is a different case and the readings under the
-   * old one measured something nobody asks about any more. Delete the case and
-   * add another: two deliberate commands, with the loss printed by the first.
-   *
-   * Nothing hand-writes a reading either. A run records one when it moves,
-   * which takes the value from the instrument rather than from whoever is
-   * typing.
    */
   export async function update({ fs, args, cli }: CommandContext) {
     requireArgs([args._[0], "<file>"])
@@ -783,15 +793,8 @@
       const head = doc.querySelector("title")
       if (head) head.textContent = args.title
     }
-    single("notebook-question", args.question)
     if (args.detail !== undefined) {
       single("notebook-detail", args.detail === "-" ? await cli.readStdin() : args.detail, true)
-    }
-    // The document's own conclusion answers the question the document asks,
-    // and the detail holds everything else: why the probe is shaped this way,
-    // what it cannot separate, what it cost.
-    if (args.conclusion !== undefined) {
-      single("notebook-conclusion", args.conclusion === "-" ? await cli.readStdin() : args.conclusion, true)
     }
     for (const name of ["tag", "prompt"]) {
       for (const value of many(args[name])) {
@@ -799,13 +802,6 @@
         el.textContent = value === "-" ? await cli.readStdin() : value
         placeField(root, el, order)
       }
-    }
-
-    // Nothing edits a case, and no flag here offers to. A case is its script,
-    // so a changed script is a different case and the readings under the old
-    // one measured something nobody asks about any more.
-    if (args.script !== undefined) {
-      throw new Error("nothing updates a case; drop it with notebook case del <file>#<id> and add another")
     }
 
     const result = await cli.validate(root, path)
