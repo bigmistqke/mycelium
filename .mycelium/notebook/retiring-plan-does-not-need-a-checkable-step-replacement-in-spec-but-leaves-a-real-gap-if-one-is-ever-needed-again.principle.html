@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retiring plan does not need a checkable-step replacement in spec, but leaves a real gap if one is ever needed again</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-principle data-conforms-to="../templates/notebook.template.html#notebook-principle">
+  <notebook-title>Retiring plan does not need a checkable-step replacement in spec, but leaves a real gap if one is ever needed again</notebook-title>
+  <notebook-tag>plan</notebook-tag>
+  <notebook-tag>spec</notebook-tag>
+  <notebook-tag>canon</notebook-tag>
+  <notebook-prompt>should we integrate some of plan's functionality in spec? having steps that we can check, checkpoints, ...</notebook-prompt>
+  <notebook-detail><p>
+Plan stopped being authored on 2026-08-07 and every one of its 286 recorded
+steps already read completed, so deleting it dropped nothing anyone still
+needed. The question was whether spec should grow plan's other half — a
+runnable check per step, the way <code>plan-check</code> ran a real command
+and derived a task's status from its steps rather than storing it by hand.
+</p>
+<p>
+Every spec written since plan lapsed went straight from design to
+same-session implementation, with nothing needing a checklist that outlives
+one sitting. And where a checkable claim genuinely matters, this project
+already has a home for it: canon's behaviour, which names a real script and
+carries a verdict. Building a second checkable-step mechanism into spec
+would duplicate that chain rather than fill a gap.
+</p>
+<p>
+The gap is real anyway, and worth naming rather than assuming closed. If a
+future effort needs multi-session task tracking again — the kind
+<code>plan-doc</code> and <code>plan-task</code> gave six-task efforts like
+the harness-shape plan — spec has nowhere to put it today. That is the
+condition to watch for, not a reason to build the mechanism now against a
+workflow the project has already outgrown.
+</p>
+</notebook-detail>
+  <a data-rel="supports" href="./spec-and-plan-duplicate-each-other.principle.html">the earlier observation that spec and plan overlapped before either lapsed</a>
+  <a data-rel="supports" href="./derive-progress-declare-rejection.principle.html">the checkable-step mechanism this decides not to rebuild inside spec</a>
+  <a data-rel="elaborates" href="../canon/root.canon.html">canon's own behaviour-plus-test chain, the existing home for a checkable claim</a>
+</notebook-principle>
+</body></html>

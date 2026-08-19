@@ -250,9 +250,9 @@ stale item cannot sit there quietly.
 
 An item carries **no date and no status**. It exists in order to stop existing,
 so `done` deletes the file rather than marking it, and git holds what the
-project decided not to do. Do not add priority, size or assignment: `plan`'s
-twelve documents hold 286 statuses that all say `completed`, which is what a
-maintained progress field becomes.
+project decided not to do. Do not add priority, size or assignment: the
+now-retired `plan` family's twelve documents held 286 statuses that all said
+`completed`, which is what a maintained progress field becomes.
 
 Design: `.mycelium/specs/2026-08-09-followup-family.spec.html`.
 

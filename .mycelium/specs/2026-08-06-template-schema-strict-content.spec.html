@@ -91,10 +91,9 @@ works.</p>
 <p>For the third group, a placeholder names the template its content follows.</p>
 <pre><code>&lt;plan-task repeatable conforms-to="#plan-task"&gt;&lt;/plan-task&gt;
 &lt;figure-node required repeatable conforms-to="#figure-node"&gt;&lt;/figure-node&gt;</code></pre>
-<p>A parent then pulls its children into validation. This says the thing
-<a href="../templates/plan.template.html">plan.template.html</a> currently
-records as a limit: that a parent's template <q>can't reach into that child's
-own internal shape</q>.</p>
+<p>A parent then pulls its children into validation. This says the thing the
+now-retired <code>plan.template.html</code> once recorded as a limit: that a
+parent's template <q>can't reach into that child's own internal shape</q>.</p>
 <p>It also closes a gap in the figure family. No
 <code>figure-graph</code> in the corpus declares conformance, so no figure has
 ever met the generic validator, and a node placed at <code>nowhere</code>
