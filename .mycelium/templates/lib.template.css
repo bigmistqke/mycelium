@@ -1,0 +1,21 @@
+/* The lib-* field vocabulary. Every tag is hyphenated so it can never
+   collide with a current or future standard HTML element, and selectors
+   stay scoped under lib-doc so this file's rules can never leak onto
+   another template's same-named field tags.
+
+   A function reads as a card: its own doc, since that is the one part of
+   it a reader can actually see rendered — a <script> is never rendered
+   content regardless of what display says, so the code and its test stay
+   readable only in source, the same as any other command script here. */
+lib-doc { display: block; }
+lib-doc > lib-title { display: block; font-weight: 600; font-size: 1.1rem; margin-bottom: 0.75rem; }
+lib-function {
+  display: block;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.9rem 1.1rem;
+  background: var(--code-bg);
+  margin: 0.75rem 0;
+}
+lib-function > lib-function-doc { display: block; color: var(--muted); font-size: 0.92rem; }

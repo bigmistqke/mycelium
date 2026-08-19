@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template: lib-doc</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="./lib.template.css">
+</head>
+<body>
+
+<h1>Template: lib-doc</h1>
+<template-host data-conforms-to="./template.template.html#template-host">
+  <template-purpose>reusable code as a real document, so a family importing it gets a schema-checked, tested, documented function instead of a bare file wandering outside the corpus</template-purpose>
+  <template-files>.mycelium/templates/&lt;slug&gt;.lib.html, sitting beside whatever assets its own functions read — no fixed directory of its own yet</template-files>
+  <template-design>
+    <a href="../specs/2026-08-19-lib-template.spec.html">lib.template.html: reusable code as a real document, not a bare file</a>
+  </template-design>
+</template-host>
+
+<div class="meta">
+  <div><b>Styling:</b> <code>./lib.template.css</code>, plus the shared <code>../theme.css</code></div>
+</div>
+
+<h2>Why this template exists</h2>
+<p>
+  A family importing another family's own logic has always worked — <code>mycelium/shared</code> and
+  <code>mycelium/utils</code> are real, working imports today. What neither had was a document of its
+  own. A <code>.ts</code> file sits outside the vocabulary this whole corpus otherwise holds to: nothing
+  checks its shape, nothing cites it, and a reader who wants to know what a function promises has to go
+  read the implementation, the same gap a bare command function had before it could export a real verb
+  table.
+</p>
+<p>
+  A <code>.lib.html</code> file closes that gap without inventing new machinery. Addressing a function by
+  <code>path.html#id</code> already works — it is the same mechanism a command script already uses to
+  reach another family's export. What was missing was a shape: somewhere a function's own doc and its own
+  test could sit beside its own code, checked the way everything else here is checked.
+</p>
+
+<h2>Shape</h2>
+<p>
+  One title for the library as a whole, and one or more functions. Each function carries its own doc as
+  a real sibling field — not a code comment, the same way a family's own purpose sits beside it rather
+  than above it in a comment — its own script, and an optional test.
+</p>
+<template id="lib-doc">
+  <lib-doc>
+    <lib-title required></lib-title>
+    <lib-function repeatable required>
+      <lib-function-doc required markup></lib-function-doc>
+      <script required></script>
+      <lib-function-test>
+        <script></script>
+      </lib-function-test>
+    </lib-function>
+  </lib-doc>
+</template>
+<pre><code>&lt;lib-doc&gt;
+  &lt;lib-title&gt;&hellip;&lt;/lib-title&gt;
+  &lt;lib-function&gt;
+    &lt;lib-function-doc&gt;&hellip;&lt;/lib-function-doc&gt;
+    &lt;script id="someFunction" type="mycelium/lib"&gt;
+      export function someFunction() { &hellip; }
+    &lt;/script&gt;
+    &lt;lib-function-test&gt;
+      &lt;script type="mycelium/test"&gt;
+        export default async function ({ assert }) { &hellip; }
+      &lt;/script&gt;
+    &lt;/lib-function-test&gt;
+  &lt;/lib-function&gt;
+&lt;/lib-doc&gt;</code></pre>
+
+<h2>A function's id is what a reader imports by</h2>
+<p>
+  <code>&lt;lib-function&gt;</code> itself carries no id — only its <code>&lt;script&gt;</code> does,
+  since that is the one element <code>script-hooks.ts</code>'s loader actually resolves with
+  <code>document.getElementById</code>. Giving the wrapper a matching id looks harmless and is not: a
+  duplicate id resolves to whichever element the DOM finds first, so <code>#someFunction</code> would
+  hand the loader the wrapper's own mixed doc-and-code text instead of the script's, and the failure
+  reads as a syntax error in code that was never wrong.
+</p>
+<p>
+  A script typed <code>mycelium/lib</code> gets the same TypeScript-stripping every <code>mycelium/*</code>
+  script already gets. Nothing about loading one is new; only the document holding it is.
+</p>
+
+<h2>A test is optional, and lives beside the function it checks</h2>
+<p>
+  <code>&lt;lib-function-test&gt;</code> wraps a plain <code>mycelium/test</code> case — the same shape
+  a canon behaviour's own node case already has, handed <code>{ assert }</code> and nothing else. No
+  sandbox: a library function is a pure function of its own arguments, not a command reading or writing
+  documents, so it needs no throwaway corpus tree to run against.
+</p>
+
+<div class="worked-example">
+  <h4>A worked example</h4>
+  <p>
+    A sample <code>&lt;lib-doc&gt;</code>, checked by <code>template.template.html</code>'s generic
+    validator against the attributes on the <code>&lt;template&gt;</code> above, and its test actually
+    runs under <code>mycelium lib test</code> like any other.
+  </p>
+
+  <div id="sample-instance">
+    <lib-doc data-conforms-to="../templates/lib.template.html#lib-doc">
+      <lib-title>arithmetic: a worked example small enough to read whole</lib-title>
+      <lib-function>
+        <lib-function-doc><p>Doubles a number. Exists only to give this template a real, running
+          instance small enough to read in one glance.</p></lib-function-doc>
+        <script id="double" type="mycelium/lib">
+          export function double(n: number): number {
+            return n * 2
+          }
+        </script>
+        <lib-function-test>
+          <script type="mycelium/test">
+            import { double } from "#double"
+
+            export default async function ({ assert }) {
+              assert(double(21) === 42, `expected 42, got ${double(21)}`)
+            }
+          </script>
+        </lib-function-test>
+      </lib-function>
+    </lib-doc>
+  </div>
+</div>
+
+<h2>Authoring commands</h2>
+<p>
+  <code>test</code> only. A function's body is real code, and no flag fits one the way <code>--title</code>
+  fits a one-line field — the same reason <code>test.template.html</code>'s own cases have no
+  <code>add</code> either. Writing a <code>.lib.html</code> file means writing the markup.
+</p>
+<script type="mycelium/command">
+  import type { CommandContext } from "mycelium/api"
+  import { loadModule } from "mycelium/utils"
+  import { resolve as resolvePath } from "node:path"
+
+  function assert(ok: unknown, text?: string) {
+    if (!ok) throw new Error(text || "assertion failed")
+  }
+  assert.near = (a: number, b: number, tolerance?: number, text?: string) => {
+    const slack = tolerance === undefined ? 0.5 : tolerance
+    if (!(Math.abs(a - b) <= slack)) {
+      throw new Error(`${text || "expected these to match"}: ${a} and ${b} differ by more than ${slack}`)
+    }
+  }
+
+  /**
+   * Run every function's own test across one library, or every library in
+   * the corpus.
+   *
+   *   mycelium lib test [<file>]
+   *
+   * A case is handed { assert } and nothing else — no sandbox, since a
+   * library function takes its own arguments and returns a value rather
+   * than reading or writing documents. A function with no
+   * lib-function-test is skipped, not failed: a test is optional, and an
+   * untested function is a gap to notice, not an error to block on.
+   */
+  export async function test({ fs, args }: CommandContext) {
+    const target = args._[0]
+    const files = target
+      ? [{ path: target, doc: fs.get(target) }]
+      : fs.list(".").filter(({ path }) => path.endsWith(".lib.html"))
+
+    let checked = 0
+    let failed = 0
+    for (const { path, doc } of files) {
+      for (const fn of Array.from(doc.querySelectorAll("lib-function"))) {
+        const id = fn.querySelector('script[type="mycelium/lib"]')?.getAttribute("id") ?? "?"
+        const testScript = fn.querySelector("lib-function-test script")
+        if (!testScript) continue
+        checked++
+        try {
+          const mod = await loadModule(resolvePath(fs.root, path), testScript)
+          if (typeof mod.default !== "function") throw new Error("this test exports no default function")
+          await mod.default({ assert })
+          console.log(`  SUCCESS  ${path}#${id}`)
+        } catch (err) {
+          failed++
+          console.log(`  FAILURE  ${path}#${id}  ${(err as Error).message}`)
+        }
+      }
+    }
+    console.log(`\n${checked} case(s), ${failed} failed`)
+    if (failed) throw new Error(`${failed} of ${checked} case(s) failed`)
+  }
+</script>
+
+<h2>Conformance</h2>
+<p>
+  Conformance is a <code>data-conforms-to</code> attribute on the element making the claim, the same as
+  every other family here.
+</p>
+<pre><code>&lt;lib-doc data-conforms-to="../templates/lib.template.html#lib-doc"&gt;
+  &hellip;
+&lt;/lib-doc&gt;</code></pre>
+
+</body>
+</html>
