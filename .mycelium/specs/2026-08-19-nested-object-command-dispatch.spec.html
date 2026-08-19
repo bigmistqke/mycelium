@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: Command dispatch as nested exported objects, replacing byVerb</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>Command dispatch as nested exported objects, replacing byVerb</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-19</spec-date>
+  <spec-problem>
+<p>
+Today the engine resolves exactly one level of a command line. <code>run.ts</code>'s
+<code>main()</code> splits argv into <code>[id, namedCommand, ...rest]</code>, finds the
+family's <code>&lt;script type="mycelium/command"&gt;</code> block, loads it as a module,
+and picks the export named after <code>namedCommand</code> with a plain property lookup —
+<code>const run = mod[command]</code> — then calls it with every remaining token packed into
+<code>args._</code>, unexamined. For <code>mycelium notebook generate graph --watch</code>, the
+engine never looks at <code>"graph"</code> at all; it hands the whole thing to <code>generate</code>
+and trusts <code>generate</code>'s own body to make sense of it.
+</p>
+<p>
+That body makes sense of it by calling <code>byVerb(ctx, "type", verbs)</code>, a helper that reads
+<code>ctx.args._[0]</code>, looks it up in a <code>verbs</code> object built fresh inside the
+function on every call, and recurses for a second level of nesting (<code>experiment case add</code>
+is two <code>byVerb</code> calls deep). <code>byVerb</code> is not shared machinery — it is defined
+separately, near-identically, in both <code>notebook.template.html</code> and
+<code>canon.template.html</code>, and the duplication has already produced a real inconsistency:
+notebook's copy slices <code>_</code> by one before recursing so a nested call sees its own verb at
+the front again, canon's copy does not, because canon never needed a second level. Nothing outside
+the function that calls <code>byVerb</code> — not the engine, not <code>--help</code>, not the
+corpus-index page — has ever been able to see the <code>verbs</code> table, because it exists only
+as a local variable built at call time.
+</p>
+<p>
+Two standing gaps come directly from this. <code>byverb-has-no-help-of-its-own.followup.html</code>
+notes that <code>--help</code> for a <code>byVerb</code>-dispatched command has nothing to print but
+the outer function's entire doc comment, because the sub-verb names exist only as prose a person
+typed into that comment by hand — <code>notebook experiment case add</code>, <code>case del</code>,
+<code>case conclude</code> are usage lines in a comment, not anything parsed. And
+<code>generate-commands-are-undeclared.direction.html</code> names the broader shape of the same
+problem: a document in this corpus declares what it is, in a way <code>validate</code> can check,
+and a command declares nothing — what a command actually does is a fact only readable by opening its
+source.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>Commands export nested objects, not calls to byVerb</h3>
+<p>
+A family's command script exports a plain object wherever it previously called <code>byVerb</code>,
+with one method per verb and one nested object per level of sub-verbs:
+</p>
+<pre><code>export const experiment = {
+  add(ctx) { ... },
+  run(ctx) { ... },
+  conclude(ctx) { ... },
+  case: {
+    add(ctx) { ... },
+    del(ctx) { ... },
+    conclude(ctx) { ... },
+  },
+}</code></pre>
+<p>
+The object's own shape is now the dispatch table. Nothing needs to stay in sync between what verbs a
+command has and what a reader can discover about it — they are the same property names, and whatever
+asks reads them directly.
+</p>
+<h3>The engine resolves every level, not just the first</h3>
+<p>
+<code>run.ts</code>'s command resolution changes from a single lookup-and-call into a loop: resolve
+<code>mod[command]</code> as today, then repeatedly examine the result. A function call consumes
+whatever of <code>rest</code> remains, parsed into args as it is now. A plain object consumes the
+next token off the front of <code>rest</code>, looks it up as a property, and the loop continues one
+level deeper. Running out of tokens while holding an object, or finding no matching property, produces
+the same "takes a verb: X, Y, Z" error <code>byVerb</code> raises today, listing that level's own
+keys.
+</p>
+<p>
+This is the one place the token-slicing rule belongs, decided once rather than copied twice with a
+drift already in it. <code>byVerb</code> and its canon duplicate disappear once no family still calls
+them.
+</p>
+<h3>--help walks the same structure</h3>
+<p>
+<code>printHelp</code> currently lists a family's roster with <code>Object.keys(mod).filter(k =&gt;
+typeof mod[k] === "function")</code> and prints each one's entire leading doc comment verbatim. It
+needs to walk into an object export the same way the engine now does, printing one line per full verb
+path (<code>generate graph</code>, <code>experiment case add</code>) — and each leaf can carry its own
+doc comment, read off its own method node with the same <code>ts.getLeadingCommentRanges</code> call
+this file already has, rather than every sub-verb sharing one comment written for the whole family of
+them.
+</p>
+<h3>readCommands gains the same walk</h3>
+<p>
+<code>shared.ts</code>'s <code>readCommands</code> — which the corpus-index page's "Commands" badges
+already depend on — recognizes exactly three export shapes today: a function declaration, an arrow or
+function-expression <code>const</code>, and an aliased re-export. An object-literal export matches
+none of them, so <code>readCommands</code> silently drops it. This has to change in the same commit
+that lands the first object-literal command, or that command disappears from the index the moment it
+ships, not later. <code>readCommands</code> needs the identical recursive walk <code>printHelp</code>
+gets, so a nested verb shows up as its own badge under the family's card.
+</p>
+<h3>Migration is per-family, not a flag day</h3>
+<p>
+The engine supports both shapes at once: a resolved export that is a function still calls immediately,
+exactly as today; a resolved export that is a plain object, the resolver now walks. A family moves to
+the nested shape on its own schedule by rewriting its own <code>byVerb</code> calls into object
+literals — this spec does not require every family using <code>byVerb</code>-shaped dispatch today to
+move in one change.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+  <li>Rewriting every family's existing dispatch in this change. This spec establishes the mechanism;
+  which family migrates first, and in what order, is a separate decision.</li>
+  <li>Any schema check confirming every leaf of an exported command object is actually a function
+  (as opposed to, say, a stray non-function property). A future audit could add this; nothing here
+  specifies one.</li>
+  <li>Whether the corpus-index page's popover UI should show a nested verb differently from a flat
+  one — a display decision for that page, not this dispatch mechanism.</li>
+  <li>The broader "document-of-documents" homepage question this idea came up alongside. Unrelated to
+  how a command line resolves to a function.</li>
+</ul>
+</spec-out-of-scope>
+  <spec-open-questions>
+<ol>
+  <li>Once a verb is individually addressable, <code>mycelium notebook generate --help</code> could
+  plausibly print just that one verb's own commands instead of the whole family's roster. Worth doing,
+  not specified here.</li>
+  <li>Should a leaf command's own doc comment become required rather than optional, now that
+  <code>--help</code> can attribute one to each verb individually instead of one comment covering
+  several? Unresolved.</li>
+  <li>Whether <code>byVerb</code> and its canon duplicate get deleted as soon as notebook and canon
+  both migrate, or stay until every family that uses the pattern has moved — depends on how many other
+  families turn out to use it, which has not been surveyed beyond notebook and canon.</li>
+</ol>
+</spec-open-questions>
+</spec-doc>
+</body></html>
