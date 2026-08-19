@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: page.command.html: a shared home for generating and serving a page</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>page.command.html: a shared home for generating and serving a page</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-19</spec-date>
+  <spec-problem>
+<p>
+<a href="../notebook/generate-commands-are-undeclared.direction.html">A prior direction</a> names the
+gap this closes: a <code>generate</code> command is a plain function discovered by naming convention,
+documented only in prose a person keeps in sync by hand. Nothing states, in a form
+<code>validate</code> or a reader could check, what a <code>generate</code> command produces or how to
+reach it.
+</p>
+<p>
+The three commands that already generate a page also disagree with each other in ways that gap makes
+easy to miss. <code>notebook generate graph</code> and <code>canon generate chain</code>/<code>measure</code>
+both call <code>graphPage()</code> (<code>graph-page.ts</code>) for their shell and get
+<code>--watch</code> for free through <code>graph-serve.ts</code>. <code>explore generate index</code>
+reimplements its own shell from scratch, including the doctype, style embedding and escaping that have
+nothing to do with what it draws, and has no watch mode at all. Canon's own watch gap is already
+recorded as <a href="../followups/give-canon-generate-watch-the-same-server-the-notebook-has.followup.html">
+its own followup</a>. Every one of these differences is a fact about how each family's own
+<code>generate</code> happened to get written, not a decision anyone made on purpose.
+</p>
+<p>
+Each family also hand-rolls how its own output reaches disk or a browser: an <code>--out</code> flag,
+a bare stdout write, or a bespoke HTTP server wired into that one family's own script. None of that is
+shared machinery, so a fourth family wanting a generated page has nothing to reuse and no address to
+give a reader who wants to open one.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>page is a command file, not a template</h3>
+<p>
+<code>page.command.html</code> declares no <code>&lt;template id&gt;</code>, so nothing conforms to
+it — the same shape <code>explore.command.html</code> and <code>comments.command.html</code> already
+have: a whole-corpus tool with no files of its own. It holds the machinery every page-producing family
+would otherwise reimplement: writing output to a derived path, and serving it fresh on
+<code>--watch</code>.
+</p>
+<h3>A family's own page export stays a pure function</h3>
+<p>
+A family that wants a generated page exports a <code>page</code> table the same way
+<a href="../specs/2026-08-19-nested-object-command-dispatch.spec.html">a command table</a> already
+works: <code>export const page = { index(): string { ... } }</code>, one entry per page it can produce.
+Each leaf takes the corpus and returns the finished HTML as a string — or a
+<code>Promise&lt;string&gt;</code>, for something like canon's <code>measure</code>, which drives a
+headless browser to read a figure's own layout. A leaf knows nothing about paths, flags, or serving; it
+stays exactly what <code>graphPage()</code>'s callers already are today, a function from corpus state to
+markup.
+</p>
+<h3>page.command.html finds every family's own page table</h3>
+<p>
+Its own command walks the corpus the way <code>explore generate index</code> already walks every
+family looking for a <code>template-host</code>, except it looks for a <code>page</code> export instead.
+Reaching into another family's script to call that export uses
+<a href="../specs/2026-07-25-virtual-module-script-imports.spec.html">the same mechanism
+this project already built</a> for one script to import another by <code>path.html#id</code> — a
+capability that spec named "cross-family command reuse" as one of the things it would unlock, without a
+caller for it yet.
+</p>
+<h3>The output address is derived, not typed in</h3>
+<p>
+A page's path is computed from the same verb path the engine's own resolver already builds while
+walking a nested command table to find the function to call — <code>page/&lt;family-id&gt;/&lt;verb
+path&gt;.html</code>. No <code>--out</code> flag for the common case: the address a reader opens is the
+same path the command line used to reach the function that built it.
+</p>
+<h3>--watch becomes one generic feature, not one per family</h3>
+<p>
+<code>page.command.html</code> owns a single watch server: given a family and a verb, it re-calls that
+page's own function on every request and serves what it returns, the way <code>graph-serve.ts</code>
+does today only for notebook and canon. Every family with a <code>page</code> export gets this for free,
+which closes canon's own watch followup as a consequence of this shape rather than as a separate port
+of <code>graph-serve.ts</code>.
+</p>
+<h3>page.command.html's own dispatch is discovered, not declared</h3>
+<p>
+It cannot know ahead of time which families export a <code>page</code> table, so it reads and looks up
+its own <code>&lt;family&gt; &lt;verb&gt;</code> arguments at runtime, rather than matching them
+against a static nested object the way <code>experiment</code>'s verbs now do. This is not a new gap:
+it is the same shape <code>mycelium &lt;id&gt; &lt;command&gt;</code> itself already has, discovered by
+walking files rather than declared as an enum anywhere.
+</p>
+<h3>Nothing here changes run.ts</h3>
+<p>
+This stays inside the command-script vocabulary the engine already resolves generically.
+<code>run.ts</code>'s own header names its one rule — protocol-only, never what any command actually
+does — and writing and serving a page is exactly the kind of thing that rule says does not belong there.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+  <li>Migrating notebook's, canon's, and explore's existing <code>generate</code> commands onto this
+  shape. This spec specifies the mechanism a family would use; doing that migration is separate work,
+  not required to land this.</li>
+  <li>Sharing a page's own visual shell across families. Deriving where a page's output goes does not
+  derive what it looks like — <code>graphPage()</code> is still only reused by the two families that
+  already call it, and this spec does not change that.</li>
+  <li>Any change to how <code>run.ts</code> resolves an ordinary command. This spec's whole point is
+  that none is needed.</li>
+</ul>
+</spec-out-of-scope>
+  <spec-open-questions>
+<ol>
+  <li>Does <code>page</code> replace <code>generate</code> as the verb name — a breaking rename across
+  every family that has one today — or sit alongside it? Unresolved.</li>
+  <li>Does a page's output under <code>page/&lt;family&gt;/...</code> get committed, and if so, what
+  stops a committed one from going stale the way a hand-authored document already has in this project
+  more than once? An audit comparing a tracked page against what regenerating it produces right now is
+  the obvious answer, and is not specified here.</li>
+  <li>The exact path convention for a verb path more than one level deep — how a nested
+  <code>page.someGroup.someKind()</code>, should a family ever want one, maps into a filesystem path —
+  is not settled beyond the flat case worked through above.</li>
+  <li>Whether <code>page.command.html</code> writes the corpus-walking, script-hooks-loading pattern it
+  needs fresh, or factors it out of <code>explore.command.html</code>, which already does the same walk
+  for a different purpose. A smaller instance of the still-open question in
+  <a href="../notebook/lib-code-lives-inside-an-html-document.direction.html">whether reusable library
+  code belongs inside a document</a>.</li>
+</ol>
+</spec-open-questions>
+</spec-doc>
+</body></html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commands: page</title>
+<link rel="stylesheet" href="../theme.css">
+</head>
+<body>
+
+<h1>Commands: page</h1>
+<template-host data-conforms-to="../templates/template.template.html#template-host">
+  <template-purpose>a shared home for generating and serving a page, so a family declares what it draws instead of hand-rolling its own output and watch server</template-purpose>
+  <template-design><a href="../specs/2026-08-19-page-command.spec.html">page.command.html: a shared home for generating and serving a page</a></template-design>
+</template-host>
+
+<div class="meta">
+  <div><b>Not a template:</b> like <code>explore.command.html</code>, this file declares no
+    <code>&lt;template id="…"&gt;</code> and nothing conforms to it via <code>data-conforms-to</code>.</div>
+  <div><b>A family opts in by exporting <code>page</code>:</b> <code>export const page = { index(): string {
+    ... } }</code>, the same nested-object shape a command table already uses. Nothing here executes
+    unless a family declares one.</div>
+</div>
+
+<h2>Commands</h2>
+<p>
+  A page's own leaf is a pure function from corpus state to an HTML string — it knows nothing about
+  paths, flags, or serving. Everything below is what turns that string into a file at
+  <code>page/&lt;family&gt;/&lt;verb path&gt;.html</code>, or into a response an open browser tab can
+  reload.
+</p>
+<script type="mycelium/command">
+  import type { CommandContext, CommandFilesystem } from "mycelium/api"
+  import { loadModule } from "mycelium/utils"
+  import { createServer } from "node:http"
+  import { join } from "node:path"
+
+  /**
+   * Where a family's own command script lives, found the same way the
+   * engine itself resolves an id: a template file first, a command file
+   * otherwise. This reads through CommandFilesystem instead of the engine's
+   * own corpus walk, since it runs as an ordinary command rather than as
+   * part of command resolution.
+   */
+  function findFamilyFile(fs: CommandFilesystem, id: string): { path: string; doc: Document } {
+    const template = fs.list("templates").find((f) => f.path === `templates/${id}.template.html`)
+    if (template) return template
+    const command = fs.list("commands").find((f) => f.path === `commands/${id}.command.html`)
+    if (command) return command
+    throw new Error(`no template or command host found for "${id}"`)
+  }
+
+  /**
+   * A family's own page table, loaded by actually running its command
+   * script — not the source-text parse readCommands does for --help and the
+   * corpus-index page, which never executes anything. This resolves through
+   * the same path.html#id mechanism a plain import statement inside a
+   * command script can already use, with loadModule calling that mechanism
+   * programmatically instead. The script element to address comes from a
+   * document this command just read, not from a specifier a person wrote
+   * into source.
+   */
+  async function resolvePageTable(fs: CommandFilesystem, id: string): Promise<Record<string, unknown>> {
+    const { path, doc } = findFamilyFile(fs, id)
+    const script = doc.querySelector('script[type="mycelium/command"]')
+    if (!script) throw new Error(`${path} has no <script type="mycelium/command">`)
+    const mod = await loadModule(join(fs.root, path), script)
+    const page = mod.page
+    if (typeof page !== "object" || page === null) throw new Error(`${id} exports no "page" table`)
+    return page as Record<string, unknown>
+  }
+
+  /**
+   * Walks a page table the same way the engine walks a command table to
+   * resolve a verb: a function is the leaf to call, a plain object is a
+   * further table to descend into one token at a time. Kept as its own copy
+   * rather than imported from the engine, since page.command.html runs as
+   * an ordinary command and the engine's own resolver is not exported for
+   * another command to call.
+   */
+  function resolvePage(id: string, table: unknown, verbPath: string[]): () => string | Promise<string> {
+    let current = table
+    const seen = [id]
+    for (const verb of verbPath) {
+      if (typeof current !== "object" || current === null) break
+      const next = (current as Record<string, unknown>)[verb]
+      const nextIsTable = typeof next === "object" && next !== null
+      if (typeof next !== "function" && !nextIsTable) {
+        const keys = Object.keys(current as object).join(", ")
+        throw new Error(`page ${seen.join(" ")} has no "${verb}" verb; it takes ${keys}`)
+      }
+      current = next
+      seen.push(verb)
+    }
+    if (typeof current !== "function") {
+      const keys = typeof current === "object" && current !== null ? Object.keys(current).join(", ") : ""
+      throw new Error(`page ${seen.join(" ")} takes a verb: ${keys}`)
+    }
+    return current as () => string | Promise<string>
+  }
+
+  const pagePathFor = (id: string, verbPath: string[]) => `page/${id}/${verbPath.join("/")}.html`
+
+  /**
+   * Serves one resolved page fresh on every request, so a corpus edit shows
+   * up on the next reload with no restart. The page table is resolved once,
+   * before the server starts. So this reflects a change to the corpus data
+   * a leaf reads, but not a change to the leaf's own code — Node's module
+   * cache still hands back the old version of that. Watching a code change
+   * needs restarting the server, the same way most dev servers without
+   * hot-module-replacement do.
+   */
+  function serve(id: string, verbPath: string[], leaf: () => string | Promise<string>, port?: number): Promise<never> {
+    const server = createServer(async (req, res) => {
+      if (req.url !== "/") {
+        res.writeHead(404)
+        res.end()
+        return
+      }
+      try {
+        const html = await leaf()
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+        res.end(html)
+      } catch (err) {
+        res.writeHead(500, { "content-type": "text/plain; charset=utf-8" })
+        res.end((err as Error).message)
+      }
+    })
+    return new Promise<never>((_resolve, reject) => {
+      server.on("error", reject)
+      server.listen(port ?? 0, () => {
+        const address = server.address()
+        const boundPort = typeof address === "object" && address ? address.port : port
+        console.log(`serving page ${[id, ...verbPath].join(" ")} at http://localhost:${boundPort}/`)
+      })
+    })
+  }
+
+  /**
+   * Generate one family's page, or serve it fresh on every request.
+   *
+   *   mycelium page generate <family> <verb>… [--watch] [--port N]
+   *
+   * <family> is a template or command host's own id. <verb>… is the path
+   * into that family's own page table — a single verb today for every
+   * family that has one. A family nesting its own page table follows the
+   * same walk a nested command table already does.
+   *
+   * Without --watch, the resolved leaf runs once and the Filesystem writes
+   * its HTML to page/<family>/<verb path>.html, so it shows up in the same
+   * "wrote …" report every other command's write does. With --watch,
+   * nothing reaches disk: an HTTP server serves the same content fresh on
+   * every request instead, on the port --port names or one the OS assigns
+   * and prints.
+   */
+  export async function generate({ fs, args }: CommandContext) {
+    const [id, ...verbPath] = args._
+    if (!id) throw new Error("page generate needs a family id, e.g. `page generate notebook graph`")
+    if (verbPath.length === 0) throw new Error(`page generate ${id} needs a verb`)
+
+    const table = await resolvePageTable(fs, id)
+    const leaf = resolvePage(id, table, verbPath)
+
+    if (args.watch !== undefined) {
+      await serve(id, verbPath, leaf, args.port ? Number(args.port) : undefined)
+      return
+    }
+
+    const html = await leaf()
+    fs.create(pagePathFor(id, verbPath), html)
+  }
+</script>
+
+</body>
+</html>
