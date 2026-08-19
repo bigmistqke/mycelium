@@ -246,6 +246,6 @@ const drawnEdges = notebook.edges
   .filter(edge => nodeById.has(edge.from) && nodeById.has(edge.to))
   .map(edge => ({ from: edge.from, to: edge.to, rel: edge.rel }))
 
-mountGraph({ ranks, parentsOf, edges: drawnEdges, bands: [], nodeAt, litFrom, sidesFor })
+mountGraph({ ranks, parentsOf, edges: drawnEdges, bands: [], nodeAt, litFrom, sidesFor, scrollToEnd: true })
 
 }

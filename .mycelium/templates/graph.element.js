@@ -1202,6 +1202,7 @@ function mount(model) {
   // Registered once however many times mount runs. Registering twice makes one
   // click toggle twice and net to nothing, which reads as a page that has
   // stopped responding rather than as a page listening too well.
+  const firstMount = !listening
   if (!listening) {
     listening = true
     grid.addEventListener('click', (event) => {
@@ -1221,6 +1222,13 @@ function mount(model) {
   if (location.search.includes('measure')) measure()
   else document.getElementById('crossings')?.closest('.stat')?.remove()
   followHash()
+  // A caller ranking its columns by time wants the newest one on screen
+  // first, not the column a reader would have to scroll a whole corpus to
+  // reach. Only on the page's own first draw, and only if the hash above
+  // did not already bring a specific node into view — a direct link to one
+  // entry is a reader's own choice about where to land, and this must not
+  // override it.
+  if (firstMount && model.scrollToEnd && !selected) grid.scrollLeft = grid.scrollWidth
 }
 
 return mount

@@ -126,7 +126,10 @@
     const full = resolvePath(root, "." + url)
     if (!full.startsWith(root)) { res.writeHead(403); res.end("forbidden"); return }
     if (!existsSync(full) || !statSync(full).isFile()) { res.writeHead(404); res.end("not found"); return }
-    res.writeHead(200, { "content-type": MIME[extname(full)] ?? "application/octet-stream" })
+    res.writeHead(200, {
+      "content-type": MIME[extname(full)] ?? "application/octet-stream",
+      "cache-control": "no-store",
+    })
     res.end(readFileSync(full))
   }
 
@@ -168,7 +171,10 @@
       if (req.url === "/") {
         try {
           const html = await leaf()
-          res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+          // A watching page redraws fresh on the server side already; a
+          // browser caching the response anyway defeats the whole point
+          // of --watch, so nothing here may be served stale.
+          res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" })
           res.end(withReloadClient(html))
         } catch (err) {
           res.writeHead(500, { "content-type": "text/plain; charset=utf-8" })
