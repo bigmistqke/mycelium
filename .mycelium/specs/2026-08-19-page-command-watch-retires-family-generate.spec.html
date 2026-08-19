@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: page.command.html grows a real dev server: livereload and static passthrough, retiring notebook's and canon's own generate</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>page.command.html grows a real dev server: livereload and static passthrough, retiring notebook's and canon's own generate</spec-title>
+  <spec-status>draft</spec-status>
+  <spec-date>2026-08-19</spec-date>
+  <spec-problem>
+<p>
+<a href="../notebook/fold-the-graph-watch-server-into-page-command-html-so-notebook-and-canon-s-own-generate-can-retire.direction.html">A prior direction</a> names the gap this closes. <code>page.command.html</code>'s own spec claimed that its
+generic <code>--watch</code> would close
+<a href="../followups/give-canon-generate-watch-the-same-server-the-notebook-has.followup.html">canon's
+long-open watch followup</a> "as a consequence of this shape rather than as a separate port of
+graph-serve.ts." That claim is not yet true. <code>serve()</code> today re-runs a page's own leaf on
+every request and nothing else: no file watching, no push to an open tab, and no route for anything
+but <code>/</code>. Neither notebook's own <code>generate graph --watch</code> nor canon's chain has
+moved onto it, because moving would trade away two things <code>graph.lib.html</code>'s
+<code>serveGraph</code> already gives notebook: a reader's tab redrawing itself without a manual
+reload, and every link the drawing carries back into the corpus actually resolving.
+</p>
+<p>
+<code>serveGraph</code> solves both, but only for the two families that already call it, with logic
+tied to graph pages specifically: it names a shared script, a ranking script and a CSS file by path,
+and pushes one of three kinds of update depending on which changed. Canon cannot reach it today for an
+unrelated reason: its chain-building code reads through <code>auditFsOver(fs)</code>, a wrapper over
+the engine's own <code>CommandFilesystem</code>, which parses once and never again — the same limit
+notebook's own graph-building code carried until <code>corpusView()</code> replaced it, recorded in
+<a href="../notebook/the-watching-graph-server-exhausts-a-two-gigabyte-heap-after-roughly-a-dozen-rebuilds.practice.html">a
+notebook entry</a> about what a fresh-per-call view was for.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>serve() gains a livereload channel, not a graph-shaped one</h3>
+<p>
+Every page's own leaf is already a pure function of corpus state with no per-family shape
+<code>page.command.html</code> can see. So the mechanism it adds cannot discriminate "just the data
+changed" from "just the styling changed" the way <code>serveGraph</code> does for a graph page's own
+known DOM. It can only tell that something under the corpus moved. On any such change, debounced the
+same 250ms <code>serveGraph</code> already uses, <code>serve()</code> now sends a reload message over a
+<code>/_reload</code> server-sent-events channel to every open tab, and the HTML each request returns
+carries a small inlined script subscribing to it.
+</p>
+<p>
+A full reload rather than an in-place patch is a real step down from what an open notebook graph does
+today: a selected node's pane closes on the next edit instead of staying open through it. Accepted
+anyway, because every family gets this uniformly, canon included, instead of one family keeping a
+richer watch nothing else can reach.
+</p>
+<h3>What to watch is derived from the corpus fs.list already returns</h3>
+<p>
+<code>serveGraph</code> took one explicit <code>watchDir</code> because notebook was its only caller
+and notebook's own documents sit in one place. <code>page.command.html</code> has no such fixed
+directory to hand it, and a family's leaf declares no watch paths of its own — the "a leaf knows
+nothing about paths, flags, or serving" rule <code>page.command.html</code>'s own spec already states
+would have to bend for that. Instead, <code>serve()</code> calls <code>fs.list(".")</code> once at
+startup, collects the distinct parent directory of every path it returns, and watches each
+non-recursively with <code>node:fs</code>'s own <code>watch</code>, the same primitive
+<code>serveGraph</code> already uses, aimed at every directory holding a document instead of one.
+</p>
+<h3>serve() also answers for the corpus paths a page links to</h3>
+<p>
+A drawing's own links point back into the corpus as paths relative to wherever the page itself sits, so
+a reader can open the entry a node names. <code>serveGraph</code> already carries a
+<code>serveStatic</code> that maps any request other than <code>/</code> or its own event channel onto
+a real file under the corpus root, refusing one that climbs above it. <code>serve()</code> gains the
+same fallback, generalized from graph pages to any page: a family gets working outbound links for free,
+the same way it gets livereload for free, because both were true of one family's hand-rolled server and
+neither has anything graph-specific in it.
+</p>
+<h3>notebook and canon each export a page leaf building fresh from disk</h3>
+<p>
+<code>notebook.template.html</code>'s <code>graphData()</code> already reads through a
+<code>corpusView()</code> rather than the engine's cached filesystem, built for exactly this
+repeated-rebuild case. Its new <code>page.graph()</code> calls it the same way the deleted
+<code>--watch</code> branch did: <code>corpusView(corpusRoot, ".")</code>, fresh on every call, wrapped
+in <code>graphPage()</code> with a <code>&lt;base href="../../"&gt;</code> tag, since
+<code>page.command.html</code> writes it two directories below the corpus root
+(<code>page/notebook/graph.html</code>) where the old <code>notebook.html</code> sat at the root.
+</p>
+<p>
+Canon's chain-building logic moves from <code>generate()</code> into a private <code>chainPage(base)</code>
+function, reading through <code>corpusView(repoRoot, CORPUS_DIR)</code> in place of
+<code>auditFsOver(fs)</code>, the same fresh-per-call substitution notebook already made, closing the
+followup's own stated blocker rather than working around it. <code>page.chain()</code> calls
+<code>chainPage('&lt;base href="../../"&gt;')</code>; <code>measure</code>, which never follows a link
+and only counts what a headless browser renders, keeps calling the same function with an empty base and
+writing the result to its own temp file, since driving Chrome to read a figure's layout is not
+something a <code>page</code> leaf does.
+</p>
+<h3>generate disappears from both families; serveGraph and its hmrClient disappear from the library</h3>
+<p>
+<code>notebook.template.html</code>'s and <code>canon.template.html</code>'s own <code>generate</code>
+exports go, along with the <code>--out</code>/<code>--base</code>/<code>--watch</code>/<code>--port</code>/<code>--open</code>
+surface each carried. <code>mycelium page generate notebook graph [--watch]</code> and
+<code>mycelium page generate canon chain [--watch]</code> replace both. Once neither calls it,
+<code>graph.lib.html</code>'s <code>serveGraph</code> lib-function and its <code>hmrClient</code> helper
+are dead code and come out, along with the now-unused <code>hmrClient?</code> field on
+<code>GraphPage</code> — <code>page.command.html</code> injects its own reload script into the returned
+HTML string directly, so a leaf's own shell never needs a slot for one.
+</p>
+<h3>The corpus-wide index and the deploy workflow both move with the address</h3>
+<p>
+<code>page.command.html</code>'s own <code>buildIndex()</code> links the two drawings under
+"Drawings" by their literal path; those become <code>page/notebook/graph.html</code> and
+<code>page/canon/chain.html</code>. <code>.github/workflows/deploy-pages.yml</code>'s two build steps,
+<code>mycelium notebook generate graph --out notebook.html</code> and
+<code>mycelium canon generate chain --out chain.html</code>, become
+<code>mycelium page generate notebook graph</code> and <code>mycelium page generate canon chain</code>.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+  <li>Restoring serveGraph's partial data/CSS swap in any generic form. Nothing about a page's own
+  leaf tells <code>page.command.html</code> what changed, only that something did, and inventing a
+  protocol for that with one real caller ever having wanted it is exactly the abstraction this project's
+  own rules argue against building ahead of a second need.</li>
+  <li>Watching a family's own code for changes. <code>serve()</code>'s existing doc comment already
+  states this limit — Node's module cache hands back the old version of a leaf's own script regardless —
+  and nothing here changes it; only corpus documents trigger a reload.</li>
+  <li>Any change to <code>page index</code>'s own asset handling. The corpus-wide landing page links to
+  <code>theme.css</code> by a relative href already, a pre-existing gap this spec's static passthrough
+  happens to close as a side effect, not something it sets out to fix.</li>
+</ul>
+</spec-out-of-scope>
+  <spec-open-questions>
+<ol>
+  <li>Whether a family wanting a third kind of push — something between "nothing changed" and "reload
+  everything" — ever arrives, and whether that argues for a small opt-in hook on a page's own leaf or
+  stays a one-off the way <code>serveGraph</code> was. Unresolved until a second family actually wants
+  one.</li>
+</ol>
+</spec-open-questions>
+</spec-doc>
+</body></html>

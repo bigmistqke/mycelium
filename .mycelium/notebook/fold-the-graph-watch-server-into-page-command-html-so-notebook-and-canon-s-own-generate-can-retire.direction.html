@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fold the graph watch server into page.command.html, so notebook and canon's own generate can retire</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Fold the graph watch server into page.command.html, so notebook and canon's own generate can retire</notebook-title>
+  <notebook-tag>page</notebook-tag>
+  <notebook-tag>watch</notebook-tag>
+  <notebook-prompt>The reason I didn't touch them: the same regression I flagged back when we first discussed migrating — notebook generate graph --watch uses serveGraph, which does real incremental updates over SSE (push just the changed data, or just the CSS, or a full reload, depending on what changed). page.command.html's --watch is much simpler: it just re-renders the whole page fresh on every request, no push, no diffing. If notebook's own generate gets replaced by page generate notebook graph, that richer watch behavior goes away — a real UX regression for anyone actively watching the notebook graph while editing. -&gt; remove notebook generate graph --watch -&gt; or make the page's hmr smarter</notebook-prompt>
+  <notebook-detail>Chosen direction: make page's watch smarter rather than drop the capability. page.command.html's
+serve() gains a corpus-wide file watcher, the same primitive serveGraph already used for one
+directory, now widened to every directory holding a document. It also gains a livereload SSE channel
+and the static-corpus passthrough serveGraph's serveStatic already provides, since a page's own links
+into the corpus need that regardless of which family drew the page. Once serve() does both, notebook's
+own generate graph --watch and canon's missing watch both fold onto page generate <family> <verb>
+--watch with no bespoke server left in either family. The cost is real: page.command.html pushes a full
+reload rather than serveGraph's partial data/css swap, so an open pane loses its selection on an edit.
+Accepted as the right trade — one shared mechanism every family gets, including canon, which had none,
+over a per-family richness only graph pages ever used.
+</verb></family></notebook-detail>
+  <a data-rel="elaborates" href="../specs/2026-08-19-page-command.spec.html">the spec whose own out-of-scope section deferred this migration</a>
+  <a data-rel="elaborates" href="../specs/2026-08-19-lib-template.spec.html">serveGraph, the lib function this retires</a>
+  <a data-rel="supports" href="../followups/give-canon-generate-watch-the-same-server-the-notebook-has.followup.html">the watch gap this closes for canon</a>
+</notebook-direction>
+</body></html>
