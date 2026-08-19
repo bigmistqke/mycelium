@@ -712,25 +712,6 @@
   }
 
   /**
-   * One verb, and a sentence naming it when somebody passes another.
-   *
-   * Every type command dispatches the same way, so learning one is learning the
-   * rest. What differs between them is what the type declares, which is the
-   * whole reason they are separate commands.
-   */
-  async function byVerb(ctx, type, verbs) {
-    const verb = ctx.args._[0]
-    if (!verbs[verb]) {
-      throw new Error(
-        verb
-          ? `canon ${type} has no "${verb}" verb; it takes ${Object.keys(verbs).join(', ')}`
-          : `canon ${type} takes a verb: ${Object.keys(verbs).join(', ')}`,
-      )
-    }
-    return verbs[verb](ctx)
-  }
-
-  /**
    * Create an axiom: a rule the project holds, with the reasoning under it.
    *
    *   mycelium canon axiom add --canon <name> --id <slug> --title "…"
@@ -750,8 +731,8 @@
    * it. Use move when that changes, since a claim whose home is wrong is a
    * different problem from a claim that is wrong.
    */
-  export async function axiom(ctx: CommandContext) {
-    return byVerb(ctx, 'axiom', { add: (one) => addClaim(one, 'axiom') })
+  export const axiom = {
+    add: (one: CommandContext) => addClaim(one, 'axiom'),
   }
 
   /**
@@ -767,8 +748,8 @@
    * for. A subsystem is a grouping of files, so nothing contradicts one and
    * nothing derives one from a principle either.
    */
-  export async function specification(ctx: CommandContext) {
-    return byVerb(ctx, 'specification', { add: (one) => addClaim(one, 'specification') })
+  export const specification = {
+    add: (one: CommandContext) => addClaim(one, 'specification'),
   }
 
   /**
@@ -798,11 +779,9 @@
    * made only of digits, because a number rots the first time somebody inserts
    * a behaviour above it.
    */
-  export async function behaviour(ctx: CommandContext) {
-    return byVerb(ctx, 'behaviour', {
-      add: (one) => addBehaviour(one),
-      group: (one) => groupBehaviours(one),
-    })
+  export const behaviour = {
+    add: (one: CommandContext) => addBehaviour(one),
+    group: (one: CommandContext) => groupBehaviours(one),
   }
 
   // What an axiom and a specification share, with the two type commands above
@@ -1028,7 +1007,7 @@
   async function groupBehaviours({ fs, args, cli }: CommandContext) {
     requireArgs([args.canon, '--canon'], [args.id, '--id'], [args.title, '--title'])
     primeFieldOrder(fs)
-    const children = args._.slice(1)
+    const children = args._
     if (!children.length) throw new Error('name at least one behaviour to gather')
 
     const path = canonPathFor(args.canon)
