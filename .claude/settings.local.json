@@ -26,7 +26,6 @@
       "Bash(sqlite3:*)",
       "Bash(wc:*)",
       "Bash(pnpm run build:*)",
-      "Bash(npx tsx:*)",
       "Bash(ls:*)",
       "Bash(npm run test:*)",
       "Bash(deciduous show:*)",
@@ -35,10 +34,6 @@
       "Bash(npm info:*)",
       "Skill(commit)",
       "Bash(echo:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npx vitest run:*)",
-      "Bash(MYCELIUM_DEBUG_TIMING=1 node:*)",
-      "Bash(node:*)",
       "WebFetch(domain:c4model.com)",
       "Bash(git rm:*)",
       "Bash(pnpm init)"
