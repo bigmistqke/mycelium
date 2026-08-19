@@ -440,25 +440,6 @@
   }
 
   /**
-   * One verb, and a sentence naming it when somebody passes another.
-   *
-   * Every type command dispatches the same way, so learning one is learning
-   * the rest. What differs between them is what the type declares, which is
-   * the whole reason they are separate commands.
-   */
-  async function byVerb(ctx, type, verbs) {
-    const verb = ctx.args._[0]
-    if (!verbs[verb]) {
-      throw new Error(
-        verb
-          ? `language ${type} has no "${verb}" verb; it takes ${Object.keys(verbs).join(', ')}`
-          : `language ${type} takes a verb: ${Object.keys(verbs).join(', ')}`,
-      )
-    }
-    return verbs[verb](ctx)
-  }
-
-  /**
    * Create a term: a word this project uses with one fixed meaning.
    *
    *   mycelium language term add --title "…" --file <slug>
@@ -474,8 +455,8 @@
    * worth writing, since fixing a meaning is the point and displacing a word is
    * a bonus.
    */
-  export async function term(ctx: CommandContext) {
-    return byVerb(ctx, 'term', { add: (one) => addEntry(one, 'term') })
+  export const term = {
+    add: (one: CommandContext) => addEntry(one, 'term'),
   }
 
   /**
@@ -492,8 +473,8 @@
    * aspiration and a check is the contract, and the two can differ by a lot: one
    * rule here matches far less than its title suggests and another rejects more.
    */
-  export async function rule(ctx: CommandContext) {
-    return byVerb(ctx, 'rule', { add: (one) => addEntry(one, 'rule') })
+  export const rule = {
+    add: (one: CommandContext) => addEntry(one, 'rule'),
   }
 
   /**
@@ -509,8 +490,8 @@
    * A guide is where a constraint goes when nothing can check it, rather than
    * where one waits while somebody gets round to checking it.
    */
-  export async function guide(ctx: CommandContext) {
-    return byVerb(ctx, 'guide', { add: (one) => addEntry(one, 'guide') })
+  export const guide = {
+    add: (one: CommandContext) => addEntry(one, 'guide'),
   }
 
   // What every language entry shares, with the three type commands above
