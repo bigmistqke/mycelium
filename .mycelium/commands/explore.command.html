@@ -34,7 +34,7 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext } from "mycelium/api"
-  import { declaresATemplate } from "mycelium/shared"
+  import { declaresATemplate, readCommands } from "mycelium/shared"
   import { resolveHref } from "mycelium/canon-citations"
   import { writeFileSync, mkdtempSync } from "node:fs"
   import { tmpdir } from "node:os"
@@ -98,6 +98,7 @@
     name: string
     purpose: string
     specs: { href: string; label: string }[]
+    commands: { name: string; summary: string }[]
     files: Map<string, string>
   }
 
@@ -113,14 +114,28 @@
    * carries a &lt;template-host&gt;: a one-line &lt;template-purpose&gt; and the
    * &lt;template-design&gt; links to the specs behind it. A family's section on
    * this page reads both straight off its own file, so nothing here
-   * describes a family a second time.
+   * describes a family a second time. A card also lists its own commands —
+   * every export its &lt;script type="mycelium/command"&gt; declares, read the
+   * same way `mycelium --help` reads one, so a reader sees what a family can
+   * do without leaving the page.
    *
-   * The rest of the corpus sorts under those sections the same way
+   * Families split into two groups, the same split findTemplateFile already
+   * makes when it resolves an &lt;id&gt;. A template declares a schema
+   * (`declaresATemplate`), and instances conform to it. A command file
+   * declares none and is never expected to gather any — explore itself is
+   * one. Grouping them together read as a corpus of near-identical cards
+   * where several always said "no files yet." That line is not a gap; it is
+   * only what a command file is.
+   *
+   * The rest of the corpus sorts under those family sections the same way
    * explore list already finds it: every element carrying data-conforms-to,
    * however deeply it sits, with the fragment stripped off to find which
    * family's file it belongs to. One line per file, not per instance — a
    * canon subsystem holding forty axioms is one document a reader opens,
-   * and what conforms inside it is this command's own bookkeeping.
+   * and what conforms inside it is this command's own bookkeeping. A file
+   * with no host and nothing conforming inside it is neither a template nor
+   * a command, so it earns a third heading of its own rather than sitting
+   * under either.
    *
    * --out and --base behave exactly as they do for notebook generate graph and
    * canon generate chain. --out writes there, relative to the corpus or
@@ -135,6 +150,7 @@
     const documents = fs.list(".").filter(({ path }) => !GENERATED.has(path))
 
     const families = new Map<string, FamilySection>()
+    const isTemplate = new Map<string, boolean>()
     for (const { path, doc } of documents) {
       if (!isHost(doc)) continue
       const purpose = (doc.querySelector("template-host template-purpose")?.textContent ?? "").trim()
@@ -143,7 +159,10 @@
         label: (a.textContent ?? "").trim(),
       }))
       const name = path.split("/").pop()!.replace(/\.(template|command)\.html$/, "")
-      families.set(path, { path, name, purpose, specs, files: new Map() })
+      const script = doc.querySelector('script[type="mycelium/command"]')
+      const commands = script ? readCommands(script.textContent ?? "") : []
+      families.set(path, { path, name, purpose, specs, commands, files: new Map() })
+      isTemplate.set(path, declaresATemplate(doc))
     }
 
     const other = new Map<string, string>()
@@ -158,30 +177,62 @@
     }
 
     const sectionId = (name: string) => `family-${name.replace(/[^a-z0-9]+/gi, "-")}`
+    const slug = (text: string) => text.replace(/[^a-z0-9]+/gi, "-").toLowerCase()
 
-    const section = (family: FamilySection) => {
+    const section = (family: FamilySection, isTemplateFamily: boolean) => {
       const specLinks = family.specs
         .map((spec) => `<a href="${escapeHtml(spec.href)}">${escapeHtml(spec.label)}</a>`)
         .join(", ")
+      // A badge stays a label — the card holds a row of them, not a row of
+      // paragraphs. What a command does sits in a popover instead, anchored
+      // to its own badge with CSS anchor positioning and opened by a click,
+      // native to the platform and costing this page no script of its own.
+      const commandItems = family.commands
+        .map((command) => {
+          const id = `cmd-${slug(family.name)}-${slug(command.name)}`
+          const anchor = `--${id}`
+          if (!command.summary) return `<li><code>${escapeHtml(command.name)}</code></li>`
+          return `<li>
+      <button type="button" popovertarget="${id}" style="anchor-name:${anchor}">${escapeHtml(command.name)}</button>
+      <div id="${id}" popover class="cmd-popover" style="position-anchor:${anchor}">${escapeHtml(command.summary)}</div>
+    </li>`
+        })
+        .join("\n    ")
+      const commandsBlock = family.commands.length
+        ? `<h4>Commands</h4>\n  <ul class="commands">\n    ${commandItems}\n  </ul>`
+        : ""
       const files = [...family.files].sort(([, left], [, right]) => left.localeCompare(right))
       const fileLinks = files
         .map(([path, title]) => `<li><a href="${escapeHtml(path)}">${escapeHtml(title)}</a></li>`)
         .join("\n    ")
       const count = files.length ? `<span class="count">${files.length}</span>` : ""
+      // A command file is never expected to gather instances of its own —
+      // that is what declaring no template means — so "no files yet" would
+      // read as a gap it isn't. Only a template family, which instances
+      // could conform to, earns that line.
+      const filesBlock = files.length
+        ? `<h4>Files</h4>\n  <ul class="files">\n    ${fileLinks}\n  </ul>`
+        : isTemplateFamily
+          ? `<h4>Files</h4>\n  <p class="empty">no files yet</p>`
+          : ""
       return `<section class="family" id="${sectionId(family.name)}">
   <h3><a href="${escapeHtml(family.path)}">${escapeHtml(family.name)}</a>${count}</h3>
   <p>${escapeHtml(family.purpose)}${specLinks ? ` &mdash; ${specLinks}` : ""}</p>
-  ${files.length ? `<ul>\n    ${fileLinks}\n  </ul>` : `<p class="empty">no files yet</p>`}
+  ${commandsBlock}
+  ${filesBlock}
 </section>`
     }
 
     const sortedFamilies = [...families.values()].sort((left, right) => left.path.localeCompare(right.path))
-    const sections = sortedFamilies.map(section).join("\n")
+    const templateFamilies = sortedFamilies.filter((family) => isTemplate.get(family.path))
+    const commandFamilies = sortedFamilies.filter((family) => !isTemplate.get(family.path))
+    const templateSections = templateFamilies.map((family) => section(family, true)).join("\n")
+    const commandSections = commandFamilies.map((family) => section(family, false)).join("\n")
 
     const otherSection = other.size
       ? `<section class="family" id="other">
   <h3>other<span class="count">${other.size}</span></h3>
-  <ul>
+  <ul class="files">
     ${[...other].sort(([, left], [, right]) => left.localeCompare(right))
       .map(([path, title]) => `<li><a href="${escapeHtml(path)}">${escapeHtml(title)}</a></li>`)
       .join("\n    ")}
@@ -226,19 +277,33 @@
   .drawings a:hover { border-color: var(--accent); }
   .drawings b { display: block; margin-bottom: 0.3rem; color: var(--accent); font-family: var(--font-mono); }
   .drawings span { color: var(--muted); font-size: 0.9rem; }
+  p.section-intro { color: var(--muted); margin-top: -0.5rem; }
   .corpus {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.1rem;
-    align-items: start;
+    align-items: stretch;
   }
   section.family {
+    display: flex;
+    flex-direction: column;
+    max-height: 40rem;
+    min-height: 0;
+    /* A grid/flex item with the default overflow:visible still reports
+       its full, uncapped content height as its "automatic minimum size" —
+       so notebook's 430 files forced the row taller regardless of
+       max-height, and the file list's own overflow-y:auto never had a
+       shorter box to scroll within. overflow:hidden here is what makes
+       max-height a real ceiling instead of a suggestion; the actual
+       scrolling still happens on ul.files below, inside that ceiling. */
+    overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1.1rem 1.3rem;
     background: var(--code-bg);
   }
   section.family h3 {
+    flex: 0 0 auto;
     margin-top: 0;
     display: flex;
     align-items: baseline;
@@ -252,19 +317,66 @@
     border-radius: 999px;
     padding: 0.05rem 0.5rem;
   }
-  section.family p { font-size: 0.92rem; color: var(--muted); }
+  section.family p { flex: 0 0 auto; font-size: 0.92rem; color: var(--muted); }
   section.family p a { color: var(--muted); }
   section.family .empty { font-style: italic; }
+  section.family h4 {
+    flex: 0 0 auto;
+    margin: 0.9rem 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
   section.family ul {
     list-style: none;
-    margin: 0.75rem 0 0;
+    margin: 0;
     padding: 0;
-    max-height: 14rem;
+  }
+  section.family ul.commands { flex: 0 0 auto; }
+  section.family ul.files {
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
   }
   section.family li { margin: 0.2rem 0; font-size: 0.9rem; }
   section.family li a { text-decoration: none; }
   section.family li a:hover { text-decoration: underline; }
+  section.family ul.commands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  section.family ul.commands li { margin: 0; }
+  section.family ul.commands code,
+  section.family ul.commands button {
+    display: inline-block;
+    font: inherit;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    background: var(--border);
+    border: none;
+    border-radius: 4px;
+    padding: 0.05rem 0.4rem;
+    color: inherit;
+  }
+  section.family ul.commands button { cursor: pointer; }
+  section.family ul.commands button:hover,
+  section.family ul.commands button:focus-visible { background: var(--accent); color: var(--bg); }
+  .cmd-popover {
+    position: fixed;
+    position-area: bottom;
+    position-try-fallbacks: flip-block;
+    margin: 0.35rem 0 0;
+    max-width: 20rem;
+    background: var(--code-bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+  }
 </style>`
 
     const page = `<!DOCTYPE html>
@@ -285,11 +397,20 @@ ${style}
   <li><a href="notebook.html"><b>The notebook</b><span>every entry, ranked by the day it arrived</span></a></li>
   <li><a href="chain.html"><b>The canon chain</b><span>every axiom's reach, from claim to declaration</span></a></li>
 </ul>
-<h2>The corpus</h2>
+<h2>Templates</h2>
+<p class="section-intro">A template declares a schema, and a family of files conforms to it. Each
+  card below is one template: what it holds, the files that conform to it now, and the commands
+  that create or change them.</p>
 <div class="corpus">
-${sections}
-${otherSection}
+${templateSections}
 </div>
+<h2>Commands</h2>
+<p class="section-intro">A command file declares no schema, so nothing conforms to it. Each card
+  below is a whole-corpus tool with no files of its own — only the commands it runs.</p>
+<div class="corpus">
+${commandSections}
+</div>
+${otherSection ? `<h2>Other</h2>\n<div class="corpus">\n${otherSection}\n</div>\n` : ""}
 </body>
 </html>
 `

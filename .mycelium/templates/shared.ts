@@ -7,6 +7,8 @@
 // anyway") no longer holds once the script itself loads from a real
 // file: URL. See .mycelium/specs/2026-07-25-virtual-module-script-imports.spec.html.
 
+import ts from "typescript"
+
 export function todayDate(): string {
   const d = new Date()
   const pad = (n: number) => String(n).padStart(2, "0")
@@ -73,4 +75,82 @@ export function placeField(root: Element, el: Element, order: string[]): void {
  */
 export function declaresATemplate(doc: Document): boolean {
   return doc.querySelector("template[id]") !== null
+}
+
+// Every command a source EXPORTS, with the opening sentence of its doc
+// comment — the same reading printRoster does over `mycelium --help`, so a
+// page drawing the corpus can show a family's commands without repeating
+// that parse. Parsed with the real TypeScript compiler rather than a regex
+// so `export async function`, arrow-function exports, and reordered or
+// reformatted commands are all still picked up correctly.
+function parseCommandSource(source: string): ts.SourceFile {
+  return ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
+}
+
+function hasExportModifier(node: ts.Node): boolean {
+  return !!(ts.canHaveModifiers(node) && ts.getModifiers(node)?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword))
+}
+
+function exportedFunctionNames(stmt: ts.Statement): string[] {
+  if (ts.isFunctionDeclaration(stmt) && hasExportModifier(stmt) && stmt.name) return [stmt.name.text]
+  // `export { addCase as case }`. A family names its commands after the
+  // types it declares, and a type is free to be called something
+  // JavaScript reserves as a keyword. The alias is the name the command
+  // line uses, so the alias is the name this reads.
+  if (ts.isExportDeclaration(stmt) && stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
+    return stmt.exportClause.elements.map((element) => element.name.text)
+  }
+  if (!ts.isVariableStatement(stmt) || !hasExportModifier(stmt)) return []
+  return stmt.declarationList.declarations
+    .filter((d) => ts.isIdentifier(d.name) && !!d.initializer && (ts.isFunctionExpression(d.initializer) || ts.isArrowFunction(d.initializer)))
+    .map((d) => (d.name as ts.Identifier).text)
+}
+
+function formatComment(raw: string): string {
+  return raw
+    .replace(/^\/\*+/, "")
+    .replace(/\*+\/$/, "")
+    .split("\n")
+    .map((line) => line.replace(/^\s*\*\s?/, "").trimEnd())
+    .filter((line, i, arr) => !(line === "" && (i === 0 || i === arr.length - 1)))
+    .join("\n")
+}
+
+// The nearest block comment (JSDoc or plain) immediately preceding a node.
+function leadingBlockComment(source: string, node: ts.Node): string | undefined {
+  const ranges = ts.getLeadingCommentRanges(source, node.getFullStart())
+  const doc = ranges?.filter((r) => r.kind === ts.SyntaxKind.MultiLineCommentTrivia).pop()
+  return doc ? source.slice(doc.pos, doc.end) : undefined
+}
+
+// The opening sentence of a doc comment, as one line. Not its first LINE:
+// these comments are hand-wrapped at roughly 72 columns, so a first line is
+// as likely to end mid-clause as at a sentence boundary. Joins the leading
+// paragraph back into one line and cuts at the first sentence-ending
+// period, falling back to a hard truncation for a comment with none.
+const SUMMARY_MAX = 76
+
+function firstSentence(doc: string): string {
+  const lines: string[] = []
+  for (const line of doc.split("\n")) {
+    if (!line.trim()) break
+    lines.push(line.trim())
+  }
+  const paragraph = lines.join(" ")
+  const end = /\.(\s|$)/.exec(paragraph)
+  const sentence = end ? paragraph.slice(0, end.index + 1) : paragraph
+  return sentence.length > SUMMARY_MAX ? sentence.slice(0, SUMMARY_MAX - 1).trimEnd() + "…" : sentence
+}
+
+export function readCommands(source: string): { name: string; summary: string }[] {
+  const sourceFile = parseCommandSource(source)
+  const commands: { name: string; summary: string }[] = []
+
+  for (const stmt of sourceFile.statements) {
+    const names = exportedFunctionNames(stmt)
+    if (names.length === 0) continue
+    const doc = leadingBlockComment(source, stmt)
+    for (const name of names) commands.push({ name, summary: doc ? firstSentence(formatComment(doc)) : "" })
+  }
+  return commands
 }
