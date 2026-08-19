@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: webdriver.lib.html: a lib file with no assets to sit beside, and the directory that follows from that</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>webdriver.lib.html: a lib file with no assets to sit beside, and the directory that follows from that</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-19</spec-date>
+  <spec-problem>
+<p>
+<a href="../notebook/a-lib-file-with-no-file-relative-reads-gets-its-own-directory-webdriver-is-the-second-real-example.direction.html">A prior direction</a> names the gap this closes.
+<a href="../specs/2026-08-19-lib-template.spec.html">lib.template.html's own spec</a> proved the
+<code>*.lib.html</code> shape on one file, <code>graph.lib.html</code>, and deliberately left its
+directory undecided: <code>graph.lib.html</code> reads <code>graph.template.css</code> and
+<code>tokens.css</code> through a path computed from its own location, so nothing about that one file
+could say whether "beside its own template" was a rule or an accident of where the first example
+happened to sit.
+</p>
+<p>
+<code>src/webdriver.ts</code> is a second, real, already-used file. <code>canon.template.html</code>
+imports <code>ELEMENT</code> and <code>withBrowser</code>, and calls both; it also imports
+<code>chromePath</code> and <code>sleep</code>, and calls neither, so two of its four imports are dead
+weight. <code>notebook.template.html</code> imports and calls <code>withBrowser</code> alone. None of
+webdriver.ts's functions read a file relative to their own location; every one takes its inputs as
+arguments or reads <code>process.env</code>. Porting it into the <code>lib.template.html</code> shape is
+mechanical, the same worked pattern <code>graph.lib.html</code> already proved. Where the result should
+live is not.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>The convention was already the right shape; only the directory was missing</h3>
+<p>
+<code>lib.template.html</code>'s own <code>template-files</code> field already said a lib file sits
+"beside whatever assets its own functions read." That is not a placeholder for a directory decision —
+it is the decision, stated in terms of asset locality rather than a fixed path. A lib file with no such
+asset has nothing to sit beside, so it needs its own home: <code>.mycelium/lib/&lt;slug&gt;.lib.html</code>.
+<code>webdriver.lib.html</code> lands there. <code>graph.lib.html</code> stays in
+<code>.mycelium/templates/</code>, beside <code>graph.template.css</code>, <code>tokens.css</code> and
+the three <code>*.element.js</code> files its own <code>namedScripts</code> reads by name — moving it
+would mean moving all four together, a real migration this spec does not do.
+</p>
+<h3>webdriver.lib.html carries four functions; the rest of webdriver.ts is private</h3>
+<p>
+<code>ELEMENT</code>, <code>sleep</code>, <code>chromePath</code> and <code>withBrowser</code> each get
+their own <code>&lt;lib-function&gt;</code>, since each is independently addressable by id, the same
+reasoning that gives <code>graph.lib.html</code>'s <code>templatePath</code> and
+<code>templateFile</code> their own entries. The port drops the two dead imports
+<code>canon.template.html</code> carried rather than repointing them at something nothing calls.
+<code>chromedriver</code>, <code>session</code>, <code>chromeBuild</code> and <code>unpack</code> exist
+only to make <code>withBrowser</code> work, the same way <code>graph.lib.html</code>'s
+<code>graphPage</code> keeps its own private <code>tokensFile</code> helper rather than promoting it to
+a fifth <code>lib-function</code>. <code>withBrowser</code>'s own script imports <code>sleep</code> and
+<code>chromePath</code> back from their own ids, the same cross-function reuse <code>graphPage</code>
+already does for <code>templateFile</code>.
+</p>
+<h3>What gets a test, and what does not</h3>
+<p>
+<code>sleep</code> and <code>ELEMENT</code> are deterministic and get one each.
+<code>chromePath</code> reads <code>process.env.CHROME_PATH</code> before it ever touches the
+filesystem, so setting that variable to a fake path and reading it back tests the function without
+needing a real Chrome install. <code>withBrowser</code> gets none, carrying the same explanatory comment
+<code>serveGraph</code> did before it was retired: it spawns a real process and speaks a real protocol
+to it, so it is exercised by running it rather than by a case that could complete without one.
+</p>
+<h3>Both templates repoint their import; the package export goes</h3>
+<p>
+<code>canon.template.html</code> and <code>notebook.template.html</code> both change
+<code>import { … } from "mycelium/webdriver"</code> to one
+<code>import { … } from "../lib/webdriver.lib.html#…"</code> per function actually called, matching how
+both already reach <code>graph.lib.html</code>. <code>src/webdriver.ts</code> is deleted once nothing
+imports it, and package.json's own <code>"./webdriver"</code> export goes with it — the same cleanup the
+lib-template port already did for <code>graph-page</code> and <code>graph-serve</code>, since a bare
+subpath with no confirmed external consumer is dead weight rather than compatibility.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+  <li>Moving <code>graph.lib.html</code> into <code>.mycelium/lib/</code> too. It stays exempted by its
+  own asset reads, as this spec's design section states; migrating it means moving four files together,
+  not one.</li>
+  <li>Seeding <code>.mycelium/lib/</code> or <code>lib.template.html</code> into a consuming project.
+  Investigating this surfaced a real gap — neither is part of <code>SEED_FAMILIES</code> or
+  <code>seedPaths()</code>'s directory walk today, so a seeded <code>notebook.template.html</code>'s own
+  relative imports into <code>graph.lib.html</code> and now <code>webdriver.lib.html</code> resolve inside
+  this repository and are not confirmed to resolve in a fresh consumer. Recorded as its own followup
+  rather than folded into this port, since fixing it well means auditing the whole seed list, not adding
+  one more directory to it by hand.</li>
+</ul>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>

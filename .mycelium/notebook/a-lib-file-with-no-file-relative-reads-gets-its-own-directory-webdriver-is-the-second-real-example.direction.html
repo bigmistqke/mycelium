@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A lib file with no file-relative reads gets its own directory; webdriver is the second real example</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>A lib file with no file-relative reads gets its own directory; webdriver is the second real example</notebook-title>
+  <notebook-tag>lib</notebook-tag>
+  <notebook-tag>webdriver</notebook-tag>
+  <notebook-prompt>let's make a .lib.html for the webdriver stuff</notebook-prompt>
+  <notebook-detail><p>
+The lib-template spec deferred a directory convention for <code>*.lib.html</code> files until a second
+real example existed, since <code>graph.lib.html</code> alone could not say whether "beside its own
+template" was the rule or just where the first one happened to land.
+</p>
+<p>
+<code>webdriver.ts</code> is that second example, and it settles the question by contrast rather than
+by generalizing: it reads no file relative to its own location at all, unlike <code>graph.lib.html</code>,
+which reads <code>graph.template.css</code> and <code>tokens.css</code> through a path computed from
+where it sits. So the convention is not one fixed directory for every lib file — it is that a lib file
+sits beside whatever assets its own functions read, and <code>.mycelium/lib/</code> is where one lands
+when it reads none. <code>webdriver.lib.html</code> goes there; <code>graph.lib.html</code> stays put.
+</p>
+</notebook-detail>
+  <a data-rel="elaborates" href="../specs/2026-08-19-lib-template.spec.html">the spec that deferred this exact question</a>
+</notebook-direction>
+</body></html>
