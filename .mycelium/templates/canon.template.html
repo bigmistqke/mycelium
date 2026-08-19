@@ -552,7 +552,8 @@
   import { spawn, spawnSync, execFileSync } from "node:child_process"
   import { CORPUS_DIR, loadModule } from "mycelium/utils"
   import { ELEMENT, chromePath, sleep, withBrowser } from "mycelium/webdriver"
-  import { graphPage, namedScripts } from "mycelium/graph-page"
+  import { graphPage } from "./graph.lib.html#graphPage"
+  import { namedScripts } from "./graph.lib.html#namedScripts"
   import { pathToFileURL } from "node:url"
 
   const TYPES = ['axiom', 'specification']

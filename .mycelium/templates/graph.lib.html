@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library: graph — the page every ranked-graph drawing shares, and the server that keeps one open</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="./lib.template.css">
+</head>
+<body>
+<lib-doc data-conforms-to="../templates/lib.template.html#lib-doc">
+  <lib-title>graph: the page every ranked-graph drawing shares, and the server that keeps one open</lib-title>
+
+  <lib-function>
+    <lib-function-doc><p>Reads one of this project's own files by name, relative to wherever this
+      library itself sits. Read rather than embedded, so a page's code and styling stay files a
+      person can open and an editor can check.</p></lib-function-doc>
+    <script id="templateFile" type="mycelium/lib">
+      import { readFileSync } from "node:fs"
+      import { dirname, join } from "node:path"
+      import { fileURLToPath } from "node:url"
+
+      const here = dirname(fileURLToPath(import.meta.url))
+
+      export function templateFile(name: string): string {
+        return readFileSync(join(here, name), "utf8")
+      }
+    </script>
+    <lib-function-test>
+      <script type="mycelium/test">
+        import { templateFile } from "#templateFile"
+
+        export default async function ({ assert }) {
+          const css = templateFile("graph.template.css")
+          assert(css.includes("--ink-1"), "expected graph.template.css's own token, found none")
+        }
+      </script>
+    </lib-function-test>
+  </lib-function>
+
+  <lib-function>
+    <lib-function-doc><p>Where one of this project's own files sits, without reading it. A server
+      watching for changes needs an absolute path to hand to node:fs.watch, and this is the same
+      "where do the templates live" fact templateFile already answers.</p></lib-function-doc>
+    <script id="templatePath" type="mycelium/lib">
+      import { dirname, join } from "node:path"
+      import { fileURLToPath } from "node:url"
+
+      const here = dirname(fileURLToPath(import.meta.url))
+
+      export function templatePath(name: string): string {
+        return join(here, name)
+      }
+    </script>
+    <lib-function-test>
+      <script type="mycelium/test">
+        import { existsSync } from "node:fs"
+        import { templatePath } from "#templatePath"
+
+        export default async function ({ assert }) {
+          assert(existsSync(templatePath("graph.template.css")))
+        }
+      </script>
+    </lib-function-test>
+  </lib-function>
+
+  <lib-function>
+    <lib-function-doc><p>Reads several of this project's own files, keeping each one's own name
+      beside it — what graphPage needs to inline a list of scripts by name rather than by
+      concatenating them into one.</p></lib-function-doc>
+    <script id="namedScripts" type="mycelium/lib">
+      import { templateFile } from "#templateFile"
+
+      export function namedScripts(names: string[]): { name: string; source: string }[] {
+        return names.map((name) => ({ name, source: templateFile(name) }))
+      }
+    </script>
+    <lib-function-test>
+      <script type="mycelium/test">
+        import { namedScripts } from "#namedScripts"
+        import { templateFile } from "#templateFile"
+
+        export default async function ({ assert }) {
+          const [only] = namedScripts(["graph.template.css"])
+          assert(only.name === "graph.template.css")
+          assert(only.source === templateFile("graph.template.css"))
+        }
+      </script>
+    </lib-function-test>
+  </lib-function>
+
+  <lib-function>
+    <lib-function-doc><p>Assembles the page a ranked graph draws itself into: a header carrying
+      counts, a grid for the columns, a canvas for the wires, and a pane for whatever a reader
+      selects. Every graph gets the same shell, because every graph gets the same drawing — what
+      differs is the title, the counts and the data, and those arrive as arguments.</p></lib-function-doc>
+    <script id="graphPage" type="mycelium/lib">
+      import { readFileSync } from "node:fs"
+      import { dirname, join } from "node:path"
+      import { fileURLToPath } from "node:url"
+      import { templateFile } from "#templateFile"
+
+      const here = dirname(fileURLToPath(import.meta.url))
+
+      export interface GraphPage {
+        title: string
+        /**
+         * The counts line, as markup. Each graph counts different things, and the
+         * wires-over-boxes stat gets appended here so a page that measured nothing
+         * can drop it.
+         */
+        counts: string
+        /** The id the data sits under, which the drawing reads it back from. */
+        dataId: string
+        data: unknown
+        /**
+         * A base tag, or nothing. A page written outside the documents directory
+         * needs one to resolve the links it carries back into the corpus.
+         */
+        base?: string
+        /**
+         * The scripts to inline, in order. The shared drawing comes first and the
+         * caller's own ranking second, since the second calls what the first
+         * defines.
+         *
+         * Each becomes its own <script data-src="…"> tag rather than one
+         * concatenation, so a name on the page can find one script's own source
+         * again. Classic scripts share one top-level scope across tags, the same
+         * way they did concatenated into one — so nothing about how they run
+         * changes. Only that a caller wanting to re-run just the ranking script
+         * later, the way a live page does, now has something to select.
+         */
+        scripts: { name: string; source: string }[]
+        /**
+         * A live page's own script, inlined last. Absent for the file `generate`
+         * writes, which has nothing to talk to once it exists; a server sets this
+         * to the small script that opens the change channel and answers what
+         * arrives on it.
+         */
+        hmrClient?: string
+      }
+
+      /**
+       * The corpus's shared palette and type families, read once so the graph
+       * page's ink levels and box text can be defined relative to the same
+       * --bg/--fg/--font-mono/--font-serif tokens every other page in the corpus
+       * uses. Not the system Canvas/CanvasText colors and a sans-serif this
+       * page used to pick on its own.
+       */
+      function tokensFile(): string {
+        return readFileSync(join(here, "..", "tokens.css"), "utf8")
+      }
+
+      export function graphPage(page: GraphPage): string {
+        const closing = "<" + "/script"
+        const json = JSON.stringify(page.data).split(closing).join("<\\/script")
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${page.title}</title>
+${page.base ?? ""}
+<style id="graph-style">
+${tokensFile()}
+${templateFile("graph.template.css")}
+</style>
+</head>
+<body>
+<header>
+  <h1>${page.title}</h1>
+  <div class="counts">
+    ${page.counts}<span class="stat"> &middot;
+    <b id="crossings">—</b> wires over boxes</span>
+  </div>
+  <div id="filters"></div>
+</header>
+<div id="grid"><svg id="wires"></svg><svg id="wires-lit"></svg></div>
+<aside id="pane" hidden>
+  <button id="pane-close" type="button" aria-label="close">&times;</button>
+  <h2 id="pane-title"></h2>
+  <div id="pane-meta">
+    <p id="pane-where"></p>
+    <p id="pane-reach"></p>
+  </div>
+  <div id="pane-detail"></div>
+  <div id="pane-links"></div>
+</aside>
+<script type="application/json" id="${page.dataId}">${json}${closing}>
+${page.scripts.map(({ name, source }) => `<script data-src="${name}">\n${source}\n${closing}>`).join("\n")}
+${page.hmrClient ? `<script id="hmr-client">\n${page.hmrClient}\n${closing}>` : ""}
+</body>
+</html>
+`
+      }
+    </script>
+    <lib-function-test>
+      <script type="mycelium/test">
+        import { graphPage } from "#graphPage"
+
+        export default async function ({ assert }) {
+          const html = graphPage({
+            title: "smoke test",
+            counts: "",
+            dataId: "graph-data",
+            data: { hello: "world" },
+            scripts: [],
+          })
+          assert(html.startsWith("<!DOCTYPE html>"), "expected a real document")
+          assert(html.includes("<title>smoke test</title>"), "title did not make it into the shell")
+          assert(html.includes('"hello":"world"'), "data did not make it into the embedded JSON")
+        }
+      </script>
+    </lib-function-test>
+  </lib-function>
+
+  <lib-function>
+    <lib-function-doc><p>Serves a ranked graph, and keeps serving it as the corpus it draws
+      changes: the same page graphPage builds, held open over HTTP and redrawn in the reader's own
+      tab whenever a watched file moves. Runs until interrupted — this is what
+      <code>notebook generate graph --watch</code> calls.</p></lib-function-doc>
+    <script id="serveGraph" type="mycelium/lib">
+      import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
+      import { watch, readFileSync, existsSync, statSync } from "node:fs"
+      import { basename, dirname, extname, resolve as resolvePath } from "node:path"
+      import { spawn } from "node:child_process"
+      import { platform } from "node:process"
+      import { graphPage, type GraphPage } from "#graphPage"
+
+      export interface GraphData {
+        data: unknown
+        counts: string
+        /** How many edges leaving the drawing's own kind got dropped, for a note worth logging once. */
+        dropped?: number
+      }
+
+      export interface ServeGraphOptions {
+        /** What graphPage always needs, minus the parts that change on every rebuild or only apply to a written file. */
+        page: Omit<GraphPage, "data" | "counts" | "base" | "scripts" | "hmrClient">
+        /** Absolute path to the shared drawing engine, graph.element.js. */
+        sharedScriptPath: string
+        /** Absolute path to the family's own ranking script — the one that calls the shared engine. */
+        rankingScriptPath: string
+        /** Absolute path to graph.template.css. */
+        cssPath: string
+        /** Absolute path to the corpus, served at "/" so a node's own link opens the real file. */
+        corpusRoot: string
+        /** Where the family's own documents live, relative to corpusRoot. Any change inside rebuilds. */
+        watchDir: string
+        build: () => GraphData
+        port?: number
+        open?: boolean
+      }
+
+      const MIME: Record<string, string> = {
+        ".html": "text/html; charset=utf-8",
+        ".css": "text/css; charset=utf-8",
+        ".js": "text/javascript; charset=utf-8",
+        ".json": "application/json; charset=utf-8",
+        ".svg": "image/svg+xml",
+        ".png": "image/png",
+      }
+
+      function openBrowser(url: string) {
+        const cmd = platform === "darwin" ? "open" : platform === "win32" ? "start" : "xdg-open"
+        spawn(cmd, [url], { stdio: "ignore", detached: true }).unref()
+      }
+
+      /**
+       * The client half of the change channel, inlined into the page as one more
+       * script.
+       *
+       * Kept here rather than as a file beside graph.element.js: it is protocol,
+       * not drawing, and it has no life outside this exact server — nothing else
+       * ever loads it or checks it on its own.
+       */
+      function hmrClient(rankingScriptName: string, dataId: string): string {
+        return `(function () {
+  var source = new EventSource('/_hmr')
+  source.onmessage = function (event) {
+    var msg = JSON.parse(event.data)
+    if (msg.kind === 'reload') { location.reload(); return }
+    if (msg.kind === 'css') {
+      document.getElementById('graph-style').textContent = msg.css
+      return
+    }
+    if (msg.kind === 'data') {
+      document.getElementById('${dataId}').textContent = JSON.stringify(msg.data)
+      document.querySelector('.counts').innerHTML =
+        msg.counts + '<span class="stat"> &middot; <b id="crossings">—</b> wires over boxes</span>'
+      var tag = document.querySelector('script[data-src="${rankingScriptName}"]')
+      tag.textContent = msg.script
+      new Function(msg.script)()
+    }
+  }
+})()`
+      }
+
+      function serveStatic(req: IncomingMessage, res: ServerResponse, root: string) {
+        const url = decodeURIComponent((req.url ?? "/").split("?")[0].split("#")[0])
+        const full = resolvePath(root, "." + url)
+        // A path climbing above the corpus root is refused rather than resolved —
+        // the same rule a request from outside the corpus would meet anywhere else.
+        if (!full.startsWith(root)) { res.writeHead(403); res.end("forbidden"); return }
+        if (!existsSync(full) || !statSync(full).isFile()) { res.writeHead(404); res.end("not found"); return }
+        res.writeHead(200, { "content-type": MIME[extname(full)] ?? "application/octet-stream" })
+        res.end(readFileSync(full))
+      }
+
+      /**
+       * Serve a graph, and keep serving it as the corpus it draws changes.
+       *
+       * Runs until interrupted. Every GET / rebuilds and redraws fresh. A rebuild
+       * costs about a second on this corpus, most of it the engine's own
+       * startup — a long-lived process pays that once, not per request. A
+       * single reader opening the page is not where that second would be
+       * missed.
+       */
+      export async function serveGraph(options: ServeGraphOptions): Promise<never> {
+        const port = options.port ?? 4322
+        let lastDropped: number | undefined
+
+        const sharedName = basename(options.sharedScriptPath)
+        const rankingName = basename(options.rankingScriptPath)
+
+        const rebuild = () => {
+          const { data, counts, dropped } = options.build()
+          if (dropped !== undefined && dropped !== lastDropped) {
+            console.log(`note: ${dropped} edge(s) leaving the drawing are not drawn`)
+            lastDropped = dropped
+          }
+          return { data, counts }
+        }
+
+        const buildPage = () => {
+          const { data, counts } = rebuild()
+          return graphPage({
+            ...options.page,
+            data,
+            counts,
+            scripts: [
+              { name: sharedName, source: readFileSync(options.sharedScriptPath, "utf8") },
+              { name: rankingName, source: readFileSync(options.rankingScriptPath, "utf8") },
+            ],
+            hmrClient: hmrClient(rankingName, options.page.dataId),
+          })
+        }
+
+        const subscribers = new Set<ServerResponse>()
+        const send = (msg: unknown) => {
+          const line = `data: ${JSON.stringify(msg)}\n\n`
+          for (const res of subscribers) res.write(line)
+        }
+
+        const server = createServer((req, res) => {
+          if (req.method !== "GET") { res.writeHead(405); res.end("method not allowed"); return }
+          if (req.url === "/") {
+            res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+            res.end(buildPage())
+            return
+          }
+          if (req.url === "/_hmr") {
+            res.writeHead(200, {
+              "content-type": "text/event-stream",
+              "cache-control": "no-cache",
+              connection: "keep-alive",
+            })
+            res.write(":\n\n")
+            subscribers.add(res)
+            req.on("close", () => subscribers.delete(res))
+            return
+          }
+          serveStatic(req, res, options.corpusRoot)
+        })
+
+        // What kind of change each watched path names, decided once rather than on
+        // every event. A watched directory can hold more than one of these. An
+        // event with no filename — a platform limitation, not a rare one — cannot
+        // say which, so touching every kind possible in that directory is the
+        // safe reading of "something changed and I cannot say what."
+        const kindOf = new Map<string, "shared" | "ranking" | "css">([
+          [options.sharedScriptPath, "shared"],
+          [options.rankingScriptPath, "ranking"],
+          [options.cssPath, "css"],
+        ])
+        const corpusWatchDir = resolvePath(options.corpusRoot, options.watchDir)
+
+        let touched = { doc: false, css: false, ranking: false, shared: false }
+        let timer: ReturnType<typeof setTimeout> | undefined
+
+        const flush = () => {
+          timer = undefined
+          const doing = touched
+          touched = { doc: false, css: false, ranking: false, shared: false }
+          if (doing.shared) { send({ kind: "reload" }); return }
+          if (doing.css) send({ kind: "css", css: readFileSync(options.cssPath, "utf8") })
+          if (doing.doc || doing.ranking) {
+            const { data, counts } = rebuild()
+            send({ kind: "data", data, counts, script: readFileSync(options.rankingScriptPath, "utf8") })
+          }
+        }
+
+        const schedule = () => {
+          if (timer) clearTimeout(timer)
+          timer = setTimeout(flush, 250)
+        }
+
+        const watchedDirs = new Set([
+          dirname(options.sharedScriptPath),
+          dirname(options.rankingScriptPath),
+          dirname(options.cssPath),
+          corpusWatchDir,
+        ])
+        for (const dir of watchedDirs) {
+          watch(dir, (_event, filename) => {
+            if (dir === corpusWatchDir) { touched.doc = true; schedule(); return }
+            const full = filename ? resolvePath(dir, filename) : null
+            const kind = full ? kindOf.get(full) : undefined
+            if (kind) { touched[kind] = true; schedule(); return }
+            // No filename, or a file in this directory nothing here watches by
+            // name (an editor's swap file, say). Touch every kind this directory
+            // could mean rather than guess wrong and stay silent.
+            for (const [path, k] of kindOf) if (dirname(path) === dir) touched[k] = true
+            schedule()
+          })
+        }
+
+        await new Promise<void>((_resolve, reject) => {
+          server.on("error", (err: NodeJS.ErrnoException) => {
+            if (err.code === "EADDRINUSE") {
+              console.error(`port ${port} is already in use — pass --port to use a different one`)
+              process.exit(1)
+            }
+            reject(err)
+          })
+          server.listen(port, () => {
+            const url = `http://localhost:${port}/`
+            console.log(`serving — open: ${url}`)
+            if (options.open) openBrowser(url)
+          })
+        })
+        // Unreachable: the promise above only settles by throwing. The server runs
+        // until the process is killed, the same way explore's own planned serve does.
+        throw new Error("unreachable")
+      }
+    </script>
+    <!-- No test: serveGraph starts a server and never returns under normal
+         operation, so it is exercised by running it, not by a case that
+         could complete. An untested function is a gap to notice, not a
+         reason to invent a workaround. -->
+  </lib-function>
+</lib-doc>
+
+</body>
+</html>

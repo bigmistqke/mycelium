@@ -20,8 +20,6 @@
     "./retext": "./src/retext.ts",
     "./shared": "./.mycelium/templates/shared.ts",
     "./extract-graph": "./.mycelium/templates/extract-graph.ts",
-    "./graph-page": "./.mycelium/templates/graph-page.ts",
-    "./graph-serve": "./.mycelium/templates/graph-serve.ts",
     "./language-prose": "./.mycelium/templates/language-prose.ts",
     "./code-comments": "./.mycelium/templates/code-comments.ts",
     "./canon-citations": "./.mycelium/templates/canon-citations.ts"
