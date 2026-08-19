@@ -287,11 +287,11 @@
 
   async function updateDoc({ fs, args, cli }) {
     primeOrders(fs)
-    requireArgs([args._[1], "<file>"])
-    const path = `plans/${args._[1]}`
+    requireArgs([args._[0], "<file>"])
+    const path = `plans/${args._[0]}`
     const doc = getPlanFile(fs, path)
     const root = doc.querySelector("plan-doc")
-    if (!root) throw new Error(`${args._[1]} has no <plan-doc> root`)
+    if (!root) throw new Error(`${args._[0]} has no <plan-doc> root`)
 
     field(doc, root, "plan-title", args.title)
     field(doc, root, "plan-status", args.status)
@@ -306,11 +306,11 @@
 
   async function addTask({ fs, args, cli }) {
     primeOrders(fs)
-    requireArgs([args._[1], "<file>"], [args.title, "--title"], [args.files, "--files"])
-    const path = `plans/${args._[1]}`
+    requireArgs([args._[0], "<file>"], [args.title, "--title"], [args.files, "--files"])
+    const path = `plans/${args._[0]}`
     const doc = getPlanFile(fs, path)
     const planDoc = doc.querySelector("plan-doc")
-    if (!planDoc) throw new Error(`${args._[1]} has no <plan-doc> root`)
+    if (!planDoc) throw new Error(`${args._[0]} has no <plan-doc> root`)
 
     const id = nextId(planDoc, "plan-task", "task")
     const task = doc.createElement("plan-task")
@@ -332,11 +332,11 @@
 
   async function updateTask({ fs, args, cli }) {
     primeOrders(fs)
-    requireArgs([args._[1], "<file>"], [args._[2], "<task-id>"])
-    const path = `plans/${args._[1]}`
+    requireArgs([args._[0], "<file>"], [args._[1], "<task-id>"])
+    const path = `plans/${args._[0]}`
     const doc = getPlanFile(fs, path)
-    const task = doc.getElementById(args._[2])
-    if (!task) throw new Error(`no <plan-task id="${args._[2]}"> found in ${args._[1]}`)
+    const task = doc.getElementById(args._[1])
+    if (!task) throw new Error(`no <plan-task id="${args._[1]}"> found in ${args._[0]}`)
 
     field(doc, task, "plan-title", args.title)
     field(doc, task, "plan-status", args.status)
@@ -358,13 +358,13 @@
 
   async function addStep({ fs, args, cli }) {
     primeOrders(fs)
-    requireArgs([args._[1], "<file>"], [args._[2], "<task-id>"], [args.title, "--title"])
-    const path = `plans/${args._[1]}`
+    requireArgs([args._[0], "<file>"], [args._[1], "<task-id>"], [args.title, "--title"])
+    const path = `plans/${args._[0]}`
     const doc = getPlanFile(fs, path)
-    const task = doc.getElementById(args._[2])
-    if (!task) throw new Error(`no <plan-task id="${args._[2]}"> found in ${args._[1]}`)
+    const task = doc.getElementById(args._[1])
+    if (!task) throw new Error(`no <plan-task id="${args._[1]}"> found in ${args._[0]}`)
 
-    const id = nextId(task, "plan-step", `${args._[2]}-step`)
+    const id = nextId(task, "plan-step", `${args._[1]}-step`)
     const step = doc.createElement("plan-step")
     step.setAttribute("id", id)
     step.setAttribute("data-conforms-to", "../templates/plan.template.html#plan-step")
@@ -399,11 +399,11 @@
 
   async function updateStep({ fs, args, cli }) {
     primeOrders(fs)
-    requireArgs([args._[1], "<file>"], [args._[2], "<step-id>"])
-    const path = `plans/${args._[1]}`
+    requireArgs([args._[0], "<file>"], [args._[1], "<step-id>"])
+    const path = `plans/${args._[0]}`
     const doc = getPlanFile(fs, path)
-    const step = doc.getElementById(args._[2])
-    if (!step) throw new Error(`no <plan-step id="${args._[2]}"> found in ${args._[1]}`)
+    const step = doc.getElementById(args._[1])
+    if (!step) throw new Error(`no <plan-step id="${args._[1]}"> found in ${args._[0]}`)
 
     field(doc, step, "plan-title", args.title)
     field(doc, step, "plan-status", args.status)
@@ -611,25 +611,6 @@
 
 
   /**
-   * One verb, and a sentence naming it when somebody passes another.
-   *
-   * Every type command dispatches the same way, so learning one is learning the
-   * rest. What differs between them is what the type declares, which is the
-   * whole reason they are separate commands.
-   */
-  async function byVerb(ctx, type, verbs) {
-    const verb = ctx.args._[0]
-    if (!verbs[verb]) {
-      throw new Error(
-        verb
-          ? `plan ${type} has no "${verb}" verb; it takes ${Object.keys(verbs).join(", ")}`
-          : `plan ${type} takes a verb: ${Object.keys(verbs).join(", ")}`,
-      )
-    }
-    return verbs[verb](ctx)
-  }
-
-  /**
    * Create or change a plan document: the whole of one plan.
    *
    *   mycelium plan doc add --title "…" --file <topic> --goal "…"
@@ -641,9 +622,7 @@
    * hold the work. A plan's filename carries a date, unlike a notebook entry,
    * because a plan belongs to the moment somebody made it.
    */
-  export async function doc(ctx: CommandContext) {
-    return byVerb(ctx, "doc", { add: addDoc, update: updateDoc })
-  }
+  export const doc = { add: addDoc, update: updateDoc }
 
   /**
    * Create or change a task: one unit of work inside a plan.
@@ -655,9 +634,7 @@
    * --files names what the task touches, which is what lets a reader see
    * whether two tasks collide before either starts.
    */
-  export async function task(ctx: CommandContext) {
-    return byVerb(ctx, "task", { add: addTask, update: updateTask })
-  }
+  export const task = { add: addTask, update: updateTask }
 
   /**
    * Create or change a step: one move inside a task.
@@ -670,9 +647,7 @@
    * A step may carry the command that proves it, so progress gets derived from
    * what passes rather than declared by whoever last touched the file.
    */
-  export async function step(ctx: CommandContext) {
-    return byVerb(ctx, "step", { add: addStep, update: updateStep })
-  }
+  export const step = { add: addStep, update: updateStep }
 
 </script>
 
