@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Does Node's package.json exports map tolerate a #fragment in a subpath's target?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>Does Node's package.json exports map tolerate a #fragment in a subpath's target?</notebook-title>
+  <notebook-tag>lib-code</notebook-tag>
+  <notebook-prompt>This is exactly the kind of factual, checkable question my own "reach for notebook experiment first" preference is for — let me verify it properly rather than guess.</notebook-prompt>
+  <notebook-question>package.json can point a subpath like ./graph-page at a real .ts file. It could instead point at an .html file with a #id fragment, so that the subpath resolves straight into a lib.template.html function the way an internal script-hooks.ts import already does. Does Node actually accept that, or does it reject or mis-handle the fragment in an exports-map target string?</notebook-question>
+  <notebook-case id="edit-package-json-then-spawn-a-genuinely-fresh-node-process-to-import-the-probe-subpath-a-cached-exports-map-in-this-process-would-otherwise-never-see-the-edit" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>edit package.json, then spawn a genuinely fresh node process to import the probe subpath — a cached exports map in this process would otherwise never see the edit</notebook-lens>
+    <script type="mycelium/experiment">
+import { writeFileSync, readFileSync } from "node:fs"
+import { execFileSync } from "node:child_process"
+
+export default async function () {
+  const pkgPath = new URL("../../package.json", import.meta.url)
+  const original = readFileSync(pkgPath, "utf8")
+  const pkg = JSON.parse(original)
+  pkg.exports["./zzz-fragment-probe"] = "./.mycelium/templates/graph.lib.html#graphPage"
+  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n")
+  try {
+    const probe = `
+      import("mycelium/zzz-fragment-probe")
+        .then((mod) => console.log("resolved:" + typeof mod.graphPage))
+        .catch((err) => console.log("rejected:" + err.constructor.name + ":" + err.message))
+    `
+    const out = execFileSync(process.execPath, ["--input-type=module", "-e", probe], {
+      cwd: new URL("../..", import.meta.url),
+      encoding: "utf8",
+    })
+    return out.trim()
+  } finally {
+    writeFileSync(pkgPath, original)
+  }
+}
+
+</script>
+    <notebook-reading data-on="2026-08-19">rejected:TypeError:Unknown file extension ".html" for /Users/bigmistqke/Documents/GitHub/mycelium/.mycelium/templates/graph.lib.html</notebook-reading>
+    <notebook-conclusion data-on="2026-08-19">Correction: the inference below is wrong. script-hooks.ts's resolve hook only recognizes a fragment written literally in a specifier's own text. A bare subpath like mycelium/graph-page carries no fragment until Node's own exports-map lookup produces one, inside nextResolve, where the hook never sees it again. Registering script-hooks.ts does not fix this — a second case on this experiment confirms the failure reproduces through the real mycelium CLI too, and records the shim that actually works.</notebook-conclusion>
+    <notebook-conclusion data-on="2026-08-19">A fragment target resolves correctly at the path level. Node finds graph.lib.html, not a file-not-found error. It fails one step later: loading .html as a module needs script-hooks.ts's loader hooks registered, and a bare node process spawned outside bin/mycelium.js's own startup never registers them. That is not the real external-consumption path though. Every actual consumer of this package runs seeded command scripts through mycelium's own CLI, which always registers script-hooks.ts before any command runs. The failure mode here is specific to code importing a subpath completely outside any mycelium command context, which graph-page and graph-serve were never realistically used for.</notebook-conclusion>
+  </notebook-case>
+</notebook-experiment>
+</body></html>

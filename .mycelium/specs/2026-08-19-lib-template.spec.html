@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: lib.template.html: reusable code as a real document, not a bare file</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>lib.template.html: reusable code as a real document, not a bare file</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-19</spec-date>
+  <spec-problem>
+<p>
+<a href="../notebook/lib-code-lives-inside-an-html-document.direction.html">A prior direction</a> named
+the gap this closes: reusable code such as <code>graph-page.ts</code> and <code>graph-serve.ts</code>
+sits outside the document vocabulary as a bare file, unlike everything else in the corpus, which lives
+as an <code>.html</code> document a schema can check and a reader can open through an ordinary link. The
+same direction scoped a fix to extending <code>script-hooks.ts</code>'s existing
+<code>path.html#id</code> import mechanism, since a browser-side counterpart hit real platform walls —
+recorded separately as
+<a href="../notebook/service-worker-fetch-drops-the-url-fragment.practice.html">a fetch handler never
+sees a request's fragment</a> and
+<a href="../notebook/service-worker-registration-rejects-file-origin.practice.html">a file:// page
+can't register one at all</a>.
+</p>
+<p>
+<code>graph-page.ts</code>'s <code>graphPage()</code> and <code>graph-serve.ts</code>'s
+<code>serveGraph()</code> are a concrete, live pair to prove this shape against:
+<code>notebook.template.html</code> imports both, <code>canon.template.html</code> imports
+<code>graphPage</code> alone, and <code>graph-serve.ts</code> itself imports <code>graphPage</code>
+internally to rebuild the page it serves. Three real call sites, not a toy example.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>lib.template.html declares the shape; a *.lib.html file is an instance</h3>
+<p>
+A library becomes a real template family the same way notebook or canon is one: <code>lib.template.html</code>
+declares a <code>&lt;lib-doc&gt;</code> schema, and each library — <code>graph.lib.html</code>, say —
+conforms to it via <code>data-conforms-to</code>. That alone makes a library <code>validate</code>-checked
+and corpus-citable, which a bare <code>.ts</code> file never was.
+</p>
+<h3>One function, one lib-function element</h3>
+<p>
+A library holds one or more <code>&lt;lib-function&gt;</code> elements, each carrying its own doc and
+its own script:
+</p>
+<pre><code>&lt;lib-function&gt;
+  &lt;lib-function-doc&gt;&lt;p&gt;Assembles the graph page's full HTML shell...&lt;/p&gt;&lt;/lib-function-doc&gt;
+  &lt;script id="graphPage" type="mycelium/lib"&gt;
+    export function graphPage(page) { ... }
+  &lt;/script&gt;
+  &lt;lib-function-test&gt;
+    &lt;script type="mycelium/test"&gt;
+      export default async function ({ assert }) { ... }
+    &lt;/script&gt;
+  &lt;/lib-function-test&gt;
+&lt;/lib-function&gt;</code></pre>
+<p>
+<code>&lt;lib-function-doc&gt;</code> sits as its own sibling field rather than a leading code comment,
+matching how every other description in this corpus already sits beside what it describes —
+<code>template-purpose</code> beside a family, not commented above its script. The id lives on the
+<code>&lt;script&gt;</code> itself, never on the wrapping <code>&lt;lib-function&gt;</code>: giving both
+the same id looked harmless during this port and was not — a duplicate id resolves to whichever element
+the DOM finds first, so the wrapper's own mixed doc-and-code text reached the loader instead of the
+script's, and the failure read as a syntax error in code that was never wrong.
+</p>
+<h3>Addressing and language reuse existing mechanism, not new engine code</h3>
+<p>
+<code>import { graphPage } from "../templates/graph.lib.html#graphPage"</code> resolves today, through
+the same <code>path.html#id</code> hook built for cross-family command reuse. A script typed
+<code>mycelium/lib</code> gets the same TypeScript-stripping every other <code>mycelium/*</code> script
+already gets, from <code>formatFor()</code> in <code>script-hooks.ts</code>. Neither needs a change —
+true for a specifier written literally with its own fragment, which is how every internal caller reaches
+a library. It is not true for a bare package subpath resolved indirectly through
+<code>package.json</code>'s own exports map; see the resolution below.
+</p>
+<h3>A lib gets its own test command</h3>
+<p>
+<code>mycelium lib test [&lt;file&gt;]</code> runs every <code>mycelium/test</code> case attached to a
+library's own functions, the way <code>canon test</code> runs a behaviour's. It is a new command, not a
+reuse of <code>canon test</code>'s runner — that one is walking canon documents specifically for
+behaviour citations, a different question from "does this function do what its test expects."
+</p>
+<h3>Where a *.lib.html file lives is decided per file, not by a fixed directory</h3>
+<p>
+<code>graphPage()</code> reads <code>graph.template.css</code> through a path computed relative to its
+own file's location. Moving that file into a new top-level directory would silently break that read,
+since the CSS and the client scripts it inlines are not moving in this pass. <code>graph.lib.html</code>
+stays in <code>.mycelium/templates/</code>, beside the assets it actually reads, rather than adopting a
+directory convention this port does not yet need.
+</p>
+<h3>graph.lib.html: the first port</h3>
+<p>
+<code>graphPage</code>, <code>serveGraph</code>, and the smaller helpers real callers already depend on
+— <code>namedScripts</code>, <code>templatePath</code>, <code>templateFile</code> — move into one
+<code>graph.lib.html</code>, since <code>serveGraph</code> already depends on <code>graphPage</code>
+internally and splitting them across two lib files would only add a cross-lib import with no benefit.
+<code>notebook.template.html</code> and <code>canon.template.html</code> both repoint to it directly;
+<code>graph-page.ts</code> and <code>graph-serve.ts</code> are deleted once nothing imports them.
+</p>
+<h3>Resolved: the external subpaths turned out not to be needed at all</h3>
+<p>
+A bare package subpath like <code>mycelium/graph-page</code> carries no fragment in its own specifier
+text — Node's <code>exports</code> map only produces one internally, inside its default resolver, after
+<code>script-hooks.ts</code>'s own hook has already deferred to it. Pointing a subpath straight at
+<code>graph.lib.html#graphPage</code> therefore resolves the path correctly and then fails to load it,
+confirmed by
+<a href="../notebook/exports-map-fragment-target.experiment.html">a notebook experiment</a> that
+reproduced the failure through the real <code>mycelium</code> CLI, not just a bare Node process.
+</p>
+<p>
+A small re-exporting <code>.ts</code> shim fixed it — its own literal imports write the fragment, so
+they resolve the ordinary way. But nothing in this corpus, and no confirmed external consumer, actually
+imports <code>mycelium/graph-page</code> or <code>mycelium/graph-serve</code> any more: every internal
+caller already addresses the library directly. The subpaths and the shim were both removed rather than
+kept for a consumer that does not exist.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+  <li>Porting <code>shared.ts</code>, <code>canon-citations.ts</code>, or any other bare library file.
+  This spec proves the shape on one real, already-used pair of functions; the rest migrate later.</li>
+  <li>The homecooked, nimble-html-inspired string-templating tag function discussed earlier. A real,
+  separate piece of work, and a natural second <code>*.lib.html</code> once this shape exists.</li>
+  <li>Giving canon's own graph drawing a watch mode. <code>serveGraph</code> moves as-is; nothing here
+  changes what it does or who calls it.</li>
+  <li>A directory convention for where <code>*.lib.html</code> files live in general — deferred until
+  there is more than one real example to generalize from.</li>
+</ul>
+</spec-out-of-scope>
+  <spec-open-questions>
+<ol>
+  <li>Whether <code>lib test</code> ends up sharing real code with <code>canon test</code>'s own node-case
+  runner (the sandbox, the module loading) once both exist, or stays a second independent
+  implementation — itself a small instance of the same "no good place to share code between command
+  scripts" question <code>lib.template.html</code> exists to answer for library code generally.</li>
+</ol>
+</spec-open-questions>
+</spec-doc>
+</body></html>
