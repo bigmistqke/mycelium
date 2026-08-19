@@ -949,24 +949,25 @@ function neighbours(side) {
 let selected = null
 
 /**
- * Whether a box is already somewhere a reader can see it: inside the
- * viewport, and clear of the pane sitting over its corner.
+ * Whether a box is already somewhere a reader can see it: inside #grid's
+ * own visible area.
  *
- * Read after the pane's own visibility is settled, since a box the pane now
- * covers and a box it no longer covers give opposite answers from the same
- * geometry.
+ * Against #grid's rect rather than the window's. #grid gives up width to
+ * the pane's column when it opens — its own box narrows, and a box whose
+ * position was clear of the window is not clear of #grid's new, narrower
+ * edge; getBoundingClientRect ignores that an ancestor's overflow clips it
+ * there. #grid's rect already carries however much room it currently has,
+ * pane open or closed, so checking against it is the one comparison that
+ * covers both.
  *
  * @param {HTMLElement} box
  * @returns {boolean}
  */
 function isVisible(box) {
   const rect = box.getBoundingClientRect()
-  if (rect.top < 0 || rect.left < 0 ||
-      rect.bottom > window.innerHeight || rect.right > window.innerWidth) return false
-  if (pane.hidden) return true
-  const over = pane.getBoundingClientRect()
-  return rect.right <= over.left || rect.left >= over.right ||
-         rect.bottom <= over.top || rect.top >= over.bottom
+  const bounds = grid.getBoundingClientRect()
+  return rect.top >= bounds.top && rect.left >= bounds.left &&
+         rect.bottom <= bounds.bottom && rect.right <= bounds.right
 }
 
 /**
@@ -999,16 +1000,16 @@ function show(address) {
     path.classList.toggle('lit', on)
     if (on) litWires.appendChild(path.cloneNode())
   }
-  // The pane has to be showing, or already hidden, before isVisible reads its
-  // rect below — otherwise a box the pane is about to cover still measures as
-  // clear of it.
+  // The pane's own column has to open or close before isVisible measures
+  // #grid below — showing or hiding it changes how wide #grid's own 1fr
+  // column is, which moves every box inside it.
   fillPane(selected)
   if (selected) {
     const box = boxOf(selected)
-    // Centring accounts for the pane through scroll-margin on the box itself,
-    // so nothing here measures anything or scrolls a second time. Only when
-    // the box isn't already visible, or the pane now sits over it — a reader
-    // who can already see the node they picked does not want the page to move.
+    // The pane sits in its own column now, never over #grid's, so nothing
+    // here needs to account for it geometrically — only whether the box is
+    // already on screen. A reader who can already see the node they picked
+    // does not want the page to move.
     if (box && !isVisible(box)) box.scrollIntoView({ block: 'center', inline: 'center' })
   }
   rememberSelection()
