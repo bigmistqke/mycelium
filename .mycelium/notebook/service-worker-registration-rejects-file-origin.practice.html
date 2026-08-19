@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registering a service worker throws on a file:// page, no matter what the worker contains</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>Registering a service worker throws on a file:// page, no matter what the worker contains</notebook-title>
+  <notebook-tag>service-worker</notebook-tag>
+  <notebook-prompt>none of that holds for a generated HTML file someone copies, emails, or opens via file:// -&gt; except if that file contains the service worker?</notebook-prompt>
+  <notebook-detail><p>
+A <code>file://</code> URL serializes to an opaque origin — <code>"null"</code> —
+and <code>navigator.serviceWorker.register()</code> requires a non-opaque,
+potentially-trustworthy origin. It throws at the registration call itself, before
+the browser looks at what the worker's script contains. Inlining the worker's own
+source into the page that registers it does not change this: the check is on the
+page's origin, not on where the worker's code came from.
+</p>
+<p>
+This matters here because <code>graph-page.ts</code>'s <code>templateFile()</code>
+exists specifically to keep a generated page openable after somebody moves it —
+"inlined rather than linked, so a page somebody moves still draws". A
+service-worker-based approach to serving code into a generated page can only ever
+apply to pages served over a real origin, such as <code>graph-serve.ts</code>'s
+<code>--watch</code> server; it is closed off entirely for the plain,
+copy-anywhere <code>generate</code> output.
+</p>
+</notebook-detail>
+</notebook-practice>
+</body></html>

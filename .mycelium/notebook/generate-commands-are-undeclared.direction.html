@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generate commands are plain imperative functions, undeclared the way every document in the corpus is</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Generate commands are plain imperative functions, undeclared the way every document in the corpus is</notebook-title>
+  <notebook-tag>lib-code</notebook-tag>
+  <notebook-tag>runtime</notebook-tag>
+  <notebook-prompt>i also not love how undeclared these generate scripts are. it's not such a clean fit</notebook-prompt>
+  <notebook-detail><p>
+A document in this corpus declares what it is: <code>data-conforms-to</code>
+names a schema, and <code>validate</code> checks the document against it. A
+<code>generate</code> command declares nothing. It is discovered by naming
+convention — <code>export function generate({ fs, args })</code> — and
+documented only in a JSDoc comment that <code>--help</code> happens to print
+back; nothing about what it actually does is machine-checkable.
+</p>
+<p>
+That absence is exactly why the three <code>generate</code> commands compose so
+differently from each other. <code>notebook generate graph</code> and
+<code>canon generate chain</code>/<code>measure</code> both call
+<code>graphPage()</code> and get <code>graph-serve.ts</code>'s
+<code>--watch</code> for free; <code>explore generate index</code>
+reimplements its own shell from scratch, including the generic parts that have
+nothing to do with graphs, and has no watch mode at all; <code>canon
+generate</code> sits in between, sharing the shell but still missing
+<code>--watch</code> (see the existing followup asking for the same server
+notebook already has). Whether a command's output conforms to the graph-page
+shell, and so what it gets for free, is a fact only readable by opening the
+function — nothing states it the way a document states what it conforms to.
+</p>
+<p>
+The corpus's own description of itself is "a document is the source of truth,
+and the tooling reads it." Every generated artifact in the corpus comes out of
+a command, and commands are the one part of the system that description does
+not yet cover.
+</p>
+</notebook-detail>
+</notebook-direction>
+</body></html>

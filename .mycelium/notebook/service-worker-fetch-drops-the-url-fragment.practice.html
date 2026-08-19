@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A service worker's fetch event never carries the request URL's fragment</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>A service worker's fetch event never carries the request URL's fragment</notebook-title>
+  <notebook-tag>service-worker</notebook-tag>
+  <notebook-prompt>but that's a nodejs runtime, i'm talking about a browser runtime that somehow does some fancy stuff with imports. it could be a service worker</notebook-prompt>
+  <notebook-detail><p>
+While weighing a browser-side counterpart to <code>src/script-hooks.ts</code> — that
+hook lets a Node <code>import</code> address one &lt;script&gt; inside an .html
+document with a <code>path.html#locator</code> specifier — the natural instinct was
+to mirror the same addressing in a service worker intercepting module fetches in a
+browser.
+</p>
+<p>
+That does not carry over. A URL's fragment is stripped before the network request
+is constructed: <code>Request.url</code>, and so
+<code>FetchEvent.request.url</code>, never carries a <code>#fragment</code>, because
+a fragment is a client-side-only addressing concept that is never sent over the
+wire. A service worker intercepting <code>./lib.html#nimble-html</code> and
+<code>./lib.html#other-script</code> sees the same request either way.
+</p>
+<p>
+A browser-side version of the same idea would have to move the locator into the
+path or the query string instead — a real asymmetry against the Node hook's
+addressing, not a detail to smooth over.
+</p>
+</notebook-detail>
+</notebook-practice>
+</body></html>

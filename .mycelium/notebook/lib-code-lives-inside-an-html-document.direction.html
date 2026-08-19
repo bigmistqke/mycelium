@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Give reusable library code a real document shape, loaded the way script-hooks.ts already loads one template's script from another</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-direction data-conforms-to="../templates/notebook.template.html#notebook-direction">
+  <notebook-title>Give reusable library code a real document shape, loaded the way script-hooks.ts already loads one template's script from another</notebook-title>
+  <notebook-tag>lib-code</notebook-tag>
+  <notebook-tag>runtime</notebook-tag>
+  <notebook-prompt>also add this idea of having a runtime so we can load scripts from html files so that we can follow the mycelium vocabulary with our own lib-code</notebook-prompt>
+  <notebook-detail><p>
+Every family but one keeps its documentation, its tests and its source in one
+.html file. The exception is reusable library code: <code>graph-page.ts</code>,
+<code>shared.ts</code>, <code>graph.element.js</code>, and any vendored helper
+such as nimble-html would join them, all sit outside the document vocabulary as
+bare <code>.ts</code>/<code>.js</code> files, because nothing today lets a
+consumer <code>import</code> from inside an .html document except
+<code>src/script-hooks.ts</code>'s own hook — and that hook is scoped to one
+<code>.template.html</code>'s command script importing another's.
+</p>
+<p>
+The proposal is to close that gap rather than accept it: give library code a
+real document shape — source and its own tests co-located, addressed the way
+<code>script-hooks.ts</code> already resolves a
+<code>path.html#locator</code> specifier under Node — instead of a permanent
+exception carved out for anything that has to be <code>import</code>able.
+<code>templateFile()</code>'s plain <code>readFileSync</code> would need to
+become "pull one &lt;script&gt;'s textContent out of a parsed document" for the
+client-inlined case, which is close to what <code>script-hooks.ts</code>'s own
+<code>findScript()</code> already does for the Node case.
+</p>
+<p>
+A browser-side counterpart, so a generated page's own client scripts could
+import the same way, was the first avenue explored for this — a service worker
+rewriting module fetches. That avenue turned out mostly closed: it cannot serve
+a plain, copy-anywhere <code>generate</code> output at all, and even where it
+would apply it needs a different addressing scheme than the Node hook's
+<code>#locator</code>. The Node-side extension of the existing hook stays open
+regardless of how, or whether, a browser counterpart ever gets built.
+</p>
+</notebook-detail>
+  <a data-rel="depends_on" href="./service-worker-registration-rejects-file-origin.practice.html">closes off a browser-side runtime for the plain, copy-anywhere generate output</a>
+  <a data-rel="depends_on" href="./service-worker-fetch-drops-the-url-fragment.practice.html">means a browser-side counterpart would need a different addressing scheme than the Node hook's #locator</a>
+  <a data-rel="leads_to" href="./generate-commands-are-undeclared.direction.html">noticing lib-code escapes the document vocabulary is what surfaced that generate commands do too</a>
+</notebook-direction>
+</body></html>
