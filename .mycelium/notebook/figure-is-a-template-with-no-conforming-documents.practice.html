@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>figure.template.html declares elements but nothing ever conforms to it, unlike every other template family</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>figure.template.html declares elements but nothing ever conforms to it, unlike every other template family</notebook-title>
+  <notebook-prompt>for figure.template.html -&gt; i wonder if we should make an additional category 'element.html' that is a template that provides a custom-element but no documents</notebook-prompt>
+  <notebook-detail><p>Building <code>explore generate index</code>'s Templates/Commands split surfaced this:
+the split reads <code>declaresATemplate</code> — whether a host file has a
+<code>&lt;template id&gt;</code> — to decide whether a family belongs under Templates
+(instances can conform to it) or Commands (nothing ever will, by design, and the page
+no longer prints "no files yet" for those).</p>
+<p><code>figure.template.html</code> fits neither reading cleanly. It declares three
+element templates (<code>figure-graph</code>, <code>figure-node</code>,
+<code>figure-edge</code>) and ships a real <code>figure.element.js</code>, so
+<code>declaresATemplate</code> puts it under Templates. But nothing has ever conformed
+to it as a standalone document, and nothing is expected to: its elements get embedded
+inside other documents instead — <code>chain.canon.html</code>, for one — the way
+<a href="./instance-inside-a-host-document.practice.html">an earlier spike already
+found</a>. So it sits under Templates showing "no files yet" forever, same as a command
+file does, for the opposite reason: a command declares no schema at all, while figure
+declares one that nothing outside it ever uses directly.</p>
+<p>Every other <code>*.element.js</code> in the corpus — <code>notebook</code>,
+<code>test</code>, <code>experiment</code>, <code>graph</code>, <code>chain</code> — is
+a support script for a family that already has real conforming documents. Figure is
+the only file shaped this way right now, which is why a third category for it got
+proposed and then set aside: one member is not yet a pattern worth naming.</p>
+</notebook-detail>
+  <a data-rel="elaborates" href="./instance-inside-a-host-document.practice.html">the same fact — a figure lives inside another document rather than being one — surfacing again while building the corpus-explorer page</a>
+</notebook-practice>
+</body></html>
