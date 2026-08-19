@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A literal &lt;/script&gt; inside a JS template string closes the real script tag around it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-practice data-conforms-to="../templates/notebook.template.html#notebook-practice">
+  <notebook-title>A literal &lt;/script&gt; inside a JS template string closes the real script tag around it</notebook-title>
+  <notebook-tag>validate</notebook-tag>
+  <notebook-tag>command-scripts</notebook-tag>
+  <notebook-detail>A command script lives inside its own <script type="mycelium/command"> + "/script"; any script string embedding another script tag needs the same split.</script></notebook-detail>
+</notebook-practice>
+</body></html>

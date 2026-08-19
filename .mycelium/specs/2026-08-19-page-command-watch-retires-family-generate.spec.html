@@ -9,18 +9,17 @@
 <body>
 <spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
   <spec-title>page.command.html grows a real dev server: livereload and static passthrough, retiring notebook's and canon's own generate</spec-title>
-  <spec-status>draft</spec-status>
+  <spec-status>implemented</spec-status>
   <spec-date>2026-08-19</spec-date>
   <spec-problem>
 <p>
 <a href="../notebook/fold-the-graph-watch-server-into-page-command-html-so-notebook-and-canon-s-own-generate-can-retire.direction.html">A prior direction</a> names the gap this closes. <code>page.command.html</code>'s own spec claimed that its
-generic <code>--watch</code> would close
-<a href="../followups/give-canon-generate-watch-the-same-server-the-notebook-has.followup.html">canon's
-long-open watch followup</a> "as a consequence of this shape rather than as a separate port of
-graph-serve.ts." That claim is not yet true. <code>serve()</code> today re-runs a page's own leaf on
-every request and nothing else: no file watching, no push to an open tab, and no route for anything
-but <code>/</code>. Neither notebook's own <code>generate graph --watch</code> nor canon's chain has
-moved onto it, because moving would trade away two things <code>graph.lib.html</code>'s
+generic <code>--watch</code> would close canon's long-open watch gap, at the time still tracked as its
+own followup and since deleted by this spec's own work, "as a consequence of this shape rather than as
+a separate port of graph-serve.ts." That claim was not yet true. <code>serve()</code> re-ran a page's
+own leaf on every request and nothing else: no file watching, no push to an open tab, and no route for
+anything but <code>/</code>. Neither notebook's own <code>generate graph --watch</code> nor canon's
+chain had moved onto it, because moving would have traded away two things <code>graph.lib.html</code>'s
 <code>serveGraph</code> already gives notebook: a reader's tab redrawing itself without a manual
 reload, and every link the drawing carries back into the corpus actually resolving.
 </p>
@@ -104,11 +103,20 @@ are dead code and come out, along with the now-unused <code>hmrClient?</code> fi
 <code>GraphPage</code> — <code>page.command.html</code> injects its own reload script into the returned
 HTML string directly, so a leaf's own shell never needs a slot for one.
 </p>
-<h3>The corpus-wide index and the deploy workflow both move with the address</h3>
+<h3>A family's own page links move onto its own card</h3>
 <p>
-<code>page.command.html</code>'s own <code>buildIndex()</code> links the two drawings under
-"Drawings" by their literal path; those become <code>page/notebook/graph.html</code> and
-<code>page/canon/chain.html</code>. <code>.github/workflows/deploy-pages.yml</code>'s two build steps,
+<code>readCommands</code> already reads <code>export const page = {...}</code> the same way it reads
+any other exported command table, since nothing about the shape tells it apart. Rather than teach it
+to, <code>buildIndex()</code> splits a family's own parsed commands by that one property name: an
+ordinary command stays a pill with a tooltip, and a <code>page</code> verb becomes a real link at
+<code>page/&lt;family&gt;/&lt;verb&gt;.html</code> under a new "Page" heading on that family's own card.
+The hardcoded top-level "Drawings" list, naming only notebook and canon by hand, goes with it — any
+family exporting <code>page</code> now surfaces its own output the same way, with no second place
+needing to know the two names.
+</p>
+<h3>The deploy workflow moves with the address</h3>
+<p>
+<code>.github/workflows/deploy-pages.yml</code>'s two build steps,
 <code>mycelium notebook generate graph --out notebook.html</code> and
 <code>mycelium canon generate chain --out chain.html</code>, become
 <code>mycelium page generate notebook graph</code> and <code>mycelium page generate canon chain</code>.

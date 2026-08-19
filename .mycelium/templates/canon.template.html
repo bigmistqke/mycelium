@@ -550,7 +550,7 @@
   import { tmpdir } from "node:os"
   import { dirname, join, resolve as resolvePath } from "node:path"
   import { spawn, spawnSync, execFileSync } from "node:child_process"
-  import { CORPUS_DIR, loadModule } from "mycelium/utils"
+  import { CORPUS_DIR, corpusView, loadModule } from "mycelium/utils"
   import { ELEMENT, chromePath, sleep, withBrowser } from "mycelium/webdriver"
   import { graphPage } from "./graph.lib.html#graphPage"
   import { namedScripts } from "./graph.lib.html#namedScripts"
@@ -1259,7 +1259,7 @@
   /**
    * Draw the chain, so an axiom's reach is visible rather than merely checked.
    *
-   *   mycelium canon generate chain [--out <path>] [--base [<href>]]
+   *   mycelium page generate canon chain [--watch] [--port N]
    *
    * The three checks say the chain holds together and none says what it looks
    * like. grounded reports that an axiom reaches a behaviour, never how many or
@@ -1278,10 +1278,14 @@
    * comment and its whole implementation, and the anchor into the corpus. The
    * blast radius as a gesture rather than a list assembled by hand.
    *
-   * --out writes to that path, relative to the corpus or absolute, for committing a
-   * snapshot. Omitted, it writes to a temp file and prints a file:// URL.
-   * --base adds a <base> tag, so a page written elsewhere still resolves the
-   * links it carries. Bare, it points at this machine's own corpus.
+   * Reads through a fresh corpusView on every call rather than the engine's
+   * cached filesystem, the same substitution notebook's own graphData
+   * already made. So page.command.html's --watch shows an edit on the next
+   * reload instead of the corpus as it stood when the server started.
+   *
+   * base carries a <base> tag as literal markup, so a caller two directories
+   * below the corpus root and one writing to a bare temp file for measure
+   * can each pass what actually resolves their own links.
    *
    * A template's worked examples never reach the page. They conform, so every
    * reader of the corpus finds them, and a sample principle counted among real
@@ -1289,11 +1293,9 @@
    *
    * @behaviour canon/chain.canon.html#the-drawing-counts-only-claims
    */
-  export function generate({ fs, args }: CommandContext) {
-    const kind = args._[0]
-    if (kind !== 'chain') throw new Error(`unknown generate kind "${kind}" — expected "chain"`)
-
-    const corpus = auditFsOver(fs)
+  function chainPage(base: string): string {
+    const corpusRoot = resolvePath(CORPUS_DIR)
+    const corpus = corpusView(resolvePath(corpusRoot, '..'), CORPUS_DIR)
 
     // A template's worked examples conform, and claim nothing. The three chain
     // checks want them, since a sample's job is to make a check fire, so
@@ -1434,11 +1436,6 @@
         .map((entry) => [entry.address, walk(entry.address, above)])),
     }
 
-    // A valueless flag parses as the string "true", which is what bare --base
-    // arrives as. knowledge generate reads it the same way.
-    const base = args.base === undefined
-      ? ''
-      : `<base href="${args.base === 'true' ? pathToFileURL(resolvePath(fs.root) + '/').href : args.base}">`
     // The shared drawing goes first and the chain's own ranking second, since
     // the second calls what the first defines.
     const page = graphPage({
@@ -1453,16 +1450,16 @@
     <b>${data.code.filter(d => d.cites.length > 1).length}</b> declarations answering more than one claim`,
       scripts: namedScripts(['graph.element.js', 'chain.element.js']),
     })
+    corpus.dispose?.()
+    return page
+  }
 
-    if (args.out) {
-      const out = resolvePath(fs.root, args.out as string)
-      writeFileSync(out, page)
-      console.log(`wrote    ${out}`)
-      return
-    }
-    const out = join(mkdtempSync(join(tmpdir(), 'mycelium-chain-')), 'chain.html')
-    writeFileSync(out, page)
-    console.log(pathToFileURL(out).href)
+  /**
+   * Draw the chain, so an axiom's reach is visible rather than merely
+   * checked.
+   */
+  export const page = {
+    chain: () => chainPage('<base href="../../">'),
   }
 
   /**
@@ -1481,7 +1478,7 @@
    */
   export async function measure({ fs, args }: CommandContext) {
     const out = join(mkdtempSync(join(tmpdir(), 'mycelium-chain-')), 'chain.html')
-    generate({ fs, args: { ...args, _: ['chain'], out } } as CommandContext)
+    writeFileSync(out, chainPage(''))
 
     const root = resolvePath(fs.root, '..')
     await withBrowser({ root, show: args.show !== undefined, port: Number(args.port ?? 9515) }, async (call) => {
@@ -1508,26 +1505,6 @@
       console.log(`boxes sitting on each other: ${found.collisions}`)
 
     })
-  }
-
-  // An AuditFs over the command's own filesystem, since readCanon and the
-  // citation reader both take one and a command is handed the other. Reading
-  // is all either needs.
-  function auditFsOver(fs) {
-    const docs = fs.list('').map(({ path, doc }) => ({ path: `${CORPUS_DIR}/${path}`, doc }))
-    const byPath = new Map(docs.map((d) => [d.path, d.doc]))
-    return {
-      root: resolvePath(fs.root, '..'),
-      docsDir: CORPUS_DIR,
-      list: (dir = '.', options: { ext?: string } = {}) => docs
-        .map((d) => d.path)
-        .filter((path) => (!dir || dir === '.' || path.startsWith(`${dir}/`)) && (!options.ext || path.endsWith(options.ext))),
-      // Real text, not an empty string. The stub that used to sit here made
-      // every file look like it held nothing, so a reader of source found no
-      // comments and reported that as an answer rather than as a failure.
-      read: (path: string) => readFileSync(resolvePath(fs.root, '..', path), 'utf8'),
-      parse: (path: string) => byPath.get(path),
-    }
   }
 
   /**

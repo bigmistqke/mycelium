@@ -25,10 +25,12 @@ easy to miss. <code>notebook generate graph</code> and <code>canon generate chai
 both call <code>graphPage()</code> (<code>graph-page.ts</code>) for their shell and get
 <code>--watch</code> for free through <code>graph-serve.ts</code>. <code>explore generate index</code>
 reimplements its own shell from scratch, including the doctype, style embedding and escaping that have
-nothing to do with what it draws, and has no watch mode at all. Canon's own watch gap is already
-recorded as <a href="../followups/give-canon-generate-watch-the-same-server-the-notebook-has.followup.html">
-its own followup</a>. Every one of these differences is a fact about how each family's own
-<code>generate</code> happened to get written, not a decision anyone made on purpose.
+nothing to do with what it draws, and has no watch mode at all. Canon's own watch was the same kind of
+omission, tracked separately until
+<a href="../specs/2026-08-19-page-command-watch-retires-family-generate.spec.html">a later spec</a>
+closed it by generalizing this one's own <code>--watch</code>. Every one of these differences is a
+fact about how each family's own <code>generate</code> happened to get written, not a decision anyone
+made on purpose.
 </p>
 <p>
 Each family also hand-rolls how its own output reaches disk or a browser: an <code>--out</code> flag,

@@ -15,8 +15,6 @@
 </template-host>
 
 <div class="meta">
-  <div><b>Not a template:</b> like <code>explore.command.html</code>, this file declares no
-    <code>&lt;template id="…"&gt;</code> and nothing conforms to it via <code>data-conforms-to</code>.</div>
   <div><b>A family opts in by exporting <code>page</code>:</b> <code>export const page = { index(): string {
     ... } }</code>, the same nested-object shape a command table already uses. Nothing here executes
     unless a family declares one.</div>
@@ -37,8 +35,9 @@
   import { loadModule } from "mycelium/utils"
   import { declaresATemplate, readCommands, type CommandEntry } from "mycelium/shared"
   import { resolveHref } from "mycelium/canon-citations"
-  import { createServer } from "node:http"
-  import { join } from "node:path"
+  import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
+  import { watch, readFileSync, existsSync, statSync } from "node:fs"
+  import { join, dirname, extname, resolve as resolvePath } from "node:path"
 
   /**
    * Where a family's own command script lives, found the same way the
@@ -106,6 +105,45 @@
 
   const pagePathFor = (id: string, verbPath: string[]) => `page/${id}/${verbPath.join("/")}.html`
 
+  const MIME: Record<string, string> = {
+    ".html": "text/html; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+  }
+
+  /**
+   * Serves a real corpus file for any request the reload channel and the
+   * page route itself don't claim, so a link a page carries back into the
+   * corpus resolves instead of 404ing. A path climbing above the corpus
+   * root is refused rather than resolved, the same rule a request from
+   * outside the corpus would meet anywhere else.
+   */
+  function serveStatic(req: IncomingMessage, res: ServerResponse, root: string) {
+    const url = decodeURIComponent((req.url ?? "/").split("?")[0].split("#")[0])
+    const full = resolvePath(root, "." + url)
+    if (!full.startsWith(root)) { res.writeHead(403); res.end("forbidden"); return }
+    if (!existsSync(full) || !statSync(full).isFile()) { res.writeHead(404); res.end("not found"); return }
+    res.writeHead(200, { "content-type": MIME[extname(full)] ?? "application/octet-stream" })
+    res.end(readFileSync(full))
+  }
+
+  // Inlined before </body>, or appended if a leaf's own HTML carries none.
+  // Kept generic rather than reused from graph.lib.html's own client: this
+  // one only ever says "something changed, reload", since serve() cannot
+  // tell what changed the way a graph page's own hmrClient once could.
+  const closing = "<" + "/script"
+  const RELOAD_CLIENT = `<script>(function () {
+  var source = new EventSource('/_reload')
+  source.onmessage = function () { location.reload() }
+})()${closing}>`
+
+  function withReloadClient(html: string): string {
+    return html.includes("</body>") ? html.replace("</body>", `${RELOAD_CLIENT}\n</body>`) : html + RELOAD_CLIENT
+  }
+
   /**
    * Serves one resolved page fresh on every request, so a corpus edit shows
    * up on the next reload with no restart. The page table is resolved once,
@@ -114,23 +152,55 @@
    * cache still hands back the old version of that. Watching a code change
    * needs restarting the server, the same way most dev servers without
    * hot-module-replacement do.
+   *
+   * Every directory holding a real document is watched, debounced by 250ms,
+   * and any change inside one sends every open tab a reload message over an
+   * SSE channel at /_reload. A leaf declares no watch paths of its own, so
+   * this cannot know which corpus edit actually mattered to it and reloads
+   * on any of them. Any other request is served as a real file under the
+   * corpus root, so a link a page carries back into the corpus resolves.
    */
-  function serve(id: string, verbPath: string[], leaf: () => string | Promise<string>, port?: number): Promise<never> {
+  function serve(id: string, verbPath: string[], leaf: () => string | Promise<string>, fs: CommandFilesystem, port?: number): Promise<never> {
+    const root = fs.root
+    const subscribers = new Set<ServerResponse>()
+
     const server = createServer(async (req, res) => {
-      if (req.url !== "/") {
-        res.writeHead(404)
-        res.end()
+      if (req.url === "/") {
+        try {
+          const html = await leaf()
+          res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+          res.end(withReloadClient(html))
+        } catch (err) {
+          res.writeHead(500, { "content-type": "text/plain; charset=utf-8" })
+          res.end((err as Error).message)
+        }
         return
       }
-      try {
-        const html = await leaf()
-        res.writeHead(200, { "content-type": "text/html; charset=utf-8" })
-        res.end(html)
-      } catch (err) {
-        res.writeHead(500, { "content-type": "text/plain; charset=utf-8" })
-        res.end((err as Error).message)
+      if (req.url === "/_reload") {
+        res.writeHead(200, {
+          "content-type": "text/event-stream",
+          "cache-control": "no-cache",
+          connection: "keep-alive",
+        })
+        res.write(":\n\n")
+        subscribers.add(res)
+        req.on("close", () => subscribers.delete(res))
+        return
       }
+      serveStatic(req, res, root)
     })
+
+    const watchedDirs = new Set(fs.list(".").map(({ path }) => dirname(resolvePath(root, path))))
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const scheduleReload = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        timer = undefined
+        for (const res of subscribers) res.write(`data: reload\n\n`)
+      }, 250)
+    }
+    for (const dir of watchedDirs) watch(dir, scheduleReload)
+
     return new Promise<never>((_resolve, reject) => {
       server.on("error", reject)
       server.listen(port ?? 0, () => {
@@ -167,7 +237,7 @@
     const leaf = resolvePage(id, table, verbPath)
 
     if (args.watch !== undefined) {
-      await serve(id, verbPath, leaf, args.port ? Number(args.port) : undefined)
+      await serve(id, verbPath, leaf, fs, args.port ? Number(args.port) : undefined)
       return
     }
 
@@ -207,10 +277,9 @@
 
   /**
    * The corpus-wide landing page: what the corpus holds, grouped by the
-   * family that governs it, with the two drawings linked above the list.
-   * Each family is a card carrying its own file count, so scanning the
-   * grid finds one without a separate index needing to stay in sync with
-   * it.
+   * family that governs it. Each family is a card carrying its own file
+   * count, so scanning the grid finds one without a separate index needing
+   * to stay in sync with it.
    *
    * Every templates/*.template.html and commands/*.command.html file
    * already carries a &lt;template-host&gt;: a one-line &lt;template-purpose&gt;
@@ -219,7 +288,9 @@
    * here describes a family a second time. A card also lists its own
    * commands — every export its &lt;script type="mycelium/command"&gt;
    * declares, read the same way `mycelium --help` reads one, so a reader
-   * sees what a family can do without leaving the page.
+   * sees what a family can do without leaving the page. A family's own
+   * `page` export sorts separately, as real links to what it draws rather
+   * than as one more command pill nobody can click.
    *
    * Families split into two groups, the same split findTemplateFile
    * already makes when it resolves an &lt;id&gt;. A template declares a
@@ -278,7 +349,15 @@
       const specLinks = family.specs
         .map((spec) => `<a href="${escapeHtml(spec.href)}">${escapeHtml(spec.label)}</a>`)
         .join(", ")
-      const commandItems = family.commands
+      // A family's own `page` export reads as a command like any other —
+      // readCommands cannot tell the two apart, and shouldn't have to. Split
+      // it out here instead: page.command.html is the one place that knows
+      // what a "page" verb path actually resolves to on disk, so this is
+      // where a pill becomes a real link rather than a tooltip.
+      const isPageCommand = (command: CommandEntry) => command.path[0] === "page"
+      const pageCommands = family.commands.filter(isPageCommand)
+      const otherCommands = family.commands.filter((command) => !isPageCommand(command))
+      const commandItems = otherCommands
         .map((command) => {
           const label = command.path.join(" ")
           const id = `cmd-${slug(family.name)}-${slug(label)}`
@@ -290,8 +369,18 @@
     </li>`
         })
         .join("\n    ")
-      const commandsBlock = family.commands.length
+      const commandsBlock = otherCommands.length
         ? `<h4>Commands</h4>\n  <ul class="commands">\n    ${commandItems}\n  </ul>`
+        : ""
+      const pageItems = pageCommands
+        .map((command) => {
+          const verbPath = command.path.slice(1)
+          const href = at(pagePathFor(family.name, verbPath))
+          return `<li><a href="${escapeHtml(href)}">${escapeHtml(verbPath.join(" "))}</a></li>`
+        })
+        .join("\n    ")
+      const pageBlock = pageCommands.length
+        ? `<h4>Page</h4>\n  <ul class="files">\n    ${pageItems}\n  </ul>`
         : ""
       const files = [...family.files].sort(([, left], [, right]) => left.localeCompare(right))
       const fileLinks = files
@@ -307,6 +396,7 @@
   <h3><a href="${escapeHtml(at(family.path))}">${escapeHtml(family.name)}</a>${count}</h3>
   <p>${escapeHtml(family.purpose)}${specLinks ? ` &mdash; ${specLinks}` : ""}</p>
   ${commandsBlock}
+  ${pageBlock}
   ${filesBlock}
 </section>`
     }
@@ -336,25 +426,6 @@
     const style = `<style>
   body { max-width: 1040px; }
   p.lede { font-size: 1.05rem; color: var(--muted); }
-  .drawings {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
-    margin: 1rem 0;
-    list-style: none;
-    padding: 0;
-  }
-  .drawings a {
-    display: block;
-    padding: 1.1rem 1.25rem;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--fg);
-    text-decoration: none;
-  }
-  .drawings a:hover { border-color: var(--accent); }
-  .drawings b { display: block; margin-bottom: 0.3rem; color: var(--accent); font-family: var(--font-mono); }
-  .drawings span { color: var(--muted); font-size: 0.9rem; }
   p.section-intro { color: var(--muted); margin-top: -0.5rem; }
   .corpus {
     display: grid;
@@ -462,11 +533,6 @@ ${style}
 <body>
 <h1>mycelium</h1>
 <p class="lede">${about}</p>
-<h2 id="drawings">Drawings</h2>
-<ul class="drawings">
-  <li><a href="${escapeHtml(at("notebook.html"))}"><b>The notebook</b><span>every entry, ranked by the day it arrived</span></a></li>
-  <li><a href="${escapeHtml(at("chain.html"))}"><b>The canon chain</b><span>every axiom's reach, from claim to declaration</span></a></li>
-</ul>
 <h2>Templates</h2>
 <p class="section-intro">A template declares a schema, and a family of files conforms to it. Each
   card below is one template: what it holds, the files that conform to it now, and the commands
@@ -501,7 +567,7 @@ ${otherSection ? `<h2>Other</h2>\n<div class="corpus">\n${otherSection}\n</div>\
    */
   export async function index({ fs, args, cli }: CommandContext) {
     if (args.watch !== undefined) {
-      await serve("index", [], () => buildIndex(fs, cli), args.port ? Number(args.port) : undefined)
+      await serve("index", [], () => buildIndex(fs, cli), fs, args.port ? Number(args.port) : undefined)
       return
     }
     fs.create(INDEX_PATH, buildIndex(fs, cli))

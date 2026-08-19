@@ -65,10 +65,10 @@ jobs:
         run: pnpm mycelium canon test
 
       - name: Build the notebook graph
-        run: pnpm mycelium notebook generate graph --out notebook.html
+        run: pnpm mycelium page generate notebook graph
 
       - name: Build the canon chain
-        run: pnpm mycelium canon generate chain --out chain.html
+        run: pnpm mycelium page generate canon chain
 
       - name: Build the index
         run: pnpm mycelium page index

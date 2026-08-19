@@ -319,10 +319,7 @@
   import { BLOCK_TAGS } from "mycelium/language-prose"
   import { graphPage } from "./graph.lib.html#graphPage"
   import { namedScripts } from "./graph.lib.html#namedScripts"
-  import { templatePath } from "./graph.lib.html#templatePath"
-  import { serveGraph } from "./graph.lib.html#serveGraph"
-  import { tmpdir } from "node:os"
-  import { basename, dirname, join, resolve, resolve as resolvePath } from "node:path"
+  import { basename, dirname, resolve, resolve as resolvePath } from "node:path"
   import { pathToFileURL } from "node:url"
   import { execFileSync } from "node:child_process"
 
@@ -1310,8 +1307,7 @@
   /**
    * Draw the notebook, as days in columns.
    *
-   *   mycelium notebook generate graph [--out <path>] [--base [<href>]]
-   *   mycelium notebook generate graph --watch [--port N] [--open]
+   *   mycelium page generate notebook graph [--watch] [--port N]
    *
    * A day is a partition rather than a rank: four fifths of the edges join
    * two entries from the same day, so columns of days alone would leave most
@@ -1324,50 +1320,28 @@
    * out newest first, so the first mention of a path is the commit that added
    * it.
    *
-   * --out writes to that path, relative to the corpus or absolute. Omitted, this
-   * writes a temp file and prints a file:// URL. Every address in the page is
-   * relative to the corpus, so a page written outside it needs --base to resolve
-   * them; --base with no value points at this machine's own corpus, which is
-   * right for looking and wrong for committing.
-   *
-   * --watch holds the process open instead of writing a file. It serves the
-   * page over HTTP, rooted at the corpus so a node's own link opens the real
-   * document. It redraws the page in the reader's own tab whenever an entry
-   * changes. --out and --base do nothing with it: nothing gets written, and
-   * nothing needs a base once the server is the one serving the links.
+   * Reads through a fresh corpusView on every call rather than the engine's
+   * own cached filesystem, so page.command.html's --watch shows an edit on
+   * the next reload without restarting. The base tag assumes
+   * page.command.html's own convention for where this lands:
+   * page/notebook/graph.html, two directories below the corpus root. That
+   * convention is the one thing about its own address a leaf is allowed to
+   * know, since page.command.html publishes it rather than this file
+   * choosing it.
    */
-  export function generate({ fs, args }: CommandContext) {
-    if (args._[0] !== "graph") throw new Error(`unknown generate kind "${args._[0]}" — expected "graph"`)
-    const corpusRoot = resolvePath(CORPUS_DIR)
-
-    if (args.watch) {
-      return serveGraph({
-        page: GRAPH_PAGE,
-        sharedScriptPath: templatePath(GRAPH_PAGE.scripts[0]),
-        rankingScriptPath: templatePath(GRAPH_PAGE.scripts[1]),
-        cssPath: templatePath("graph.template.css"),
-        corpusRoot,
-        watchDir: DIR,
-        build: () => graphData(corpusView(corpusRoot, ".")),
-        port: args.port ? Number(args.port) : undefined,
-        open: args.open !== undefined,
+  export const page = {
+    graph(): string {
+      const corpusRoot = resolvePath(CORPUS_DIR)
+      const { data, counts, dropped } = graphData(corpusView(corpusRoot, "."))
+      if (dropped) console.log(`note: ${dropped} edge(s) leaving the notebook are not drawn`)
+      return graphPage({
+        ...GRAPH_PAGE,
+        scripts: namedScripts(GRAPH_PAGE.scripts),
+        data,
+        counts,
+        base: '<base href="../../">',
       })
-    }
-
-    const { data, counts, dropped } = graphData(corpusView(fs.root, "."))
-    if (dropped) console.log(`note: ${dropped} edge(s) leaving the notebook are not drawn`)
-    const rel = (p) => (p.startsWith(corpusRoot + "/") ? p.slice(corpusRoot.length + 1) : p)
-
-    const base = args.base === undefined ? ""
-      : `<base href="${args.base === "true" ? pathToFileURL(corpusRoot + "/").href : args.base}">`
-
-    const page = graphPage({ ...GRAPH_PAGE, scripts: namedScripts(GRAPH_PAGE.scripts), data, counts, base })
-
-    const out = args.out
-      ? resolvePath(CORPUS_DIR, args.out)
-      : join(tmpdir(), `mycelium-notebook-${Date.now()}.html`)
-    fs.create(rel(out), page)
-    console.log(args.out ? out : pathToFileURL(out).href)
+    },
   }
 
   /**
