@@ -536,7 +536,7 @@
     }
   }
 
-  /** Where a verb finds the file it works on: the positional byVerb leaves behind. */
+  /** Where a verb finds the file it works on: the positional the engine leaves behind after resolving the verb itself. */
   const fileArg = (args, label) => {
     requireArgs([args._[0], label])
     return args._[0]
@@ -617,29 +617,6 @@
   }
 
   /**
-   * One verb, and a sentence naming it when somebody passes another.
-   *
-   * Every type command dispatches the same way, so a reader who has learnt one
-   * has learnt the rest. What differs between them is what the type declares,
-   * which is the whole reason they are separate commands.
-   *
-   * Shifts the positional the verb itself consumed off the front, so a handler
-   * — leaf or another byVerb nested one level deeper, the way case sits under
-   * experiment — always finds its own first argument at the same place.
-   */
-  async function byVerb(ctx, type, verbs) {
-    const verb = ctx.args._[0]
-    if (!verbs[verb]) {
-      throw new Error(
-        verb
-          ? `notebook ${type} has no "${verb}" verb; it takes ${Object.keys(verbs).join(", ")}`
-          : `notebook ${type} takes a verb: ${Object.keys(verbs).join(", ")}`,
-      )
-    }
-    return verbs[verb]({ ...ctx, args: { ...ctx.args, _: ctx.args._.slice(1) } })
-  }
-
-  /**
    * Create a principle: a rule somebody saw by stepping back over what accumulated.
    *
    *   mycelium notebook principle add --title "…" --detail "…" | --detail -
@@ -653,8 +630,8 @@
    * what it rules out, what it cost to learn — has nowhere else to live, and
    * a title with nowhere to stand on its own is not an entry.
    */
-  export async function principle(ctx: CommandContext) {
-    return byVerb(ctx, "principle", { add: (one) => addEntry(one, "principle") })
+  export const principle = {
+    add: (one: CommandContext) => addEntry(one, "principle"),
   }
 
   /**
@@ -672,8 +649,8 @@
    * from thinking rather than from running something: a title alone is not a
    * record of what happened, only a headline for one.
    */
-  export async function practice(ctx: CommandContext) {
-    return byVerb(ctx, "practice", { add: (one) => addEntry(one, "practice") })
+  export const practice = {
+    add: (one: CommandContext) => addEntry(one, "practice"),
   }
 
   /**
@@ -690,8 +667,8 @@
    * proposal, and the reasoning behind wanting the work elsewhere is what
    * makes it one.
    */
-  export async function direction(ctx: CommandContext) {
-    return byVerb(ctx, "direction", { add: (one) => addEntry(one, "direction") })
+  export const direction = {
+    add: (one: CommandContext) => addEntry(one, "direction"),
   }
 
   /**
@@ -707,8 +684,8 @@
    * --detail is required, and says what the entry took from the source: what
    * a reader cannot get from the title or the link alone.
    */
-  export async function research(ctx: CommandContext) {
-    return byVerb(ctx, "research", { add: (one) => addEntry(one, "research") })
+  export const research = {
+    add: (one: CommandContext) => addEntry(one, "research"),
   }
 
   /**
@@ -750,18 +727,15 @@
    * run takes every case, or the one an address names, and records a reading
    * only when it moves.
    */
-  export async function experiment(ctx: CommandContext) {
-    return byVerb(ctx, "experiment", {
-      add: (one) => addEntry(one, "experiment"),
-      run: (one) => runCases(one),
-      conclude: (one) => concludeExperiment(one),
-      case: (one) =>
-        byVerb(one, "case", {
-          add: (two) => attachCaseTo(two),
-          del: (two) => dropCase(two),
-          conclude: (two) => concludeCase(two),
-        }),
-    })
+  export const experiment = {
+    add: (one: CommandContext) => addEntry(one, "experiment"),
+    run: (one: CommandContext) => runCases(one),
+    conclude: (one: CommandContext) => concludeExperiment(one),
+    case: {
+      add: (two: CommandContext) => attachCaseTo(two),
+      del: (two: CommandContext) => dropCase(two),
+      conclude: (two: CommandContext) => concludeCase(two),
+    },
   }
 
   /**
