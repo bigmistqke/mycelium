@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Followup: Audit whether a seeded project's own templates can actually reach graph.lib.html and webdriver.lib.html</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/followup.template.css">
+</head>
+<body>
+<followup-item data-conforms-to="../templates/followup.template.html#followup-item">
+  <followup-title>Audit whether a seeded project's own templates can actually reach graph.lib.html and webdriver.lib.html</followup-title>
+  <followup-at><a href="../../src/run.ts">SEED_FAMILIES and seedPaths, which copy only template/notebook/language/followup into a fresh corpus</a></followup-at>
+  <followup-when>when a consumer's own notebook.template.html runs page generate notebook graph or a browser experiment case and the relative import into .mycelium/lib or .mycelium/templates cannot find the file, since neither directory is seeded today</followup-when>
+</followup-item>
+</body></html>

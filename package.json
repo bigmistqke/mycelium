@@ -16,7 +16,6 @@
   "exports": {
     "./api": "./src/api.ts",
     "./utils": "./src/utils.ts",
-    "./webdriver": "./src/webdriver.ts",
     "./retext": "./src/retext.ts",
     "./shared": "./.mycelium/templates/shared.ts",
     "./extract-graph": "./.mycelium/templates/extract-graph.ts",
