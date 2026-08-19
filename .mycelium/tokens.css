@@ -20,6 +20,13 @@
 
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --font-serif: 'Newsreader', Georgia, Cambria, 'Times New Roman', Times, serif;
+  /* IBM Plex Mono's own x-height ÷ units-per-em (516/1000, read off its font
+     file), not a guess. font-size-adjust is inherited, so a page that sets
+     this once — where its body text is the mono face — gets any descendant
+     that switches to --font-serif rescaled to the mono's own visual size:
+     Newsreader's natural ratio (852/2000 = .426) reads smaller at the same
+     declared font-size, which is exactly the mismatch this exists to close. */
+  --font-mono-aspect: 0.516;
 }
 @media (prefers-color-scheme: dark) {
   :root {

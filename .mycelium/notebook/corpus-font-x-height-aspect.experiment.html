@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What's the real x-height-to-em ratio for the corpus's mono and serif type families?</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/notebook.template.css">
+</head>
+<body>
+<notebook-experiment data-conforms-to="../templates/notebook.template.html#notebook-experiment">
+  <notebook-title>What's the real x-height-to-em ratio for the corpus's mono and serif type families?</notebook-title>
+  <notebook-tag>typography</notebook-tag>
+  <notebook-prompt>let's do font-size-adjust: derivation &gt; state synchronization</notebook-prompt>
+  <notebook-question>IBM Plex Mono and Newsreader (tokens.css's --font-mono/--font-serif) read as different visual sizes at the same declared font-size. What is each face's own x-height ÷ units-per-em, read from its own font file rather than guessed?</notebook-question>
+  <notebook-case id="read-from-the-font-files-own-tables" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>read the head table's unitsPerEm and the OS/2 table's sxHeight straight out of each font's own binary</notebook-lens>
+    <script type="mycelium/experiment">
+function readSfntTable(buffer, tag) {
+  const numTables = buffer.readUInt16BE(4)
+  for (let index = 0; index < numTables; index++) {
+    const recordOffset = 12 + index * 16
+    const recordTag = buffer.toString("ascii", recordOffset, recordOffset + 4)
+    if (recordTag === tag) {
+      const offset = buffer.readUInt32BE(recordOffset + 8)
+      const length = buffer.readUInt32BE(recordOffset + 12)
+      return buffer.subarray(offset, offset + length)
+    }
+  }
+  throw new Error(`no "${tag}" table`)
+}
+
+function xHeightAspect(buffer) {
+  const head = readSfntTable(buffer, "head")
+  const unitsPerEm = head.readUInt16BE(18)
+  const os2 = readSfntTable(buffer, "OS/2")
+  const version = os2.readUInt16BE(0)
+  if (version < 2) throw new Error(`OS/2 version ${version} carries no sxHeight`)
+  const sxHeight = os2.readInt16BE(86)
+  return { unitsPerEm, sxHeight, aspect: sxHeight / unitsPerEm }
+}
+
+export default async function () {
+  // Resolved from the same Google Fonts family names tokens.css declares
+  // (--font-mono, --font-serif); the CDN serves one static weight/style per
+  // URL, so this asks for the regular cut of each, the one body text sets.
+  const families = {
+    "IBM Plex Mono": "https://fonts.gstatic.com/s/ibmplexmono/v20/-F63fjptAgt5VM-kVkqdyU8n5ig.ttf",
+    Newsreader:
+      "https://fonts.gstatic.com/s/newsreader/v26/cY9qfjOCX1hbuyalUrK49dLac06G1ZGsZBtoBCzBDXXD9JVF438weI_ADA.ttf",
+  }
+  const readings = []
+  for (const [name, url] of Object.entries(families)) {
+    const response = await fetch(url)
+    const buffer = Buffer.from(await response.arrayBuffer())
+    const { unitsPerEm, sxHeight, aspect } = xHeightAspect(buffer)
+    readings.push(`${name} ${sxHeight}/${unitsPerEm}=${aspect.toFixed(3)}`)
+  }
+  return readings.join("; ")
+}
+
+</script>
+    <notebook-reading data-on="2026-08-19">IBM Plex Mono 516/1000=0.516; Newsreader 852/2000=0.426</notebook-reading>
+    <notebook-conclusion data-on="2026-08-19">tokens.css's --font-mono-aspect (0.516) is IBM Plex Mono's own measured ratio, used as the shared font-size-adjust target so --font-serif text rescales to match it rather than reading at Newsreader's smaller natural 0.426.</notebook-conclusion>
+  </notebook-case>
+</notebook-experiment>
+</body></html>

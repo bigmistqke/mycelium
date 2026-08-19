@@ -24,6 +24,7 @@
   body { margin: 0;
          background: var(--bg); color: var(--fg);
          font-family: var(--font-mono); font-size: 13px; line-height: 1.45;
+         font-size-adjust: var(--font-mono-aspect);
          height: 100vh; display: flex; flex-direction: column; }
   #grid { flex: 1; min-height: 0; overflow: auto; padding-bottom: calc(var(--pane-h) + 3rem); }
   /* A column, so the relations can sit against the bottom edge however short
@@ -41,7 +42,7 @@
      halves the neighbour lists below use, so the two rows read as one column
      each rather than as two unrelated splits. */
   #pane-meta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-               column-gap: 0; margin: 0 0 .75rem; }
+               column-gap: 0; margin: 0 0 .75rem; font-size: .78rem; }
   #pane-meta.alone { grid-template-columns: minmax(0, 1fr); }
   #pane-meta.alone #pane-where { padding-right: 0; }
   #pane-where { color: var(--ink-3); margin: 0; padding-right: 1.25rem; }
@@ -51,7 +52,9 @@
      typed rather than one the layout chose. */
   /* This is the entry's own prose, pulled in whole from its detail field, so
      it reads in the same body face it does on its own page rather than the
-     mono the rest of this drawing is set in. */
+     mono the rest of this drawing is set in. No font-size of its own: body's
+     font-size-adjust already rescales this face to the mono's own x-height,
+     which is the actual gap between the two — not the declared size. */
   #pane-detail { font-family: var(--font-serif); }
   #pane-detail p { margin: 0 0 .6rem; }
   #pane-detail .doc { white-space: pre-wrap; }
