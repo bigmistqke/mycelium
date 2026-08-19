@@ -380,7 +380,7 @@
         })
         .join("\n    ")
       const pageBlock = pageCommands.length
-        ? `<h4>Page</h4>\n  <ul class="files">\n    ${pageItems}\n  </ul>`
+        ? `<h4>Page</h4>\n  <ul class="page-links">\n    ${pageItems}\n  </ul>`
         : ""
       const files = [...family.files].sort(([, left], [, right]) => left.localeCompare(right))
       const fileLinks = files
@@ -394,10 +394,12 @@
           : ""
       return `<section class="family" id="${sectionId(family.name)}">
   <h3><a href="${escapeHtml(at(family.path))}">${escapeHtml(family.name)}</a>${count}</h3>
+  <div class="card-body">
   <p>${escapeHtml(family.purpose)}${specLinks ? ` &mdash; ${specLinks}` : ""}</p>
-  ${commandsBlock}
   ${pageBlock}
+  ${commandsBlock}
   ${filesBlock}
+  </div>
 </section>`
     }
 
@@ -436,21 +438,34 @@
   section.family {
     display: flex;
     flex-direction: column;
-    max-height: 40rem;
+    max-height: 60rem;
     min-height: 0;
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 1.1rem 1.3rem;
     background: var(--code-bg);
   }
   section.family h3 {
     flex: 0 0 auto;
-    margin-top: 0;
+    margin: 0;
+    padding: 1.1rem 1.3rem 0.6rem;
     display: flex;
     align-items: baseline;
     gap: 0.5rem;
   }
+  section.family .card-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding: 0 1.3rem 1.1rem;
+  }
+  section.family .card-body::-webkit-scrollbar { width: 6px; }
+  section.family .card-body::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 999px;
+  }
+  section.family .card-body::-webkit-scrollbar-track { background: transparent; }
   section.family .count {
     font-size: 0.75rem;
     font-weight: normal;
@@ -459,11 +474,10 @@
     border-radius: 999px;
     padding: 0.05rem 0.5rem;
   }
-  section.family p { flex: 0 0 auto; font-size: 0.92rem; color: var(--muted); }
+  section.family p { font-size: 0.92rem; color: var(--muted); }
   section.family p a { color: var(--muted); }
   section.family .empty { font-style: italic; }
   section.family h4 {
-    flex: 0 0 auto;
     margin: 0.9rem 0 0.35rem;
     font-size: 0.72rem;
     font-weight: 600;
@@ -475,12 +489,6 @@
     list-style: none;
     margin: 0;
     padding: 0;
-  }
-  section.family ul.commands { flex: 0 0 auto; }
-  section.family ul.files {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
   }
   section.family li { margin: 0.2rem 0; font-size: 0.9rem; }
   section.family li a { text-decoration: none; }
