@@ -20,6 +20,9 @@
   <div><b>A family opts in by exporting <code>page</code>:</b> <code>export const page = { index(): string {
     ... } }</code>, the same nested-object shape a command table already uses. Nothing here executes
     unless a family declares one.</div>
+  <div><b>One page is this file's own:</b> the corpus-wide landing page belongs to no single family the
+    way every other page does, so it is a command here directly rather than something discovered through
+    a family's own export.</div>
 </div>
 
 <h2>Commands</h2>
@@ -30,8 +33,10 @@
   reload.
 </p>
 <script type="mycelium/command">
-  import type { CommandContext, CommandFilesystem } from "mycelium/api"
+  import type { CommandContext, CommandFilesystem, Cli } from "mycelium/api"
   import { loadModule } from "mycelium/utils"
+  import { declaresATemplate, readCommands, type CommandEntry } from "mycelium/shared"
+  import { resolveHref } from "mycelium/canon-citations"
   import { createServer } from "node:http"
   import { join } from "node:path"
 
@@ -168,6 +173,338 @@
 
     const html = await leaf()
     fs.create(pagePathFor(id, verbPath), html)
+  }
+
+  // Not under page/, unlike every family's own page. The published site
+  // is the whole corpus directory, deployed as-is, so this has to sit at
+  // its literal root — the site's actual homepage, not a page three
+  // levels in nobody would land on.
+  const INDEX_PATH = "index.html"
+
+  /**
+   * A host is a template or command file describing a family, found the
+   * same way every-host-says-what-it-is already finds one: the
+   * &lt;template-host&gt; element every such file carries, whether or not it
+   * also declares a schema.
+   */
+  function isHost(doc: Document): boolean {
+    return doc.querySelector("template-host[data-conforms-to]") !== null
+  }
+
+  const titleOf = (doc: Document) => (doc.querySelector("title")?.textContent ?? "").trim()
+
+  const escapeHtml = (text: string) =>
+    text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+
+  interface FamilySection {
+    path: string
+    name: string
+    purpose: string
+    specs: { href: string; label: string }[]
+    commands: CommandEntry[]
+    files: Map<string, string>
+  }
+
+  /**
+   * The corpus-wide landing page: what the corpus holds, grouped by the
+   * family that governs it, with the two drawings linked above the list.
+   * Each family is a card carrying its own file count, so scanning the
+   * grid finds one without a separate index needing to stay in sync with
+   * it.
+   *
+   * Every templates/*.template.html and commands/*.command.html file
+   * already carries a &lt;template-host&gt;: a one-line &lt;template-purpose&gt;
+   * and the &lt;template-design&gt; links to the specs behind it. A family's
+   * section on this page reads both straight off its own file, so nothing
+   * here describes a family a second time. A card also lists its own
+   * commands — every export its &lt;script type="mycelium/command"&gt;
+   * declares, read the same way `mycelium --help` reads one, so a reader
+   * sees what a family can do without leaving the page.
+   *
+   * Families split into two groups, the same split findTemplateFile
+   * already makes when it resolves an &lt;id&gt;. A template declares a
+   * schema (declaresATemplate), and instances conform to it. A command
+   * file declares none and is never expected to gather any — this file is
+   * one. Grouping them together read as a corpus of near-identical cards
+   * where several always said "no files yet." That line is not a gap; it
+   * is only what a command file is.
+   *
+   * The rest of the corpus sorts under those family sections the same way
+   * explore list already finds it: every element carrying
+   * data-conforms-to, however deeply it sits, with the fragment stripped
+   * off to find which family's file it belongs to. A file with no host and
+   * nothing conforming inside it is neither a template nor a command, so
+   * it earns a third heading of its own rather than sitting under either.
+   *
+   * Every link on the page is computed with cli.href against this page's
+   * own fixed location, index.html — no --out, no --base, since this
+   * page has exactly one place it lives.
+   */
+  function buildIndex(fs: CommandFilesystem, cli: Cli): string {
+    const at = (target: string) => cli.href(INDEX_PATH, target)
+
+    const documents = fs.list(".")
+    const families = new Map<string, FamilySection>()
+    const isTemplate = new Map<string, boolean>()
+    for (const { path, doc } of documents) {
+      if (!isHost(doc)) continue
+      const purpose = (doc.querySelector("template-host template-purpose")?.textContent ?? "").trim()
+      const specs = Array.from(doc.querySelectorAll("template-host template-design a")).map((a) => ({
+        href: at(resolveHref(path, a.getAttribute("href") ?? "")),
+        label: (a.textContent ?? "").trim(),
+      }))
+      const name = path.split("/").pop()!.replace(/\.(template|command)\.html$/, "")
+      const script = doc.querySelector('script[type="mycelium/command"]')
+      const commands = script ? readCommands(script.textContent ?? "") : []
+      families.set(path, { path, name, purpose, specs, commands, files: new Map() })
+      isTemplate.set(path, declaresATemplate(doc))
+    }
+
+    const other = new Map<string, string>()
+    for (const { path, doc } of documents) {
+      if (isHost(doc)) continue
+      const conforming = Array.from(doc.querySelectorAll("[data-conforms-to]"))
+      if (!conforming.length) { other.set(path, titleOf(doc) || path); continue }
+      for (const el of conforming) {
+        const templatePath = resolveHref(path, el.getAttribute("data-conforms-to") ?? "").split("#")[0]
+        families.get(templatePath)?.files.set(path, titleOf(doc) || path)
+      }
+    }
+
+    const sectionId = (name: string) => `family-${name.replace(/[^a-z0-9]+/gi, "-")}`
+    const slug = (text: string) => text.replace(/[^a-z0-9]+/gi, "-").toLowerCase()
+
+    const section = (family: FamilySection, isTemplateFamily: boolean) => {
+      const specLinks = family.specs
+        .map((spec) => `<a href="${escapeHtml(spec.href)}">${escapeHtml(spec.label)}</a>`)
+        .join(", ")
+      const commandItems = family.commands
+        .map((command) => {
+          const label = command.path.join(" ")
+          const id = `cmd-${slug(family.name)}-${slug(label)}`
+          const anchor = `--${id}`
+          if (!command.summary) return `<li><code>${escapeHtml(label)}</code></li>`
+          return `<li>
+      <button type="button" popovertarget="${id}" style="anchor-name:${anchor}">${escapeHtml(label)}</button>
+      <div id="${id}" popover class="cmd-popover" style="position-anchor:${anchor}">${escapeHtml(command.summary)}</div>
+    </li>`
+        })
+        .join("\n    ")
+      const commandsBlock = family.commands.length
+        ? `<h4>Commands</h4>\n  <ul class="commands">\n    ${commandItems}\n  </ul>`
+        : ""
+      const files = [...family.files].sort(([, left], [, right]) => left.localeCompare(right))
+      const fileLinks = files
+        .map(([path, title]) => `<li><a href="${escapeHtml(at(path))}">${escapeHtml(title)}</a></li>`)
+        .join("\n    ")
+      const count = files.length ? `<span class="count">${files.length}</span>` : ""
+      const filesBlock = files.length
+        ? `<h4>Files</h4>\n  <ul class="files">\n    ${fileLinks}\n  </ul>`
+        : isTemplateFamily
+          ? `<h4>Files</h4>\n  <p class="empty">no files yet</p>`
+          : ""
+      return `<section class="family" id="${sectionId(family.name)}">
+  <h3><a href="${escapeHtml(at(family.path))}">${escapeHtml(family.name)}</a>${count}</h3>
+  <p>${escapeHtml(family.purpose)}${specLinks ? ` &mdash; ${specLinks}` : ""}</p>
+  ${commandsBlock}
+  ${filesBlock}
+</section>`
+    }
+
+    const sortedFamilies = [...families.values()].sort((left, right) => left.path.localeCompare(right.path))
+    const templateFamilies = sortedFamilies.filter((family) => isTemplate.get(family.path))
+    const commandFamilies = sortedFamilies.filter((family) => !isTemplate.get(family.path))
+    const templateSections = templateFamilies.map((family) => section(family, true)).join("\n")
+    const commandSections = commandFamilies.map((family) => section(family, false)).join("\n")
+
+    const otherSection = other.size
+      ? `<section class="family" id="other">
+  <h3>other<span class="count">${other.size}</span></h3>
+  <ul class="files">
+    ${[...other].sort(([, left], [, right]) => left.localeCompare(right))
+      .map(([path, title]) => `<li><a href="${escapeHtml(at(path))}">${escapeHtml(title)}</a></li>`)
+      .join("\n    ")}
+  </ul>
+</section>`
+      : ""
+
+    const about = `mycelium keeps the thinking behind this codebase inside the codebase:
+      <a href="${escapeHtml(at("canon/root.canon.html"))}">the axioms it holds true</a> now, the notebook
+      below where that thinking stays fluid before it hardens into one, and the specs, tests and
+      followups connecting the two.`
+
+    const style = `<style>
+  body { max-width: 1040px; }
+  p.lede { font-size: 1.05rem; color: var(--muted); }
+  .drawings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+    list-style: none;
+    padding: 0;
+  }
+  .drawings a {
+    display: block;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .drawings a:hover { border-color: var(--accent); }
+  .drawings b { display: block; margin-bottom: 0.3rem; color: var(--accent); font-family: var(--font-mono); }
+  .drawings span { color: var(--muted); font-size: 0.9rem; }
+  p.section-intro { color: var(--muted); margin-top: -0.5rem; }
+  .corpus {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.1rem;
+    align-items: stretch;
+  }
+  section.family {
+    display: flex;
+    flex-direction: column;
+    max-height: 40rem;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.3rem;
+    background: var(--code-bg);
+  }
+  section.family h3 {
+    flex: 0 0 auto;
+    margin-top: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  section.family .count {
+    font-size: 0.75rem;
+    font-weight: normal;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.05rem 0.5rem;
+  }
+  section.family p { flex: 0 0 auto; font-size: 0.92rem; color: var(--muted); }
+  section.family p a { color: var(--muted); }
+  section.family .empty { font-style: italic; }
+  section.family h4 {
+    flex: 0 0 auto;
+    margin: 0.9rem 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  section.family ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  section.family ul.commands { flex: 0 0 auto; }
+  section.family ul.files {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  section.family li { margin: 0.2rem 0; font-size: 0.9rem; }
+  section.family li a { text-decoration: none; }
+  section.family li a:hover { text-decoration: underline; }
+  section.family ul.commands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  section.family ul.commands li { margin: 0; }
+  section.family ul.commands code,
+  section.family ul.commands button {
+    display: inline-block;
+    font: inherit;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    background: var(--border);
+    border: none;
+    border-radius: 4px;
+    padding: 0.05rem 0.4rem;
+    color: inherit;
+  }
+  section.family ul.commands button { cursor: pointer; }
+  section.family ul.commands button:hover,
+  section.family ul.commands button:focus-visible { background: var(--accent); color: var(--bg); }
+  .cmd-popover {
+    position: fixed;
+    position-area: bottom;
+    position-try-fallbacks: flip-block;
+    margin: 0.35rem 0 0;
+    max-width: 20rem;
+    background: var(--code-bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+  }
+</style>`
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mycelium</title>
+<link rel="stylesheet" href="${escapeHtml(at("theme.css"))}">
+${style}
+</head>
+<body>
+<h1>mycelium</h1>
+<p class="lede">${about}</p>
+<h2 id="drawings">Drawings</h2>
+<ul class="drawings">
+  <li><a href="${escapeHtml(at("notebook.html"))}"><b>The notebook</b><span>every entry, ranked by the day it arrived</span></a></li>
+  <li><a href="${escapeHtml(at("chain.html"))}"><b>The canon chain</b><span>every axiom's reach, from claim to declaration</span></a></li>
+</ul>
+<h2>Templates</h2>
+<p class="section-intro">A template declares a schema, and a family of files conforms to it. Each
+  card below is one template: what it holds, the files that conform to it now, and the commands
+  that create or change them.</p>
+<div class="corpus">
+${templateSections}
+</div>
+<h2>Commands</h2>
+<p class="section-intro">A command file declares no schema, so nothing conforms to it. Each card
+  below is a whole-corpus tool with no files of its own — only the commands it runs.</p>
+<div class="corpus">
+${commandSections}
+</div>
+${otherSection ? `<h2>Other</h2>\n<div class="corpus">\n${otherSection}\n</div>\n` : ""}
+</body>
+</html>
+`
+  }
+
+  /**
+   * Generate the corpus-wide landing page, or serve it fresh on every
+   * request.
+   *
+   *   mycelium page index [--watch] [--port N]
+   *
+   * Without --watch, this writes to index.html, at the corpus root rather
+   * than under page/. The published site is the whole corpus directory,
+   * deployed as-is, so this is the one page that has to sit where a
+   * homepage actually needs to be. With --watch, an HTTP server serves the
+   * same content fresh on every request instead, the same as generate
+   * does for a family's own page.
+   */
+  export async function index({ fs, args, cli }: CommandContext) {
+    if (args.watch !== undefined) {
+      await serve("index", [], () => buildIndex(fs, cli), args.port ? Number(args.port) : undefined)
+      return
+    }
+    fs.create(INDEX_PATH, buildIndex(fs, cli))
   }
 </script>
 

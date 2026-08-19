@@ -71,7 +71,7 @@ jobs:
         run: pnpm mycelium canon generate chain --out chain.html
 
       - name: Build the index
-        run: pnpm mycelium explore generate index --out index.html
+        run: pnpm mycelium page index
 
       - uses: actions/configure-pages@v6
 
