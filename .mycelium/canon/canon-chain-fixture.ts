@@ -40,9 +40,9 @@ export function tinySubsystem(): Record<string, string> {
 // Generates the page and hands back the data it embeds, which is what every
 // claim about the drawing is really a claim about.
 export function chainOf(sandbox: any, assert: (ok: unknown, text?: string) => void) {
-  const done = sandbox.mycelium("canon", "generate", "chain", "--out", "chain.html")
+  const done = sandbox.mycelium("page", "generate", "canon", "chain")
   assert(done.ok, `generate failed: ${(done.stderr || done.stdout).trim()}`)
-  const page = sandbox.read("chain.html")
+  const page = sandbox.read("page/canon/chain.html")
   const open = page.indexOf(">", page.indexOf('id="chain"')) + 1
   return JSON.parse(page.slice(open, page.indexOf("</script>", open)))
 }

@@ -102,6 +102,7 @@
  * @property {(address: string) => string} [impactFor]
  * @property {(address: string) => Side[]} [sidesFor]
  * @property {DrawnEdge[]} [edges]
+ * @property {boolean} [scrollToEnd]
  */
 
 /**
