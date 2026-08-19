@@ -77,33 +77,19 @@ export function declaresATemplate(doc: Document): boolean {
   return doc.querySelector("template[id]") !== null
 }
 
-// Every command a source EXPORTS, with the opening sentence of its doc
-// comment — the same reading printRoster does over `mycelium --help`, so a
-// page drawing the corpus can show a family's commands without repeating
-// that parse. Parsed with the real TypeScript compiler rather than a regex
-// so `export async function`, arrow-function exports, and reordered or
-// reformatted commands are all still picked up correctly.
+// Every command a source EXPORTS, with its full verb path and the opening
+// sentence of its doc comment — the same reading printHelp/printRoster do
+// over `mycelium --help`, so a page drawing the corpus can show a family's
+// commands without repeating that parse. Parsed with the real TypeScript
+// compiler rather than a regex so `export async function`, arrow-function
+// exports, and reordered or reformatted commands are all still picked up
+// correctly.
 function parseCommandSource(source: string): ts.SourceFile {
   return ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
 }
 
 function hasExportModifier(node: ts.Node): boolean {
   return !!(ts.canHaveModifiers(node) && ts.getModifiers(node)?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword))
-}
-
-function exportedFunctionNames(stmt: ts.Statement): string[] {
-  if (ts.isFunctionDeclaration(stmt) && hasExportModifier(stmt) && stmt.name) return [stmt.name.text]
-  // `export { addCase as case }`. A family names its commands after the
-  // types it declares, and a type is free to be called something
-  // JavaScript reserves as a keyword. The alias is the name the command
-  // line uses, so the alias is the name this reads.
-  if (ts.isExportDeclaration(stmt) && stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
-    return stmt.exportClause.elements.map((element) => element.name.text)
-  }
-  if (!ts.isVariableStatement(stmt) || !hasExportModifier(stmt)) return []
-  return stmt.declarationList.declarations
-    .filter((d) => ts.isIdentifier(d.name) && !!d.initializer && (ts.isFunctionExpression(d.initializer) || ts.isArrowFunction(d.initializer)))
-    .map((d) => (d.name as ts.Identifier).text)
 }
 
 function formatComment(raw: string): string {
@@ -116,11 +102,14 @@ function formatComment(raw: string): string {
     .join("\n")
 }
 
-// The nearest block comment (JSDoc or plain) immediately preceding a node.
-function leadingBlockComment(source: string, node: ts.Node): string | undefined {
+// The nearest block comment (JSDoc or plain) immediately preceding a node,
+// formatted. Works the same whether the node is a top-level statement or a
+// method/property sitting inside an object literal — TypeScript's leading
+// trivia is positional, not statement-specific.
+function docFor(source: string, node: ts.Node): string {
   const ranges = ts.getLeadingCommentRanges(source, node.getFullStart())
-  const doc = ranges?.filter((r) => r.kind === ts.SyntaxKind.MultiLineCommentTrivia).pop()
-  return doc ? source.slice(doc.pos, doc.end) : undefined
+  const range = ranges?.filter((r) => r.kind === ts.SyntaxKind.MultiLineCommentTrivia).pop()
+  return range ? formatComment(source.slice(range.pos, range.end)) : ""
 }
 
 // The opening sentence of a doc comment, as one line. Not its first LINE:
@@ -142,15 +131,72 @@ function firstSentence(doc: string): string {
   return sentence.length > SUMMARY_MAX ? sentence.slice(0, SUMMARY_MAX - 1).trimEnd() + "…" : sentence
 }
 
-export function readCommands(source: string): { name: string; summary: string }[] {
+export interface CommandEntry {
+  /** The full verb path from the family's own name down to this leaf, e.g. `["experiment", "case", "add"]`. */
+  path: string[]
+  /** This leaf's own doc comment, or the nearest ancestor's if it has none of its own. */
+  doc: string
+  summary: string
+}
+
+function propertyName(name: ts.PropertyName): string | undefined {
+  return ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : undefined
+}
+
+function entryFor(path: string[], doc: string): CommandEntry {
+  return { path, doc, summary: doc ? firstSentence(doc) : "" }
+}
+
+// A command value is either callable — the leaf itself — or a further table
+// of verbs, the same shape `byVerb`'s own `verbs` argument used to have, just
+// written as a real export instead of rebuilt inside a function body:
+// `export const experiment = { add() {}, case: { add() {}, del() {} } }`.
+// A property with no doc comment of its own inherits the nearest ancestor's,
+// so a family whose rich usage doc sits once above the whole object still
+// shows it under every verb reached from there, and a verb that later gets
+// its own more specific comment overrides that inherited one.
+function walkCommandValue(source: string, expr: ts.Expression, path: string[], inherited: string, out: CommandEntry[]): void {
+  // An inline function, or a bare reference to one declared elsewhere in the
+  // file — `add: addDoc` reads a verb table the same way `add: (ctx) => ...`
+  // does, just naming an existing handler instead of writing one in place.
+  if (ts.isFunctionExpression(expr) || ts.isArrowFunction(expr) || ts.isIdentifier(expr)) {
+    out.push(entryFor(path, inherited))
+    return
+  }
+  if (!ts.isObjectLiteralExpression(expr)) return
+  for (const prop of expr.properties) {
+    if (ts.isMethodDeclaration(prop) && prop.name) {
+      const name = propertyName(prop.name)
+      if (name) out.push(entryFor([...path, name], docFor(source, prop) || inherited))
+    } else if (ts.isPropertyAssignment(prop) && prop.name) {
+      const name = propertyName(prop.name)
+      if (name) walkCommandValue(source, prop.initializer, [...path, name], docFor(source, prop) || inherited, out)
+    }
+  }
+}
+
+export function readCommands(source: string): CommandEntry[] {
   const sourceFile = parseCommandSource(source)
-  const commands: { name: string; summary: string }[] = []
+  const out: CommandEntry[] = []
 
   for (const stmt of sourceFile.statements) {
-    const names = exportedFunctionNames(stmt)
-    if (names.length === 0) continue
-    const doc = leadingBlockComment(source, stmt)
-    for (const name of names) commands.push({ name, summary: doc ? firstSentence(formatComment(doc)) : "" })
+    if (ts.isFunctionDeclaration(stmt) && hasExportModifier(stmt) && stmt.name) {
+      out.push(entryFor([stmt.name.text], docFor(source, stmt)))
+      continue
+    }
+    // `export { addCase as case }`. A family names its commands after the
+    // types it declares, and a type is free to be called something
+    // JavaScript reserves as a keyword. The alias is the name the command
+    // line uses, so the alias is the name this reads.
+    if (ts.isExportDeclaration(stmt) && stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
+      for (const element of stmt.exportClause.elements) out.push(entryFor([element.name.text], ""))
+      continue
+    }
+    if (!ts.isVariableStatement(stmt) || !hasExportModifier(stmt)) continue
+    const doc = docFor(source, stmt)
+    for (const decl of stmt.declarationList.declarations) {
+      if (ts.isIdentifier(decl.name) && decl.initializer) walkCommandValue(source, decl.initializer, [decl.name.text], doc, out)
+    }
   }
-  return commands
+  return out
 }

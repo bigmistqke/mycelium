@@ -34,7 +34,7 @@
 </p>
 <script type="mycelium/command">
   import type { CommandContext } from "mycelium/api"
-  import { declaresATemplate, readCommands } from "mycelium/shared"
+  import { declaresATemplate, readCommands, type CommandEntry } from "mycelium/shared"
   import { resolveHref } from "mycelium/canon-citations"
   import { writeFileSync, mkdtempSync } from "node:fs"
   import { tmpdir } from "node:os"
@@ -98,7 +98,7 @@
     name: string
     purpose: string
     specs: { href: string; label: string }[]
-    commands: { name: string; summary: string }[]
+    commands: CommandEntry[]
     files: Map<string, string>
   }
 
@@ -189,11 +189,12 @@
       // native to the platform and costing this page no script of its own.
       const commandItems = family.commands
         .map((command) => {
-          const id = `cmd-${slug(family.name)}-${slug(command.name)}`
+          const label = command.path.join(" ")
+          const id = `cmd-${slug(family.name)}-${slug(label)}`
           const anchor = `--${id}`
-          if (!command.summary) return `<li><code>${escapeHtml(command.name)}</code></li>`
+          if (!command.summary) return `<li><code>${escapeHtml(label)}</code></li>`
           return `<li>
-      <button type="button" popovertarget="${id}" style="anchor-name:${anchor}">${escapeHtml(command.name)}</button>
+      <button type="button" popovertarget="${id}" style="anchor-name:${anchor}">${escapeHtml(label)}</button>
       <div id="${id}" popover class="cmd-popover" style="position-anchor:${anchor}">${escapeHtml(command.summary)}</div>
     </li>`
         })

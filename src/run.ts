@@ -9,6 +9,7 @@ import { basename, dirname, join, posix, relative as relativePath, resolve as re
 import { register } from "node:module"
 import ts from "typescript"
 import { CORPUS_DIR, parseHTML, parseHTMLWithLocations, walkFiles, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.ts"
+import { readCommands, type CommandEntry } from "../.mycelium/templates/shared.ts"
 
 register("./script-hooks.ts", import.meta.url)
 
@@ -428,33 +429,6 @@ function parseCommandSource(source: string): ts.SourceFile {
   return ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
 }
 
-function hasExportModifier(node: ts.Node): boolean {
-  return !!(ts.canHaveModifiers(node) && ts.getModifiers(node)?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword))
-}
-
-// Commands are discovered by their JSDoc, not a separate manifest: the
-// engine never needs to know what a command means, only where its doc
-// comment sits relative to the export it documents. Parsed with the real
-// compiler rather than a regex so `export async function`, arrow-function
-// exports, and reordered/reformatted commands all still get picked up
-// correctly.
-function exportedFunctionNames(stmt: ts.Statement): string[] {
-  if (ts.isFunctionDeclaration(stmt) && hasExportModifier(stmt) && stmt.name) return [stmt.name.text]
-  // `export { addCase as case }`. A family names its commands after the types
-  // it declares, and a type is free to be called something JavaScript reserves
-  // as a keyword. The alias is the name the command line uses, so the alias is
-  // the name the roster prints. Without this the command still works and no
-  // reader finds out it exists, which is the one failure this roster exists to
-  // prevent.
-  if (ts.isExportDeclaration(stmt) && stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
-    return stmt.exportClause.elements.map((element) => element.name.text)
-  }
-  if (!ts.isVariableStatement(stmt) || !hasExportModifier(stmt)) return []
-  return stmt.declarationList.declarations
-    .filter((d) => ts.isIdentifier(d.name) && !!d.initializer && (ts.isFunctionExpression(d.initializer) || ts.isArrowFunction(d.initializer)))
-    .map((d) => (d.name as ts.Identifier).text)
-}
-
 function formatComment(raw: string): string {
   return raw
     .replace(/^\/\*+/, "")
@@ -463,30 +437,6 @@ function formatComment(raw: string): string {
     .map((line) => line.replace(/^\s*\*\s?/, "").trimEnd())
     .filter((line, i, arr) => !(line === "" && (i === 0 || i === arr.length - 1)))
     .join("\n")
-}
-
-// The nearest block comment (JSDoc or plain) immediately preceding a node —
-// the same idea acorn's comment list + distance check used to implement,
-// now reading it directly off the compiler's own notion of a node's leading
-// trivia.
-function leadingBlockComment(source: string, node: ts.Node): string | undefined {
-  const ranges = ts.getLeadingCommentRanges(source, node.getFullStart())
-  const doc = ranges?.filter((r) => r.kind === ts.SyntaxKind.MultiLineCommentTrivia).pop()
-  return doc ? source.slice(doc.pos, doc.end) : undefined
-}
-
-function extractCommandDocs(source: string): Map<string, string> {
-  const docs = new Map<string, string>()
-  const sourceFile = parseCommandSource(source)
-
-  for (const stmt of sourceFile.statements) {
-    const names = exportedFunctionNames(stmt)
-    if (names.length === 0) continue
-    const doc = leadingBlockComment(source, stmt)
-    if (!doc) continue
-    for (const name of names) docs.set(name, formatComment(doc))
-  }
-  return docs
 }
 
 // The opening sentence of a doc comment, as one line. Not its first LINE:
@@ -512,26 +462,11 @@ function firstSentence(doc: string): string {
   return sentence.length > SUMMARY_MAX ? sentence.slice(0, SUMMARY_MAX - 1).trimEnd() + "…" : sentence
 }
 
-// Every command a source EXPORTS, with the opening sentence of its doc comment.
-// Deliberately not built on extractCommandDocs above: that one indexes
-// non-exported top-level declarations too, which is harmless for printHelp
-// because printHelp takes its NAMES from the loaded module's real exports
-// and only asks the docs map for text. The roster never loads a module —
-// it reads source only, so that it can describe every family without
-// executing any of them. So it has to reject non-exports itself, or it
-// would advertise a file's private helpers as commands.
-function readCommands(source: string): { name: string; summary: string }[] {
-  const sourceFile = parseCommandSource(source)
-  const commands: { name: string; summary: string }[] = []
-
-  for (const stmt of sourceFile.statements) {
-    const names = exportedFunctionNames(stmt)
-    if (names.length === 0) continue
-    const doc = leadingBlockComment(source, stmt)
-    for (const name of names) commands.push({ name, summary: doc ? firstSentence(formatComment(doc)) : "" })
-  }
-  return commands
-}
+// readCommands, which walks every export's doc comment — including a
+// nested table of verbs — comes from shared.ts rather than a second copy
+// here. The corpus-index page needs the identical parse. A family's roster
+// reading one command's doc one way while its own --help reads it another
+// is exactly the drift this file otherwise avoids.
 
 // One line per command across every family, so no command can be invisible
 // to someone who never thought to ask for the family it lives in. The point
@@ -631,7 +566,7 @@ function printRoster(docsDir: string, stream: (line: string) => void) {
     // this function's problem. The roster's job is to be a complete index
     // of the families that DO work. So this names a broken one and steps
     // over it, rather than taking every other family down with it.
-    let commands: { name: string; summary: string }[]
+    let commands: CommandEntry[]
     try {
       commands = readCommands(script.textContent ?? "")
     } catch (err) {
@@ -645,8 +580,9 @@ function printRoster(docsDir: string, stream: (line: string) => void) {
     }
 
     stream("")
-    const width = Math.max(...commands.map((c) => c.name.length))
-    for (const { name, summary } of commands) stream(`  ${name.padEnd(width + 2)}${summary}`.trimEnd())
+    const labels = commands.map((c) => c.path.join(" "))
+    const width = Math.max(...labels.map((l) => l.length))
+    for (const [index, { summary }] of commands.entries()) stream(`  ${labels[index].padEnd(width + 2)}${summary}`.trimEnd())
     stream("")
   }
 }
@@ -715,13 +651,11 @@ function printAudits(docsDir: string, stream: (line: string) => void) {
   stream("")
 }
 
-function printHelp(id: string, templateLabel: string, mod: Record<string, unknown>, source: string, stream: (line: string) => void) {
-  const docs = extractCommandDocs(source)
-  const names = Object.keys(mod).filter((k) => typeof mod[k] === "function")
+function printHelp(id: string, templateLabel: string, source: string, stream: (line: string) => void) {
+  const commands = readCommands(source)
   stream(`commands for "${id}" (${templateLabel}):\n`)
-  for (const name of names) {
-    stream(`  ${name}`)
-    const doc = docs.get(name)
+  for (const { path, doc } of commands) {
+    stream(`  ${path.join(" ")}`)
     stream(doc ? doc.split("\n").map((l) => `    ${l}`.trimEnd()).join("\n") : "    (no JSDoc comment)")
     stream("")
   }
@@ -819,14 +753,14 @@ async function main() {
   const commandArgs = useDefault && namedCommand ? [namedCommand, ...rest] : rest
 
   if (!command || command === "--help" || command === "-h") {
-    printHelp(id, templateLabel, mod, source, command ? out : err)
+    printHelp(id, templateLabel, source, command ? out : err)
     process.exit(command ? 0 : 1)
   }
 
-  const run = mod[command] as ((ctx: CommandContext) => void | Promise<void>) | undefined
-  if (typeof run !== "function") {
+  const top = mod[command] as unknown
+  if (typeof top !== "function" && (typeof top !== "object" || top === null)) {
     console.error(`${templateLabel} has no "${command}" command\n`)
-    printHelp(id, templateLabel, mod, source, err)
+    printHelp(id, templateLabel, source, err)
     process.exit(1)
   }
 
@@ -847,7 +781,32 @@ async function main() {
 
   const fs = new Filesystem(docsDir)
   try {
-    await run({ fs, args, cli })
+    // A resolved export is either the command itself, or a table of further
+    // verbs to descend into: `export const experiment = { add() {}, case:
+    // { add() {} } }` reads the same way byVerb's own `verbs` argument used
+    // to. It is a real export now, instead of one rebuilt inside a function
+    // body on every call. One token off args._ per level, the same slicing
+    // byVerb did by hand, so a nested table finds its own verb where the
+    // one above it left off.
+    let current: unknown = top
+    const verbPath = [id, command]
+    while (typeof current === "object" && current !== null) {
+      const verb = args._[0]
+      const table = current as Record<string, unknown>
+      const next = verb !== undefined ? table[verb] : undefined
+      if (verb === undefined || (typeof next !== "function" && (typeof next !== "object" || next === null))) {
+        const keys = Object.keys(table).join(", ")
+        throw new Error(
+          verb
+            ? `${verbPath.join(" ")} has no "${verb}" verb; it takes ${keys}`
+            : `${verbPath.join(" ")} takes a verb: ${keys}`,
+        )
+      }
+      current = next
+      verbPath.push(verb)
+      args._ = args._.slice(1)
+    }
+    await (current as (ctx: CommandContext) => void | Promise<void>)({ fs, args, cli })
     fs.commit()
   } catch (err) {
     console.error((err as Error).message)
