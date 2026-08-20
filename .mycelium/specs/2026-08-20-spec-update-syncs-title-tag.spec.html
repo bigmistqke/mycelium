@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: spec update keeps the page's own title tag in step with spec-title</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>spec update keeps the page's own title tag in step with spec-title</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-20</spec-date>
+  <spec-problem>
+<p>
+An earlier followup, now done, named the gap: <code>spec update --title "…"</code> changes the
+<code>&lt;spec-title&gt;</code> field but never the page's own <code>&lt;title&gt;</code> element,
+even though <code>spec add</code> sets both together at creation, writing <code>Spec: &lt;title&gt;</code>
+into the page's <code>&lt;title&gt;</code>. A spec retitled once already carries the mismatch;
+<code>notebook.template.html</code>'s own <code>update</code> already keeps its entry's
+<code>&lt;title&gt;</code> in step with <code>notebook-title</code> for exactly this reason, so a
+reader can tell what a document argues by its browser tab as much as by opening it.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>update writes both, the way add already does</h3>
+<p>
+<code>spec update</code> gains the same four lines <code>notebook update</code> already carries: whenever
+<code>--title</code> carries a real, non-empty value, the page's own <code>&lt;title&gt;</code>
+element gets the same string, prefixed <code>Spec: </code> to match what <code>add</code> writes on
+creation. An omitted <code>--title</code> touches neither field, keeping <code>update</code>'s existing
+rule that a flag left off leaves its field untouched.
+</p>
+<p>
+<code>spec-title</code> is required, so passing an empty <code>--title</code> to clear it already fails
+validation before the command returns — the same dead branch <code>notebook update</code> carries for
+its own required title field. Nothing here adds a path for clearing the page's own
+<code>&lt;title&gt;</code>, since nothing can clear the field it mirrors either.
+</p>
+</spec-design>
+</spec-doc>
+</body></html>

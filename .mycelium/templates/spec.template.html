@@ -315,6 +315,14 @@
     }
 
     field('spec-title', args.title)
+    // The page's own title travels with spec-title, the same way
+    // notebook.template.html's update keeps an entry's <title> in step with
+    // notebook-title: a reader browsing by tab should not meet a question
+    // the document stopped asking.
+    if (args.title !== undefined && args.title !== '') {
+      const head = doc.querySelector('title')
+      if (head) head.textContent = `Spec: ${args.title}`
+    }
     field('spec-status', args.status)
 
     const bodyMarkup = args.body === '-' ? await cli.readStdin() : args.body
