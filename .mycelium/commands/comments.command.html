@@ -13,13 +13,6 @@
   <template-purpose>decide whether each comment in a file earns its place, and delete the ones that do not, judged against the guide in the language family rather than against anything written here</template-purpose>
 </template-host>
 
-<div class="meta">
-  <div><b>Not a template:</b> like <code>explore.command.html</code> and
-    <code>validate.command.html</code>, this document declares no <code>&lt;template id="…"&gt;</code>
-    and nothing conforms to it. It has commands and no type, which is what the
-    <code>.command.html</code> suffix means.</div>
-</div>
-
 <h2>Why this is not a language rule</h2>
 <p>
   Every rule in <code>language.template.html</code> takes text and returns matches. Passive voice,
@@ -265,6 +258,19 @@
   }
 
   /**
+   * A regular comment spanning more than one line. Whether a comment fits on
+   * one line is a fact about its shape, not a question about its content, so
+   * it needs no more judgment than a WIP tag or a roster doc comment does.
+   * A doc comment stays exempt: its multi-paragraph JSDoc tags answer to
+   * isRosterDoc's own standard, not this one.
+   *
+   * @behaviour canon/comments.canon.html#a-multi-line-regular-comment-goes-without-asking
+   */
+  function isMultiLineRegular(c: { raw: string }): boolean {
+    return !c.raw.trimStart().startsWith("/**") && c.raw.includes("\n")
+  }
+
+  /**
    * One call for the whole file, not one per comment and not one per batch.
    * Comments in a file argue with each other: three that each look defensible
    * alone can be one point made three times, and only a reader holding all of
@@ -282,6 +288,8 @@
         protectedCount++
       } else if (WORKING_NOTE.test(c.text)) {
         verdicts.set(c.id, { verdict: "cut", reason: "working note, tagged WIP" })
+      } else if (isMultiLineRegular(c)) {
+        verdicts.set(c.id, { verdict: "cut", reason: "multi-line regular comment; keep a comment to one line" })
       } else {
         toJudge.push(c)
       }

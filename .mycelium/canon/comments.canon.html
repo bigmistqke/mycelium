@@ -684,5 +684,29 @@ so the judgment stays affordable while keeping what it needs.</p>
       }
     </script>
   </canon-behaviour>
+  <canon-behaviour id="a-multi-line-regular-comment-goes-without-asking" data-conforms-to="../templates/canon.template.html#canon-behaviour">
+    <canon-title>comments check cuts a comment spanning more than one line without a model ever seeing it.</canon-title>
+    <a data-rel="depends_on" href="./comments.canon.html#the-file-may-state-its-own-verdict">a comment's own shape is the author saying cut out loud, the same as the WIP tag does</a>
+    <canon-verdict>PENDING</canon-verdict>
+    <script type="mycelium/test">// The refusing stub is the assertion: it fails the run if anything asks it,
+// so a pass here means the verdict came from the comment's own shape alone.
+import type { TestContext } from "mycelium/api"
+import { GUIDE, guideDoc, stubClaude } from "./comments-fixture.ts"
+export default async function ({ assert, sandbox }: TestContext) {
+  sandbox.write(GUIDE, guideDoc())
+  sandbox.write("sample.ts", "// line one of a rationale\n// line two of the same one\nconst a = 1\n")
+
+  const stub = stubClaude("refuse")
+  try {
+    const done = sandbox.mycelium("comments", "check", ".mycelium/sample.ts")
+    const said = done.stdout + done.stderr
+    assert(!said.includes("the stub was asked"), `the shape should have settled it: ${said.trim()}`)
+    assert(said.includes("cut"), `a multi-line comment should be cut; said: ${said.trim()}`)
+  } finally {
+    stub.restore()
+  }
+}
+</script>
+  </canon-behaviour>
 </canon-specification>
 </body></html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: comments check cuts a multi-line regular comment without asking the model</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>comments check cuts a multi-line regular comment without asking the model</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-20</spec-date>
+  <spec-problem>
+<p>
+This project's own working style leans on long, multi-paragraph <code>//</code> comments throughout
+<code>src/</code> and every template's embedded command scripts, each one explaining a rejected
+alternative, a constraint from outside the file, or a bug a design avoids. That style is itself the
+problem this spec answers: a comment spanning several lines is exactly the shape a decision recorded in
+the wrong place takes, and <code>comment-earns-its-place.guide.html</code> already names that failure —
+<q>a comment naming a rejected alternative is a decision that nothing can query, and moving it beats
+deleting it</q> — without anything ever checking for the shape that failure takes.
+</p>
+<p>
+<code>comments check</code>/<code>comments autofix</code> already judge every comment against that guide
+through a model call, and already skip the model entirely for two shapes that need no judgment: it cuts a
+<code>WIP</code>-tagged working note outright, and keeps a doc comment on an export outright, because the
+roster prints it. A multi-line regular comment joins those two. Whether a comment spans one
+line or several is a fact about its shape, not a question about its content, so it needs no more judgment
+than the two shapes already decided without asking.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>comments check cuts a multi-line regular comment without asking the model</h3>
+<p>
+<code>isMultiLineRegular()</code> in <code>comments.command.html</code> reports true for a comment whose
+raw text carries a newline and does not open with <code>/**</code> — a doc comment stays exempt, since
+its shape and its multi-paragraph JSDoc tags answer to a different standard entirely, the one
+<code>isRosterDoc()</code> already protects. <code>judgeAll()</code> checks it alongside the two existing
+no-model shapes, in the same <code>if</code>/<code>else if</code> chain, cutting the comment and naming
+why, before it ever reaches <code>toJudge</code>.
+</p>
+<p>
+This shape carries no <code>promote</code> path. <code>promote</code> exists for a comment the model reads
+as carrying rationale worth moving rather than losing, and a mechanical shape check makes no such
+reading — it only knows the comment spans more than one line. Promoting a multi-line comment that carries
+real rationale needs a person's own hand, the same <code>notebook practice</code>/<code>notebook
+principle</code> commands this project already has for exactly that, before <code>autofix</code> ever
+touches the file it sits in.
+</p>
+<h3>The guide states the same rule the check now enforces</h3>
+<p>
+<code>comment-earns-its-place.guide.html</code>'s own detail gains a line saying a comment fits on one
+line, full stop — the standard a reader of the guide meets is the same one the command now enforces
+mechanically, rather than a narrower one the guide states and a wider one the code silently adds beside
+it.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+<li>Running <code>comments autofix</code> across the existing corpus. This repository's own <code>src/</code>
+and templates carry hundreds of multi-line comments today, many recording real rationale — sweeping them
+all away in one run is a large, separately-decided action, not a consequence of adding the check that would
+now catch them.</li>
+</ul>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>
