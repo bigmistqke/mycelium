@@ -107,7 +107,7 @@
     <notebook-prompt repeatable></notebook-prompt>
     <notebook-question required></notebook-question>
     <notebook-case repeatable conforms-to="#notebook-case"></notebook-case>
-    <notebook-conclusion markup></notebook-conclusion>
+    <notebook-conclusion conforms-to="#notebook-conclusion"></notebook-conclusion>
     <notebook-detail markup></notebook-detail>
     <a repeatable href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </notebook-experiment>
@@ -118,8 +118,14 @@
     <notebook-fixture markup></notebook-fixture>
     <script required></script>
     <notebook-reading repeatable data-on="^\d{4}-\d{2}-\d{2}$"></notebook-reading>
-    <notebook-conclusion repeatable markup data-on="^\d{4}-\d{2}-\d{2}$"></notebook-conclusion>
+    <notebook-conclusion repeatable conforms-to="#notebook-conclusion" data-on="^\d{4}-\d{2}-\d{2}$"></notebook-conclusion>
   </notebook-case>
+</template>
+<template id="notebook-conclusion">
+  <notebook-conclusion>
+    <notebook-conclusion-title required></notebook-conclusion-title>
+    <notebook-conclusion-detail markup></notebook-conclusion-detail>
+  </notebook-conclusion>
 </template>
 <pre><code>&lt;notebook-practice&gt;
   &lt;notebook-title&gt;&hellip;&lt;/notebook-title&gt;
@@ -561,7 +567,8 @@
       console.log(`dropped  reading ${reading.getAttribute("data-on")}  ${(reading.textContent ?? "").trim()}`)
     }
     for (const said of Array.from(one.querySelectorAll("notebook-conclusion"))) {
-      console.log(`dropped  conclusion ${said.getAttribute("data-on")}`)
+      const title = said.querySelector(":scope > notebook-conclusion-title")?.textContent?.trim() ?? ""
+      console.log(`dropped  conclusion ${said.getAttribute("data-on")}  ${title}`)
     }
     console.log(`deleted  ${target}`)
   }
@@ -615,15 +622,42 @@
     await readCase(fs, args, path, one, declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case"))
   }
 
+  /**
+   * Write a conclusion's title and detail, the way add and update already
+   * write an entry's own title and detail.
+   *
+   * The element passed in starts with neither child or already carries
+   * both, so appending in this order is enough — there is no third child
+   * ever in the way.
+   */
+  function fillConclusion(doc, said, title, detailHtml) {
+    const setChild = (name, text, html) => {
+      let el = said.querySelector(`:scope > ${name}`)
+      if (text === undefined) {
+        el?.remove()
+        return
+      }
+      if (!el) {
+        el = doc.createElement(name)
+        said.appendChild(el)
+      }
+      if (html) el.innerHTML = text
+      else el.textContent = text
+    }
+    setChild("notebook-conclusion-title", title, false)
+    setChild("notebook-conclusion-detail", detailHtml, true)
+  }
+
   async function concludeCase({ fs, args, cli }: CommandContext) {
     const target = fileArg(args, "<file>#<id>")
-    requireArgs([args.conclusion, "--conclusion"])
+    requireArgs([args.title, "--title"])
     const { path, cases } = casesIn(fs, target)
     const one = cases[0]
-    const said = fs.get(path).createElement("notebook-conclusion")
+    const doc = fs.get(path)
+    const said = doc.createElement("notebook-conclusion")
     said.setAttribute("data-on", todayDate())
-    said.innerHTML = args.conclusion === "-" ? await cli.readStdin() : args.conclusion
-    const first = one.querySelector("notebook-conclusion")
+    fillConclusion(doc, said, args.title, args.detail === "-" ? await cli.readStdin() : args.detail)
+    const first = one.querySelector(":scope > notebook-conclusion")
     if (first) one.insertBefore(said, first)
     else placeField(one, said, declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case"))
     const checked = await cli.validate(one, path)
@@ -642,19 +676,18 @@
   // document asks one question, so it needs one answer at a time.
   async function concludeExperiment({ fs, args, cli }: CommandContext) {
     const name = fileArg(args, "<file>")
-    requireArgs([args.conclusion, "--conclusion"])
+    requireArgs([args.title, "--title"])
     const path = `${DIR}/${name}`
     const doc = fs.get(path)
     const root = experimentAt(fs, path, name)
     const order = declaredOrder(fs.get("templates/notebook.template.html"), "notebook-experiment")
-    const text = args.conclusion === "-" ? await cli.readStdin() : args.conclusion
     const existing = root.querySelector(":scope > notebook-conclusion")
-    if (text === "") existing?.remove()
-    else if (existing) existing.innerHTML = text
-    else {
-      const el = doc.createElement("notebook-conclusion")
-      el.innerHTML = text
-      placeField(root, el, order)
+    if (args.title === "") {
+      existing?.remove()
+    } else {
+      const said = existing ?? doc.createElement("notebook-conclusion")
+      fillConclusion(doc, said, args.title, args.detail === "-" ? await cli.readStdin() : args.detail)
+      if (!existing) placeField(root, said, order)
     }
     const result = await cli.validate(root, path)
     if (!result.ok) throw new Error(result.errors.join("\n"))
@@ -742,7 +775,8 @@
    *
    *   mycelium notebook experiment run <file>[#<id>] [--show] [--port N]
    *
-   *   mycelium notebook experiment conclude <file> --conclusion "…" | --conclusion -
+   *   mycelium notebook experiment conclude <file> --title "…"
+   *     [--detail "…" | --detail -]
    *
    *   mycelium notebook experiment case add <file> --lens "…"
    *     --script "…" | --script - [--id <slug>] [--browser]
@@ -752,8 +786,8 @@
    *
    *   mycelium notebook experiment case del <file>#<id>
    *
-   *   mycelium notebook experiment case conclude <file>#<id>
-   *     --conclusion "…" | --conclusion -
+   *   mycelium notebook experiment case conclude <file>#<id> --title "…"
+   *     [--detail "…" | --detail -]
    *
    * --question is what the whole document asks. --lens with --script builds
    * the first case, so one question with one probe still costs one command.
@@ -773,9 +807,18 @@
    * about it. Dropping a case with no replacement is still what del alone
    * is for, printing every reading and conclusion it takes with it.
    *
-   * conclude sets the document's own answer, and replaces it rather than
-   * accumulating. case conclude instead appends a dated line under one
-   * case's readings, and those do accumulate.
+   * Both conclude commands take --title and --detail, the way an entry's own
+   * add does: a scannable line and the markup underneath it. --title is
+   * required, and --detail is not — a short conclusion can be its own title.
+   *
+   * experiment conclude sets the document's own answer, and replaces it
+   * rather than accumulating.
+   *
+   * An empty --title clears the document's answer, the same way an empty
+   * --detail clears a field on update.
+   *
+   * case conclude instead appends a dated conclusion under one case's
+   * readings, and those do accumulate.
    *
    * run takes every case, or the one an address names, and records a reading
    * only when it moves.
@@ -799,11 +842,11 @@
    *     [--detail "…" | --detail - | --detail ""] [--tag NAME]… [--prompt "…"]…
    *
    * Every flag here is valid for every type this family holds, which is what
-   * keeps this the one command that reaches all five. --question,
-   * --conclusion and a case's own script live under experiment instead. None
-   * of the three means anything on a principle, a practice, a direction, or a
-   * research entry, and a flag meaningless for the type it would land on does
-   * not belong on the command building that type.
+   * keeps this the one command that reaches all five. --question, conclude's
+   * own --title and --detail, and a case's own script live under experiment
+   * instead. None of them means anything on a principle, a practice, a
+   * direction, or a research entry, and a flag meaningless for the type it
+   * would land on does not belong on the command building that type.
    *
    * An omitted flag leaves its field untouched and an empty value clears it,
    * which is the rule every family here follows. --tag and --prompt repeat,
@@ -1103,8 +1146,10 @@
         console.log(`  ${reading.getAttribute("data-on")}  ${(reading.textContent ?? "").trim()}`)
       }
       for (const said of Array.from(one.querySelectorAll(":scope > notebook-conclusion"))) {
-        console.log(`\n  concluded ${said.getAttribute("data-on")}`)
-        for (const line of blockLines(said)) console.log(`    ${line}`)
+        const title = said.querySelector(":scope > notebook-conclusion-title")?.textContent?.trim() ?? ""
+        console.log(`\n  concluded ${said.getAttribute("data-on")}  ${title}`)
+        const detail = said.querySelector(":scope > notebook-conclusion-detail")
+        if (detail) for (const line of blockLines(detail)) console.log(`    ${line}`)
       }
       const probe = one.querySelector(":scope > script")?.textContent
       if (probe?.trim()) {
@@ -1117,11 +1162,10 @@
 
     const said = root.querySelector(":scope > notebook-conclusion")
     if (said) {
-      const body = blockLines(said)
-      if (body.length) {
-        console.log("\nconclusion")
-        for (const line of body) console.log(`  ${line}`)
-      }
+      const title = said.querySelector(":scope > notebook-conclusion-title")?.textContent?.trim() ?? ""
+      console.log(`\nconclusion  ${title}`)
+      const detail = said.querySelector(":scope > notebook-conclusion-detail")
+      if (detail) for (const line of blockLines(detail)) console.log(`  ${line}`)
     }
 
     const detail = root.querySelector("notebook-detail")

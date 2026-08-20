@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: notebook-conclusion: a title and a detail, the way an entry has both</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>notebook-conclusion: a title and a detail, the way an entry has both</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-20</spec-date>
+  <spec-problem>
+<p>
+An earlier followup, now done, named the gap: <code>notebook-conclusion</code> held one blob of markup and
+nothing scannable, so reading a case's conclusions meant opening every one of them in full. An entry's own
+<code>notebook-title</code> and <code>notebook-detail</code> already solve exactly this for the record as a
+whole — a one-line summary a reader can scan, and the reasoning underneath it — but a conclusion never got the
+same split.
+</p>
+<p>
+The corpus already showed the cost. Four instances existed before this spec, one of them three paragraphs long,
+and every one of them read as an undifferentiated block: nothing in <code>notebook show</code>'s own output, or
+in the markup itself, let a reader tell what a conclusion claimed without reading all of it.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>notebook-conclusion becomes a nested type, the way notebook-case already is</h3>
+<p>
+<code>notebook.template.html</code> gains a <code>&lt;template id="notebook-conclusion"&gt;</code> declaring
+two children: <code>notebook-conclusion-title</code>, required and plain text, and
+<code>notebook-conclusion-detail</code>, optional markup. Both the case-level field (repeatable, carrying
+<code>data-on</code>) and the document-level field on <code>notebook-experiment</code> (singular, no
+<code>data-on</code>) now reference it through <code>conforms-to="#notebook-conclusion"</code> instead of
+declaring <code>markup</code> directly, the same mechanism <code>notebook-case</code> already uses to nest under
+<code>notebook-experiment</code>.
+</p>
+<p>
+Detail stays optional rather than required. A short conclusion can be its own title, and forcing a second field
+under it would recreate the empty-boilerplate problem <code>--detail</code> already solves for entries by being
+required only where a title alone says too little.
+</p>
+<h3>Both conclude commands take --title and --detail</h3>
+<p>
+<code>notebook experiment case conclude &lt;file&gt;#&lt;id&gt; --title "…" [--detail "…" | --detail -]</code>
+and <code>notebook experiment conclude &lt;file&gt; --title "…" [--detail "…" | --detail -]</code> replace the
+old single <code>--conclusion</code> flag on both commands. A shared <code>fillConclusion</code> helper writes
+both children in the right order, backing a fresh case-level conclusion and an in-place update of the
+document-level one alike.
+</p>
+<p>
+Document-level conclude keeps its replace-not-accumulate behaviour: an empty <code>--title</code> clears the
+existing conclusion, the same way an empty <code>--detail</code> clears a field on <code>notebook update</code>.
+Case-level conclude keeps appending, since a case gathers conclusions over time the way
+<a href="../notebook/several-readings-kept-apart.principle.html">an existing principle</a> already argues several
+cases should stay apart rather than merge.
+</p>
+<h3>show and del print the title, not the whole body</h3>
+<p>
+<code>notebook show</code> prints a conclusion's <code>concluded &lt;date&gt;</code> line with its title beside
+the date, and only prints the detail underneath when one exists. <code>case del</code> and
+<a href="../specs/2026-08-20-case-update-deletes-and-adds.spec.html">case update</a> print the same title on the
+line announcing what a deleted case took with it, so the honesty that command already promises now names what it
+drops, not only when it drops it.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+<li>Requiring <code>notebook-conclusion-detail</code>. Left optional so a one-line conclusion stays one line,
+unlike an entry's own <code>notebook-detail</code>, which this spec's problem section explains is required for a
+different reason: an entry has nothing else to record what happened.</li>
+</ul>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>

@@ -42,8 +42,15 @@ export default async function () {
 
 </script>
     <notebook-reading data-on="2026-08-19">rejected:TypeError:Unknown file extension ".html" for /Users/bigmistqke/Documents/GitHub/mycelium/.mycelium/templates/graph.lib.html</notebook-reading>
-    <notebook-conclusion data-on="2026-08-19">Correction: the inference below is wrong. script-hooks.ts's resolve hook only recognizes a fragment written literally in a specifier's own text. A bare subpath like mycelium/graph-page carries no fragment until Node's own exports-map lookup produces one, inside nextResolve, where the hook never sees it again. Registering script-hooks.ts does not fix this — a second case on this experiment confirms the failure reproduces through the real mycelium CLI too, and records the shim that actually works.</notebook-conclusion>
-    <notebook-conclusion data-on="2026-08-19">A fragment target resolves correctly at the path level. Node finds graph.lib.html, not a file-not-found error. It fails one step later: loading .html as a module needs script-hooks.ts's loader hooks registered, and a bare node process spawned outside bin/mycelium.js's own startup never registers them. That is not the real external-consumption path though. Every actual consumer of this package runs seeded command scripts through mycelium's own CLI, which always registers script-hooks.ts before any command runs. The failure mode here is specific to code importing a subpath completely outside any mycelium command context, which graph-page and graph-serve were never realistically used for.</notebook-conclusion>
+    <notebook-conclusion data-on="2026-08-19">
+      <notebook-conclusion-title>Correction: registering script-hooks.ts does not fix this after all</notebook-conclusion-title>
+      <notebook-conclusion-detail><p>The conclusion below is wrong. script-hooks.ts's resolve hook only recognizes a fragment written literally in a specifier's own text. A bare subpath like mycelium/graph-page carries no fragment until Node's own exports-map lookup produces one, inside nextResolve, where the hook never sees it again. Registering script-hooks.ts does not fix this — a second case on this experiment confirms the failure reproduces through the real mycelium CLI too, and records the shim that actually works.</p></notebook-conclusion-detail>
+    </notebook-conclusion>
+    <notebook-conclusion data-on="2026-08-19">
+      <notebook-conclusion-title>The fragment resolves; only the .html module loader must run first</notebook-conclusion-title>
+      <notebook-conclusion-detail><p>A fragment target resolves correctly at the path level. Node finds graph.lib.html, not a file-not-found error. It fails one step later: loading .html as a module needs script-hooks.ts's loader hooks registered, and a bare node process spawned outside bin/mycelium.js's own startup never registers them.</p>
+<p>That is not the real external-consumption path though. Every actual consumer of this package runs seeded command scripts through mycelium's own CLI, which always registers script-hooks.ts before any command runs. The failure mode here is specific to code importing a subpath completely outside any mycelium command context, which graph-page and graph-serve were never realistically used for.</p></notebook-conclusion-detail>
+    </notebook-conclusion>
   </notebook-case>
 </notebook-experiment>
 </body></html>

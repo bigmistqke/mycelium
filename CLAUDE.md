@@ -127,9 +127,13 @@ else. `notebook experiment case del <file>#<id>` does the same deleting and
 printing alone, for a case with no replacement.
 
 A conclusion says what somebody made of a reading, and is not the same thing as
-the reading itself. `notebook case conclude <file>#<id> --conclusion "…"` adds
-one beside a case's readings; `notebook update <file> --conclusion "…"`
-answers the question the whole document asks.
+the reading itself. It carries a title and a detail, the way an entry does —
+a scannable line and the markup underneath it, with only the title required.
+`notebook experiment case conclude <file>#<id> --title "…" [--detail "…"]`
+adds one beside a case's readings; `notebook experiment conclude <file>
+--title "…" [--detail "…"]` answers the question the whole document asks,
+replacing its previous answer rather than accumulating one. An empty `--title`
+clears it.
 
 A case may run under Node or in a browser (`--browser`), since a probe that
 needs a rendered layout — measuring a figure, say — can't get one from a
