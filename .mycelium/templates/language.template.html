@@ -123,7 +123,7 @@
     <language-detail>
       <p repeatable="" markup=""></p>
     </language-detail>
-    <language-dependency repeatable="" name=".+" version=".+"></language-dependency>
+    <script type="mycelium/importmap"></script>
     <script required=""></script>
     <a repeatable="" href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </language-rule>
@@ -148,7 +148,7 @@
   &lt;language-pass&gt;… an example that passes …&lt;/language-pass&gt;
   &lt;language-fail&gt;… an example that fails …&lt;/language-fail&gt;
   &lt;language-detail&gt;… optional, free-form …&lt;/language-detail&gt;
-  &lt;language-dependency name="retext" version="^9.0.0"&gt;&lt;/language-dependency&gt;   &lt;!-- repeatable, only if the check imports a real library --&gt;
+  &lt;script type="mycelium/importmap"&gt;{ "imports": { "retext": "^9.0.0" } }&lt;/script&gt;   &lt;!-- optional, only if the check imports a real library --&gt;
   &lt;script type="mycelium/rule"&gt;export function check(text) { … }&lt;/script&gt;
 &lt;/language-rule&gt;
 
@@ -176,10 +176,12 @@
   check fails its own template, and nobody can write one. Nothing can claim to be enforced and not be.
 </p>
 <p>
-  <code>language-dependency</code> holds a real package a check imports, one element per package, empty like
-  <code>figure-edge</code> because its meaning sits in <code>name</code> and <code>version</code> rather than
-  in text. Seeding installs every one it finds into the consumer's own project, so the check runs there the
-  same way it runs here. See
+  A check that imports a real library names it on the rule itself, in a second script carrying
+  <code>type="mycelium/importmap"</code>: plain JSON shaped like a browser's own
+  <code>{"imports": {"name": "version"}}</code>, read as data and never executed — a real
+  <code>type="importmap"</code> would have a browser try to resolve those values as module paths, and
+  a version range is not one. Seeding installs everything that script lists into the consumer's own
+  project, so a check runs there the same way it runs here. See
   <a data-rel="specifies" href="../specs/2026-08-20-rule-declared-dependencies.spec.html">the spec</a>.
 </p>
 <p>
@@ -781,7 +783,7 @@
     const language = { replaces }
 
     for (const { path, doc } of fs.list('language/rules')) {
-      const ruleScript = doc.querySelector('language-rule > script')
+      const ruleScript = doc.querySelector('language-rule > script:not([type="mycelium/importmap"])')
       if (!ruleScript) continue
       // Loaded through the engine's own loader, the same way the audit below
       // loads them, rather than a data: URL. fs.list returns paths relative
@@ -971,7 +973,7 @@
     const rules: { path: string; check: Function; title: string; pass: string; fail: string; detail: string }[] = []
     for (const { path, doc } of fs.list("language/rules")) {
       const el = doc.querySelector("language-rule")
-      const ruleScript = doc.querySelector("language-rule > script")
+      const ruleScript = doc.querySelector('language-rule > script:not([type="mycelium/importmap"])')
       if (!ruleScript) continue
       const mod = await loadModule(resolvePath(fs.root, path), ruleScript)
       if (typeof mod.check !== "function") continue
@@ -1475,7 +1477,7 @@
     const rules = []
     for (const path of fs.list(`${fs.docsDir}/language`, { ext: '.rule.html' })) {
       const root = fs.parse(path).querySelector('language-rule')
-      const script = fs.parse(path).querySelector('language-rule > script')
+      const script = fs.parse(path).querySelector('language-rule > script:not([type="mycelium/importmap"])')
       if (!script) continue
       const validates = (root?.getAttribute('data-validates') ?? 'all').trim().split(/\s+/)
       // Loaded through the engine's own loader rather than a data: URL. A

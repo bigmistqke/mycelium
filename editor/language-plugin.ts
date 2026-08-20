@@ -61,6 +61,18 @@ export function isNodeOnly(type: string): boolean {
   return type.startsWith("mycelium/")
 }
 
+// mycelium/importmap is the one mycelium/* type that is not code: a rule's
+// own JSON, read with JSON.parse rather than imported. TypeScript reads an
+// object literal at this position as a block statement, so real content
+// here would earn it spurious diagnostics.
+//
+// It gets an empty virtual file instead. Its slot in the array still has to
+// exist, since buildBlockCode's #locator rewriting and
+// getExtraServiceScripts both name a sibling by position.
+function isOpaqueData(type: string): boolean {
+  return type === "mycelium/importmap"
+}
+
 function extensionFor(block: ScriptBlock): ".ts" | ".js" {
   return isNodeOnly(block.type) ? ".ts" : ".js"
 }
@@ -174,6 +186,16 @@ function buildBlockCode(
   }
 }
 
+// What an opaque block maps to: nothing, since it has no real content to
+// carry a diagnostic back to.
+const EMPTY_MAPPING: CodeMapping = {
+  sourceOffsets: [],
+  generatedOffsets: [],
+  lengths: [],
+  generatedLengths: [],
+  data: { verification: false, completion: false, semantic: false, navigation: false, structure: false, format: false },
+}
+
 function snapshotOf(text: string): ts.IScriptSnapshot {
   return {
     getText: (start, end) => text.slice(start, end),
@@ -212,7 +234,9 @@ export function createMyceliumLanguagePlugin(
         // code, and claiming it is would put TypeScript diagnostics on prose.
         mappings: [],
         embeddedCodes: blocks.map((block, i) => {
-          const { text, mapping } = buildBlockCode(block, blocks, htmlBaseName)
+          const { text, mapping } = isOpaqueData(block.type)
+            ? { text: "", mapping: EMPTY_MAPPING }
+            : buildBlockCode(block, blocks, htmlBaseName)
           return {
             id: `script_${i}`,
             languageId: isNodeOnly(block.type) ? "typescript" : "javascript",

@@ -227,13 +227,21 @@ function repointOutwardLinks(html, path, carried) {
 }
 
 /**
- * Every package a seeded rule declares, gathered from the language-dependency
- * elements the seed just wrote.
+ * Every package a seeded rule declares, gathered from every
+ * type="mycelium/importmap" script the seed just wrote.
  *
  * A rule's check runs against a real library, not a copy this package
  * carries — mycelium/retext tried that once and pinned every consumer to
  * whichever version this package happened to depend on. The dependency
- * belongs to the rule, so the rule installs it.
+ * belongs to the rule, so the rule installs it. mycelium/importmap rather
+ * than a real type="importmap" because these values are semver ranges for
+ * npm, not resolution targets a browser could act on.
+ *
+ * The script stays plain JSON rather than a real module, though. Reading it
+ * is a JSON.parse, never an import, so it never runs through the
+ * type-stripping module hook every other mycelium/* script loads through.
+ * That hook fails on a real install, since this package's own corpus sits
+ * inside node_modules there.
  *
  * package-manager-detector finds which manager the consumer already used to
  * install mycelium itself. A lockfile is already there by construction, so
@@ -251,11 +259,13 @@ async function installDependencies(paths, repoRoot, out) {
   const dependencies = new Map()
   for (const path of paths) {
     if (!path.endsWith(".html")) continue
-    const { document } = parseHTML(readFileSync(resolvePath(PACKAGE_CORPUS, path), "utf8"))
-    for (const el of Array.from(document.querySelectorAll("language-dependency"))) {
-      const name = el.getAttribute("name")
-      const version = el.getAttribute("version")
-      if (name && version) dependencies.set(name, version)
+    const filePath = resolvePath(PACKAGE_CORPUS, path)
+    const { document } = parseHTML(readFileSync(filePath, "utf8"))
+    for (const el of Array.from(document.querySelectorAll('script[type="mycelium/importmap"]'))) {
+      const parsed = JSON.parse(el.textContent ?? "{}")
+      for (const [name, version] of Object.entries(parsed.imports ?? {})) {
+        dependencies.set(name, /** @type {string} */ (version))
+      }
     }
   }
   if (dependencies.size === 0) return

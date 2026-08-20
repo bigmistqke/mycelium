@@ -565,28 +565,69 @@
           placeholder.hasAttribute('conforms-to') ||
           placeholder.children.length > 0,
       }))
-      const byTag = new Map(slots.map((slot) => [slot.tag, slot]))
+
+      /**
+       * Whether a real element could belong to this placeholder, judged on the
+       * declared attributes alone — the same test checkAttributes runs, kept
+       * silent here since only the assigned slot should ever report an error.
+       * Two placeholders sharing a tag need this to tell them apart:
+       * language-rule's two <script> children, one plain and one carrying
+       * type="mycelium/importmap", are exactly this case.
+       */
+      function fits(slot, child) {
+        for (const attr of Array.from(slot.placeholder.attributes)) {
+          if (SCHEMA_WORDS.has(attr.name)) continue
+          const optional = attr.value.startsWith('?')
+          const pattern = optional ? attr.value.slice(1) : attr.value
+          if (!child.hasAttribute(attr.name)) {
+            if (!optional) return false
+            continue
+          }
+          if (pattern && !new RegExp(pattern).test(child.getAttribute(attr.name).trim())) return false
+        }
+        return true
+      }
+
+      // Grouped by tag, attribute-bearing placeholders sorted before a bare
+      // one so a typed sibling never falls through to the untyped catch-all.
+      const byTag = new Map()
+      for (const slot of slots) {
+        if (!byTag.has(slot.tag)) byTag.set(slot.tag, [])
+        byTag.get(slot.tag).push(slot)
+      }
+      for (const candidates of byTag.values()) {
+        candidates.sort((a, b) => Number(b.attributeBorne) - Number(a.attributeBorne))
+      }
 
       const found = new Map()
       let cursor = 0
       for (const child of Array.from(target.children)) {
         const tag = child.tagName.toLowerCase()
-        if (!byTag.has(tag)) {
+        const candidates = byTag.get(tag)
+        if (!candidates) {
           errors.push(`unexpected <${tag}> on ${label}`)
           continue
         }
-        const rank = slots.findIndex((slot) => slot.tag === tag)
+        // The common case is one placeholder per tag, which always fits —
+        // going through fits() there would trade a specific attribute-pattern
+        // error for a generic one, so only ambiguous tags pay for the check.
+        const slot = candidates.length === 1 ? candidates[0] : candidates.find((candidate) => fits(candidate, child))
+        if (!slot) {
+          errors.push(`<${tag}> on ${label} matches no declared shape for that tag`)
+          continue
+        }
+        const rank = slots.indexOf(slot)
         if (rank < cursor) {
           errors.push(`<${tag}> comes after <${slots[cursor].tag}>; the template declares it before`)
         } else {
           cursor = rank
         }
-        if (!found.has(tag)) found.set(tag, [])
-        found.get(tag).push(child)
+        if (!found.has(slot)) found.set(slot, [])
+        found.get(slot).push(child)
       }
 
       for (const slot of slots) {
-        const nodes = found.get(slot.tag) ?? []
+        const nodes = found.get(slot) ?? []
         if (nodes.length === 0) {
           if (slot.required) errors.push(`missing or empty <${slot.tag}>`)
           continue

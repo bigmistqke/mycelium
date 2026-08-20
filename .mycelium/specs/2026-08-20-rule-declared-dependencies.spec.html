@@ -27,20 +27,42 @@ imports from outside the corpus.
 </spec-problem>
   <spec-design>
 <p>
-A rule declares a dependency where it lives, the same way <code>figure-edge</code> holds its endpoints in
-attributes rather than text: <code>&lt;language-dependency name="retext" version="^9.0.0"&gt;&lt;/language-dependency&gt;</code>,
-repeatable, added to <code>language-rule</code>'s schema in <code>language.template.html</code>.
-<code>passive-voice.rule.html</code> carries two, one for <code>retext</code> and one for
-<code>retext-passive</code>, and its script imports both by their own name.
-<code>mycelium/retext</code> and <code>.mycelium/templates/retext.js</code> go away.
+A rule declares a dependency on itself, in a second <code>&lt;script&gt;</code> carrying
+<code>type="mycelium/importmap"</code>: plain JSON shaped like a browser's own
+<code>{"imports": {"retext": "^9.0.0"}}</code>, but not that real type — these values are semver ranges
+for npm, not resolution targets a browser could act on, and claiming the real type would have a
+browser that honors import maps try to resolve them as module paths.
+<code>language-rule</code>'s schema in <code>language.template.html</code> declares it optional,
+alongside the required, untyped script that carries the actual check.
+<code>mycelium/retext</code> and <code>.mycelium/templates/retext.js</code> go away;
+<code>passive-voice.rule.html</code> imports <code>retext</code> and <code>retext-passive</code> by
+their own name, and declares both in its importmap.
 </p>
 <p>
-Seeding gathers every <code>language-dependency</code> across the files it writes and installs them into the
-consumer's own project once the copy finishes. <code>package-manager-detector</code> finds which package
-manager the consumer already used to install <code>mycelium</code> itself — a lockfile is already there by
-construction, since installing mycelium is what put one there — and resolves that manager's own
-<code>add</code> command, run against the consumer's <code>package.json</code> directly. The package manager
-writes its own <code>package.json</code> and lockfile; nothing here parses or edits either by hand.
+Two placeholders sharing one tag name is new: the generic validator in <code>template.template.html</code>
+matched a field by tag alone, so a second <code>&lt;script&gt;</code> read as a duplicate of the first.
+<code>walkChildren</code> now groups same-tag placeholders and picks among them by whichever declared
+attributes discriminate one from another — <code>type</code> here — trying the more specific placeholder
+before the bare one, which is what keeps "exactly one real check" true without a separate audit: an untyped
+script can only ever match the check slot.
+</p>
+<p>
+Reading the importmap is a parse, not an import — <code>JSON.parse</code> on the script's own text.
+Importing it would run it through the same type-stripping module hook every other
+<code>mycelium/*</code> script loads through, and that hook refuses a file under
+<code>node_modules</code>, which is exactly where this package's own corpus sits in a real install. The
+same reason rules out feeding this script's raw JSON to the editor's own TypeScript checker: an object
+literal at that position reads as a block statement, so <code>editor/language-plugin.ts</code> now gives a
+<code>mycelium/importmap</code> block an empty virtual file instead of its real content, the one
+<code>mycelium/*</code> type that carries data rather than code.
+</p>
+<p>
+Seeding gathers every <code>mycelium/importmap</code> script across the files it writes and installs the
+union into the consumer's own project once the copy finishes. <code>package-manager-detector</code> finds
+which package manager the consumer already used to install <code>mycelium</code> itself — a lockfile is
+already there by construction — and resolves that manager's own <code>add</code> command, run against the
+consumer's <code>package.json</code> directly. The package manager writes its own <code>package.json</code>
+and lockfile; nothing here parses or edits either by hand.
 </p>
 <p>
 When detection finds nothing, seeding prints the packages a rule needs instead of failing the whole run, the
