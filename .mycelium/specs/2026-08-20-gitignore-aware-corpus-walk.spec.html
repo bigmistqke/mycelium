@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: walkFiles skips what .gitignore already excludes</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>walkFiles skips what .gitignore already excludes</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-20</spec-date>
+  <spec-problem>
+<p>
+An earlier followup, now done, named the gap: <code>walkFiles</code> in <code>src/utils.ts</code> skips
+<code>node_modules</code> and any dot-entry by name, but nothing tells it about <code>.gitignore</code>. Running
+<code>page generate</code> or <code>page index</code> locally writes build output onto disk — under
+<code>.mycelium/page/</code>, or as <code>.mycelium/index.html</code> — and every family's own <code>fs.list()</code>
+walks through <code>corpusView</code>, which walks through <code>walkFiles</code>, so the next <code>validate</code>
+finds that output sitting beside real source documents.
+</p>
+<p>
+A generated page is not a document anybody wrote, so checking it against <code>prose-follows-the-language</code>
+or <code>every-link-resolves</code> fails a build over prose nobody authored and links nobody meant to check. The
+project's own <code>.gitignore</code> already states which paths are build output — <code>.mycelium/page/</code>,
+<code>.mycelium/index.html</code>, <code>.mycelium/notebook.html</code>, <code>.mycelium/chain.html</code>, and
+every <code>*.failure.png</code> a browser test case leaves behind — so the walk had an answer sitting beside it
+the whole time, unread.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>walkFiles reads the nearest .gitignore once, and reuses it</h3>
+<p>
+<code>walkFiles</code> keeps its own signature, one directory in and a flat file list out, so every existing
+caller — <code>corpusView</code>, <code>seedPaths</code>, <code>findTemplateFile</code>, the audit walking
+<code>src/</code> for <code>prose-follows-the-language</code> — changes nothing about how it calls in. Internally
+it now looks for the nearest <code>.gitignore</code> above the directory it was handed, walking upward the same
+way git itself resolves one, and reuses whatever it finds for every entry in that walk. A project with none —
+this package's own seed, dropped fresh into a consumer with no git history yet — walks exactly as it did before,
+since a matcher that never gets built ignores nothing.
+</p>
+<p>
+The lookup is cached per starting directory, in a module-level map that outlives one call. <code>fs.list()</code>
+runs dozens of times over one <code>validate</code>, each one a fresh call into <code>walkFiles</code>, and
+re-reading and re-parsing the same <code>.gitignore</code> that many times would cost real time for an answer
+that cannot have changed since the process started.
+</p>
+<h3>The ignore package parses the file; walkFiles only asks it questions</h3>
+<p>
+Real <code>.gitignore</code> syntax carries negation, directory-only patterns and glob semantics a naive string
+match gets wrong at the edges, and this project does not want a second, worse parser for a format git already
+parses correctly. <code>ignore</code> is a small, widely used package doing exactly this one thing, so
+<code>walkFiles</code> adds it as a dependency and calls <code>.ignores(path)</code> once per entry rather than
+reimplementing pattern matching by hand.
+</p>
+<p>
+Each entry is tested with a path relative to the <code>.gitignore</code>'s own directory, since that is the root
+every pattern inside it names — not relative to whatever directory <code>walkFiles</code> started
+from, which may sit several levels below. A directory entry is tested with a trailing slash appended, since a
+pattern like <code>.mycelium/page/</code> only matches a directory and the package needs that told to it rather
+than inferred from the entry existing on disk.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+<li>Nested <code>.gitignore</code> files below the one nearest the walk's own start. This repository carries
+exactly one, at its root, and git's own support for several stacked ones is not a shape anything here
+exercises today.</li>
+</ul>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>

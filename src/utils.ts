@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url"
 import type { Corpus } from "./api.ts"
 import { Window } from "happy-dom"
 import { parse as parse5Parse } from "parse5"
+import ignoreFactory, { type Ignore } from "ignore"
 
 // Where a corpus sits, relative to the working directory. One name serves this
 // repository and any project installing this package, so what a consumer gets
@@ -46,16 +47,59 @@ export function findFirstByTag(node: any, tag: string): any {
   return undefined
 }
 
+// The nearest .gitignore above a starting directory, compiled once and
+// reused for every entry the walk that asked for it meets. Cached per
+// starting directory rather than per call, since fs.list() runs walkFiles
+// dozens of times over one validate and the file on disk cannot have
+// changed between them.
+//
+// A project with no .gitignore anywhere above it gets null back — this
+// package's own seed, freshly dropped into a consumer with no git history
+// yet, is exactly that case. A null matcher ignores nothing, which is how
+// walkFiles behaved before this existed.
+const gitignoreCache = new Map<string, { root: string; ig: Ignore } | null>()
+
+function gitignoreMatcher(startDir: string): { root: string; ig: Ignore } | null {
+  const resolved = resolvePath(startDir)
+  const cached = gitignoreCache.get(resolved)
+  if (cached !== undefined) return cached
+
+  let current = resolved
+  let found: { root: string; ig: Ignore } | null = null
+  while (true) {
+    const candidate = join(current, ".gitignore")
+    if (existsSync(candidate)) {
+      found = { root: current, ig: ignoreFactory().add(readFileSync(candidate, "utf8")) }
+      break
+    }
+    const parent = dirname(current)
+    if (parent === current) break
+    current = parent
+  }
+  gitignoreCache.set(resolved, found)
+  return found
+}
+
 // Every file under dir, recursively. node_modules is skipped: rooting an
 // audit's filesystem above the corpus puts it in reach, and walking it would cost
-// more than the rest of the tree by orders of magnitude.
+// more than the rest of the tree by orders of magnitude. Anything the
+// nearest .gitignore excludes is skipped the same way, since build output
+// like .mycelium/page/ is no more a source file than node_modules is.
 export function walkFiles(dir: string): string[] {
+  return walkFilesUnder(dir, gitignoreMatcher(dir))
+}
+
+function walkFilesUnder(dir: string, matcher: { root: string; ig: Ignore } | null): string[] {
   const results: string[] = []
   for (const entry of readdirSync(dir)) {
     if (entry === "node_modules" || entry.startsWith(".")) continue
     const full = join(dir, entry)
     const stat = statSync(full)
-    if (stat.isDirectory()) results.push(...walkFiles(full))
+    if (matcher) {
+      const path = relative(matcher.root, full)
+      if (matcher.ig.ignores(stat.isDirectory() ? `${path}/` : path)) continue
+    }
+    if (stat.isDirectory()) results.push(...walkFilesUnder(full, matcher))
     else results.push(full)
   }
   return results
