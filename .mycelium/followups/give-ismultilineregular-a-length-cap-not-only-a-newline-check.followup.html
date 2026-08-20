@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Followup: Give isMultiLineRegular a length cap, not only a newline check</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/followup.template.css">
+</head>
+<body>
+<followup-item data-conforms-to="../templates/followup.template.html#followup-item">
+  <followup-title>Give isMultiLineRegular a length cap, not only a newline check</followup-title>
+  <followup-at><a href="../commands/comments.command.html">isMultiLineRegular, which only checks c.raw.includes(newline) and lets an arbitrarily long single physical line through</a></followup-at>
+  <followup-when>when a comment gets compressed to one technically-legal line that is still 150+ characters, which happened repeatedly converting the engine to JSDoc before catching it by hand each time</followup-when>
+</followup-item>
+</body></html>

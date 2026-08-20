@@ -7,7 +7,7 @@
     "assigns the block source.unknown: no grammar, so no syntax highlighting",
     "at all. This injects one extra rule ahead of that fallback, matched only",
     "for type=\"mycelium/...\", that embeds source.ts instead. The prefix test",
-    "is the same one src/script-hooks.ts and editor/language-plugin.ts use to",
+    "is the same one src/script-hooks.js and editor/language-plugin.ts use to",
     "decide a block's language; if that prefix ever changes, this does too.",
     "",
     "The injection targets text.html.derivative, not text.html.basic. VS Code",

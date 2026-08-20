@@ -380,7 +380,7 @@
   checker that can only ever check one project.
 </p>
 <p>
-  All three share one reader, <a href="./canon-citations.ts">canon-citations.ts</a>, which holds both
+  All three share one reader, <a href="./canon-citations.js">canon-citations.js</a>, which holds both
   ends of the joint: which behaviours the corpus states, and which behaviour each test says it
   checks. Three copies of that reading is how two checks come to disagree about what a citation is.
 </p>
@@ -1596,7 +1596,7 @@
       // miss: argument parsing, the path a command chooses, how a document
       // serializes, and the exit code.
       mycelium(...argv) {
-        const done = spawnSync(process.execPath, [join(root, "src", "run.ts"), ...argv], { cwd: dir, encoding: "utf8" })
+        const done = spawnSync(process.execPath, [join(root, "src", "run.js"), ...argv], { cwd: dir, encoding: "utf8" })
         return { ok: done.status === 0, status: done.status, stdout: done.stdout ?? "", stderr: done.stderr ?? "" }
       },
       read: (path) => readFileSync(join(docs, path), "utf8"),

@@ -1,27 +1,18 @@
 {
-  // Describes how this project actually runs: Node 24 executing src/*.ts
-  // directly, no build step, no emit. Every setting below follows from that
-  // one fact rather than from a preference.
+  // Node 24 executes src/*.ts and src/*.js directly: no build step, no emit.
   "compilerOptions": {
-    // Node 24 strips types, it does not compile them. Anything that needs a
-    // runtime representation (enum, namespace, parameter property) would be
-    // erased into nothing and break at runtime, so the compiler rejects it
-    // here instead of letting an editor call it valid.
+    // Node 24 strips types, it does not compile them; a runtime construct (enum, namespace, parameter property) would erase into nothing.
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
 
-    // The imports in src/ are written the way Node wants them — "./utils.ts",
-    // extension included. Without these two, every one of those specifiers is
-    // an error (TS5097), which is most of what an editor complains about today.
+    // Imports carry their real extension ("./utils.js"), the way Node wants them.
     "allowImportingTsExtensions": true,
     "module": "preserve",
     "moduleResolution": "bundler",
     "noEmit": true,
 
     "target": "esnext",
-    // happy-dom supplies Element/Document/Node at runtime; the DOM lib is what
-    // names them at author time. Both are needed — esnext alone leaves every
-    // DOM annotation in src/ unresolved.
+    // happy-dom supplies Element/Document/Node at runtime; dom is what names them at author time.
     "lib": ["esnext", "dom"],
     "types": ["node"],
 
@@ -29,34 +20,17 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
 
-    // A mycelium/* script may import a type="module" sibling by #id (see
-    // editor/language-plugin.ts). Without this, resolving the specifier is as
-    // far as it goes — TypeScript refuses to open a .js file for type
-    // information at all, so the import is "implicitly any" under strict.
-    // This lets it infer real types from the plain JS instead.
+    // A mycelium/* script may import a type="module" sibling by #id; without this a .js import is implicitly any.
     "allowJs": true,
-    // Every .js file this config ever sees is one of the *.element.js files
-    // named in include below — nothing else matches that glob, so this
-    // checks exactly those six and nothing wider. checkJs used to stay off,
-    // with each file opting in for itself via its own `// @ts-check`
-    // pragma; three had it and three did not, so half the browser code ran
-    // unchecked with nothing saying so. One switch checking all six removes
-    // the pragma as something to remember to add.
+    // Global, not per-file @ts-check: three of six *.element.js files once carried the pragma and three didn't, leaving half unchecked with nothing saying so.
     "checkJs": true
   },
-  // Only src/. The other 2,042 lines of this project live inside
-  // <script type="mycelium/*"> blocks in docs/, which the TypeScript compiler
-  // cannot read at all — that is the language server's job, not tsconfig's.
-  //
-  // The *.element.js files are the exception, because they are real files
-  // rather than blocks inside a document. They run in a browser, so they may
-  // not be TypeScript, and they carry their types as JSDoc instead. Each one
-  // opts in with its own `// @ts-check`: listing them here only lets the
-  // compiler see them, and checkJs stays off for the reason above.
+  // Only src/, editor/ and the corpus's own .html/.js files — everything else lives inside <script type="mycelium/*"> blocks the compiler can't read; that's the language server's job.
   "include": [
     "src/**/*.ts",
+    "src/**/*.js",
     "editor/**/*.ts",
     ".mycelium/**/*.html",
-    ".mycelium/templates/*.element.js"
+    ".mycelium/templates/*.js"
   ]
 }

@@ -14,7 +14,7 @@ import * as ts from "typescript"
 import { resolve, relative } from "node:path"
 import { readFileSync } from "node:fs"
 import { createMyceliumLanguagePlugin, findScriptBlocks, isNodeOnly } from "./language-plugin.ts"
-import { CORPUS_DIR, walkHtmlFiles } from "../src/utils.ts"
+import { CORPUS_DIR, walkHtmlFiles } from "../src/utils.js"
 
 const root = resolve(import.meta.dirname, "..")
 const tsconfig = resolve(root, "tsconfig.json")

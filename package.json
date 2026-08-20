@@ -15,13 +15,13 @@
   },
   "exports": {
     "./api": "./src/api.ts",
-    "./utils": "./src/utils.ts",
-    "./retext": "./src/retext.ts",
-    "./shared": "./.mycelium/templates/shared.ts",
-    "./extract-graph": "./.mycelium/templates/extract-graph.ts",
-    "./language-prose": "./.mycelium/templates/language-prose.ts",
-    "./code-comments": "./.mycelium/templates/code-comments.ts",
-    "./canon-citations": "./.mycelium/templates/canon-citations.ts"
+    "./utils": "./src/utils.js",
+    "./retext": "./src/retext.js",
+    "./shared": "./.mycelium/templates/shared.js",
+    "./extract-graph": "./.mycelium/templates/extract-graph.js",
+    "./language-prose": "./.mycelium/templates/language-prose.js",
+    "./code-comments": "./.mycelium/templates/code-comments.js",
+    "./canon-citations": "./.mycelium/templates/canon-citations.js"
   },
   "files": [
     "bin",
@@ -29,7 +29,9 @@
     ".mycelium/templates",
     ".mycelium/commands",
     ".mycelium/language",
-    ".mycelium/theme.css"
+    ".mycelium/lib",
+    ".mycelium/theme.css",
+    ".mycelium/tokens.css"
   ],
   "scripts": {
     "mycelium": "node bin/mycelium.js",

@@ -1,17 +1,12 @@
-// Shared across template-embedded command scripts — importable now that
-// script-hooks.ts gives every embedded <script> a real file: identity
-// instead of a data: URL. This is the first real instance of the sharing
-// docs/knowledge/2026-07-24-duplicate-not-share-loadcheck.decision.html
-// declined at a much smaller scale. That decision's own stated reason
-// ("a data: URL-loaded command script can't do a relative import
-// anyway") no longer holds once the script itself loads from a real
-// file: URL. See .mycelium/specs/2026-07-25-virtual-module-script-imports.spec.html.
+// Shared across template-embedded command scripts, each of which now has a real file: identity to import by.
 
 import ts from "typescript"
 
-export function todayDate(): string {
+/** @returns {string} */
+export function todayDate() {
   const d = new Date()
-  const pad = (n: number) => String(n).padStart(2, "0")
+  /** @param {number} n */
+  const pad = (n) => String(n).padStart(2, "0")
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
@@ -20,9 +15,13 @@ export function todayDate(): string {
  *
  * Reads the shape out of the template rather than repeating it, so a field
  * added to a template needs no second edit here.
+ *
+ * @param {Document} templateDoc
+ * @param {string} typeId
+ * @returns {string[]}
  */
-export function declaredOrder(templateDoc: Document, typeId: string): string[] {
-  const tpl = templateDoc.querySelector(`template[id="${typeId}"]`) as HTMLTemplateElement | null
+export function declaredOrder(templateDoc, typeId) {
+  const tpl = /** @type {HTMLTemplateElement | null} */ (templateDoc.querySelector(`template[id="${typeId}"]`))
   const shape = tpl?.content?.firstElementChild
   return shape ? Array.from(shape.children).map((c) => c.tagName.toLowerCase()) : []
 }
@@ -32,11 +31,15 @@ export function declaredOrder(templateDoc: Document, typeId: string): string[] {
  *
  * A family nesting several types needs all of them at once, and reading them
  * together means a command never names its own types in code.
+ *
+ * @param {Document} templateDoc
+ * @returns {Map<string, string[]>}
  */
-export function declaredOrders(templateDoc: Document): Map<string, string[]> {
-  const orders = new Map<string, string[]>()
+export function declaredOrders(templateDoc) {
+  /** @type {Map<string, string[]>} */
+  const orders = new Map()
   for (const tpl of Array.from(templateDoc.querySelectorAll("template[id]"))) {
-    const id = tpl.getAttribute("id")!
+    const id = /** @type {string} */ (tpl.getAttribute("id"))
     orders.set(id, declaredOrder(templateDoc, id))
   }
   return orders
@@ -52,8 +55,13 @@ export function declaredOrders(templateDoc: Document): Map<string, string[]> {
  *
  * A tag the template does not declare keeps its place. An edge or a script
  * never moves, and declared fields only ever move relative to each other.
+ *
+ * @param {Element} root
+ * @param {Element} el
+ * @param {string[]} order
+ * @returns {void}
  */
-export function placeField(root: Element, el: Element, order: string[]): void {
+export function placeField(root, el, order) {
   const rank = order.indexOf(el.tagName.toLowerCase())
   const later =
     rank < 0
@@ -72,27 +80,43 @@ export function placeField(root: Element, el: Element, order: string[]): void {
  *
  * validate still checks every worked example, since conforming is half their
  * job. This answers a different question.
+ *
+ * @param {Document} doc
+ * @returns {boolean}
  */
-export function declaresATemplate(doc: Document): boolean {
+export function declaresATemplate(doc) {
   return doc.querySelector("template[id]") !== null
 }
 
-// Every command a source EXPORTS, with its full verb path and the opening
-// sentence of its doc comment — the same reading printHelp/printRoster do
-// over `mycelium --help`, so a page drawing the corpus can show a family's
-// commands without repeating that parse. Parsed with the real TypeScript
-// compiler rather than a regex so `export async function`, arrow-function
-// exports, and reordered or reformatted commands are all still picked up
-// correctly.
-function parseCommandSource(source: string): ts.SourceFile {
+/**
+ * Every command a source EXPORTS, with its full verb path and the opening
+ * sentence of its doc comment — the same reading printHelp/printRoster do
+ * over `mycelium --help`, so a page drawing the corpus can show a family's
+ * commands without repeating that parse. Parsed with the real TypeScript
+ * compiler rather than a regex so `export async function`, arrow-function
+ * exports, and reordered or reformatted commands are all still picked up
+ * correctly.
+ *
+ * @param {string} source
+ * @returns {ts.SourceFile}
+ */
+function parseCommandSource(source) {
   return ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
 }
 
-function hasExportModifier(node: ts.Node): boolean {
+/**
+ * @param {ts.Node} node
+ * @returns {boolean}
+ */
+function hasExportModifier(node) {
   return !!(ts.canHaveModifiers(node) && ts.getModifiers(node)?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword))
 }
 
-function formatComment(raw: string): string {
+/**
+ * @param {string} raw
+ * @returns {string}
+ */
+function formatComment(raw) {
   return raw
     .replace(/^\/\*+/, "")
     .replace(/\*+\/$/, "")
@@ -102,25 +126,32 @@ function formatComment(raw: string): string {
     .join("\n")
 }
 
-// The nearest block comment (JSDoc or plain) immediately preceding a node,
-// formatted. Works the same whether the node is a top-level statement or a
-// method/property sitting inside an object literal — TypeScript's leading
-// trivia is positional, not statement-specific.
-function docFor(source: string, node: ts.Node): string {
+/**
+ * The nearest block comment (JSDoc or plain) immediately preceding a node,
+ * formatted. Works the same whether the node is a top-level statement or a
+ * method/property sitting inside an object literal — TypeScript's leading
+ * trivia is positional, not statement-specific.
+ *
+ * @param {string} source
+ * @param {ts.Node} node
+ * @returns {string}
+ */
+function docFor(source, node) {
   const ranges = ts.getLeadingCommentRanges(source, node.getFullStart())
   const range = ranges?.filter((r) => r.kind === ts.SyntaxKind.MultiLineCommentTrivia).pop()
   return range ? formatComment(source.slice(range.pos, range.end)) : ""
 }
 
-// The opening sentence of a doc comment, as one line. Not its first LINE:
-// these comments are hand-wrapped at roughly 72 columns, so a first line is
-// as likely to end mid-clause as at a sentence boundary. Joins the leading
-// paragraph back into one line and cuts at the first sentence-ending
-// period, falling back to a hard truncation for a comment with none.
+// Max length for firstSentence's own collapsed output.
 const SUMMARY_MAX = 76
 
-function firstSentence(doc: string): string {
-  const lines: string[] = []
+/**
+ * @param {string} doc
+ * @returns {string}
+ */
+function firstSentence(doc) {
+  /** @type {string[]} */
+  const lines = []
   for (const line of doc.split("\n")) {
     if (!line.trim()) break
     lines.push(line.trim())
@@ -131,34 +162,49 @@ function firstSentence(doc: string): string {
   return sentence.length > SUMMARY_MAX ? sentence.slice(0, SUMMARY_MAX - 1).trimEnd() + "…" : sentence
 }
 
-export interface CommandEntry {
-  /** The full verb path from the family's own name down to this leaf, e.g. `["experiment", "case", "add"]`. */
-  path: string[]
-  /** This leaf's own doc comment, or the nearest ancestor's if it has none of its own. */
-  doc: string
-  summary: string
-}
+/**
+ * @typedef {object} CommandEntry
+ * @property {string[]} path The full verb path from the family's own name down to this leaf, e.g. `["experiment", "case", "add"]`.
+ * @property {string} doc This leaf's own doc comment, or the nearest ancestor's if it has none of its own.
+ * @property {string} summary
+ */
 
-function propertyName(name: ts.PropertyName): string | undefined {
+/**
+ * @param {ts.PropertyName} name
+ * @returns {string | undefined}
+ */
+function propertyName(name) {
   return ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : undefined
 }
 
-function entryFor(path: string[], doc: string): CommandEntry {
+/**
+ * @param {string[]} path
+ * @param {string} doc
+ * @returns {CommandEntry}
+ */
+function entryFor(path, doc) {
   return { path, doc, summary: doc ? firstSentence(doc) : "" }
 }
 
-// A command value is either callable — the leaf itself — or a further table
-// of verbs, the same shape `byVerb`'s own `verbs` argument used to have, just
-// written as a real export instead of rebuilt inside a function body:
-// `export const experiment = { add() {}, case: { add() {}, del() {} } }`.
-// A property with no doc comment of its own inherits the nearest ancestor's,
-// so a family whose rich usage doc sits once above the whole object still
-// shows it under every verb reached from there, and a verb that later gets
-// its own more specific comment overrides that inherited one.
-function walkCommandValue(source: string, expr: ts.Expression, path: string[], inherited: string, out: CommandEntry[]): void {
-  // An inline function, or a bare reference to one declared elsewhere in the
-  // file — `add: addDoc` reads a verb table the same way `add: (ctx) => ...`
-  // does, just naming an existing handler instead of writing one in place.
+/**
+ * A command value is either callable — the leaf itself — or a further table
+ * of verbs, the same shape `byVerb`'s own `verbs` argument used to have, just
+ * written as a real export instead of rebuilt inside a function body:
+ * `export const experiment = { add() {}, case: { add() {}, del() {} } }`.
+ * A property with no doc comment of its own inherits the nearest ancestor's,
+ * so a family whose rich usage doc sits once above the whole object still
+ * shows it under every verb reached from there, and a verb that later gets
+ * its own more specific comment overrides that inherited one.
+ *
+ * @param {string} source
+ * @param {ts.Expression} expr
+ * @param {string[]} path
+ * @param {string} inherited
+ * @param {CommandEntry[]} out
+ * @returns {void}
+ */
+function walkCommandValue(source, expr, path, inherited, out) {
+  // An inline function, or a bare reference to a named one declared elsewhere.
   if (ts.isFunctionExpression(expr) || ts.isArrowFunction(expr) || ts.isIdentifier(expr)) {
     out.push(entryFor(path, inherited))
     return
@@ -175,19 +221,21 @@ function walkCommandValue(source: string, expr: ts.Expression, path: string[], i
   }
 }
 
-export function readCommands(source: string): CommandEntry[] {
+/**
+ * @param {string} source
+ * @returns {CommandEntry[]}
+ */
+export function readCommands(source) {
   const sourceFile = parseCommandSource(source)
-  const out: CommandEntry[] = []
+  /** @type {CommandEntry[]} */
+  const out = []
 
   for (const stmt of sourceFile.statements) {
     if (ts.isFunctionDeclaration(stmt) && hasExportModifier(stmt) && stmt.name) {
       out.push(entryFor([stmt.name.text], docFor(source, stmt)))
       continue
     }
-    // `export { addCase as case }`. A family names its commands after the
-    // types it declares, and a type is free to be called something
-    // JavaScript reserves as a keyword. The alias is the name the command
-    // line uses, so the alias is the name this reads.
+    // `export { addCase as case }`: the alias is the name the command line uses, so it's the name this reads.
     if (ts.isExportDeclaration(stmt) && stmt.exportClause && ts.isNamedExports(stmt.exportClause)) {
       for (const element of stmt.exportClause.elements) out.push(entryFor([element.name.text], ""))
       continue

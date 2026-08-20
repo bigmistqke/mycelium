@@ -55,7 +55,7 @@ export function findScriptBlocks(html: string): ScriptBlock[] {
 
 // A mycelium/* script never runs in a browser, so it may carry type
 // annotations. Everything else has to stay valid JavaScript. Same rule, and the
-// same prefix test, as formatFor in src/script-hooks.ts — if one changes the
+// same prefix test, as formatFor in src/script-hooks.js — if one changes the
 // other is wrong.
 export function isNodeOnly(type: string): boolean {
   return type.startsWith("mycelium/")
@@ -66,7 +66,7 @@ function extensionFor(block: ScriptBlock): ".ts" | ".js" {
 }
 
 // The same locator a bare "#<locator>" resolves to at run time
-// (src/script-hooks.ts's resolve()) is either the id an author wrote, or
+// (src/script-hooks.js's resolve()) is either the id an author wrote, or
 // "@N", the Nth <script> tag in the document. Both are computed
 // identically here and there from the same real file, so a block with no
 // id is still addressable.
@@ -80,7 +80,7 @@ function findBlockIndexByLocator(blocks: ScriptBlock[], locator: string): number
 }
 
 // A module specifier sitting right after "from" or "import"/"import(" — the
-// same shapes script-hooks.ts's resolve() has to handle at run time, minus
+// same shapes script-hooks.js's resolve() has to handle at run time, minus
 // specifiers built by string concatenation, which neither hook can see
 // through. Text scanning rather than parsing, same tradeoff findScriptBlocks
 // above already makes, so a "#…" string sitting inside a comment or an
@@ -92,7 +92,7 @@ const HASH_SPECIFIER = /(?<=\b(?:from|import)\s*\(?\s*)(['"])#([^'"]*)\1/g
 // source. A bare "#locator" import is TypeScript's own reserved
 // package-subpath-import syntax. TypeScript has no idea this project
 // overloads it to mean "the sibling script with this id", which
-// script-hooks.ts's resolve() does at run time. So left alone it is
+// script-hooks.js's resolve() does at run time. So left alone it is
 // always "cannot find module".
 // Rewriting it here to a real relative path to that sibling's own virtual
 // file lets TypeScript's ordinary module resolution do the rest.

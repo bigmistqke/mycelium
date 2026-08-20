@@ -19,7 +19,7 @@ Both follow from treating the file as the unit. This treats a block as the unit.
 
 The rule the plugin applies is the one
 `.mycelium/specs/2026-08-01-script-type-decides-the-language.spec.html` states, and
-it is the same rule `src/script-hooks.ts` applies when it decides a module's
+it is the same rule `src/script-hooks.js` applies when it decides a module's
 format. If one changes, the other is wrong:
 
 | Script type | Runtime | Language |

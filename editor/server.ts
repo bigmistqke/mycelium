@@ -29,7 +29,7 @@ connection.onInitialize((params) =>
 connection.onInitialized(() => {
   server.initialized()
   // Watch both, not just the HTML. A command block imports ../../src/api.ts and
-  // ./extract-graph.ts, so a change to either has to invalidate the documents
+  // ./extract-graph.js, so a change to either has to invalidate the documents
   // that import it.
   server.fileWatcher.watchFiles(["**/*.{html,ts}"])
 })

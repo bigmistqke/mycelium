@@ -41,7 +41,7 @@ path before asking for the href.</p>
       // That split is the reason add takes an undated slug while every other
       // command takes a whole filename.
       import type { TestContext } from "mycelium/api"
-      import { todayDate } from "../templates/shared.ts"
+      import { todayDate } from "../templates/shared.js"
       export default async function ({ assert, sandbox }: TestContext) {
         const done = sandbox.mycelium(
           "spec", "add",

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: The engine's ten node_modules-only files become plain JavaScript with JSDoc</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>The engine's ten node_modules-only files become plain JavaScript with JSDoc</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-20</spec-date>
+  <spec-problem>
+<p>
+A real (non-symlinked) install of this package cannot run at all on stock Node 24, confirmed by packing a
+real tarball and installing it rather than trusting this repository's own symlinked <code>link:</code> dev
+dependency, which hides the failure entirely. <code>bin/mycelium.js</code>'s own <code>import "../src/run.ts"</code>
+throws <code>ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING</code>: Node refuses to strip types for a
+<code>.ts</code> file whose real path passes through <code>node_modules</code>, a deliberate, currently
+permanent restriction with no opt-in flag (<a href="https://github.com/nodejs/node/issues/57215">nodejs/node
+issue 57215</a> tracks the open request and remains unresolved). Isolated testing confirmed the same failure
+for every one of the package's own <code>mycelium/*</code> exports — <code>shared</code>,
+<code>extract-graph</code>, <code>language-prose</code>, <code>code-comments</code>,
+<code>canon-citations</code> — since each resolves to a <code>.ts</code> file through the same restriction.
+</p>
+<p>
+A prototype confirmed a loader-hook workaround works too: register a custom Node module hook before the
+failing import, transpiling <code>.ts</code> on the fly with the <code>typescript</code> package already
+depended on, bypassing Node's native stripping path entirely. This spec drops it anyway. It ties the fix to
+the exact shape of today's restriction rather than removing the reason it exists, and it means shipping two
+different strip mechanisms — Node's native one for corpus scripts, a hand-rolled one for the engine's own —
+for what is, underneath, the same problem.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>The restriction only ever reaches nine files, confirmed by tracing where it can bite</h3>
+<p>
+Corpus documents never need any of this. Once seeded, <code>notebook.template.html</code> and every other
+family template live inside a consumer's own project, never inside <code>node_modules</code>, so their own
+<code>&lt;script type="mycelium/command"&gt;</code> blocks already load through Node's native stripping with
+no restriction ever applying — confirmed directly, running <code>notebook principle add</code> end to end
+against a real packed install with only the engine's own bootstrap patched around. The restriction only
+touches files that permanently live inside <code>node_modules/mycelium/</code>: the five files
+<code>package.json</code>'s own <code>exports</code> map names, and <code>src/run.ts</code>,
+<code>src/utils.ts</code>, <code>src/retext.ts</code> and <code>src/script-hooks.ts</code>, which those five
+and the entry point import in turn.
+</p>
+<p>
+<code>src/api.ts</code> is the tenth file in that same set and needs nothing done to it. Every reference to it
+anywhere in the corpus or the engine uses <code>import type</code>, which <code>verbatimModuleSyntax</code>
+guarantees erases the whole import statement rather than leaving a runtime one behind — nothing ever asks
+Node to load it, so the restriction that only fires on an attempted load never has anything to fire on.
+</p>
+<h3>Nine files become plain JavaScript carrying their types as JSDoc</h3>
+<p>
+<code>run.ts</code>, <code>utils.ts</code>, <code>retext.ts</code>, <code>script-hooks.ts</code>,
+<code>shared.ts</code>, <code>extract-graph.ts</code>, <code>language-prose.ts</code>,
+<code>code-comments.ts</code> and <code>canon-citations.ts</code> become <code>.js</code>, their type
+annotations rewritten as <code>@param</code>/<code>@returns</code>/<code>@typedef</code> comments rather than
+dropped. None of the nine uses a generic, a class, an enum or a namespace — checked directly rather than
+assumed — so every annotation carries over to JSDoc with nothing lost and nothing approximated. Plain
+JavaScript needs no stripping of any kind, on any Node version, inside <code>node_modules</code> or out, so
+the restriction stops applying because there is nothing left for it to apply to.
+</p>
+<p>
+<code>tsconfig.json</code> already runs <code>checkJs</code> globally rather than gating it behind a
+per-file <code>// @ts-check</code> pragma — a switch made deliberately after three of six
+<code>*.element.js</code> files carried the pragma and three did not, leaving half of them unchecked with
+nothing saying so. These nine files join <code>include</code> the same way, so <code>pnpm run typecheck</code>
+holds them to the same standard it already holds every <code>.ts</code> file to, with no new mechanism and no
+pragma to remember.
+</p>
+<h3>Only the engine's own cross-references change; nothing seeded does</h3>
+<p>
+A relative import between two of these nine files needs its extension updated — <code>run.ts</code> importing
+<code>from "./utils.ts"</code> becomes <code>from "./utils.js"</code> — since a relative specifier names a
+real file rather than resolving through a lookup. <code>package.json</code>'s own <code>exports</code> map
+repoints its five entries at the new <code>.js</code> files the same way, and <code>bin/mycelium.js</code>'s
+own import becomes <code>../src/run.js</code>.
+</p>
+<p>
+Every corpus document importing one of these five stays exactly as it is. A command script writes
+<code>import { declaredOrder } from "mycelium/shared"</code>, a bare specifier that resolves through the
+exports map rather than naming a file directly, so the map's own target changing from <code>.ts</code> to
+<code>.js</code> is invisible from the importing side. No template, no command host and no notebook entry's
+own worked example needs a single edit.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+<li>Every <code>&lt;script type="mycelium/command"&gt;</code>/<code>mycelium/audit</code>/<code>mycelium/lib</code>
+block across the corpus — canon, notebook, language, template, followup, spec, figure, lib and every command
+host. None of it needed converting: confirmed directly that a seeded document's own script already loads
+through Node's native stripping unaffected, since seeding guarantees it never sits inside
+<code>node_modules</code>. Converting it anyway would be a much larger, unjustified rewrite answering a
+problem these files do not have.</li>
+<li>The editor extension's own type-checking of embedded corpus scripts. It checks real TypeScript inside
+<code>&lt;script type="mycelium/*"&gt;</code> blocks, which this spec leaves untouched, so nothing about how
+it works needs to change.</li>
+<li>The loader-hook workaround prototyped while investigating this. Confirmed working, and recorded here as
+the alternative not taken rather than implemented, since it fixes today's specific restriction shape without
+removing the reason the restriction exists.</li>
+</ul>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>
