@@ -16,7 +16,6 @@
   "exports": {
     "./api": "./src/api.ts",
     "./utils": "./src/utils.js",
-    "./retext": "./src/retext.js",
     "./shared": "./.mycelium/templates/shared.js",
     "./extract-graph": "./.mycelium/templates/extract-graph.js",
     "./language-prose": "./.mycelium/templates/language-prose.js",
@@ -42,6 +41,7 @@
     "happy-dom": "^20.11.0",
     "ignore": "^7.0.6",
     "marked": "^18.0.7",
+    "package-manager-detector": "^1.8.0",
     "parse5": "^8.0.1",
     "retext": "^9.0.0",
     "retext-passive": "^5.0.0",

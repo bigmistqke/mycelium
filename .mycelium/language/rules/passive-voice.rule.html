@@ -11,8 +11,11 @@
   <language-title>Do not use the passive voice.</language-title>
   <language-pass><p>The roster reads the command scripts.</p></language-pass>
   <language-fail><p>The command scripts are read by the roster.</p></language-fail>
-  <language-detail><p>Detected by retext-passive rather than a pattern, because a pattern cannot tell <q>is written</q> from <q>is required</q>. This is the first rule here to import a library, which is why rules stopped loading through a data URL: that has no base to resolve a package name against. The library arrives through <code>mycelium/retext</code> rather than by its own name, because a seeded corpus has one package installed and reaching past it would depend on a flat <code>node_modules</code>.</p></language-detail>
-  <script>import { retext, retextPassive } from "mycelium/retext"
+  <language-detail><p>Detected by retext-passive rather than a pattern, because a pattern cannot tell <q>is written</q> from <q>is required</q>. This is the first rule here to import a library, which is why rules stopped loading through a data URL: that has no base to resolve a package name against. The two <code>language-dependency</code> elements below say what this check needs; seeding installs both into the consumer's own project, so the import resolves there the same way it resolves here.</p></language-detail>
+  <language-dependency name="retext" version="^9.0.0"></language-dependency>
+  <language-dependency name="retext-passive" version="^5.0.0"></language-dependency>
+  <script>import { retext } from "retext"
+import retextPassive from "retext-passive"
 
 const processor = retext().use(retextPassive)
 

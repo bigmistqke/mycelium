@@ -3,7 +3,10 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync, unlinkSync } from "node:fs"
 import { basename, dirname, join, posix, relative as relativePath, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
+import { spawnSync } from "node:child_process"
 import ts from "typescript"
+import { detect } from "package-manager-detector/detect"
+import { resolveCommand } from "package-manager-detector/commands"
 import { CORPUS_DIR, parseHTML, parseHTMLWithLocations, walkFiles, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.js"
 import { readCommands } from "../.mycelium/templates/shared.js"
 /** @import { CommandEntry } from "../.mycelium/templates/shared.js" */
@@ -224,6 +227,55 @@ function repointOutwardLinks(html, path, carried) {
 }
 
 /**
+ * Every package a seeded rule declares, gathered from the language-dependency
+ * elements the seed just wrote.
+ *
+ * A rule's check runs against a real library, not a copy this package
+ * carries — mycelium/retext tried that once and pinned every consumer to
+ * whichever version this package happened to depend on. The dependency
+ * belongs to the rule, so the rule installs it.
+ *
+ * package-manager-detector finds which manager the consumer already used to
+ * install mycelium itself. A lockfile is already there by construction, so
+ * detection needs no fallback of its own. That manager's own add command
+ * then writes package.json and the lockfile, the same as if somebody had
+ * typed it by hand.
+ *
+ * @param {string[]} paths
+ * @param {string} repoRoot
+ * @param {(line: string) => void} out
+ * @returns {Promise<void>}
+ */
+async function installDependencies(paths, repoRoot, out) {
+  /** @type {Map<string, string>} */
+  const dependencies = new Map()
+  for (const path of paths) {
+    if (!path.endsWith(".html")) continue
+    const { document } = parseHTML(readFileSync(resolvePath(PACKAGE_CORPUS, path), "utf8"))
+    for (const el of Array.from(document.querySelectorAll("language-dependency"))) {
+      const name = el.getAttribute("name")
+      const version = el.getAttribute("version")
+      if (name && version) dependencies.set(name, version)
+    }
+  }
+  if (dependencies.size === 0) return
+
+  const specs = [...dependencies].map(([name, version]) => `${name}@${version}`)
+  const pm = await detect({ cwd: repoRoot })
+  if (!pm) {
+    out(`A seeded rule needs: ${specs.join(", ")} — no package manager detected, add them yourself.`)
+    return
+  }
+  const resolved = resolveCommand(pm.agent, "add", specs)
+  if (!resolved) {
+    out(`A seeded rule needs: ${specs.join(", ")} — ${pm.agent} has no add command, add them yourself.`)
+    return
+  }
+  out(`installing ${specs.join(" ")} with ${resolved.command} ${resolved.args.join(" ")}`)
+  spawnSync(resolved.command, resolved.args, { cwd: repoRoot, stdio: "inherit" })
+}
+
+/**
  * Writes a corpus where none exists, and reports every file it wrote.
  *
  * This is the one thing the engine knows that is not the protocol, and it has
@@ -236,9 +288,9 @@ function repointOutwardLinks(html, path, carried) {
  *
  * @param {string} target
  * @param {(line: string) => void} out
- * @returns {boolean}
+ * @returns {Promise<boolean>}
  */
-function seedCorpus(target, out) {
+async function seedCorpus(target, out) {
   if (existsSync(target)) return false
 
   const paths = seedPaths()
@@ -255,6 +307,7 @@ function seedCorpus(target, out) {
   out(`A corpus is now at ${CORPUS_DIR}/. Commit it: an instance names its own`)
   out("template by relative path, so the templates belong beside what conforms to them.")
   out("")
+  await installDependencies(paths, dirname(target), out)
   return true
 }
 
@@ -872,7 +925,7 @@ async function main() {
 
   // Bare name seeds if needed, then prints; a second run only prints.
   if (!id) {
-    seedCorpus(docsDir, out)
+    await seedCorpus(docsDir, out)
     if (!existsSync(docsDir)) {
       out(`No corpus here yet. Run \`mycelium\` with nothing after it to write one into ${CORPUS_DIR}/.`)
       process.exit(0)

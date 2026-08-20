@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A seeded rule declares its own package dependency, installed at seed time</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A seeded rule declares its own package dependency, installed at seed time</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-20</spec-date>
+  <spec-problem>
+<p>
+A rule that needs a real library has one working path today: reach it through <code>mycelium/retext</code>,
+a re-export this package carries so a seeded corpus — which has only <code>mycelium</code> installed — can
+still resolve <code>retext</code> under either npm or pnpm. It works, but it hides a fact that belongs to
+the rule behind the engine's own export surface, and it pins every consumer to whichever <code>retext</code>
+version mycelium itself happens to depend on.
+</p>
+<p>
+The dependency is the rule's, not the engine's. <code>passive-voice.rule.html</code> is the only file that
+needs one, and nothing about seeding — a pure filesystem copy today — ever looks at what a seeded document
+imports from outside the corpus.
+</p>
+</spec-problem>
+  <spec-design>
+<p>
+A rule declares a dependency where it lives, the same way <code>figure-edge</code> holds its endpoints in
+attributes rather than text: <code>&lt;language-dependency name="retext" version="^9.0.0"&gt;&lt;/language-dependency&gt;</code>,
+repeatable, added to <code>language-rule</code>'s schema in <code>language.template.html</code>.
+<code>passive-voice.rule.html</code> carries two, one for <code>retext</code> and one for
+<code>retext-passive</code>, and its script imports both by their own name.
+<code>mycelium/retext</code> and <code>.mycelium/templates/retext.js</code> go away.
+</p>
+<p>
+Seeding gathers every <code>language-dependency</code> across the files it writes and installs them into the
+consumer's own project once the copy finishes. <code>package-manager-detector</code> finds which package
+manager the consumer already used to install <code>mycelium</code> itself — a lockfile is already there by
+construction, since installing mycelium is what put one there — and resolves that manager's own
+<code>add</code> command, run against the consumer's <code>package.json</code> directly. The package manager
+writes its own <code>package.json</code> and lockfile; nothing here parses or edits either by hand.
+</p>
+<p>
+When detection finds nothing, seeding prints the packages a rule needs instead of failing the whole run, the
+same way a broken audience should not block everything ahead of it. This is the one place seeding leaves the
+pure-filesystem model it has held until now, and it does so because the alternative — a shim living inside
+this package for every dependency a future rule might ever want — repeats the exact problem
+<code>a-seeded-document-imports-only-what-seeded-it.principle.html</code> already named once.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>
+No general dependency mechanism for every template family — only <code>language-rule</code> gets this field,
+because only one file needs it today. No interactive confirmation before running the install: seeding
+already writes files without asking, and this is one more write. No version reconciliation between two rules
+naming the same package with different ranges — nothing does that yet, because nothing needs to.
+</p>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>

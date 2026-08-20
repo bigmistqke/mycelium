@@ -123,6 +123,7 @@
     <language-detail>
       <p repeatable="" markup=""></p>
     </language-detail>
+    <language-dependency repeatable="" name=".+" version=".+"></language-dependency>
     <script required=""></script>
     <a repeatable="" href=".+" data-rel="^(depends_on|blocks|supports|contradicts|alternative_to|leads_to|specifies|elaborates)$"></a>
   </language-rule>
@@ -147,6 +148,7 @@
   &lt;language-pass&gt;… an example that passes …&lt;/language-pass&gt;
   &lt;language-fail&gt;… an example that fails …&lt;/language-fail&gt;
   &lt;language-detail&gt;… optional, free-form …&lt;/language-detail&gt;
+  &lt;language-dependency name="retext" version="^9.0.0"&gt;&lt;/language-dependency&gt;   &lt;!-- repeatable, only if the check imports a real library --&gt;
   &lt;script type="mycelium/rule"&gt;export function check(text) { … }&lt;/script&gt;
 &lt;/language-rule&gt;
 
@@ -172,6 +174,13 @@
   the two types, and it is why they are two types rather than one with a field saying which.
   <code>language-rule</code> declares <code>&lt;script required&gt;</code>, so a rule with no
   check fails its own template, and nobody can write one. Nothing can claim to be enforced and not be.
+</p>
+<p>
+  <code>language-dependency</code> holds a real package a check imports, one element per package, empty like
+  <code>figure-edge</code> because its meaning sits in <code>name</code> and <code>version</code> rather than
+  in text. Seeding installs every one it finds into the consumer's own project, so the check runs there the
+  same way it runs here. See
+  <a data-rel="specifies" href="../specs/2026-08-20-rule-declared-dependencies.spec.html">the spec</a>.
 </p>
 <p>
   A field would have let it. An earlier version of this template had
