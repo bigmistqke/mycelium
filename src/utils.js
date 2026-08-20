@@ -9,6 +9,7 @@ import ignoreFactory from "ignore"
 /** @import { Ignore } from "ignore" */
 import { detect } from "package-manager-detector/detect"
 import { resolveCommand } from "package-manager-detector/commands"
+import ts from "typescript"
 
 /**
  * Where a corpus sits, relative to the working directory. One name serves this
@@ -435,4 +436,43 @@ export async function installPackages(dependencies, repoRoot, out) {
   }
   out(`installing ${specs.join(" ")} with ${resolved.command} ${resolved.args.join(" ")}`)
   spawnSync(resolved.command, resolved.args, { cwd: repoRoot, stdio: "inherit" })
+}
+
+/**
+ * Every relative import/from specifier ("./x", "../x") a script's own text
+ * carries, rewritten by asking rewrite for each one's replacement — skipped,
+ * left exactly as written, wherever rewrite returns undefined.
+ *
+ * The same TypeScript-AST technique localReferences in run.js uses to find
+ * these, run here to replace them instead. A bare specifier ("mycelium/x")
+ * is never offered: it resolves through package.json's exports map
+ * regardless of where its target file sits, so moving a file never changes it.
+ *
+ * @param {string} source
+ * @param {(specifier: string) => string | undefined} rewrite
+ * @returns {string}
+ */
+export function rewriteImportSpecifiers(source, rewrite) {
+  const sourceFile = ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
+  /** @type {{start: number, end: number, text: string}[]} */
+  const edits = []
+  /** @param {ts.StringLiteral} literal */
+  const consider = (literal) => {
+    if (!literal.text.startsWith(".")) return
+    const replacement = rewrite(literal.text)
+    if (replacement === undefined) return
+    edits.push({ start: literal.getStart(sourceFile) + 1, end: literal.getEnd() - 1, text: replacement })
+  }
+  /** @param {ts.Node} node */
+  const visit = (node) => {
+    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) consider(node.moduleSpecifier)
+    ts.forEachChild(node, visit)
+  }
+  visit(sourceFile)
+
+  let out = source
+  for (const edit of edits.sort((a, b) => b.start - a.start)) {
+    out = out.slice(0, edit.start) + edit.text + out.slice(edit.end)
+  }
+  return out
 }

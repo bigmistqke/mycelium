@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: A path command moves a file and rewrites every reference to it</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>A path command moves a file and rewrites every reference to it</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-20</spec-date>
+  <spec-problem>
+<p>
+Nothing in this project can move a file. Every cross-reference in the corpus is a relative path written
+by hand — a stylesheet <code>&lt;link href&gt;</code>, a <code>data-conforms-to</code>, a
+<code>&lt;script src&gt;</code>, an ordinary <code>&lt;a href&gt;</code> citation, a relative
+<code>import</code> inside a script — so moving one file today means finding and hand-editing every
+document that names it, and missing one leaves a dead link <code>every-link-resolves</code> only catches
+on the next <code>validate</code>.
+</p>
+<p>
+This blocks reorganizing <code>.mycelium/templates/</code>, currently 31 files flat, into per-family
+directories: that move touches a large, unknown number of documents across the whole corpus, and doing
+it by hand is exactly the kind of mechanical, error-prone edit this project's own tooling exists to
+replace.
+</p>
+</spec-problem>
+  <spec-design>
+<p>
+<code>mycelium path move &lt;from&gt; &lt;to&gt;</code>, a protocol-only command in the same family as
+<code>explore</code> and <code>validate</code> — reading only generic signals
+(<code>href</code>, <code>src</code>, <code>data-conforms-to</code>, a script's own <code>import</code>
+specifiers), never a specific family's field names, so it needs no changes when a new content family
+joins the corpus.
+</p>
+<p>
+It walks every <code>.html</code> file in the corpus once, the same crawl <code>validate</code> already
+runs, looking for anything resolving to <code>&lt;from&gt;</code>: a stylesheet link, a
+<code>data-conforms-to</code> (the path half, its <code>#fragment</code> left untouched), a script
+<code>src</code>, an ordinary <code>&lt;a href&gt;</code>, and a relative <code>import</code>/
+<code>from</code> specifier inside an embedded script. This is the same TypeScript-AST technique
+<code>localReferences</code> in <code>src/run.js</code> already uses to find a seeded document's own
+dependencies, run here in reverse.
+</p>
+<p>
+Each match gets rewritten to a fresh relative path from that referencing document to
+<code>&lt;to&gt;</code>, since a move can change relative distance as well as name. Edits splice into the
+original bytes at the attribute or specifier's own source location, the way
+<code>repointOutwardLinks</code> already rewrites a seeded document's outward links — everything else in
+a touched file survives exactly as its author wrote it.
+</p>
+<p>
+<code>package.json</code>'s own <code>exports</code> map gets the same treatment when one of its values
+matches <code>&lt;from&gt;</code> exactly, since that is a path reference too, just written in JSON
+rather than HTML. The file moves last, once every reference to its old path has already been rewritten.
+</p>
+<p>
+Printed output names every file it touched and how — the same style <code>autofix</code> already
+reports sorted fields in. Running <code>validate</code> afterward is how a run confirms nothing broke:
+this command does not validate on its own behalf.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>
+No directory moves — one file per invocation, so a reorganization script calls this once per file rather
+than the tool inventing its own batch semantics. No rewriting of bare <code>mycelium/*</code> specifiers
+inside a script: those already resolve through <code>package.json</code>'s exports map regardless of
+where the target file sits, and that map is what this command updates instead. No touching
+<code>src/run.js</code>'s own family-root convention (<code>templates/${family}.template.html</code> in
+<code>seedPaths</code>) — a small, fixed, engine-known set, not a generic corpus reference, so moving a
+family's own template into a new directory still needs that one line updated by hand as part of the
+reorganization that calls for it.
+</p>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>

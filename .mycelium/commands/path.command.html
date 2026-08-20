@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commands: path</title>
+<link rel="stylesheet" href="../theme.css">
+</head>
+<body>
+
+<h1>Commands: path</h1>
+<template-host data-conforms-to="../templates/template.template.html#template-host">
+  <template-purpose>moves a file and rewrites every reference to it across the corpus, so a reorganization is one command per file rather than a hand search for every link</template-purpose>
+</template-host>
+
+<div class="meta">
+  <div><b>Protocol-only, like explore and validate:</b> this reads only generic signals — a stylesheet
+    link, <code>data-conforms-to</code>, a script <code>src</code>, an ordinary <code>&lt;a href&gt;</code>,
+    a script's own relative <code>import</code> — never a specific family's field names.</div>
+</div>
+
+<h2>Commands</h2>
+<p>
+  Full design: <a href="../specs/2026-08-20-path-command.spec.html">the spec</a>.
+</p>
+<script type="mycelium/command">
+  import type { CommandContext } from "mycelium/api"
+  import { CORPUS_DIR, parseHTMLWithLocations, walkHtmlFiles, rewriteImportSpecifiers } from "mycelium/utils"
+  import { readFileSync, writeFileSync, mkdirSync, renameSync, existsSync } from "node:fs"
+  import { dirname, resolve as resolvePath, posix } from "node:path"
+
+  interface Edit {
+    start: number
+    end: number
+    text: string
+  }
+
+  // A leading protocol ("https:", "data:", ...) or a bare "#fragment" never
+  // names a file this corpus holds, the same test repointOutwardLinks in
+  // src/run.js already applies to an outward link.
+  function isFileReference(value: string): boolean {
+    return !!value && !value.startsWith("#") && !/^[a-z][a-z0-9+.-]*:/i.test(value)
+  }
+
+  // A reference's target, split from its #fragment, resolved against the
+  // directory that holds the document naming it.
+  function resolveReference(dir: string, value: string): { target: string; fragment: string } {
+    const hash = value.indexOf("#")
+    const target = hash === -1 ? value : value.slice(0, hash)
+    const fragment = hash === -1 ? "" : value.slice(hash)
+    return { target: posix.normalize(posix.join(dir, target)), fragment }
+  }
+
+  // The relative form a fresh reference from dir to target should take,
+  // "./" prefixed unless it already climbs out with "../" — the same
+  // convention every hand-written link in this corpus already uses.
+  function relativeReference(dir: string, target: string): string {
+    const rel = posix.relative(dir, target)
+    return rel.startsWith("..") ? rel : `./${rel}`
+  }
+
+  /**
+   * Every edit one document needs. An attribute value resolves from readDir,
+   * and resolveTarget answers what its resolved target becomes — undefined
+   * means leave it alone. The rewritten form then re-expresses relative to
+   * writeDir.
+   *
+   * readDir and writeDir match for a document whose own location has not
+   * changed, and only what it points at might have. They differ only for
+   * the moved file itself, re-expressing everything it points at from its
+   * new location.
+   */
+  function collectEdits(
+    html: string,
+    readDir: string,
+    writeDir: string,
+    resolveTarget: (target: string) => string | undefined,
+  ): Edit[] {
+    const edits: Edit[] = []
+
+    function rewriteAttribute(node: any, attrName: string) {
+      const attr = (node.attrs ?? []).find((a: any) => a.name === attrName)
+      if (!attr || !isFileReference(attr.value)) return
+      const { target, fragment } = resolveReference(readDir, attr.value)
+      const newTarget = resolveTarget(target)
+      if (newTarget === undefined) return
+      const at = node.sourceCodeLocation?.attrs?.[attrName]
+      if (!at) return
+      edits.push({ start: at.startOffset, end: at.endOffset, text: `${attrName}="${relativeReference(writeDir, newTarget)}${fragment}"` })
+    }
+
+    function visit(node: any) {
+      const tag = node.tagName?.toLowerCase()
+      // A <template>'s content is schema, not markup — its attribute values
+      // are regular expressions, and diving into them corrupts one that
+      // happens to look like a path. repointOutwardLinks skips this for the
+      // same reason.
+      if (tag === "template") return
+      if (tag === "link" && node.attrs?.some((a: any) => a.name === "rel" && a.value === "stylesheet")) {
+        rewriteAttribute(node, "href")
+      }
+      if (node.attrs?.some((a: any) => a.name === "data-conforms-to")) rewriteAttribute(node, "data-conforms-to")
+      if (tag === "script" && node.attrs?.some((a: any) => a.name === "src")) rewriteAttribute(node, "src")
+      if (tag === "a") rewriteAttribute(node, "href")
+
+      if (tag === "script" && !node.attrs?.some((a: any) => a.name === "src")) {
+        const textNode = node.childNodes?.[0]
+        const loc = textNode?.sourceCodeLocation
+        if (loc) {
+          const rewritten = rewriteImportSpecifiers(textNode.value, (specifier) => {
+            const { target, fragment } = resolveReference(readDir, specifier)
+            const newTarget = resolveTarget(target)
+            if (newTarget === undefined) return undefined
+            return `${relativeReference(writeDir, newTarget)}${fragment}`
+          })
+          if (rewritten !== textNode.value) edits.push({ start: loc.startOffset, end: loc.endOffset, text: rewritten })
+        }
+      }
+
+      for (const child of node.childNodes ?? []) visit(child)
+    }
+    visit(parseHTMLWithLocations(html))
+
+    return edits
+  }
+
+  function applyEdits(html: string, edits: Edit[]): string {
+    let out = html
+    for (const edit of edits.sort((a, b) => b.start - a.start)) {
+      out = out.slice(0, edit.start) + edit.text + out.slice(edit.end)
+    }
+    return out
+  }
+
+  /**
+   * Moves a file and rewrites every reference to it.
+   *
+   *   mycelium path move <from> <to>
+   *
+   * <from> and <to> are corpus-relative paths. Every other .html file gets
+   * scanned for a stylesheet link, data-conforms-to, a script src, an
+   * ordinary <a href>, or a script's own relative import resolving to
+   * <from>. Each one becomes a fresh relative path to <to> — fresh because a
+   * move can change relative distance as well as name, not just the
+   * reference's own file.
+   *
+   * The moved file gets the same treatment in the other direction: every
+   * reference it carries is re-expressed from its new location, whether or
+   * not what it points at moved too.
+   *
+   * package.json's own exports map is checked last, for a value matching
+   * <from> exactly — a path reference written in JSON rather than HTML,
+   * moved the same way. The file itself moves only once every reference to
+   * its old path has already been rewritten.
+   */
+  export async function move({ fs, args }: CommandContext) {
+    const from = posix.normalize(args._[0])
+    const to = posix.normalize(args._[1])
+    const root = fs.root
+    const fromFull = resolvePath(root, from)
+    const toFull = resolvePath(root, to)
+    if (!existsSync(fromFull)) throw new Error(`no file at ${from}`)
+
+    const touched: string[] = []
+
+    for (const file of walkHtmlFiles(root)) {
+      const isMoved = file === fromFull
+      const html = readFileSync(file, "utf8")
+      const readDir = isMoved ? dirname(fromFull) : dirname(file)
+      const writeDir = isMoved ? dirname(toFull) : dirname(file)
+      // A worked example inside the moved file can reference itself by its
+      // own old path. That target has to become the new path too, since
+      // nothing exists at the old one any more.
+      const resolveTarget = isMoved
+        ? (target: string) => (target === fromFull ? toFull : target)
+        : (target: string) => (target === fromFull ? toFull : undefined)
+
+      const edits = collectEdits(html, readDir, writeDir, resolveTarget)
+      if (edits.length === 0) continue
+      writeFileSync(file, applyEdits(html, edits))
+      touched.push(file)
+    }
+
+    // package.json sits one level above the corpus, so its own paths carry
+    // the corpus directory's name the way every exports entry already does.
+    const packageJsonPath = resolvePath(dirname(root), "package.json")
+    if (existsSync(packageJsonPath)) {
+      const fromValue = `"./${CORPUS_DIR}/${from}"`
+      const toValue = `"./${CORPUS_DIR}/${to}"`
+      const content = readFileSync(packageJsonPath, "utf8")
+      if (content.includes(fromValue)) {
+        writeFileSync(packageJsonPath, content.replace(fromValue, toValue))
+        touched.push(packageJsonPath)
+      }
+    }
+
+    mkdirSync(dirname(toFull), { recursive: true })
+    renameSync(fromFull, toFull)
+
+    for (const path of touched) console.log(`rewrote  ${path}`)
+    console.log(`moved    ${from} -> ${to}`)
+    console.log(`${touched.length} file(s) rewrote a reference`)
+  }
+
+  export default move
+</script>
+
+</body>
+</html>
