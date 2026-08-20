@@ -4,7 +4,7 @@
 // command, validate included, actually does. See
 // .mycelium/specs/2026-07-23-mycelium-authoring-commands.spec.html.
 
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs"
+import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync, unlinkSync } from "node:fs"
 import { basename, dirname, join, posix, relative as relativePath, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
 import ts from "typescript"
@@ -58,28 +58,116 @@ const PUBLISHED_SITE = "https://bigmistqke.github.io/mycelium/"
 // judgement about them. Adding one is a line here plus whatever it names.
 const SEED_FAMILIES = ["template", "notebook", "language", "followup"]
 
+// Every local file a document needs to load, run or validate against. A
+// stylesheet or script it links, the template it conforms to, and — inside
+// whatever <script> it carries — a relative import and any bare filename
+// literal ending .css, .js or .html that names a real file.
+//
+// Parsed throughout, never pattern-matched over raw text. happy-dom reads
+// the markup and the TypeScript compiler reads a script's own source, the
+// same way shared.ts's readCommands already reads one.
+//
+// <a href> never counts. That is a citation to other content, not something
+// a document needs in order to run, and following it would pull in most of
+// the corpus.
+//
+// A bare literal carries no directory of its own — graph.lib.html names
+// graph.template.css that way, through its own file-reading helper rather
+// than an href. A script tag a command writes into a fresh instance is
+// relative to wherever that instance ends up living, not to the template
+// writing it. Both fall back to the corpus root, checked by basename alone,
+// which is where every file either shape has needed to reach so far. A
+// reference the fallback still cannot resolve is dropped rather than
+// guessed at.
+function localReferences(html: string, ownDir: string): string[] {
+  const found = new Set<string>()
+  const consider = (spec: string) => {
+    const target = spec.split("#")[0]
+    if (!target) return
+    const direct = resolvePath(ownDir, target)
+    const path = existsSync(direct) ? direct : resolvePath(PACKAGE_CORPUS, basename(target))
+    if (existsSync(path) && statSync(path).isFile()) found.add(path)
+  }
+
+  const { document } = parseHTML(html)
+  for (const el of Array.from(document.querySelectorAll('link[rel="stylesheet"][href]'))) {
+    consider(el.getAttribute("href") ?? "")
+  }
+  // Every instance names the template it conforms to, and validate opens
+  // that path. A lib document is an instance of lib.template.html the same
+  // way a notebook entry is an instance of notebook.template.html, so its
+  // own template has to reach a consumer too, not only the instance itself.
+  for (const el of Array.from(document.querySelectorAll("[data-conforms-to]"))) {
+    consider(el.getAttribute("data-conforms-to") ?? "")
+  }
+  for (const el of Array.from(document.querySelectorAll("script[src]"))) {
+    consider(el.getAttribute("src") ?? "")
+  }
+
+  for (const el of Array.from(document.querySelectorAll("script"))) {
+    if (el.hasAttribute("src")) continue
+    const source = el.textContent ?? ""
+    if (!source.trim()) continue
+    const sourceFile = ts.createSourceFile("_.tsx", source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX)
+    const visit = (node: ts.Node) => {
+      if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+        consider(node.moduleSpecifier.text)
+      } else if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+        // A document a command writes carries its own markup as a literal
+        // rather than as a tag of notebook.template.html's own — the same
+        // <link>/<script src> query just run above, applied to that
+        // literal's own text instead of the whole document.
+        if (/<script[\s>]|<link[\s>]/.test(node.text)) {
+          for (const nested of localReferences(node.text, ownDir)) found.add(nested)
+        } else if (/^[\w.-]+\.(css|js|html)$/.test(node.text)) {
+          consider(node.text)
+        }
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(sourceFile)
+  }
+
+  return [...found]
+}
+
 // Every file a fresh corpus gets, as paths relative to the corpus root.
 //
-// Only documents and their stylesheets. Nothing in the corpus names a .ts
-// helper beside a template, because a script imports it rather than linking to
-// it, so the package keeps the single copy. An .element.js goes the same way,
-// since the generated graph page inlines it from wherever the reading code sits.
+// The family templates plus everything under language/ and commands/ are
+// collections a fresh corpus wants wholesale — nothing about what one
+// document references would ever derive those. What each of them needs
+// beyond itself is a different question, and localReferences answers it:
+// starting from this set, every file it turns up joins the set and gets
+// asked the same question, until a pass finds nothing new. A family's own
+// stylesheet no longer needs its own line here, since the template's own
+// <link> already says it needs one.
 function seedPaths(): string[] {
-  const paths: string[] = ["theme.css"]
+  const roots: string[] = ["theme.css"]
   for (const family of SEED_FAMILIES) {
-    for (const suffix of ["html", "css"]) {
-      const path = `templates/${family}.template.${suffix}`
-      if (existsSync(resolvePath(PACKAGE_CORPUS, path))) paths.push(path)
-    }
+    const path = `templates/${family}.template.html`
+    if (existsSync(resolvePath(PACKAGE_CORPUS, path))) roots.push(path)
   }
   for (const dir of ["language", "commands"]) {
     const full = resolvePath(PACKAGE_CORPUS, dir)
     if (!existsSync(full)) continue
     for (const file of walkFiles(full)) {
-      if (file.endsWith(".html")) paths.push(relativePath(PACKAGE_CORPUS, file))
+      if (file.endsWith(".html")) roots.push(relativePath(PACKAGE_CORPUS, file))
     }
   }
-  return paths
+
+  const resolved = new Set(roots.map((path) => resolvePath(PACKAGE_CORPUS, path)))
+  const queue = [...resolved]
+  while (queue.length) {
+    const full = queue.shift()!
+    if (!full.endsWith(".html")) continue
+    for (const ref of localReferences(readFileSync(full, "utf8"), dirname(full))) {
+      if (!resolved.has(ref)) {
+        resolved.add(ref)
+        queue.push(ref)
+      }
+    }
+  }
+  return [...resolved].map((full) => relativePath(PACKAGE_CORPUS, full)).sort()
 }
 
 // Repoints the links a seeded document carries out of the corpus it is leaving.

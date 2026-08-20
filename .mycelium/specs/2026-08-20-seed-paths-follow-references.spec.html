@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: seedPaths follows what a seeded document actually references</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>seedPaths follows what a seeded document actually references</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-20</spec-date>
+  <spec-problem>
+<p>
+An earlier followup, now done, named a concrete crash: a freshly seeded consumer's own
+<code>notebook.template.html</code> imports <code>../lib/webdriver.lib.html#withBrowser</code> and
+<code>./graph.lib.html#graphPage</code>, and neither file reaches a consumer's corpus, because
+<code>seedPaths()</code> in <code>src/run.ts</code> only ever copied a hand-picked list: each
+<code>SEED_FAMILIES</code> family's own <code>&lt;family&gt;.template.html</code>/<code>.css</code>
+pair, plus everything under <code>language/</code> and <code>commands/</code>. Reproducing it end to
+end (packing a real tarball rather than this repository's own symlinked dev dependency, which hides
+the gap) showed the failure is not narrow: the missing import sits at the top of
+<code>notebook.template.html</code>'s command script, so every verb in the family throws, not only
+<code>page generate notebook graph</code> or a browser case.
+</p>
+<p>
+The list was never going to stay complete by hand. It already missed two files this spec found, and a
+lib file a template starts depending on next month would miss the same way, for the same reason:
+nothing derives the list from what a seeded document actually needs, so nobody notices until a
+consumer's install throws.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>seedPaths starts from the same roots, then follows what they reference</h3>
+<p>
+The family template files plus the full walk of <code>language/</code> and <code>commands/</code>
+stay exactly as they are — those are collections a fresh corpus wants wholesale, not something a link
+graph would ever derive. What changes is what happens next: every file in that starting set gets
+scanned for the local files it needs to load or run, each newly found file joins the set and gets
+scanned in turn, until a pass turns up nothing new. A family's own <code>.css</code> no longer needs
+its own line in the family loop, since the template's own <code>&lt;link&gt;</code> already says it
+needs one.
+</p>
+<h3>Four reference shapes, one parser each, never a pattern over raw text</h3>
+<p>
+<code>localReferences()</code> parses a document with the same happy-dom parser
+<code>parseHTML</code> already uses everywhere else in this file, and reads a <code>&lt;script&gt;</code>'s
+own source with the TypeScript compiler, the same way <code>shared.ts</code>'s <code>readCommands</code>
+already does. A relative <code>&lt;link href&gt;</code> or <code>&lt;script src&gt;</code> counts,
+found by querying the parsed document. So does a <code>data-conforms-to</code>: a lib document is an
+instance of <code>lib.template.html</code> the same way a notebook entry is an instance of
+<code>notebook.template.html</code>, and validate opens that path too.
+</p>
+<p>
+The first end-to-end run of this fix caught the gap directly: a freshly seeded
+<code>graph.lib.html</code> and <code>webdriver.lib.html</code> both failed <code>validate</code> with
+<code>no template found at .mycelium/templates/lib.template.html#lib-doc</code> before
+<code>data-conforms-to</code> joined the other shapes. A relative <code>import … from "…"</code>
+inside an inline <code>&lt;script&gt;</code> counts too, found by walking that script's own AST for
+<code>ImportDeclaration</code> nodes. <code>&lt;a href&gt;</code> never counts — that is a citation to
+other content, not something a document needs to run, and following it would pull in most of the
+corpus.
+</p>
+<p>
+A third shape rides on the same AST walk: any string or template literal whose text is nothing but a
+bare filename ending <code>.css</code>, <code>.js</code> or <code>.html</code>. <code>graph.lib.html</code>
+reads <code>graph.template.css</code> and <code>tokens.css</code> this way, by name, through its own
+<code>templateFile()</code> helper rather than by <code>href</code>; <code>notebook.template.html</code>
+names <code>graph.element.js</code> and <code>notebook.element.js</code> the same way, in the array it
+hands to <code>namedScripts()</code>. Neither shows up as markup anywhere, so only a literal this
+narrow — never a general string scan — reaches them.
+</p>
+<h3>A generated instance's own script tag counts too, found the same way twice</h3>
+<p>
+<code>notebook.template.html</code>'s <code>add</code> command writes <code>&lt;script
+src="../templates/experiment.element.js"&gt;</code> into the HTML string it builds for a fresh browser
+experiment — real markup, but sitting inside a JavaScript template literal rather than in
+<code>notebook.template.html</code>'s own document. The AST walk already visits that literal as an
+ordinary string node; when its text contains <code>&lt;script</code> or <code>&lt;link</code>,
+<code>localReferences()</code> parses that text as its own small HTML document and recurses into it
+with the identical <code>&lt;link&gt;</code>/<code>&lt;script src&gt;</code> query. The same function
+runs twice, once on the whole document and once on a fragment of it, rather than a second, different
+mechanism existing for the fragment.
+</p>
+<h3>Every relative path resolves against its own directory first, the corpus root second</h3>
+<p>
+A real <code>href</code>, <code>src</code> or import specifier resolves against the file that carries
+it, which is what "relative" already means for all three. Two shapes cannot: a bare literal like
+<code>"graph.template.css"</code> carries no directory at all, and the string
+<code>notebook.template.html</code> writes into a future instance —
+<code>"../templates/experiment.element.js"</code> — is relative to wherever that instance ends up
+living, not to <code>notebook.template.html</code>'s own location. Both fall back to the corpus root,
+checked by basename alone, which is where every file either shape has ever needed to reach has sat so
+far. A reference this fallback still cannot resolve is dropped rather than guessed at.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+<li>Publishing <code>.mycelium/lib/</code> in <code>package.json</code>'s own <code>files</code> list.
+A real npm pack of this repository, checked directly, ships <code>graph.lib.html</code> (inside
+<code>.mycelium/templates</code>, which is listed) but nothing under <code>.mycelium/lib</code> at
+all — the seed can only copy what the installed package itself carries, and today it does not carry
+that directory. Recorded as its own followup.</li>
+<li>Node's refusal to strip types for a <code>.ts</code> file resolved from inside
+<code>node_modules</code>, hit while reproducing the crash this spec fixes through a real packed
+install rather than this repository's own symlinked dev dependency. A currently permanent Node
+restriction with no opt-in flag, unrelated to what gets seeded. Recorded as its own followup.</li>
+</ul>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>
