@@ -1,11 +1,14 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, join, relative, resolve as resolvePath } from "node:path"
 import { pathToFileURL } from "node:url"
+import { spawnSync } from "node:child_process"
 /** @import { Corpus } from "./api.ts" */
 import { Window } from "happy-dom"
 import { parse as parse5Parse } from "parse5"
 import ignoreFactory from "ignore"
 /** @import { Ignore } from "ignore" */
+import { detect } from "package-manager-detector/detect"
+import { resolveCommand } from "package-manager-detector/commands"
 
 /**
  * Where a corpus sits, relative to the working directory. One name serves this
@@ -399,4 +402,37 @@ export function corpusView(root, docsDir, cache = new Map()) {
       cache.clear()
     },
   }
+}
+
+/**
+ * Installs { name: version } pairs into a project via its own package
+ * manager, detected from what already got it there.
+ *
+ * package-manager-detector finds which manager the consumer already used —
+ * a lockfile is already there by construction, since installing anything
+ * at all is what put one there — and resolves that manager's own add
+ * command. The package manager writes its own package.json and lockfile;
+ * this never parses or edits either by hand.
+ *
+ * @param {Map<string, string>} dependencies
+ * @param {string} repoRoot
+ * @param {(line: string) => void} out
+ * @returns {Promise<void>}
+ */
+export async function installPackages(dependencies, repoRoot, out) {
+  if (dependencies.size === 0) return
+
+  const specs = [...dependencies].map(([name, version]) => `${name}@${version}`)
+  const pm = await detect({ cwd: repoRoot })
+  if (!pm) {
+    out(`needs: ${specs.join(", ")} — no package manager detected, add them yourself.`)
+    return
+  }
+  const resolved = resolveCommand(pm.agent, "add", specs)
+  if (!resolved) {
+    out(`needs: ${specs.join(", ")} — ${pm.agent} has no add command, add them yourself.`)
+    return
+  }
+  out(`installing ${specs.join(" ")} with ${resolved.command} ${resolved.args.join(" ")}`)
+  spawnSync(resolved.command, resolved.args, { cwd: repoRoot, stdio: "inherit" })
 }

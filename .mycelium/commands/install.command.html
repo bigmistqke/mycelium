@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commands: install</title>
+<link rel="stylesheet" href="../theme.css">
+</head>
+<body>
+
+<h1>Commands: install</h1>
+<template-host data-conforms-to="../templates/template.template.html#template-host">
+  <template-purpose>installs the packages a rule's own mycelium/importmap script declares, for whichever rule needs one seeding did not already catch</template-purpose>
+</template-host>
+
+<div class="meta">
+  <div><b>Why this exists beside seeding:</b> seeding installs a rule's declared packages once, the
+    moment it writes a corpus where none exists. A rule added by hand afterward, or one an updated
+    <code>mycelium</code> ships with a dependency the installed version never had, is never asked about
+    again — seeding does not run a second time. This command asks.</div>
+</div>
+
+<h2>Commands</h2>
+<p>
+  Both this command and seeding gather the same shape — a package name and the version range its rule
+  wants — from the same place, a rule's own <code>mycelium/importmap</code> script, and hand it to the
+  same <code>installPackages</code> in <code>mycelium/utils</code>. Seeding gathers from the files it is
+  about to write; this gathers from whatever the corpus already holds.
+</p>
+<script type="mycelium/command">
+  import type { CommandContext } from "mycelium/api"
+  import { installPackages } from "mycelium/utils"
+  import { dirname } from "node:path"
+
+  /**
+   * Installs every package a rule's own mycelium/importmap script declares.
+   *
+   *   mycelium install
+   *
+   * Walks language/ for every .rule.html file, reads each one's
+   * mycelium/importmap script the same way seeding does, and installs the
+   * union through the consumer's own package manager. Idempotent: asking
+   * again when nothing changed costs a no-op, since the package manager's
+   * own add command already is one.
+   */
+  export default async function install({ fs }: CommandContext) {
+    const dependencies = new Map<string, string>()
+    for (const { path, doc } of fs.list("language")) {
+      if (!path.endsWith(".rule.html")) continue
+      for (const el of Array.from(doc.querySelectorAll('script[type="mycelium/importmap"]'))) {
+        const parsed = JSON.parse(el.textContent ?? "{}")
+        for (const [name, version] of Object.entries(parsed.imports ?? {})) {
+          dependencies.set(name, version as string)
+        }
+      }
+    }
+    await installPackages(dependencies, dirname(fs.root), console.log)
+  }
+</script>
+
+</body>
+</html>

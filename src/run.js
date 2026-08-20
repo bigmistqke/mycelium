@@ -3,11 +3,8 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync, unlinkSync } from "node:fs"
 import { basename, dirname, join, posix, relative as relativePath, resolve as resolvePath } from "node:path"
 import { register } from "node:module"
-import { spawnSync } from "node:child_process"
 import ts from "typescript"
-import { detect } from "package-manager-detector/detect"
-import { resolveCommand } from "package-manager-detector/commands"
-import { CORPUS_DIR, parseHTML, parseHTMLWithLocations, walkFiles, walkHtmlFiles, validateInstance, readStdin, loadModule } from "./utils.js"
+import { CORPUS_DIR, parseHTML, parseHTMLWithLocations, walkFiles, walkHtmlFiles, validateInstance, readStdin, loadModule, installPackages } from "./utils.js"
 import { readCommands } from "../.mycelium/templates/shared.js"
 /** @import { CommandEntry } from "../.mycelium/templates/shared.js" */
 
@@ -228,7 +225,8 @@ function repointOutwardLinks(html, path, carried) {
 
 /**
  * Every package a seeded rule declares, gathered from every
- * type="mycelium/importmap" script the seed just wrote.
+ * type="mycelium/importmap" script the seed just wrote, then installed
+ * through installPackages.
  *
  * A rule's check runs against a real library, not a copy this package
  * carries — mycelium/retext tried that once and pinned every consumer to
@@ -242,12 +240,6 @@ function repointOutwardLinks(html, path, carried) {
  * type-stripping module hook every other mycelium/* script loads through.
  * That hook fails on a real install, since this package's own corpus sits
  * inside node_modules there.
- *
- * package-manager-detector finds which manager the consumer already used to
- * install mycelium itself. A lockfile is already there by construction, so
- * detection needs no fallback of its own. That manager's own add command
- * then writes package.json and the lockfile, the same as if somebody had
- * typed it by hand.
  *
  * @param {string[]} paths
  * @param {string} repoRoot
@@ -268,21 +260,7 @@ async function installDependencies(paths, repoRoot, out) {
       }
     }
   }
-  if (dependencies.size === 0) return
-
-  const specs = [...dependencies].map(([name, version]) => `${name}@${version}`)
-  const pm = await detect({ cwd: repoRoot })
-  if (!pm) {
-    out(`A seeded rule needs: ${specs.join(", ")} — no package manager detected, add them yourself.`)
-    return
-  }
-  const resolved = resolveCommand(pm.agent, "add", specs)
-  if (!resolved) {
-    out(`A seeded rule needs: ${specs.join(", ")} — ${pm.agent} has no add command, add them yourself.`)
-    return
-  }
-  out(`installing ${specs.join(" ")} with ${resolved.command} ${resolved.args.join(" ")}`)
-  spawnSync(resolved.command, resolved.args, { cwd: repoRoot, stdio: "inherit" })
+  await installPackages(dependencies, repoRoot, out)
 }
 
 /**

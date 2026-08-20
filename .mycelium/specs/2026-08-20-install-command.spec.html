@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: An install command re-runs dependency-installing after seeding finishes</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>An install command re-runs dependency-installing after seeding finishes</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-20</spec-date>
+  <spec-problem>
+<p>
+Seeding installs a rule's declared packages, but only once: <code>seedCorpus</code> returns immediately
+when <code>.mycelium/</code> already exists, and that gate covers the dependency-install step along with
+the file-writing it guards. A rule added by hand after that first run, or one an updated <code>mycelium</code>
+version ships with a dependency the installed version never had, gets copied in — updating the package
+itself already carries new template files — but its packages never get installed, because nothing ever
+asks again.
+</p>
+</spec-problem>
+  <spec-design>
+<p>
+The detect-a-package-manager-and-run-its-add-command step moves out of <code>src/run.js</code> and into
+<code>src/utils.js</code> as <code>installPackages(dependencies, repoRoot, out)</code>, exported through the
+existing <code>mycelium/utils</code> specifier every corpus command already reaches other engine helpers
+through. Its own behavior does not change; only where a caller can reach it does.
+</p>
+<p>
+A new singleton <code>.mycelium/commands/install.command.html</code> gives <code>mycelium install</code> to
+whoever needs to ask again. It walks <code>language/</code> for every <code>.rule.html</code> file through
+<code>fs.list</code>, the same way the <code>prose-follows-the-language</code> audit already finds every
+rule, reads each one's <code>mycelium/importmap</code> script the same way <code>seedCorpus</code> does, and
+calls the same <code>installPackages</code>. <code>seedCorpus</code> keeps gathering its own dependencies
+from the files it is about to write, unchanged, and calls the same function once seeding finishes — one
+primitive, two places that need it for different reasons.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<p>
+No automatic re-run on every command invocation — installing is a real write to the consumer's project, so
+it stays something somebody asks for, the same way seeding itself is. No diff against what is already
+installed: the package manager's own add command is idempotent, so asking again when nothing changed costs
+a no-op rather than a wrong state.
+</p>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>
