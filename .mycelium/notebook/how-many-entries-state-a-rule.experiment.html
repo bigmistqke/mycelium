@@ -11,13 +11,10 @@
   <notebook-title>How many entries state a rule?</notebook-title>
   <notebook-tag>measurement</notebook-tag>
   <notebook-question>How many entries state a rule rather than record an event?</notebook-question>
-  <notebook-case id="merged" data-conforms-to="../templates/notebook.template.html#notebook-case">
-    <notebook-lens>every reading this probe takes, merged into one string until somebody splits them apart</notebook-lens>
+  <notebook-case id="rule-shaped-title-count" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how many notebook titles open like a rule, broken down by which opening word carries it</notebook-lens>
     <script type="mycelium/experiment">
 export default function ({ fs }) {
-    // The family this counted retired on 2026-08-10, taking docs/knowledge with
-    // it, so the same question now asks the notebook. A title is a title in both,
-    // which is why the reading survives the move as a number to compare against.
     const RULE = /^(A|An|Every|Nothing|Only|Derive|Link|Information|Reach)\b/
     let rules = 0, total = 0
     const opening = {}
@@ -31,16 +28,13 @@ export default function ({ fs }) {
       const word = RULE.exec(title)[1]
       opening[word] = (opening[word] ?? 0) + 1
     }
-    // Which words carry it, because one word doing most of the work would mean
-    // the regex measures a habit of phrasing rather than a habit of thinking.
     const spread = Object.entries(opening).sort((a, b) => b[1] - a[1])
       .map(([word, n]) => `${word} ${n}`).join(", ")
     return `${rules} of ${total} titles open like a rule (${spread})`
 }
+
 </script>
-    <notebook-reading data-on="2026-08-18">94 of 417 titles open like a rule (A 69, An 8, Derive 6, Every 5, Reach 2, Link 2, Information 1, Only 1)</notebook-reading>
-    <notebook-reading data-on="2026-08-18">90 of 407 titles open like a rule (A 65, An 8, Derive 6, Every 5, Reach 2, Link 2, Information 1, Only 1)</notebook-reading>
-    <notebook-reading data-on="2026-08-18">90 of 403 titles open like a rule (A 65, An 8, Derive 6, Every 5, Reach 2, Link 2, Information 1, Only 1)</notebook-reading>
+    <notebook-reading data-on="2026-08-20">101 of 441 titles open like a rule (A 75, An 9, Derive 6, Every 5, Reach 2, Link 2, Information 1, Only 1)</notebook-reading>
   </notebook-case>
   <notebook-detail><p>The question outlived the family it first asked about. This counted
 <code>docs/knowledge</code> until that directory retired on 2026-08-10, and the

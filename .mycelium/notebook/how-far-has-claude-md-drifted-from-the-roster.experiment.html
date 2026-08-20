@@ -14,13 +14,28 @@
   <notebook-tag>corpus</notebook-tag>
   <notebook-prompt>maybe we should remove the CLAUDE.md stuff -&gt; derivation &gt; state synchronization</notebook-prompt>
   <notebook-question>How many commands does CLAUDE.md name, how many does the corpus export, and how much of the file is a copy of something a command already prints?</notebook-question>
-  <notebook-case id="merged" data-conforms-to="../templates/notebook.template.html#notebook-case">
-    <notebook-lens>every reading this probe takes, merged into one string until somebody splits them apart</notebook-lens>
+  <notebook-case id="fenced-block-fraction" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how much of CLAUDE.md sits inside a fenced code block, the copied surface rather than the prose around it</notebook-lens>
     <script type="mycelium/experiment">
 export default function ({ fs }) {
-    // What the corpus exports, read the way the roster reads it: every exported
-    // function in a host's command script, with the host's own id in front. No
-    // list of families appears here, so a twelfth one counts itself.
+    const text = fs.read("CLAUDE.md")
+    const lines = text.split("\n")
+    let fenced = 0, open = false
+    for (const line of lines) {
+      if (line.startsWith("```")) { open = !open; continue }
+      if (!open) continue
+      fenced++
+    }
+    return `${fenced} of ${lines.length} lines sit inside a fenced block`
+}
+
+</script>
+    <notebook-reading data-on="2026-08-20">53 of 536 lines sit inside a fenced block</notebook-reading>
+  </notebook-case>
+  <notebook-case id="command-coverage" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how many commands the corpus exports against how many CLAUDE.md names, and where the two disagree</notebook-lens>
+    <script type="mycelium/experiment">
+export default function ({ fs }) {
     const real = new Set()
     for (const dir of ["templates", "commands"]) {
       for (const path of fs.list(`${fs.docsDir}/${dir}`, { ext: ".html" })) {
@@ -33,17 +48,13 @@ export default function ({ fs }) {
       }
     }
 
-    // What the file claims, taken only from its fenced blocks. Prose naming a
-    // command in passing is a reference; a block is where somebody copies an
-    // interface, and copying is the thing under question.
     const text = fs.read("CLAUDE.md")
     const lines = text.split("\n")
-    let fenced = 0, open = false
+    let open = false
     const named = new Set()
     for (const line of lines) {
       if (line.startsWith("```")) { open = !open; continue }
       if (!open) continue
-      fenced++
       for (const found of line.matchAll(/mycelium (?:run )?([a-z-]+) ([a-z-]+)/g)) {
         named.add(`${found[1]} ${found[2]}`)
       }
@@ -51,14 +62,13 @@ export default function ({ fs }) {
 
     const stale = [...named].filter((one) => !real.has(one)).sort()
     const missing = [...real].filter((one) => !named.has(one)).sort()
-    return `the corpus exports ${real.size} commands and the file names ${named.size}; ` +
-      `${stale.length} named that do not exist (${stale.join(", ") || "none"}); ` +
-      `${missing.length} exist that it never names; ` +
-      `${fenced} of ${lines.length} lines sit inside a fenced block`
+    return `The corpus exports ${real.size} commands and CLAUDE.md names ${named.size}. ` +
+      `Of those, ${stale.length} do not exist${stale.length ? ` (${stale.join(", ")})` : ""}. ` +
+      `Separately, ${missing.length} real commands go unnamed.`
 }
 
 </script>
-    <notebook-reading data-on="2026-08-18">the corpus exports 46 commands and the file names 23; 0 named that do not exist (none); 23 exist that it never names; 48 of 499 lines sit inside a fenced block</notebook-reading>
+    <notebook-reading data-on="2026-08-20">The corpus exports 38 commands and CLAUDE.md names 29. Of those, 10 do not exist (canon axiom, canon behaviour, canon specification, notebook case, notebook direction, notebook experiment, notebook generate, notebook practice, notebook principle, notebook research). Separately, 19 real commands go unnamed.</notebook-reading>
   </notebook-case>
   <notebook-detail><p>The file governing how an agent works here lists commands in fenced blocks
 and warns that a person maintains them by hand. It names twenty-three of the

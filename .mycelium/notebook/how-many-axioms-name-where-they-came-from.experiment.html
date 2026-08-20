@@ -12,15 +12,11 @@
   <notebook-tag>canon</notebook-tag>
   <notebook-tag>measurement</notebook-tag>
   <notebook-question>How many of the corpus's axioms carry a canon-references child, and how many does a naive text count overstate that by?</notebook-question>
-  <notebook-case id="merged" data-conforms-to="../templates/notebook.template.html#notebook-case">
-    <notebook-lens>every reading this probe takes, merged into one string until somebody splits them apart</notebook-lens>
+  <notebook-case id="grounded-count" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how many axioms carry a canon-references child naming where they came from, and over how many links</notebook-lens>
     <script type="mycelium/experiment">
 export default function ({ fs }) {
-    // Two readings of the same corpus. One asks the documents, and one counts the
-    // string anywhere it appears — including inside a test script, where an axiom
-    // is a sandbox fixture rather than something the project claims. A spec
-    // counted seventeen axioms that way while fifteen existed.
-    let axioms = 0, grounded = 0, links = 0, fixtures = 0
+    let axioms = 0, grounded = 0, links = 0
     for (const path of fs.list(`${fs.docsDir}/canon`, { ext: ".html" })) {
       const doc = fs.parse(path)
       for (const axiom of doc.querySelectorAll("canon-axiom[data-conforms-to]")) {
@@ -31,15 +27,30 @@ export default function ({ fs }) {
         grounded++
         links += refs.querySelectorAll("a[href]").length
       }
+    }
+    return `${grounded} of ${axioms} axioms name a source, over ${links} link(s)`
+}
+
+</script>
+    <notebook-reading data-on="2026-08-20">14 of 17 axioms name a source, over 28 link(s)</notebook-reading>
+  </notebook-case>
+  <notebook-case id="naive-text-count" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>what a naive text count of every &lt;canon-axiom id&gt; would say, including sandbox fixtures inside a test script</notebook-lens>
+    <script type="mycelium/experiment">
+export default function ({ fs }) {
+    let axioms = 0, fixtures = 0
+    for (const path of fs.list(`${fs.docsDir}/canon`, { ext: ".html" })) {
+      const doc = fs.parse(path)
+      axioms += doc.querySelectorAll("canon-axiom[data-conforms-to]").length
       for (const script of doc.querySelectorAll("script")) {
         fixtures += (script.textContent.match(/<canon-axiom id="/g) ?? []).length
       }
     }
-    return `${grounded} of ${axioms} axioms name a source, over ${links} link(s); ` +
-      `a text count would say ${axioms + fixtures}, counting ${fixtures} sandbox fixture(s)`
+    return `a text count would say ${axioms + fixtures}, counting ${fixtures} sandbox fixture(s)`
 }
+
 </script>
-    <notebook-reading data-on="2026-08-18">14 of 16 axioms name a source, over 27 link(s); a text count would say 18, counting 2 sandbox fixture(s)</notebook-reading>
+    <notebook-reading data-on="2026-08-20">a text count would say 19, counting 2 sandbox fixture(s)</notebook-reading>
   </notebook-case>
   <notebook-detail><p>This exists so no document has to write the number down. CLAUDE.md once
 claimed a field that nothing had built, and the fix was to point at a script

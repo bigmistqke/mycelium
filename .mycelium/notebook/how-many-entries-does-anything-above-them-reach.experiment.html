@@ -14,14 +14,10 @@
   <notebook-tag>measurement</notebook-tag>
   <notebook-prompt>currently we generate metadata as .html and we provide ways to query it by creating commands for the generated metadata. but still. the data grows and grows and grows. until it becomes impossible to really get anything out of it EXCEPT from reading the whole thing. titles do help in that sense, as they are a way to generate lists and compress the information. but still the scale problem continues. i wonder what we could do to improve queryability. i was thinking maybe embeddings or some type of graph database.</notebook-prompt>
   <notebook-question>How many of the notebook's entries are cited by a canon claim or a spec, and how many float with nothing above them?</notebook-question>
-  <notebook-case id="merged" data-conforms-to="../templates/notebook.template.html#notebook-case">
-    <notebook-lens>every reading this probe takes, merged into one string until somebody splits them apart</notebook-lens>
+  <notebook-case id="cited-from-above" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how many notebook entries are cited by a canon claim or a spec, and how many float with nothing above them</notebook-lens>
     <script type="mycelium/experiment">
 export default function ({ fs }) {
-    // Two ways up out of the notebook, and the script counts both. A canon claim
-    // cites the entry a rule hardened out of, and a spec cites the entry a design
-    // rests on. Nothing but its own filename carries an entry neither one reaches,
-    // which is what leaves a flat list as the only way to find it again.
     const entries = new Set()
     for (const path of fs.list(`${fs.docsDir}/notebook`, { ext: ".html" })) {
       entries.add(path.replace(/^.*\//, ""))
@@ -38,22 +34,26 @@ export default function ({ fs }) {
     }
 
     const both = new Set([...reached.canon, ...reached.specs])
-    // Edges inside the notebook are a third reading, and deliberately a separate
-    // one. An entry citing another entry says the two belong together; it does
-    // not say anything above them holds either.
+    return `${both.size} of ${entries.size} entries are cited from above ` +
+      `(${reached.canon.size} by canon, ${reached.specs.size} by a spec). ${entries.size - both.size} float.`
+}
+
+</script>
+    <notebook-reading data-on="2026-08-20">75 of 441 entries are cited from above (27 by canon, 51 by a spec). 366 float.</notebook-reading>
+  </notebook-case>
+  <notebook-case id="internal-edges" data-conforms-to="../templates/notebook.template.html#notebook-case">
+    <notebook-lens>how many edges stay internal to the notebook, since an entry citing another says the two belong together, not that anything above holds either</notebook-lens>
+    <script type="mycelium/experiment">
+export default function ({ fs }) {
     let inbound = 0
     for (const path of fs.list(`${fs.docsDir}/notebook`, { ext: ".html" })) {
       inbound += fs.parse(path).querySelectorAll("[data-rel][href]").length
     }
-
-    return `${both.size} of ${entries.size} entries are cited from above ` +
-      `(${reached.canon.size} by canon, ${reached.specs.size} by a spec); ` +
-      `${entries.size - both.size} float, under ${inbound} notebook-internal edge(s)`
+    return `${inbound} notebook-internal edge(s).`
 }
 
 </script>
-    <notebook-reading data-on="2026-08-18">63 of 407 entries are cited from above (26 by canon, 39 by a spec); 344 float, under 446 notebook-internal edge(s)</notebook-reading>
-    <notebook-reading data-on="2026-08-18">63 of 403 entries are cited from above (26 by canon, 39 by a spec); 340 float, under 443 notebook-internal edge(s)</notebook-reading>
+    <notebook-reading data-on="2026-08-20">473 notebook-internal edge(s).</notebook-reading>
   </notebook-case>
   <notebook-detail><p>The count answers a different question from the one that prompted it.
 Somebody asked how to query a corpus that keeps growing, weighing embeddings
