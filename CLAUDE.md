@@ -117,11 +117,14 @@ experiment that already exists. `notebook experiment run <file>[#<id>]` runs
 every case, or the one an address names, and only appends a reading when it
 changed: an unchanged run says so and writes nothing.
 
-Nothing edits a case. A case is its script, so a changed script is a different
-case, and the readings under the old one measured something nobody asks about
-any more. `notebook case del <file>#<id>` prints every reading and conclusion
-it discards, and editing a probe means deleting one and adding another — two
-deliberate commands, with the loss visible in the first.
+Nothing edits a case in place. A case is its script, so a changed script is a
+different case, and the readings under the old one measured something nobody
+asks about any more. `notebook experiment case update <file>#<id> --script "…"`
+deletes the old case and adds its replacement as one command, printing every
+reading and conclusion the old case takes with it — `--lens` and `--id` both
+default to the case being replaced, so passing only `--script` changes nothing
+else. `notebook experiment case del <file>#<id>` does the same deleting and
+printing alone, for a case with no replacement.
 
 A conclusion says what somebody made of a reading, and is not the same thing as
 the reading itself. `notebook case conclude <file>#<id> --conclusion "…"` adds

@@ -552,22 +552,67 @@
     await readCase(fs, args, path, one, declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case"))
   }
 
-  function dropCase({ fs, args }: CommandContext) {
-    const target = fileArg(args, "<file>#<id>")
-    if (!target.includes("#")) throw new Error("del takes an address of the form <file>#<id>")
-    const { cases } = casesIn(fs, target)
-    const one = cases[0]
-    // The readings measured what that script measured and nothing else, so they
-    // go with it. Printing them is what makes deleting and adding an honest
-    // edit rather than a quiet loss.
+  // The readings measured what that script measured and nothing else, so they
+  // go with it. Printing them is what makes deleting a case an honest edit
+  // rather than a quiet loss, whether del is the whole command or update is
+  // doing the same thing on its way to adding a replacement.
+  function announceDrop(one, target) {
     for (const reading of Array.from(one.querySelectorAll("notebook-reading"))) {
       console.log(`dropped  reading ${reading.getAttribute("data-on")}  ${(reading.textContent ?? "").trim()}`)
     }
     for (const said of Array.from(one.querySelectorAll("notebook-conclusion"))) {
       console.log(`dropped  conclusion ${said.getAttribute("data-on")}`)
     }
-    one.remove()
     console.log(`deleted  ${target}`)
+  }
+
+  function dropCase({ fs, args }: CommandContext) {
+    const target = fileArg(args, "<file>#<id>")
+    if (!target.includes("#")) throw new Error("del takes an address of the form <file>#<id>")
+    const { cases } = casesIn(fs, target)
+    const one = cases[0]
+    announceDrop(one, target)
+    one.remove()
+  }
+
+  /**
+   * Replace a case's script, honestly: delete the old one, announcing what it
+   * takes with it the same way del does, then add its replacement.
+   *
+   * A case is its script, so nothing here edits one in place. update exists
+   * for the two-command dance itself: del followed by add, run as one
+   * command instead of two remembered separately.
+   *
+   * --lens and --id default to the case being replaced, so
+   * `case update <file>#<id> --script -` alone changes only the script.
+   * Passing either one renames the case on its way back in, the same as a
+   * fresh add would.
+   */
+  async function updateCase({ fs, args, cli }: CommandContext) {
+    const target = fileArg(args, "<file>#<id>")
+    if (!target.includes("#")) throw new Error("update takes an address of the form <file>#<id>")
+    requireArgs([args.script, "--script"])
+
+    const { path, root, cases } = casesIn(fs, target)
+    const old = cases[0]
+    const oldLens = old.querySelector(":scope > notebook-lens")?.textContent?.trim() ?? ""
+    const oldWasBrowser = old.querySelector(':scope > script[type="text/mycelium-experiment"]') !== null
+
+    announceDrop(old, target)
+    old.remove()
+
+    const nextArgs = {
+      ...args,
+      lens: args.lens ?? oldLens,
+      id: args.id ?? old.getAttribute("id"),
+      browser: args.browser ?? (oldWasBrowser ? true : undefined),
+    }
+    const one = await attachCase(fs, nextArgs, cli, path, root)
+    const result = await cli.validate(root, path)
+    if (!result.ok) throw new Error(result.errors.join("\n"))
+    fs.commit()
+    console.log(`added    ${target.split("#")[0]}#${one.getAttribute("id")}`)
+    await readCase(fs, args, path, one, declaredOrder(fs.get("templates/notebook.template.html"), "notebook-case"))
   }
 
   async function concludeCase({ fs, args, cli }: CommandContext) {
@@ -702,6 +747,9 @@
    *   mycelium notebook experiment case add <file> --lens "…"
    *     --script "…" | --script - [--id <slug>] [--browser]
    *
+   *   mycelium notebook experiment case update <file>#<id>
+   *     --script "…" | --script - [--lens "…"] [--id <slug>] [--browser]
+   *
    *   mycelium notebook experiment case del <file>#<id>
    *
    *   mycelium notebook experiment case conclude <file>#<id>
@@ -715,9 +763,15 @@
    * case lives only under experiment: the other four types have no readings
    * to attach one to. Several cases stay apart on purpose, per
    * readings-kept-apart — a second lens gets its own case rather than
-   * merging into one answer. Nothing updates a case; delete and add instead.
-   * del prints every reading it drops. --id overrides the id derived from
-   * --lens.
+   * merging into one answer. Nothing edits a case in place, because a case is
+   * its script and a changed script is a different case.
+   *
+   * update is the delete-then-add that a changed script needs, run as one
+   * command instead of two remembered separately. It prints what the old
+   * case drops the same way del does, and both --lens and --id default to
+   * the case being replaced, so passing only --script changes nothing else
+   * about it. Dropping a case with no replacement is still what del alone
+   * is for, printing every reading and conclusion it takes with it.
    *
    * conclude sets the document's own answer, and replaces it rather than
    * accumulating. case conclude instead appends a dated line under one
@@ -732,6 +786,7 @@
     conclude: (one: CommandContext) => concludeExperiment(one),
     case: {
       add: (two: CommandContext) => attachCaseTo(two),
+      update: (two: CommandContext) => updateCase(two),
       del: (two: CommandContext) => dropCase(two),
       conclude: (two: CommandContext) => concludeCase(two),
     },

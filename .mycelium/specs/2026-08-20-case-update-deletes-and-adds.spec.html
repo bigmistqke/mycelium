@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spec: notebook experiment case update: delete and add as one honest command</title>
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../templates/spec.template.css">
+</head>
+<body>
+<spec-doc data-conforms-to="../templates/spec.template.html#spec-doc">
+  <spec-title>notebook experiment case update: delete and add as one honest command</spec-title>
+  <spec-status>implemented</spec-status>
+  <spec-date>2026-08-20</spec-date>
+  <spec-problem>
+<p>
+An earlier followup, now done, named the gap: changing a case's script means running
+<code>notebook experiment case del</code> and then <code>notebook experiment case add</code>, and remembering both is the whole
+burden. Nothing enforced the order, and nothing stopped a session from running the first and forgetting the second,
+leaving an experiment with one fewer case than intended.
+</p>
+<p>
+The two-command shape came from a real constraint, stated in this file's own doc comment: a case is its script, so a
+changed script is a different case, and the readings under the old one measured something nobody asks about any
+more. That constraint does not require two commands, only that the old case's identity end before the new one's
+begins.
+</p>
+</spec-problem>
+  <spec-design>
+<h3>update deletes and adds, and prints both</h3>
+<p>
+<code>notebook experiment case update &lt;file&gt;#&lt;id&gt; --script "…" | --script - [--lens "…"] [--id &lt;slug&gt;]
+[--browser]</code> resolves the case the address names, prints every reading and conclusion it is about to take with
+it — the same lines <code>case del</code> already prints — removes it, then builds the replacement through the same
+<code>attachCase</code> helper <code>case add</code> uses. A shared <code>announceDrop</code> function now backs
+both commands, so the two can never print the loss differently.
+</p>
+<h3>--lens and --id default to the case being replaced</h3>
+<p>
+Passing only <code>--script</code> changes nothing else about the case: its lens, its id and whether it runs in a
+browser all carry over from the case it replaces. Passing <code>--lens</code> or <code>--id</code> renames it on
+the way back in, the same as passing them to a fresh <code>case add</code> would. The id still defaults from the
+lens whenever nobody passes either flag, through the same <code>slugFor</code> logic <code>add</code> already uses.
+</p>
+<h3>update runs the new case immediately</h3>
+<p>
+Once the replacement validates and the document commits to disk, <code>update</code> runs it through the same
+<code>readCase</code> path <code>case add</code> uses, recording a first reading under the new case the same way a
+freshly added one gets one. Nothing about running a case changes; only how a changed script gets there does.
+</p>
+</spec-design>
+  <spec-out-of-scope>
+<ul>
+<li><code>case del</code> stays as its own command. Dropping a case with nothing to replace it is a different
+intention from replacing one, and folding both into a single command would make an ordinary delete carry an unused
+<code>--script</code> flag.</li>
+</ul>
+</spec-out-of-scope>
+</spec-doc>
+</body></html>
